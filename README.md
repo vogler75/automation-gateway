@@ -1,1 +1,1 @@
-# opcua-proxy
+# OpcUa Gateway for GraphQL and MQTT

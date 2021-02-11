@@ -1,0 +1,33 @@
+MqttServer:
+  Listeners:
+    - Id: Mqtt
+      Port: 1883
+      Host: 0.0.0.0
+      LogLevel: ALL # ALL | INFO
+
+GraphQLServer:
+  Listeners:
+    - Port: 4000
+
+Database:
+  Logger:
+
+OpcUaClient:
+  - Id: "local"
+    Enabled: true
+    LogLevel: INFO
+    EndpointUrl:  "opc.tcp://172.17.0.1:4890"
+    UpdateEndpointUrl: 172.17.0.1
+    SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#Basic128Rsa15
+    SubscriptionSamplingInterval: 0
+    UsernameProvider:
+      Username: opcuauser
+      Password: password1
+    WriteParameters:
+      QueueSize: 1000
+      BlockSize: 100
+      WithTime: true
+    MonitoringParameters:
+      BufferSize: 10
+      SamplingInterval: 0.0
+      DiscardOldest: true

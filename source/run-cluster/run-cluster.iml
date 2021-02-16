@@ -67,5 +67,38 @@
     <orderEntry type="library" name="Maven: org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.4.30" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: org.jetbrains.kotlin:kotlin-test:1.4.30" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: org.jetbrains.kotlin:kotlin-test-common:1.4.30" level="project" />
+    <orderEntry type="module" module-name="core" />
+    <orderEntry type="library" name="Maven: commons-cli:commons-cli:1.4" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.commons:commons-collections4:4.4" level="project" />
+    <orderEntry type="library" name="Maven: org.eclipse.milo:sdk-client:0.5.3" level="project" />
+    <orderEntry type="library" name="Maven: org.eclipse.milo:stack-client:0.5.3" level="project" />
+    <orderEntry type="library" name="Maven: org.eclipse.milo:stack-core:0.5.3" level="project" />
+    <orderEntry type="library" name="Maven: org.bouncycastle:bcprov-jdk15on:1.61" level="project" />
+    <orderEntry type="library" name="Maven: org.bouncycastle:bcpkix-jdk15on:1.61" level="project" />
+    <orderEntry type="library" name="Maven: com.google.guava:guava:26.0-jre" level="project" />
+    <orderEntry type="library" name="Maven: com.digitalpetri.netty:netty-channel-fsm:0.3" level="project" />
+    <orderEntry type="library" name="Maven: com.digitalpetri.fsm:strict-machine:0.1" level="project" />
+    <orderEntry type="library" name="Maven: org.eclipse.milo:sdk-core:0.5.3" level="project" />
+    <orderEntry type="library" name="Maven: org.eclipse.milo:dictionary-reader:0.5.3" level="project" />
+    <orderEntry type="library" name="Maven: org.eclipse.milo:bsd-parser:0.5.3" level="project" />
+    <orderEntry type="library" name="Maven: org.eclipse.milo:bsd-core:0.5.3" level="project" />
+    <orderEntry type="library" name="Maven: com.sun.activation:jakarta.activation:1.2.1" level="project" />
+    <orderEntry type="library" name="Maven: org.glassfish.jaxb:jaxb-runtime:2.3.3" level="project" />
+    <orderEntry type="library" name="Maven: jakarta.xml.bind:jakarta.xml.bind-api:2.3.3" level="project" />
+    <orderEntry type="library" name="Maven: org.glassfish.jaxb:txw2:2.3.3" level="project" />
+    <orderEntry type="library" name="Maven: com.sun.istack:istack-commons-runtime:3.0.11" level="project" />
+    <orderEntry type="library" name="Maven: io.vertx:vertx-mqtt:4.0.0" level="project" />
+    <orderEntry type="library" name="Maven: io.netty:netty-codec-mqtt:4.1.49.Final" level="project" />
+    <orderEntry type="library" name="Maven: io.reactivex.rxjava2:rxjava:2.2.20" level="project" />
+    <orderEntry type="library" name="Maven: org.reactivestreams:reactive-streams:1.0.3" level="project" />
+    <orderEntry type="module" module-name="graphql" />
+    <orderEntry type="library" name="Maven: io.vertx:vertx-web-graphql:4.0.0" level="project" />
+    <orderEntry type="library" name="Maven: io.vertx:vertx-web:4.0.0" level="project" />
+    <orderEntry type="library" name="Maven: io.vertx:vertx-web-common:4.0.0" level="project" />
+    <orderEntry type="library" name="Maven: io.vertx:vertx-auth-common:4.0.0" level="project" />
+    <orderEntry type="library" name="Maven: io.vertx:vertx-bridge-common:4.0.0" level="project" />
+    <orderEntry type="library" name="Maven: com.graphql-java:graphql-java:16.1" level="project" />
+    <orderEntry type="library" name="Maven: com.graphql-java:java-dataloader:2.2.3" level="project" />
+    <orderEntry type="library" scope="RUNTIME" name="Maven: org.antlr:antlr4-runtime:4.8" level="project" />
   </component>
 </module>

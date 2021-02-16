@@ -8,6 +8,7 @@ MqttServer:
 GraphQLServer:
   Listeners:
     - Port: 4000
+    - LogLeve: ALL
 
 Database:
   Logger:
@@ -22,18 +23,18 @@ Database:
         QueueSize: 20000
       Logging:
         - Topic: opc/oa1/path:json/$objects/Test/+/float
-        - Topic: opc/oa2/path:json/$objects/Test/+/float
-        - Topic: opc/oa3/path:json/$objects/Test/+/float
-        - Topic: opc/oa1/path:json/$objects/ExampleDP_Float/+
-        - Topic: opc/oa2/path:json/$objects/ExampleDP_Float/+
-        - Topic: opc/ignition/path:json/$objects/Tag Providers/default/_Sim1_/Ramp/+
-        - Topic: opc/ua/path:json/ns=1;s=16|Tags/+
+        #- Topic: opc/oa2/path:json/$objects/Test/+/float
+        #- Topic: opc/oa3/path:json/$objects/Test/+/float
+        #- Topic: opc/oa1/path:json/$objects/ExampleDP_Float/+
+        #- Topic: opc/oa2/path:json/$objects/ExampleDP_Float/+
+        #- Topic: opc/ignition/path:json/$objects/Tag Providers/default/_Sim1_/Ramp/+
+        #- Topic: opc/ua/path:json/ns=1;s=16|Tags/+
         #- Topic: opc/ucp/path:json/ns=1;s=3|Tags/+
 
 OpcUaClient:
   - Id: "oa1"
     Enabled: true
-    LogLevel: INFO
+    LogLevel: ALL
     EndpointUrl: "opc.tcp://centos1.rocworks.local:4840"
     UpdateEndpointUrl: centos1.rocworks.local
     SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#None
@@ -51,7 +52,7 @@ OpcUaClient:
       DiscardOldest: true
 
   - Id: "oa2"
-    Enabled: true
+    Enabled: false
     LogLevel: INFO
     EndpointUrl: "opc.tcp://192.168.1.100:4840"
     SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#None
@@ -69,7 +70,7 @@ OpcUaClient:
       DiscardOldest: true
 
   - Id: "oa3"
-    Enabled: true
+    Enabled: false
     LogLevel: INFO
     EndpointUrl: "opc.tcp://192.168.1.103:4840"
     UpdateEndpointUrl: 192.168.1.103
@@ -88,7 +89,7 @@ OpcUaClient:
       DiscardOldest: true
 
   - Id: "ignition"
-    Enabled: true
+    Enabled: false
     LogLevel: INFO
     EndpointUrl: "opc.tcp://ubuntu1:62541/discovery"
     SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#None
@@ -111,7 +112,7 @@ OpcUaClient:
       - Topic: opc/ignition/path:json/$objects/Tag Providers/default/_Sim1_/Ramp/+
 
   - Id: "ua"
-    Enabled: true
+    Enabled: false
     LogLevel: INFO
     EndpointUrl:  "opc.tcp://desktop-9o6hthf:4890"
     SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#Basic128Rsa15

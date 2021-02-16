@@ -29,6 +29,8 @@ import java.util.concurrent.CompletableFuture
 import kotlin.collections.HashMap
 
 import java.time.format.DateTimeFormatter
+import java.util.logging.Level
+import java.util.logging.Logger
 
 class GraphQLServer(private val defaultSystem: String) : AbstractVerticle() {
     // TODO: remove system and use Topic instead of NodeId? Or add Opc as prefix to the functions
@@ -56,9 +58,12 @@ class GraphQLServer(private val defaultSystem: String) : AbstractVerticle() {
         }
     }
 
-    private val logger = LoggerFactory.getLogger(this.javaClass.simpleName)
+    private val id = this.javaClass.simpleName
+    private val logger = LoggerFactory.getLogger(id)
     val graphql : GraphQL
     init {
+        Logger.getLogger(id).level = Level.ALL
+
         val schema = """
             | type Query {
             |   ServerInfo(System: String): ServerInfo
@@ -196,6 +201,7 @@ class GraphQLServer(private val defaultSystem: String) : AbstractVerticle() {
             request.put("NodeId", nodeId)
 
             try {
+                logger.debug("getNodeValue read request...")
                 vertx.eventBus().request<JsonObject>("${Globals.BUS_ROOT_URI_OPC}/$system/Read", request) {
                     logger.debug("getNodeValue read response [{}] [{}]", it.succeeded(), it.result()?.body())
                     if (it.succeeded()) {

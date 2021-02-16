@@ -47,8 +47,6 @@ object Main {
 
         val logger = LoggerFactory.getLogger(javaClass.simpleName)
 
-        Logger.getLogger("Mqtt").level = Level.ALL
-
         val vertx = Vertx.vertx()
 
         // Register Message Types
@@ -58,15 +56,7 @@ object Main {
         // Read config file
         val configFilePath = if (args.isNotEmpty()) args[0] else "config.yaml"
         println("Using config file: $configFilePath")
-        val config = ConfigRetriever.create(
-            vertx,
-            ConfigRetrieverOptions().addStore(
-                ConfigStoreOptions()
-                    .setType("file")
-                    .setFormat("yaml")
-                    .setConfig(JsonObject().put("path", configFilePath))
-            )
-        )
+        val config = Globals.RetrieveConfig(vertx, configFilePath)
 
         OpcUaVerticle.initKeyStoreLoader()
 
@@ -78,13 +68,13 @@ object Main {
                 vertx.close()
             } else {
                 thread { // because it will block
-                    createServices(vertx, cfg)
+                    createServices(vertx, cfg.result())
                 }
             }
         }
     }
 
-    fun createLogger(vertx: Vertx, config: JsonObject) {
+    private fun createLogger(vertx: Vertx, config: JsonObject) {
         val logger = LoggerFactory.getLogger(javaClass.simpleName)
         when (val type = config.getString("Type")) {
             "InfluxDB" -> vertx.deployVerticle(InfluxDBLogger(config))
@@ -92,9 +82,9 @@ object Main {
         }
     }
 
-    private fun createServices(vertx: Vertx, config: AsyncResult<JsonObject>) {
+    private fun createServices(vertx: Vertx, config: JsonObject) {
         // OPC UA Server
-        val enabled: List<JsonObject> = config.result().getJsonArray("OpcUaClient")
+        val enabled: List<JsonObject> = config.getJsonArray("OpcUaClient")
             .filterIsInstance<JsonObject>()
             .filter { it.getBoolean("Enabled") }
         val defaultSystem = enabled.first()
@@ -103,7 +93,7 @@ object Main {
         }
 
         // Mqtt Server
-        config.result().getJsonObject("MqttServer")
+        config.getJsonObject("MqttServer")
             ?.getJsonArray("Listeners")
             ?.filterIsInstance<JsonObject>()
             ?.forEach {
@@ -111,7 +101,7 @@ object Main {
             }
 
         // Start GraphQL Server
-        config.result().getJsonObject("GraphQLServer")
+        config.getJsonObject("GraphQLServer")
             ?.getJsonArray("Listeners")
             ?.filterIsInstance<JsonObject>()
             ?.forEach {
@@ -119,7 +109,7 @@ object Main {
             }
 
         // DB Logger
-        config.result().getJsonObject("Database")
+        config.getJsonObject("Database")
             ?.getJsonArray("Logger")
             ?.filterIsInstance<JsonObject>()
             ?.forEach {

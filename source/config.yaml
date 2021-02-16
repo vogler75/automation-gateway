@@ -1,0 +1,44 @@
+MqttServer:
+  Listeners:
+    - Id: Mqtt
+      Port: 1883
+      Host: 0.0.0.0
+      LogLevel: ALL # ALL | INFO
+
+GraphQLServer:
+  Listeners:
+    - Port: 4000
+      LogLevel: ALL
+
+Database:
+  Logger:
+    - Id: default
+      Type: InfluxDB
+      Url: http://nuc1:8086
+      Database: test
+      Username: ""
+      Password: ""
+      WriteParameters:
+        QueueSize: 20000
+      Logging:
+        - Topic: opc/default/path:json/$objects/Test/+/float
+
+OpcUaClient:
+  - Id: "default"
+    Enabled: true
+    LogLevel: ALL
+    EndpointUrl: "opc.tcp://centos1.rocworks.local:4840"
+    UpdateEndpointUrl: centos1.rocworks.local
+    SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#None
+    ConnectTimeout: 5000
+    RequestTimeout: 5000
+    KeepAliveFailuresAllowed: 0
+    SubscriptionSamplingInterval: 0.0
+    WriteParameters:
+      QueueSize: 10000
+      BlockSize: 100
+      WithTime: false
+    MonitoringParameters:
+      BufferSize: 10
+      SamplingInterval: 0
+      DiscardOldest: true

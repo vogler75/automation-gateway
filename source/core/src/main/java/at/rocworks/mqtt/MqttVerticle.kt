@@ -1,5 +1,6 @@
 package at.rocworks.mqtt
 
+import at.rocworks.data.Globals
 import at.rocworks.data.Topic
 import io.netty.handler.codec.mqtt.MqttQoS
 import io.vertx.core.AbstractVerticle
@@ -233,7 +234,7 @@ class MqttVerticle(config: JsonObject, private val endpoint: MqttEndpoint) : Abs
     private fun subscribeOpcUaTopic(t: Topic, qos: MqttQoS, ret: Promise<Boolean>) {
         val consumer = vertx.eventBus().consumer<Any>(t.topicName) { valueConsumer(t, qos, it.body()) }
         val r = JsonObject().put("ClientId", endpoint.clientIdentifier()).put("Topic", t.encodeToJson())
-        vertx.eventBus().request<JsonObject>("${t.systemType}/${t.systemName}/Subscribe", r) {
+        vertx.eventBus().request<JsonObject>("${Globals.BUS_ROOT_URI_OPC}/${t.systemName}/Subscribe", r) {
             logger.debug("Subscribe response [{}] [{}]", it.succeeded(), it.result()?.body())
             if (it.succeeded() && it.result().body().getBoolean("Ok")) {
                 this.topics[t.topicName] = consumer as MessageConsumer<Any>
@@ -249,7 +250,7 @@ class MqttVerticle(config: JsonObject, private val endpoint: MqttEndpoint) : Abs
     private fun unsubscribeOpcUaTopics(systemType: String, systemName: String, list: List<Topic>) {
         val r = JsonObject().put("ClientId", endpoint.clientIdentifier())
         r.put("Topics", JsonArray(list.map { it.encodeToJson() }))
-        vertx.eventBus().request<JsonObject>("${systemType}/${systemName}/Unsubscribe", r) {
+        vertx.eventBus().request<JsonObject>("${Globals.BUS_ROOT_URI_OPC}/${systemName}/Unsubscribe", r) {
             logger.debug("Unsubscribe response [{}] [{}]", it.succeeded(), it.result()?.body())
             if (it.succeeded() && it.result().body().getBoolean("Ok")) {
                 list.forEach { topic ->
@@ -296,7 +297,7 @@ class MqttVerticle(config: JsonObject, private val endpoint: MqttEndpoint) : Abs
                         val request = JsonObject()
                         request.put("Topic", topic.encodeToJson())
                         request.put("Data", value)
-                        vertx.eventBus().request<JsonObject>("${topic.systemType}/${topic.systemName}/Publish", request) {
+                        vertx.eventBus().request<JsonObject>("${Globals.BUS_ROOT_URI_OPC}/${topic.systemName}/Publish", request) {
                             logger.debug("Publish response [{}] [{}]", it.succeeded(), it.result()?.body())
                         }
                     }

@@ -12,6 +12,7 @@
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <kotlin.version>1.4.30</kotlin.version>
+        <vertx.version>4.0.2</vertx.version>
     </properties>
 
     <dependencies>
@@ -31,17 +32,17 @@
         <dependency>
             <groupId>io.vertx</groupId>
             <artifactId>vertx-core</artifactId>
-            <version>4.0.0</version>
+            <version>${vertx.version}</version>
         </dependency>
         <dependency>
             <groupId>io.vertx</groupId>
             <artifactId>vertx-config-yaml</artifactId>
-            <version>4.0.0</version>
+            <version>${vertx.version}</version>
         </dependency>
         <dependency>
             <groupId>io.vertx</groupId>
             <artifactId>vertx-service-discovery</artifactId>
-            <version>4.0.0</version>
+            <version>${vertx.version}</version>
         </dependency>
 
         <!-- Gateway -->

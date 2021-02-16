@@ -1,5 +1,6 @@
 package at.rocworks.opcua;
 
+import at.rocworks.data.Globals;
 import at.rocworks.data.Topic;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
@@ -45,8 +46,6 @@ public abstract class OpcUaVerticle extends AbstractVerticle implements ServiceF
 
     protected final Logger logger;
     private String logLevel = "INFO";
-
-    public static String BUS_ROOT_URI = Topic.SystemType.Opc.name();
 
     public static String APPLICATION_NAME = "Reactive Gateway@"+HostnameUtil.getHostname();
     public static String APPLICATION_URI = String.format("urn:%s:ROCWORKS.Gateway", HostnameUtil.getHostname());
@@ -213,7 +212,7 @@ public abstract class OpcUaVerticle extends AbstractVerticle implements ServiceF
         Record record = new Record()
                 .setName(id)
                 .setType(Topic.SystemType.Opc.toString())
-                .setLocation(new JsonObject().put("endpoint", BUS_ROOT_URI+"/"+this.id));
+                .setLocation(new JsonObject().put("endpoint", Globals.BUS_ROOT_URI_OPC+"/"+this.id));
 
         discovery.publish(record, ar -> {
             if (ar.succeeded()) {
@@ -309,13 +308,13 @@ public abstract class OpcUaVerticle extends AbstractVerticle implements ServiceF
 
     private void connectHandlers() {
         messageHandlers = List.of(
-                vertx.eventBus().consumer(BUS_ROOT_URI + "/" + this.id + "/ServerInfo", this::serverInfoHandler),
-                vertx.eventBus().consumer(BUS_ROOT_URI + "/" + this.id + "/Subscribe", this::subscribeHandler),
-                vertx.eventBus().consumer(BUS_ROOT_URI + "/" + this.id + "/Unsubscribe", this::unsubscribeHandler),
-                vertx.eventBus().consumer(BUS_ROOT_URI + "/" + this.id + "/Publish", this::publishHandler),
-                vertx.eventBus().consumer(BUS_ROOT_URI + "/" + this.id + "/Read", this::readHandler),
-                vertx.eventBus().consumer(BUS_ROOT_URI + "/" + this.id + "/Write", this::writeHandler),
-                vertx.eventBus().consumer(BUS_ROOT_URI + "/" + this.id + "/Browse", this::browseHandler)
+                vertx.eventBus().consumer(Globals.BUS_ROOT_URI_OPC + "/" + this.id + "/ServerInfo", this::serverInfoHandler),
+                vertx.eventBus().consumer(Globals.BUS_ROOT_URI_OPC + "/" + this.id + "/Subscribe", this::subscribeHandler),
+                vertx.eventBus().consumer(Globals.BUS_ROOT_URI_OPC + "/" + this.id + "/Unsubscribe", this::unsubscribeHandler),
+                vertx.eventBus().consumer(Globals.BUS_ROOT_URI_OPC + "/" + this.id + "/Publish", this::publishHandler),
+                vertx.eventBus().consumer(Globals.BUS_ROOT_URI_OPC + "/" + this.id + "/Read", this::readHandler),
+                vertx.eventBus().consumer(Globals.BUS_ROOT_URI_OPC + "/" + this.id + "/Write", this::writeHandler),
+                vertx.eventBus().consumer(Globals.BUS_ROOT_URI_OPC + "/" + this.id + "/Browse", this::browseHandler)
         );
     }
 

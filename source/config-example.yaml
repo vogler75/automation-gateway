@@ -8,7 +8,7 @@ MqttServer:
 GraphQLServer:
   Listeners:
     - Port: 4000
-    - LogLeve: ALL
+    - LogLevel: ALL
 
 Database:
   Logger:
@@ -52,7 +52,7 @@ OpcUaClient:
       DiscardOldest: true
 
   - Id: "oa2"
-    Enabled: false
+    Enabled: true
     LogLevel: INFO
     EndpointUrl: "opc.tcp://192.168.1.100:4840"
     SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#None
@@ -70,7 +70,7 @@ OpcUaClient:
       DiscardOldest: true
 
   - Id: "oa3"
-    Enabled: false
+    Enabled: true
     LogLevel: INFO
     EndpointUrl: "opc.tcp://192.168.1.103:4840"
     UpdateEndpointUrl: 192.168.1.103
@@ -89,7 +89,7 @@ OpcUaClient:
       DiscardOldest: true
 
   - Id: "ignition"
-    Enabled: false
+    Enabled: true
     LogLevel: INFO
     EndpointUrl: "opc.tcp://ubuntu1:62541/discovery"
     SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#None
@@ -112,7 +112,7 @@ OpcUaClient:
       - Topic: opc/ignition/path:json/$objects/Tag Providers/default/_Sim1_/Ramp/+
 
   - Id: "ua"
-    Enabled: false
+    Enabled: true
     LogLevel: INFO
     EndpointUrl:  "opc.tcp://desktop-9o6hthf:4890"
     SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#Basic128Rsa15
@@ -130,7 +130,7 @@ OpcUaClient:
       DiscardOldest: true
 
   - Id: "ucp"
-    Enabled: false
+    Enabled: true
     LogLevel: INFO
     EndpointUrl:  "opc.tcp://192.168.1.137:4890"
     UpdateEndpointUrl: 192.168.1.137

@@ -294,12 +294,11 @@ class OpcUaHandler(config: JsonObject) : OpcUaVerticle(config) {
                 }
             }
             writeValueQueued(nodeId, dataValue).onComplete(ret)
-            //writeValueAsync(nodeId, dataValue, ret)
         } catch (e: NumberFormatException) {
             logger.warn("Not a valid number [{}] for numeric tag [{}] value!", value.toString(), topic)
             ret.complete(false)
         } catch (e: Exception) {
-            e.printStackTrace()
+            //e.printStackTrace()
             ret.fail(e)
         }
         return ret.future()
@@ -353,13 +352,21 @@ class OpcUaHandler(config: JsonObject) : OpcUaVerticle(config) {
         return promise.future()
     }
 
+    private var lastWriteFailures = 0
     private fun writeValueQueued(nodeId: NodeId, dataValue: DataValue): Future<Boolean> {
         val promise = Promise.promise<Boolean>()
         try {
             writeValueQueue.add(Triple(nodeId, dataValue, promise))
+            if (lastWriteFailures > 0) {
+                logger.error("Add to write queue: Ok [{} missed writes]", lastWriteFailures)
+                lastWriteFailures = 0
+            }
         } catch (e: IllegalStateException) {
-            logger.error("Write value failed: $e")
-            promise.fail(e)
+            if (lastWriteFailures == 0) {
+                logger.error("Add to write queue: ${e.message}")
+            }
+            lastWriteFailures++
+            promise.complete(false)
         }
         return promise.future()
     }

@@ -13,16 +13,13 @@ There is also a shell script `build.sh` to build it with [Maven](https://maven.a
 
 
 ```
-> sh build.sh
+> sh make.sh
 > sh run.sh
 ```
 
 ## Configuration
 
 See config-example.yaml for an example how to configure the Gateway. You can pass a configuration file name to the program as the first argument. If no argument is given then config.yaml will be used.
-
-A more detailed description of the configuration file will come...
-
 
 ## Single JAR with Dependencies
 

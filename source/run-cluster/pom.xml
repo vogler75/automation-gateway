@@ -45,7 +45,7 @@
             <version>${vertx.version}</version>
         </dependency>
 
-        <!-- Vert.x Cluster Manager -->
+        <!-- Vert.x at.rocworks.cluster.Cluster Manager -->
         <dependency>
             <groupId>io.vertx</groupId>
             <artifactId>vertx-ignite</artifactId>

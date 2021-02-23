@@ -45,7 +45,7 @@
             <version>${vertx.version}</version>
         </dependency>
 
-        <!-- Gateway -->
+        <!-- at.rocworks.cluster.Gateway -->
         <dependency>
             <groupId>at.rocworks</groupId>
             <artifactId>gateway-core</artifactId>

@@ -1,3 +1,5 @@
+package at.rocworks.cluster
+
 import at.rocworks.mqtt.MqttVerticle
 import at.rocworks.opcua.OpcUaHandler
 import io.vertx.core.Vertx

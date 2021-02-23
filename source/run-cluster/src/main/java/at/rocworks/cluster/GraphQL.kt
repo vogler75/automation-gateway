@@ -1,3 +1,5 @@
+package at.rocworks.cluster
+
 import at.rocworks.graphql.GraphQLServer
 import io.vertx.core.Vertx
 import io.vertx.core.json.JsonObject
@@ -11,7 +13,7 @@ object GraphQL {
     }
 
     private fun services(vertx: Vertx, config: JsonObject) {
-        // Start GraphQL Server
+        // Start at.rocworks.cluster.GraphQL Server
         config.getJsonObject("GraphQLServer")
             ?.getJsonArray("Listeners")
             ?.filterIsInstance<JsonObject>()

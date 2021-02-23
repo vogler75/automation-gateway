@@ -1,5 +1,8 @@
+package at.rocworks.standalone
+
 import at.rocworks.data.*
 import at.rocworks.graphql.GraphQLServer
+import at.rocworks.logger.influx.InfluxDBLogger
 import at.rocworks.mqtt.*
 import at.rocworks.opcua.OpcUaHandler
 import at.rocworks.opcua.OpcUaVerticle
@@ -14,15 +17,8 @@ import java.lang.Exception
 import java.util.logging.LogManager
 import kotlin.system.exitProcess
 
-import io.vertx.config.ConfigStoreOptions
-import io.vertx.config.ConfigRetrieverOptions
-import io.vertx.config.ConfigRetriever
-import io.vertx.core.AsyncResult
 import org.slf4j.LoggerFactory
-import java.util.logging.Level
-import java.util.logging.Logger
 import kotlin.concurrent.thread
-
 
 object Main {
 

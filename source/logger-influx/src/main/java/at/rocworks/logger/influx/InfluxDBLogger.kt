@@ -1,3 +1,5 @@
+package at.rocworks.logger.influx
+
 import at.rocworks.data.Globals
 import at.rocworks.data.Topic
 import at.rocworks.data.Value
@@ -65,7 +67,7 @@ class InfluxDBLogger(private val config: JsonObject) : AbstractVerticle() {
                         vertx.setTimer(defaultRetryWaitTime) { connect() }
                     } else {
                         logger.info("InfluxDB connected.")
-                        db.setLogLevel(InfluxDB.LogLevel.NONE);
+                        db.setLogLevel(InfluxDB.LogLevel.NONE)
                         db.query(Query("CREATE DATABASE $database"))
                         db.setDatabase(database)
                         db.enableBatch(BatchOptions.DEFAULTS) // TODO: make batch options configurable
@@ -163,7 +165,7 @@ class InfluxDBLogger(private val config: JsonObject) : AbstractVerticle() {
     private val writeValueThread =
         thread {
             logger.info("Writer thread with queue size [{}]", writeValueQueue.remainingCapacity())
-            var point : Point? = null
+            var point : Point?
             while (!writeValueStop.get()) {
                 point = writeValueQueue.poll(10, TimeUnit.MILLISECONDS)
                 while (point!=null) {
@@ -176,7 +178,7 @@ class InfluxDBLogger(private val config: JsonObject) : AbstractVerticle() {
         }
 
 
-    var valueCounterInput : Int = 0
+    private var valueCounterInput : Int = 0
     @Volatile var valueCounterOutput : Int = 0
 
     private fun valueConsumer(data: JsonObject) {
@@ -239,15 +241,11 @@ class InfluxDBLogger(private val config: JsonObject) : AbstractVerticle() {
         val t2 = request.getLong("T2") * 1000000 // ms to nano
 
         try {
-            if (db != null) {
-                val sql = "SELECT value, status, system FROM \"${system}\" WHERE \"tag\" = '$nodeId' AND time >= $t1 AND time <= $t2"
-                val res: QueryResult = db!!.query(Query(sql))
-                val list = res.results.getOrNull(0)?.series?.getOrNull(0)?.values
-                if (list!=null) message.reply(JsonObject().put("Ok", true).put("Result", list))
-                else message.reply(JsonObject().put("Ok", false))
-            } else {
-                message.reply(JsonObject().put("Ok", false))
-            }
+            val sql = "SELECT value, status, system FROM \"${system}\" WHERE \"tag\" = '$nodeId' AND time >= $t1 AND time <= $t2"
+            val res: QueryResult = db.query(Query(sql))
+            val list = res.results.getOrNull(0)?.series?.getOrNull(0)?.values
+            if (list!=null) message.reply(JsonObject().put("Ok", true).put("Result", list))
+            else message.reply(JsonObject().put("Ok", false))
         } catch (e: Exception) {
             message.reply(JsonObject().put("Ok", false))
             e.printStackTrace()

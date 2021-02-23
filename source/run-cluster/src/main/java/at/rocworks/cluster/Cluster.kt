@@ -1,3 +1,5 @@
+package at.rocworks.cluster
+
 import at.rocworks.data.*
 import at.rocworks.opcua.OpcUaVerticle
 import io.vertx.core.Vertx

@@ -3,7 +3,7 @@ MqttServer:
     - Id: Mqtt
       Port: 1883
       Host: 0.0.0.0
-      LogLevel: ALL # ALL | INFO
+      LogLevel: INFO # ALL | INFO
 
 GraphQLServer:
   Listeners:
@@ -21,14 +21,14 @@ Database:
       WriteParameters:
         QueueSize: 20000
       Logging:
-        - Topic: opc/default/path:json/$objects/Test/+/float
+        #- Topic: opc/default/path:json/$objects/Test/+/float
 
 OpcUaClient:
-  - Id: "default"
+  - Id: "test"
     Enabled: true
-    LogLevel: ALL
-    EndpointUrl: "opc.tcp://centos1.rocworks.local:4840"
-    UpdateEndpointUrl: centos1.rocworks.local
+    LogLevel: INFO
+    EndpointUrl: "opc.tcp://192.168.1.152:4840"
+    UpdateEndpointUrl: 192.168.1.152
     SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#None
     ConnectTimeout: 5000
     RequestTimeout: 5000
@@ -36,7 +36,79 @@ OpcUaClient:
     SubscriptionSamplingInterval: 0.0
     WriteParameters:
       QueueSize: 10000
-      BlockSize: 100
+      BlockSize: 200
+      WithTime: false
+    MonitoringParameters:
+      BufferSize: 10
+      SamplingInterval: 0
+      DiscardOldest: true
+  - Id: "test1"
+    Enabled: true
+    LogLevel: INFO
+    EndpointUrl: "opc.tcp://192.168.1.113:4840"
+    UpdateEndpointUrl: 192.168.1.113
+    SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#None
+    ConnectTimeout: 5000
+    RequestTimeout: 5000
+    KeepAliveFailuresAllowed: 0
+    SubscriptionSamplingInterval: 0.0
+    WriteParameters:
+      QueueSize: 10000
+      BlockSize: 200
+      WithTime: false
+    MonitoringParameters:
+      BufferSize: 10
+      SamplingInterval: 0
+      DiscardOldest: true
+  - Id: "test2"
+    Enabled: true
+    LogLevel: INFO
+    EndpointUrl: "opc.tcp://192.168.1.139:4840"
+    UpdateEndpointUrl: 192.168.1.139
+    SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#None
+    ConnectTimeout: 5000
+    RequestTimeout: 5000
+    KeepAliveFailuresAllowed: 0
+    SubscriptionSamplingInterval: 0.0
+    WriteParameters:
+      QueueSize: 10000
+      BlockSize: 200
+      WithTime: false
+    MonitoringParameters:
+      BufferSize: 10
+      SamplingInterval: 0
+      DiscardOldest: true
+  - Id: "read1"
+    Enabled: true
+    LogLevel: INFO
+    EndpointUrl: "opc.tcp://192.168.1.113:4841"
+    UpdateEndpointUrl: 192.168.1.113
+    SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#None
+    ConnectTimeout: 5000
+    RequestTimeout: 5000
+    KeepAliveFailuresAllowed: 0
+    SubscriptionSamplingInterval: 0.0
+    WriteParameters:
+      QueueSize: 10000
+      BlockSize: 200
+      WithTime: false
+    MonitoringParameters:
+      BufferSize: 10
+      SamplingInterval: 0
+      DiscardOldest: true
+  - Id: "read2"
+    Enabled: true
+    LogLevel: INFO
+    EndpointUrl: "opc.tcp://192.168.1.139:4841"
+    UpdateEndpointUrl: 192.168.1.139
+    SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#None
+    ConnectTimeout: 5000
+    RequestTimeout: 5000
+    KeepAliveFailuresAllowed: 0
+    SubscriptionSamplingInterval: 0.0
+    WriteParameters:
+      QueueSize: 10000
+      BlockSize: 200
       WithTime: false
     MonitoringParameters:
       BufferSize: 10

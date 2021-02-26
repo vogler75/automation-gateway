@@ -1,0 +1,2 @@
+rootProject.name = 'gateway'
+include('core', 'app', 'app-gateway', 'app-graphql', 'lib-cluster', 'lib-graphql', 'lib-influxdb')

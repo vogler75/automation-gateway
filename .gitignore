@@ -30,3 +30,6 @@ hs_err_pid*
 *.swp
 .idea
 /target
+
+# Ignite Runtime Directdory
+ignite

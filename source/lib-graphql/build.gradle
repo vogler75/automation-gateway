@@ -1,0 +1,33 @@
+plugins {
+    id 'gateway.kotlin-library-conventions'
+}
+
+compileKotlin {
+    kotlinOptions {
+        jvmTarget = "11"
+    }
+}
+
+repositories {
+    mavenLocal()
+    maven {
+        url = uri('https://repo.maven.apache.org/maven2/')
+    }
+}
+
+dependencies {
+    api project(':core')
+    implementation 'org.slf4j:slf4j-api:1.7.30'
+    implementation 'org.slf4j:slf4j-jdk14:1.7.30'
+    implementation 'io.vertx:vertx-core:4.0.2'
+    implementation 'io.vertx:vertx-web-graphql:4.0.2'
+    implementation 'io.vertx:vertx-config-yaml:4.0.2'
+    implementation 'io.vertx:vertx-service-discovery:4.0.2'
+    implementation 'io.reactivex.rxjava2:rxjava:2.2.20'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.11.4'
+    testImplementation 'org.jetbrains.kotlin:kotlin-test:1.4.30'
+}
+
+group = 'at.rocworks.gateway'
+version = '1.0-SNAPSHOT'
+description = 'Gateway GraphQL'

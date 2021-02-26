@@ -1,0 +1,38 @@
+plugins {
+    id 'gateway.kotlin-application-conventions'
+}
+
+compileKotlin {
+    kotlinOptions {
+        jvmTarget = "11"
+    }
+}
+
+repositories {
+    mavenLocal()
+    maven {
+        url = uri('https://repo.maven.apache.org/maven2/')
+    }
+}
+
+dependencies {
+    implementation project(':core')
+    implementation project(':lib-graphql')
+    implementation project(':lib-cluster')
+    implementation 'org.slf4j:slf4j-api:1.7.30'
+    implementation 'org.slf4j:slf4j-jdk14:1.7.30'
+    implementation 'io.vertx:vertx-core:4.0.2'
+    implementation 'io.vertx:vertx-config-yaml:4.0.2'
+    implementation 'io.vertx:vertx-service-discovery:4.0.2'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.11.4' // Needed for Vertx Json
+}
+
+application {
+    // Define the main class for the application.
+    mainClass = 'GraphQL'
+}
+
+group = 'at.rocworks.gateway'
+version = '1.0-SNAPSHOT'
+description = 'Gateway Cluster'
+

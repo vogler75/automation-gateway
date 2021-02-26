@@ -1,6 +1,7 @@
 import at.rocworks.gateway.cluster.Cluster
 import at.rocworks.gateway.core.mqtt.MqttVerticle
 import at.rocworks.gateway.core.opcua.OpcUaHandler
+import at.rocworks.gateway.core.opcua.KeyStoreLoader
 
 import io.vertx.core.Vertx
 import io.vertx.core.json.JsonObject
@@ -9,6 +10,7 @@ object Gateway {
     @Throws(Exception::class)
     @JvmStatic
     fun main(args: Array<String>) {
+        KeyStoreLoader.init()
         Cluster.setup(args) { vertx, config -> services(vertx, config) }
     }
 

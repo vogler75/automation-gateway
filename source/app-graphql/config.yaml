@@ -1,0 +1,5 @@
+GraphQLServer:
+  Listeners:
+    - Port: 4000
+      LogLevel: ALL
+

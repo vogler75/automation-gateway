@@ -23,18 +23,18 @@ import java.util.function.Consumer
 import java.util.logging.Level
 
 abstract class DriverBase(config: JsonObject) : AbstractVerticle() {
-    protected abstract val rootUri: String
+    protected abstract fun getRootUri(): String
 
-    private val id = config.getString("Id", DriverBase::class.java.simpleName)
+    protected val id = config.getString("Id", DriverBase::class.java.simpleName)
 
-    private val uri = "$rootUri/$id"
+    protected val uri = "${getRootUri()}/$id"
 
     protected val logger: Logger
-    private val logLevel: String = config.getString("LogLevel", "INFO")
+    protected val logLevel: String = config.getString("LogLevel", "INFO")
 
-    private var messageHandlers: List<MessageConsumer<*>> = ArrayList()
+    protected var messageHandlers: List<MessageConsumer<*>> = ArrayList()
 
-    private val registry = Registry()
+    protected val registry = Registry()
 
     protected abstract fun connect(): Future<Boolean>
     protected abstract fun disconnect(): Future<Boolean>
@@ -100,6 +100,7 @@ abstract class DriverBase(config: JsonObject) : AbstractVerticle() {
     }
 
     private fun connectHandlers() {
+        println("$uri/Subscribe")
         messageHandlers = listOf<MessageConsumer<JsonObject>>(
             vertx.eventBus().consumer("$uri/ServerInfo") { serverInfoHandler(it) },
             vertx.eventBus().consumer("$uri/Subscribe") { subscribeHandler(it) },
@@ -158,7 +159,6 @@ abstract class DriverBase(config: JsonObject) : AbstractVerticle() {
         }
     }
 
-    protected abstract fun writeTopicValue(topic: Topic, value: Buffer): Future<Boolean>
 
     private fun subscribeTopic(clientId: String, topic: Topic): Future<Boolean> {
         val ret = Promise.promise<Boolean>()
@@ -169,7 +169,9 @@ abstract class DriverBase(config: JsonObject) : AbstractVerticle() {
                 logger.warn("Client [{}] already subscribed to [{}]", clientId, topic)
                 ret.complete(false)
             } else if (count == 1) {
-                subscribeTopics(listOf(topic))
+                subscribeTopics(listOf(topic)).onComplete {
+                    ret.complete(it.result())
+                }
             } else {
                 ret.complete(true)
             }
@@ -180,7 +182,6 @@ abstract class DriverBase(config: JsonObject) : AbstractVerticle() {
         return ret.future()
     }
 
-
     fun resubscribe() {
         val topics = registry.getTopics()
         if (topics.isNotEmpty()) {
@@ -190,7 +191,6 @@ abstract class DriverBase(config: JsonObject) : AbstractVerticle() {
         }
     }
 
-    protected abstract fun subscribeTopics(topic: List<Topic>): Future<Boolean>
 
     private fun unsubscribeTopics(clientId: String, topics: List<Topic>): Future<Boolean> {
         val ret = Promise.promise<Boolean>()
@@ -213,7 +213,11 @@ abstract class DriverBase(config: JsonObject) : AbstractVerticle() {
         return ret.future()
     }
 
-    abstract fun unsubscribeItems(items: List<MonitoredItem>) : Future<Boolean>
+    protected abstract fun subscribeTopics(topics: List<Topic>): Future<Boolean>
+    protected abstract fun unsubscribeItems(items: List<MonitoredItem>) : Future<Boolean>
+
+    protected abstract fun writeTopicValue(topic: Topic, value: Buffer): Future<Boolean>
+
 
     // GraphQL
     protected abstract fun readServerInfo(): JsonObject

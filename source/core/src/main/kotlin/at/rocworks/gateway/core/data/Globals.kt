@@ -8,6 +8,7 @@ import io.vertx.core.json.JsonObject
 
 object Globals {
     const val BUS_ROOT_URI_OPC = "opc"
+    const val BUS_ROOT_URI_PLC = "plc"
     const val BUS_ROOT_URI_LOG = "log"
 
     fun RetrieveConfig(vertx: Vertx, configFilePath: String)

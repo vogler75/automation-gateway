@@ -51,7 +51,7 @@ class MqttVerticle(config: JsonObject, private val endpoint: MqttEndpoint) : Abs
     private val id = config.getString("Id", "Mqtt")
     private val logger = LoggerFactory.getLogger(id)
 
-    private val topics = mutableMapOf<String, MessageConsumer<*>>() // TODO: Thread safety?
+    private val topics = mutableMapOf<String, MessageConsumer<*>>()
 
     private var unsubscribeAllDone = false
 
@@ -123,6 +123,7 @@ class MqttVerticle(config: JsonObject, private val endpoint: MqttEndpoint) : Abs
 
     @Synchronized private fun unsubscribeAll() {
         if (!unsubscribeAllDone) {
+            logger.info("Unsubscribe all [{}]", this.topics.keys.size)
             unsubscribeAllDone = true
             unsubscribeTopic(this.topics.keys.toList())
         }

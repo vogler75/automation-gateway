@@ -1,6 +1,6 @@
 import at.rocworks.gateway.cluster.Cluster
 import at.rocworks.gateway.core.mqtt.MqttVerticle
-import at.rocworks.gateway.core.opcua.OpcUaHandler
+import at.rocworks.gateway.core.opcua.OpcUaVerticle
 import at.rocworks.gateway.core.opcua.KeyStoreLoader
 
 import io.vertx.core.Vertx
@@ -20,7 +20,7 @@ object Gateway {
             .filterIsInstance<JsonObject>()
             .filter { it.getBoolean("Enabled") }
         enabled.map {
-            vertx.deployVerticle(OpcUaHandler(it))
+            vertx.deployVerticle(OpcUaVerticle(it))
         }
 
         // Mqtt Server

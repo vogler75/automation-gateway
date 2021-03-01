@@ -3,7 +3,7 @@ MqttServer:
     - Id: Mqtt
       Port: 1883
       Host: 0.0.0.0
-      LogLevel: INFO # ALL | INFO
+      LogLevel: ALL # ALL | INFO
 
 GraphQLServer:
   Listeners:
@@ -26,7 +26,7 @@ Database:
 OpcUaClient:
   - Id: "test"
     Enabled: true
-    LogLevel: INFO
+    LogLevel: ALL
     EndpointUrl: "opc.tcp://centos1:4840"
     UpdateEndpointUrl: centos1
     SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#None

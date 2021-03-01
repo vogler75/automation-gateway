@@ -20,6 +20,9 @@ import org.slf4j.LoggerFactory;
 public class KeyStoreLoader {
     public static KeyStoreLoader keyStoreLoader;
 
+    public static final String APPLICATION_NAME = "Reactive Gateway@" + HostnameUtil.getHostname();
+    public static final String APPLICATION_URI = String.format("urn:%s:ROCWORKS.Gateway", HostnameUtil.getHostname());
+
     private static final Pattern IP_ADDR_PATTERN = Pattern.compile(
             "^(([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\.){3}([01]?\\d\\d?|2[0-4]\\d|25[0-5])$");
 
@@ -53,8 +56,8 @@ public class KeyStoreLoader {
             KeyPair keyPair = SelfSignedCertificateGenerator.generateRsaKeyPair(2048);
 
             SelfSignedCertificateBuilder builder = new SelfSignedCertificateBuilder(keyPair)
-                    .setCommonName(OpcUaVerticle.APPLICATION_NAME)
-                    .setApplicationUri(OpcUaVerticle.APPLICATION_URI)
+                    .setCommonName(APPLICATION_NAME)
+                    .setApplicationUri(APPLICATION_URI)
                     .setOrganization("ROCWORKS")
                     .setOrganizationalUnit("R&D")
                     .setLocalityName("Mattersburg")

@@ -3,7 +3,7 @@ MqttServer:
     - Id: Mqtt
       Port: 1883
       Host: 0.0.0.0
-      LogLevel: INFO # ALL | INFO
+      LogLevel: ALL # ALL | INFO
 
 OpcUaClient:
   - Id: "test"

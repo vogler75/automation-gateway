@@ -1,27 +1,46 @@
 package at.rocworks.gateway.core.opcua
 
-import at.rocworks.gateway.core.data.Value
+import at.rocworks.gateway.core.data.Globals
 import at.rocworks.gateway.core.data.Topic
-import at.rocworks.gateway.core.data.Topic.TopicType
+import at.rocworks.gateway.core.data.Value
+import at.rocworks.gateway.core.driver.DriverBase
+import at.rocworks.gateway.core.driver.MonitoredItem
+
 import io.vertx.core.AsyncResult
 import io.vertx.core.CompositeFuture
 import io.vertx.core.Future
 import io.vertx.core.Promise
 import io.vertx.core.buffer.Buffer
 import io.vertx.core.eventbus.Message
-import io.vertx.core.json.Json
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
+
+import java.lang.Exception
+import java.security.Security
+import java.util.function.Predicate
+
+import org.bouncycastle.jce.provider.BouncyCastleProvider
+
+import org.eclipse.milo.opcua.sdk.client.OpcUaClient
+import org.eclipse.milo.opcua.sdk.client.api.UaClient
+import org.eclipse.milo.opcua.sdk.client.api.config.OpcUaClientConfigBuilder
+import org.eclipse.milo.opcua.sdk.client.api.identity.AnonymousProvider
+import org.eclipse.milo.opcua.sdk.client.api.identity.IdentityProvider
+import org.eclipse.milo.opcua.sdk.client.api.identity.UsernameProvider
 import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaMonitoredItem
+import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaSubscription
+import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaSubscriptionManager.SubscriptionListener
 import org.eclipse.milo.opcua.sdk.client.model.nodes.objects.ServerTypeNode
 import org.eclipse.milo.opcua.stack.core.AttributeId
 import org.eclipse.milo.opcua.stack.core.Identifiers
+import org.eclipse.milo.opcua.stack.core.UaException
+import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy
 import org.eclipse.milo.opcua.stack.core.types.builtin.*
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned
 import org.eclipse.milo.opcua.stack.core.types.enumerated.*
 import org.eclipse.milo.opcua.stack.core.types.structured.*
-import java.lang.Exception
+import org.eclipse.milo.opcua.stack.core.util.EndpointUtil
 import java.lang.IllegalStateException
 import java.lang.NumberFormatException
 import java.nio.charset.StandardCharsets
@@ -30,54 +49,22 @@ import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.TimeUnit
 import java.util.function.BiConsumer
-import kotlin.collections.HashSet
 import kotlin.concurrent.thread
-import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue
 
-class OpcUaHandler(config: JsonObject) : OpcUaVerticle(config) {
 
-    class Registry {
-        private val topics = HashSet<Topic>()
-        private val topicClients = HashMap<String, HashSet<String>>() // TODO: Thread Safety?
-        private val topicMonitoredItems = HashMap<String, ArrayList<UaMonitoredItem>>() // TODO: Thread Safety?
+class OpcUaVerticle(config: JsonObject) : DriverBase(config) {
+    override fun getRootUri() = Globals.BUS_ROOT_URI_OPC
 
-        fun addClient(clientId: String, topic: Topic) : Pair<Int, Boolean> {
-            val clients = topicClients.getOrDefault(topic.topicName, HashSet())
-            if (clients.size == 0) topicClients[topic.topicName] = clients
-            val added = clients.add(clientId)
-            return Pair(clients.size, added)
-        }
+    private val endpointUrl: String = config.getString("EndpointUrl", "")
+    private val updateEndpointUrl: String? = config.getString("UpdateEndpointUrl", null)
 
-        fun delClient(clientId: String, topic: Topic) : Pair<Int, Boolean> {
-            val clients = topicClients.getOrDefault(topic.topicName, HashSet())
-            val removed = clients.remove(clientId)
-            if (clients.size==0) topicClients.remove(topic.topicName)
-            return Pair(clients.size, removed)
-        }
+    private val securityPolicy: SecurityPolicy?
+    private val identityProvider: IdentityProvider
 
-        fun addMonitoredItem(item: UaMonitoredItem, topic: Topic) {
-            topics.add(topic)
-            val items = topicMonitoredItems.getOrDefault(topic.topicName, ArrayList<UaMonitoredItem>())
-            if (items.size == 0) topicMonitoredItems[topic.topicName] = items
-            items.add(item)
-        }
-
-        fun delMonitoredItems(topic: Topic) {
-            topicMonitoredItems.remove(topic.topicName)
-        }
-
-        fun getTopics(): List<Topic> {
-            return topics.toList()
-        }
-
-        fun delTopic(topic: Topic) : List<UaMonitoredItem> {
-            topics.remove(topic)
-            val result = topicMonitoredItems.remove(topic.topicName)
-            return result ?: ArrayList<UaMonitoredItem>()
-        }
-    }
-
-    private val registry = Registry()
+    private val requestTimeout: Int = config.getInteger("RequestTimeout", 5000)
+    private val connectTimeout: Int = config.getInteger("ConnectTimeout", 5000)
+    private val keepAliveFailuresAllowed: Int = config.getInteger("KeepAliveFailuresAllowed", 0)
+    private val subscriptionSamplingInterval: Double = config.getDouble("SubscriptionSamplingInterval", 0.0)
 
     private val monitoringParametersBufferSize : UInteger
     private val monitoringParametersBufferSizeDef = 100
@@ -97,7 +84,35 @@ class OpcUaHandler(config: JsonObject) : OpcUaVerticle(config) {
     private val writeParametersWithTime : Boolean
     private val writeParametersWithTimeDef = false
 
+    protected var client: OpcUaClient? = null
+    protected var subscription: UaSubscription? = null
+
+    private val defaultRetryWaitTime = 5000
+
+    companion object {
+        init {
+            // Required for SecurityPolicy.Aes256_Sha256_RsaPss
+            Security.addProvider(BouncyCastleProvider())
+        }
+    }
+
     init {
+        val securityPolicyConf = config.getString("SecurityPolicyUri", null)
+        securityPolicy = if (securityPolicyConf != null) SecurityPolicy.fromUri(securityPolicyConf) else null
+        identityProvider = if (config.containsKey("UsernameProvider")) {
+            val value = config.getJsonObject("UsernameProvider") as JsonObject
+            UsernameProvider(value.getString("Username"), value.getString("Password"))
+        } else AnonymousProvider()
+        logger.info("RequestTimeout: [{}] " +
+            "ConnectTimeout: [{}] " +
+            "KeepAliveFailuresAllowed: [{}] " +
+            "SubscriptionSamplingInterval [{}]",
+            requestTimeout,
+            connectTimeout,
+            keepAliveFailuresAllowed,
+            subscriptionSamplingInterval
+        )
+
         val monitoringParameters = config.getJsonObject("MonitoringParameters")
         monitoringParametersBufferSize = Unsigned.uint(monitoringParameters?.getInteger("BufferSize", monitoringParametersBufferSizeDef) ?: monitoringParametersBufferSizeDef)
         monitoringParametersSamplingInterval = monitoringParameters?.getDouble("SamplingInterval", monitoringParametersSamplingIntervalDef) ?: monitoringParametersSamplingIntervalDef
@@ -115,63 +130,165 @@ class OpcUaHandler(config: JsonObject) : OpcUaVerticle(config) {
                 "QueueSize=$writeParameterQueueSize "+
                 "BlockSize=$writeParametersBlockSize "+
                 "WithTime=$writeParametersWithTime ")
+
+        logger.info(KeyStoreLoader.APPLICATION_URI)
     }
 
     val writeGetTime = if (writeParametersWithTime) { -> DateTime.nowNanos() } else { -> null }
 
-    override fun subscribeHandler(message: Message<JsonObject>) {
-        val request = message.body()
-        val clientId = request.getString("ClientId")
-        val tagTopic = Topic.decodeFromJson(request.getJsonObject("Topic"))
-        subscribeTopic(clientId, tagTopic).onComplete { result: AsyncResult<Boolean> ->
-            if (result.cause() != null) result.cause().printStackTrace()
-            message.reply(JsonObject().put("Ok", result.succeeded() && result.result()))
+    private fun endpointFilter(): Predicate<EndpointDescription> {
+        return Predicate { e: EndpointDescription ->
+            if (updateEndpointUrl != null) {
+                logger.info("Update endpoint to $updateEndpointUrl")
+                EndpointUtil.updateUrl(e, updateEndpointUrl)
+            }
+            securityPolicy == null || e.securityPolicyUri == securityPolicy.uri
         }
     }
 
-    override fun unsubscribeHandler(message: Message<JsonObject>) {
-        val request = message.body()
-        val clientId = request.getString("ClientId")
-        val tagTopics = request.getJsonArray("Topics").map { Topic.decodeFromJson(it as JsonObject) }
-        unsubscribeTopics(clientId, tagTopics).onComplete { result: AsyncResult<Boolean> ->
-            if (result.cause() != null) result.cause().printStackTrace()
-            message.reply(JsonObject().put("Ok", result.succeeded() && result.result()))
+    private fun endpointUpdater(endpoint: EndpointDescription): EndpointDescription {
+        return if (updateEndpointUrl != null) {
+            EndpointUtil.updateUrl(endpoint, updateEndpointUrl)
+        } else {
+            endpoint
         }
     }
 
-    override fun publishHandler(message: Message<JsonObject>) {
-        val topic = Topic.decodeFromJson(message.body().getJsonObject("Topic"))
-        val data = message.body().getBuffer("Data")
-        logger.debug("Publish [{}] [{}]", topic.toString(), data.toString())
+    private val subscriptionListener: SubscriptionListener = object : SubscriptionListener {
+        override fun onKeepAlive(subscription: UaSubscription, publishTime: DateTime) {}
+        override fun onStatusChanged(subscription: UaSubscription, status: StatusCode) {
+            logger.info("onStatusChanged: $status")
+        }
+
+        override fun onPublishFailure(exception: UaException) {
+            logger.warn("onPublishFailure: " + exception.message)
+        }
+
+        override fun onNotificationDataLost(subscription: UaSubscription) {
+            logger.warn("onNotificationDataLost")
+        }
+
+        override fun onSubscriptionTransferFailed(subscription: UaSubscription, statusCode: StatusCode) {
+            logger.warn("onSubscriptionTransferFailed: $statusCode")
+            createSubscription()
+        }
+    }
+
+    override fun connect(): Future<Boolean> {
+        val promise = Promise.promise<Boolean>()
         try {
-            when (topic.topicType) {
-                TopicType.NodeId -> {
-                    writeTopicValue(topic, data).onComplete { result: AsyncResult<Boolean> ->
-                        if (result.cause() != null) result.cause().printStackTrace()
-                        message.reply(JsonObject().put("Ok", result.succeeded() && result.result()))
+            createClientAsync().onComplete { createResult: AsyncResult<Boolean> ->
+                if (createResult.succeeded()) {
+                    connectClientAsync().onComplete { connectResult: AsyncResult<Boolean> ->
+                        if (connectResult.succeeded()) {
+                            client!!.addFaultListener { serviceFault ->
+                                logger.warn("Service Fault: $serviceFault")
+                            }
+                            client!!.subscriptionManager.addSubscriptionListener(subscriptionListener)
+                            createSubscription()
+                            promise.complete()
+                        }
                     }
-                }
-                TopicType.Path -> {
-                    // TODO: implement write value with path
-                    logger.warn("Item type [{}] not yet implemented!", topic.topicType)
-                }
-                TopicType.Rpc -> {
-                    executeRpc(topic, data).onComplete { result: AsyncResult<Boolean> ->
-                        if (result.cause() != null) result.cause().printStackTrace()
-                        message.reply(JsonObject().put("Ok", result.succeeded() && result.result()))
-                    }
-                }
-                else -> {
-                    logger.warn("Item type [{}] not yet implemented!", topic.topicType)
                 }
             }
-        } catch (e: ExecutionException) {
-            e.printStackTrace()
-            message.reply(JsonObject().put("Ok", false))
-        } catch (e: InterruptedException) {
-            e.printStackTrace()
-            message.reply(JsonObject().put("Ok", false))
+        } catch (e: Exception) {
+            logger.error(e.toString())
+            promise.fail(e)
         }
+        return promise.future()
+    }
+
+    override fun disconnect(): Future<Boolean> {
+        val promise = Promise.promise<Boolean>()
+        client!!.disconnect().thenAccept {
+            promise.complete(true)
+        }
+        return promise.future()
+    }
+
+    override fun shutdown() {
+        disconnect()
+    }
+
+    private fun createSubscription() {
+        client!!.subscriptionManager
+            .createSubscription(subscriptionSamplingInterval)
+            .whenCompleteAsync(::createSubscriptionComplete)
+    }
+
+    private fun createSubscriptionComplete(s: UaSubscription, e: Throwable?) {
+        if (e == null) {
+            subscription = s
+            resubscribe()
+        } else {
+            logger.error("Unable to create subscription, reason: " + e.message)
+        }
+    }
+
+    private fun createClientAsync(): Future<Boolean> {
+        val ret = Promise.promise<Boolean>()
+        createClientThread(ret)
+        return ret.future()
+    }
+
+    private fun createClientThread(ret: Promise<Boolean>) {
+        Thread {
+            try {
+                client = OpcUaClient.create(
+                    endpointUrl,
+                    { endpoints: List<EndpointDescription> ->
+                        endpoints.stream()
+                            .filter(endpointFilter())
+                            .map { endpoint: EndpointDescription -> endpointUpdater(endpoint) }
+                            .findFirst()
+                    }
+                ) { configBuilder: OpcUaClientConfigBuilder ->
+                    configBuilder
+                        .setApplicationName(LocalizedText.english(KeyStoreLoader.APPLICATION_NAME))
+                        .setApplicationUri(KeyStoreLoader.APPLICATION_URI)
+                        .setCertificate(KeyStoreLoader.keyStoreLoader.clientCertificate)
+                        .setKeyPair(KeyStoreLoader.keyStoreLoader.clientKeyPair)
+                        .setIdentityProvider(identityProvider)
+                        .setRequestTimeout(Unsigned.uint((requestTimeout)))
+                        .setConnectTimeout(Unsigned.uint((connectTimeout)))
+                        .setKeepAliveFailuresAllowed(Unsigned.uint((keepAliveFailuresAllowed)))
+                        .build()
+                }
+                logger.info("OpcUaClient created.")
+                ret.complete()
+            } catch (e: UaException) {
+                logger.info("OpcUaClient create failed! Wait and retry... " + e.message)
+                vertx.setTimer(defaultRetryWaitTime.toLong()) { createClientThread(ret) }
+            } catch (e: Exception) {
+                ret.fail(e)
+            }
+        }.start()
+    }
+
+    private fun connectClientAsync(): Future<Boolean> {
+        val promise = Promise.promise<Boolean>()
+        connectClient(promise)
+        return promise.future()
+    }
+
+    private fun connectClient(promise: Promise<Boolean>) {
+        if (client == null) {
+            promise.fail("ConnectClientAsync where client==null!")
+        } else {
+            client!!.connect().whenCompleteAsync { _: UaClient?, e: Throwable? ->
+                if (e == null) {
+                    logger.info("OpcUaClient connected [{}] [{}]", id, endpointUrl)
+                    promise.complete(true)
+                } else {
+                    logger.info("OpcUaClient connect failed! Wait and retry... " + e.message)
+                    vertx.setTimer(defaultRetryWaitTime.toLong()) { connectClient(promise) }
+                }
+            }
+        }
+    }
+
+    protected fun rdToNodeId(rd: ReferenceDescription): NodeId {
+        return rd.nodeId.toNodeId(client!!.namespaceTable).get()
     }
 
     override fun browseHandler(message: Message<JsonObject>) {
@@ -189,53 +306,13 @@ class OpcUaHandler(config: JsonObject) : OpcUaVerticle(config) {
         }
     }
 
-    private fun subscribeTopic(clientId: String, topic: Topic): Future<Boolean> {
-        val ret = Promise.promise<Boolean>()
-        try {
-            val (count, added) = registry.addClient(clientId, topic)
-            logger.debug("Subscribe [{}] [{}]", count, topic)
-            if (!added) {
-                logger.warn("Client [{}] already subscribed to [{}]", clientId, topic)
-                ret.complete(false)
-            } else if (count == 1) {
-                when {
-                    topic.topicType === TopicType.NodeId -> subscribeNodes(listOf(topic)).onComplete(ret)
-                    topic.topicType === TopicType.Path -> subscribePath(listOf(topic)).onComplete(ret)
-                    topic.topicType === TopicType.Rpc -> ret.complete(true)
-                    else -> {
-                        logger.warn("Unhandled item type [{}]", topic.topicType)
-                        ret.complete(false)
-                    }
-                }
-            } else {
-                ret.complete(true)
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            ret.fail(e)
-        }
-        return ret.future()
-    }
-
-    private fun unsubscribeTopics(clientId: String, topics: List<Topic>): Future<Boolean> {
-        val ret = Promise.promise<Boolean>()
-        val items = ArrayList<UaMonitoredItem>()
-
-        topics.forEach { topic ->
-            val (count, removed) = registry.delClient(clientId, topic)
-            logger.debug("Unsubscribe [{}] [{}]", count, topic)
-            if (!removed) {
-                logger.warn("Client [{}] was not subscribed to [{}]", clientId, topic)
-            } else if (count == 0) {
-                items.addAll(registry.delTopic(topic))
-            }
-        }
-        if (items.size > 0) {
-            unsubscribeItems(items).onComplete(ret)
-        } else {
-            ret.complete(true)
-        }
-        return ret.future()
+    override fun subscribeTopics(topics: List<Topic>): Future<Boolean> {
+        val promise = Promise.promise<Boolean>()
+        CompositeFuture.all(
+            subscribeNodes(topics.filter { it.topicType === Topic.TopicType.NodeId }),
+            subscribePath(topics.filter { it.topicType === Topic.TopicType.Path })
+        ).onComplete { promise.complete(it.succeeded()) }
+        return promise.future()
     }
 
     private fun getVariantOfValue(value: Buffer, nodeId: NodeId): Variant {
@@ -246,9 +323,8 @@ class OpcUaHandler(config: JsonObject) : OpcUaVerticle(config) {
     }
 
     private fun getVariantOfValue(value: String, nodeId: NodeId): Variant {
-        // TODO: Exception handling
         try {
-            val type = client.addressSpace.getVariableNode(nodeId).dataType.identifier
+            val type = client!!.addressSpace.getVariableNode(nodeId).dataType.identifier
             return when (type) {
                 Identifiers.String.identifier -> Variant(value)
                 Identifiers.Float.identifier -> Variant(value.toFloat())
@@ -279,20 +355,28 @@ class OpcUaHandler(config: JsonObject) : OpcUaVerticle(config) {
         }
     }
 
-    private fun writeTopicValue(topic: Topic, value: Buffer): Future<Boolean> {
+
+    override fun writeTopicValue(topic: Topic, value: Buffer): Future<Boolean> {
         val ret = Promise.promise<Boolean>()
         try {
-            val nodeId = NodeId.parse(topic.topicInfo)
-            val dataValue = when (topic.format) {
-                Topic.Format.Value ->
-                    DataValue(getVariantOfValue(value, nodeId), null, writeGetTime())
-                Topic.Format.Json,
-                Topic.Format.Pretty -> {
-                    logger.warn("Value format not yet implemented!") // TODO
-                    DataValue(Variant.NULL_VALUE, null, null)
+            when (topic.topicType) {
+                Topic.TopicType.NodeId -> {
+                    val nodeId = NodeId.parse(topic.topicInfo)
+                    val dataValue = when (topic.format) {
+                        Topic.Format.Value ->
+                            DataValue(getVariantOfValue(value, nodeId), null, writeGetTime())
+                        Topic.Format.Json,
+                        Topic.Format.Pretty -> {
+                            logger.warn("Value format not yet implemented!") // TODO
+                            DataValue(Variant.NULL_VALUE, null, null)
+                        }
+                    }
+                    writeValueQueued(nodeId, dataValue).onComplete(ret)
+                }
+                else -> {
+                    logger.warn("Item type [{}] not yet implemented!", topic.topicType)
                 }
             }
-            writeValueQueued(nodeId, dataValue).onComplete(ret)
         } catch (e: NumberFormatException) {
             logger.warn("Not a valid number [{}] for numeric tag [{}] value!", value.toString(), topic)
             ret.complete(false)
@@ -322,7 +406,7 @@ class OpcUaHandler(config: JsonObject) : OpcUaVerticle(config) {
                     got = writeValueQueue.poll()?.let(::addIt) ?: false
                 }
                 if (nodeIds.size > 0) {
-                    val results = client.writeValues(nodeIds, dataValues).get()
+                    val results = client!!.writeValues(nodeIds, dataValues).get()
                     results.zip(promises).forEach {
                         if (!it.first.isGood) logger.warn("Writing value was not good [{}]", it.first.toString())
                         it.second.complete(it.first.isGood)
@@ -334,7 +418,7 @@ class OpcUaHandler(config: JsonObject) : OpcUaVerticle(config) {
 
     private fun writeValueAsync(nodeId: NodeId, dataValue: DataValue): Future<Boolean> {
         val promise = Promise.promise<Boolean>()
-        client.writeValue(nodeId, dataValue).thenAccept { status: StatusCode ->
+        client!!.writeValue(nodeId, dataValue).thenAccept { status: StatusCode ->
             if (status.isGood) {
                 logger.debug("Wrote [{}] to nodeId=[{}]", dataValue.value.toString(), nodeId)
                 promise.complete(true)
@@ -370,44 +454,9 @@ class OpcUaHandler(config: JsonObject) : OpcUaVerticle(config) {
         return promise.future()
     }
 
-    private fun executeRpc(topic: Topic, data: Buffer): Future<Boolean> {
-        return vertx.executeBlocking { ret: Promise<Boolean> -> // TODO: Implement functions async!
-            val response = JsonObject()
-            try {
-                val request = Json.decodeValue(data)
-                if (request is JsonObject) {
-                    response.put("Id", request.getString("Id", ""))
-                    when (val command = request.getString("Command", "")) {
-                        "ServerInfo" -> response.put("Response", readServerInfo())
-                        "BrowseNode" -> response.put("Response", rpcBrowseNode(request))
-                        else -> {
-                            val err = String.format("Unknown command [%s]", command)
-                            response.put("Error", err)
-                            logger.error(err)
-                        }
-                    }
-                } else {
-                    val err = "Request is not a json object!"
-                    response.put("Error", err)
-                    logger.error(err)
-                }
-            } catch (e: Exception) {
-                response.put("Error", e.message)
-                e.printStackTrace()
-            }
-            vertx.eventBus().publish(topic.topicName, Buffer.buffer(response.encodePrettily()))
-            ret.complete(true)
-        }
-    }
-
-    override fun serverInfoHandler(message: Message<JsonObject>) { // TODO: make it async
-        val result = readServerInfo()
-        message.reply(JsonObject().put("Ok", true).put("Result", result))
-    }
-
-    private fun readServerInfo(): JsonObject? {
+    override fun readServerInfo(): JsonObject {
         val result = JsonObject()
-        val serverNode = client.addressSpace.getObjectNode(
+        val serverNode = client!!.addressSpace.getObjectNode(
             Identifiers.Server,
             Identifiers.ServerType
         ) as ServerTypeNode
@@ -425,22 +474,6 @@ class OpcUaHandler(config: JsonObject) : OpcUaVerticle(config) {
         result.put("CurrentTime", serverStatusNode.currentTime.javaInstant.toString())
         result.put("ServerStatus", serverStatusNode.state.toString())
         return result
-    }    
-
-    private fun rpcBrowseNode(request: JsonObject) : JsonObject {
-        val response = JsonObject()
-        val node = request.getString("NodeId", "")
-        val levels = request.getInteger("Levels", -1)
-        val nodeId = NodeId.parseSafe(node)
-        val flat = request.getBoolean("Flat", false)
-        if (nodeId.isPresent) {
-            response.put("Result", browseNode(nodeId.get(), levels, flat))
-        } else {
-            val err = String.format("Invalid node [%s]", node)
-            response.put("Error", err)
-            logger.error(err)
-        }
-        return response
     }
 
     override fun readHandler(message: Message<JsonObject>) {
@@ -448,14 +481,14 @@ class OpcUaHandler(config: JsonObject) : OpcUaVerticle(config) {
         when {
             node != null && node is String -> {
                 val nodeId = NodeId.parse(node)
-                client.readValue(0.0, TimestampsToReturn.Both, nodeId).thenAccept { value ->
+                client!!.readValue(0.0, TimestampsToReturn.Both, nodeId).thenAccept { value ->
                     val result = Value.fromDataValue(value).encodeToJson()
                     message.reply(JsonObject().put("Ok", true).put("Result", result))
                 }
             }
             node != null && node is JsonArray -> {
                 val nodeIds = node.mapNotNull { if (it is String) NodeId.parse(it) else null }
-                client.readValues(0.0, TimestampsToReturn.Both, nodeIds).thenAccept { list ->
+                client!!.readValues(0.0, TimestampsToReturn.Both, nodeIds).thenAccept { list ->
                     val result = JsonArray()
                     list.forEach {
                         result.add(Value.fromDataValue(it).encodeToJson())
@@ -507,68 +540,70 @@ class OpcUaHandler(config: JsonObject) : OpcUaVerticle(config) {
     }
 
     private fun subscribeNodes(topics: List<Topic>) : Future<Boolean> {
-        //logger.info("Subscribe nodes [{}] [{}]", topics.joinToString(",") { it.topicName }, monitoringParametersSamplingInterval)
         logger.info("Subscribe nodes [{}] sampling interval [{}]", topics.size, monitoringParametersSamplingInterval)
         val ret = Promise.promise<Boolean>()
-        val nodeIds = topics.map { NodeId.parseOrNull(it.topicInfo) }.toList()
-        val requests = ArrayList<MonitoredItemCreateRequest>()
-        nodeIds.forEach { nodeId ->
-            val clientHandle = subscription.nextClientHandle()
-            requests.add(
-                MonitoredItemCreateRequest(
-                    ReadValueId(nodeId, AttributeId.Value.uid(),null, QualifiedName.NULL_VALUE),
-                    MonitoringMode.Reporting,
-                    MonitoringParameters(
-                        clientHandle,
-                        monitoringParametersSamplingInterval,
-                        null,
-                        monitoringParametersBufferSize,
-                        monitoringParametersDiscardOldest
+        if (topics.isEmpty()) ret.complete(true)
+        else {
+            val nodeIds = topics.map { NodeId.parseOrNull(it.topicInfo) }.toList()
+            val requests = ArrayList<MonitoredItemCreateRequest>()
+            nodeIds.forEach { nodeId ->
+                val clientHandle = subscription!!.nextClientHandle()
+                requests.add(
+                    MonitoredItemCreateRequest(
+                        ReadValueId(nodeId, AttributeId.Value.uid(),null, QualifiedName.NULL_VALUE),
+                        MonitoringMode.Reporting,
+                        MonitoringParameters(
+                            clientHandle,
+                            monitoringParametersSamplingInterval,
+                            null,
+                            monitoringParametersBufferSize,
+                            monitoringParametersDiscardOldest
+                        )
                     )
                 )
-            )
-        }
-
-        // when creating items in MonitoringMode.Reporting this callback is where each item needs to have its
-        // value/event consumer hooked up. The alternative is to create the item in sampling mode, hook up the
-        // consumer after the creation call completes, and then change the mode for all items to reporting.
-        val onItemCreated =
-            BiConsumer { item: UaMonitoredItem, nr: Int ->
-                val topic = topics[nr]
-                if (item.statusCode.isGood)
-                    registry.addMonitoredItem(item, topic)
-                item.setValueConsumer { data: DataValue ->
-                    //println("callback: id="+ item.monitoredItemId+ " : size=" +topics.size + " : "+ item.clientHandle.toInt() + " : " + item.readValueId.nodeId.toParseableString() + " : " + data.value.toString())
-                    valueConsumer(topic, data)
-                }
             }
 
-        subscription
-            .createMonitoredItems(TimestampsToReturn.Both, requests, onItemCreated)
-            .thenAccept { monitoredItems: List<UaMonitoredItem> ->
-                try {
-                    for (item in monitoredItems) {
-                        if (item.statusCode.isGood) {
-                            logger.debug("Monitored item created for nodeId {}", item.readValueId.nodeId)
-                        } else {
-                            logger.warn(
-                                "Failed to create item for nodeId {} (status={})",
-                                item.readValueId.nodeId,
-                                item.statusCode
-                            )
-                        }
+            // when creating items in MonitoringMode.Reporting this callback is where each item needs to have its
+            // value/event consumer hooked up. The alternative is to create the item in sampling mode, hook up the
+            // consumer after the creation call completes, and then change the mode for all items to reporting.
+            val onItemCreated =
+                BiConsumer { item: UaMonitoredItem, nr: Int ->
+                    val topic = topics[nr]
+                    if (item.statusCode.isGood)
+                        registry.addMonitoredItem(OpcUaMonitoredItem(item), topic)
+                    item.setValueConsumer { data: DataValue ->
+                        //println("callback: id="+ item.monitoredItemId+ " : size=" +topics.size + " : "+ item.clientHandle.toInt() + " : " + item.readValueId.nodeId.toParseableString() + " : " + data.value.toString())
+                        valueConsumer(topic, data)
                     }
-                    ret.complete(true)
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                    ret.fail(e)
                 }
-            }
+
+            subscription!!
+                .createMonitoredItems(TimestampsToReturn.Both, requests, onItemCreated)
+                .thenAccept { monitoredItems: List<UaMonitoredItem> ->
+                    try {
+                        for (item in monitoredItems) {
+                            if (item.statusCode.isGood) {
+                                logger.debug("Monitored item created for nodeId {}", item.readValueId.nodeId)
+                            } else {
+                                logger.warn(
+                                    "Failed to create item for nodeId {} (status={})",
+                                    item.readValueId.nodeId,
+                                    item.statusCode
+                                )
+                            }
+                        }
+                        ret.complete(true)
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        ret.fail(e)
+                    }
+                }
+        }
         return ret.future()
     }
 
     private fun subscribePath(topics: List<Topic>) : Future<Boolean> {
-        return vertx.executeBlocking { ret: Promise<Boolean> ->
+        return vertx.executeBlocking { ret ->
             try {
                 val resolvedTopics = mutableListOf<Topic>()
                 topics.forEach { topic ->
@@ -614,7 +649,9 @@ class OpcUaHandler(config: JsonObject) : OpcUaVerticle(config) {
                     }
                 }
                 logger.info("Path result size [{}]", resolvedTopics.size)
-                if (resolvedTopics.size>0) {
+                if (topics.isEmpty()) {
+                    ret.complete(true)
+                } else if (resolvedTopics.size>0) {
                     subscribeNodes(resolvedTopics).onComplete(ret)
                 } else {
                     ret.complete(false)
@@ -626,26 +663,15 @@ class OpcUaHandler(config: JsonObject) : OpcUaVerticle(config) {
         }
     }
 
-    override fun resubscribe() {
-        val topics = registry.getTopics()
-        if (topics.isNotEmpty()) {
-            logger.info("Resubscribe [{}] topics", topics.size)
-            topics.forEach(registry::delTopic)
-            subscribeNodes(topics)
-        }
-    }
-
-    private fun unsubscribeItems(items: List<UaMonitoredItem>) : Future<Boolean> {
+    override fun unsubscribeItems(items: List<MonitoredItem>) : Future<Boolean> {
         val ret = Promise.promise<Boolean>()
         try {
-            logger.debug("Unsubscribe items [{}]", items.joinToString(",") { it.readValueId.nodeId.toString() })
+            val opcUaItems = items.map { (it as OpcUaMonitoredItem).item }
+            logger.debug("Unsubscribe items [{}]", opcUaItems.joinToString(",") { it.readValueId.nodeId.toString() })
             if (items.isNotEmpty()) {
-                subscription.deleteMonitoredItems(items).thenAccept {
-                    ret.complete(true)
-                }
-            } else {
-                ret.complete(false)
+                subscription!!.deleteMonitoredItems(opcUaItems)
             }
+            ret.complete(true)
         } catch (e: Exception) {
             e.printStackTrace()
             ret.fail(e)
@@ -696,7 +722,7 @@ class OpcUaHandler(config: JsonObject) : OpcUaVerticle(config) {
 
                 // recursively browse to children if it is an object node
                 if ((maxLevel == -1 || level < maxLevel) && rd.nodeClass === NodeClass.Object) {
-                    val nodeId = rd.nodeId.toNodeId(client.namespaceTable)
+                    val nodeId = rd.nodeId.toNodeId(client!!.namespaceTable)
                     if (nodeId.isPresent) {
                         val next = browseNode(nodeId.get(), maxLevel, level + 1, flat)
                         if (flat) {
@@ -719,12 +745,12 @@ class OpcUaHandler(config: JsonObject) : OpcUaVerticle(config) {
         )
 
         try {
-            val browseResult = client.browse(browse).get()
+            val browseResult = client!!.browse(browse).get()
             if (browseResult.statusCode.isGood &&  browseResult.references != null) {
                 addResult(browseResult.references.asList())
                 var continuationPoint = browseResult.continuationPoint
                 while (continuationPoint != null && continuationPoint.isNotNull) {
-                    val nextResult = client.browseNext(false, continuationPoint).get()
+                    val nextResult = client!!.browseNext(false, continuationPoint).get()
                     addResult(nextResult.references.asList())
                     continuationPoint = nextResult.continuationPoint
                 }

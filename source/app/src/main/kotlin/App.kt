@@ -3,7 +3,7 @@ import at.rocworks.gateway.graphql.GraphQLServer
 import at.rocworks.gateway.logger.influx.InfluxDBLogger
 import at.rocworks.gateway.core.mqtt.MqttVerticle
 import at.rocworks.gateway.core.opcua.KeyStoreLoader
-import at.rocworks.gateway.core.opcua.OpcUaHandler
+import at.rocworks.gateway.core.opcua.OpcUaVerticle
 
 import kotlin.Throws
 import kotlin.jvm.JvmStatic
@@ -83,7 +83,7 @@ object App {
             .filter { it.getBoolean("Enabled") }
         val defaultSystem = enabled.first()
         enabled.map {
-            vertx.deployVerticle(OpcUaHandler(it))
+            vertx.deployVerticle(OpcUaVerticle(it))
         }
 
         // Mqtt Server

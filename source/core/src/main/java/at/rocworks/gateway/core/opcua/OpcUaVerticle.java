@@ -32,9 +32,6 @@ import org.eclipse.milo.opcua.stack.core.util.EndpointUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.security.Security;
 import java.util.ArrayList;
 import java.util.List;
@@ -60,7 +57,6 @@ public abstract class OpcUaVerticle extends AbstractVerticle {
     private Integer connectTimeout;
     private Integer keepAliveFailuresAllowed;
     private Double  subscriptionSamplingInterval;
-
 
     protected OpcUaClient client;
     protected UaSubscription subscription;

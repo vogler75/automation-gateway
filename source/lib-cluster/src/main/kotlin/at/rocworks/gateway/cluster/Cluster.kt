@@ -7,8 +7,8 @@ import at.rocworks.gateway.core.data.ValueCodec
 import io.vertx.core.Vertx
 import io.vertx.core.VertxOptions
 import io.vertx.core.json.JsonObject
-import io.vertx.spi.cluster.ignite.IgniteClusterManager
-import org.slf4j.LoggerFactory
+//import io.vertx.spi.cluster.ignite.IgniteClusterManager
+import io.vertx.spi.cluster.hazelcast.HazelcastClusterManager
 import java.util.logging.LogManager
 import kotlin.concurrent.thread
 import kotlin.system.exitProcess
@@ -25,8 +25,8 @@ object Cluster {
 
         //val logger = (LoggerFactory.getLogger(javaClass.simpleName))
 
-        val clusterManager = IgniteClusterManager()
-        //val clusterManager = HazelcastClusterManager()
+        //val clusterManager = IgniteClusterManager()
+        val clusterManager = HazelcastClusterManager()
 
         val vertxOptions = VertxOptions().setClusterManager(clusterManager)
 

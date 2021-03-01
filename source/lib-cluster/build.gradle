@@ -22,11 +22,9 @@ dependencies {
     implementation 'io.vertx:vertx-core:4.0.2'
     implementation 'io.vertx:vertx-config-yaml:4.0.2'
     implementation 'io.vertx:vertx-service-discovery:4.0.2'
-    implementation 'io.vertx:vertx-ignite:4.0.2'
+
+    implementation group: 'io.vertx', name: 'vertx-ignite', version: '4.0.2'
+    implementation group: 'io.vertx', name: 'vertx-hazelcast', version: '4.0.2'
+
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.11.4' // Needed for Vertx Json
 }
-
-group = 'at.rocworks.gateway'
-version = '1.0-SNAPSHOT'
-description = 'Gateway Cluster Library'
-

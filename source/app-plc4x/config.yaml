@@ -1,0 +1,6 @@
+Plc4x:
+  Drivers:
+    - Id: "sim"
+      Url: "simulated://127.0.0.1"
+      LogLevel: ALL
+

@@ -245,7 +245,6 @@ class OpcUaHandler(config: JsonObject) : OpcUaVerticle(config) {
             getVariantOfValue(value.toString(), nodeId)
     }
 
-
     private fun getVariantOfValue(value: String, nodeId: NodeId): Variant {
         // TODO: Exception handling
         try {

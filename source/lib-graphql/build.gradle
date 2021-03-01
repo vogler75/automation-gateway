@@ -27,7 +27,3 @@ dependencies {
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.11.4'
     testImplementation 'org.jetbrains.kotlin:kotlin-test:1.4.30'
 }
-
-group = 'at.rocworks.gateway'
-version = '1.0-SNAPSHOT'
-description = 'Gateway GraphQL'

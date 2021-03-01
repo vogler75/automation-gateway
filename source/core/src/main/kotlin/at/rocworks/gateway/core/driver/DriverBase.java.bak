@@ -1,0 +1,125 @@
+package at.rocworks.gateway.core.driver;
+
+import at.rocworks.gateway.core.data.Topic;
+
+import io.vertx.core.AbstractVerticle;
+import io.vertx.core.Future;
+import io.vertx.core.Promise;
+import io.vertx.core.eventbus.Message;
+import io.vertx.core.eventbus.MessageConsumer;
+import io.vertx.core.json.JsonObject;
+
+import io.vertx.servicediscovery.Record;
+import io.vertx.servicediscovery.ServiceDiscovery;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public abstract class DriverBase extends AbstractVerticle {
+    private String id = DriverBase.class.getSimpleName(); // Default Id
+    private String uri = getRootUri() + "/" + id;
+
+    protected final Logger logger;
+    private String logLevel = "INFO";
+
+    private List<MessageConsumer> messageHandlers = new ArrayList<>();
+
+    protected abstract String getRootUri();
+
+    protected abstract Future<Boolean> connect();
+    protected abstract Future<Boolean> disconnect();
+    protected abstract void shutdown();
+
+    public DriverBase(JsonObject config) {
+        try {
+            this.id = config.getValue("Id").toString();
+            this.logLevel = config.getString("LogLevel", "INFO");
+            java.util.logging.Logger.getLogger(id).setLevel(java.util.logging.Level.parse(this.logLevel));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        this.logger = LoggerFactory.getLogger(id);
+
+        Runtime.getRuntime().addShutdownHook(new Thread(()->{
+            logger.warn("Shutdown [{}]", this.id);
+            try {
+                shutdown();
+                logger.warn("Shutdown finished [{}]", this.id);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }));
+    }
+
+    @Override
+    public void start(Promise<Void> startPromise) {
+        logger.info("Driver start [{}]", this.id);
+        new Thread(()-> {
+            connect().onSuccess(result -> {
+                connectHandlers();
+                registerService();
+                startPromise.complete();
+            }).onFailure(result -> startPromise.fail(result.getMessage()));
+        }).start();
+    }
+
+    @Override
+    public void stop(Promise<Void> stopPromise) {
+        logger.info("Driver stop [{}]", this.id);
+        new Thread(()->{
+            try {
+                disconnect().onSuccess(result -> {
+                    disconnectHandlers();
+                    stopPromise.complete();
+                }).onFailure(result -> stopPromise.fail(result.getMessage()));
+            } catch (Exception e) {
+                stopPromise.fail(e);
+            }
+        }).start();
+    }
+
+    private void registerService() {
+        ServiceDiscovery discovery = ServiceDiscovery.create(vertx);
+
+        Record record = new Record()
+                .setName(id)
+                .setType(Topic.SystemType.Opc.toString())
+                .setLocation(new JsonObject().put("endpoint", uri));
+
+        discovery.publish(record, ar -> {
+            if (ar.succeeded()) {
+                Record publishedRecord = ar.result();
+                logger.info("Service registered.");
+            } else {
+                logger.warn("Service registration failed!");
+            }
+        });
+    }
+
+    private void connectHandlers() {
+        messageHandlers = List.of(
+                vertx.eventBus().consumer(uri + "/ServerInfo", this::serverInfoHandler),
+                vertx.eventBus().consumer(uri + "/Subscribe", this::subscribeHandler),
+                vertx.eventBus().consumer(uri + "/Unsubscribe", this::unsubscribeHandler),
+                vertx.eventBus().consumer(uri + "/Publish", this::publishHandler),
+                vertx.eventBus().consumer(uri + "/Read", this::readHandler),
+                vertx.eventBus().consumer(uri + "/Write", this::writeHandler),
+                vertx.eventBus().consumer(uri + "/Browse", this::browseHandler)
+        );
+    }
+
+    private void disconnectHandlers() {
+        messageHandlers.forEach(h -> h.unregister());
+    }
+
+    protected abstract void serverInfoHandler(Message<JsonObject> message);
+    protected abstract void subscribeHandler(Message<JsonObject> message);
+    protected abstract void unsubscribeHandler(Message<JsonObject> message);
+    protected abstract void publishHandler(Message<JsonObject> message);
+    protected abstract void readHandler(Message<JsonObject> message);
+    protected abstract void writeHandler(Message<JsonObject> message);
+    protected abstract void browseHandler(Message<JsonObject> message);
+}

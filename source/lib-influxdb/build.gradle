@@ -27,7 +27,3 @@ dependencies {
     implementation 'org.influxdb:influxdb-java:2.21'
     testImplementation 'org.jetbrains.kotlin:kotlin-test:1.4.30'
 }
-
-group = 'at.rocworks.gateway'
-version = '1.0-SNAPSHOT'
-description = 'Gateway InfluxDB Logger'

@@ -84,8 +84,8 @@ class OpcUaVerticle(config: JsonObject) : DriverBase(config) {
     private val writeParametersWithTime : Boolean
     private val writeParametersWithTimeDef = false
 
-    protected var client: OpcUaClient? = null
-    protected var subscription: UaSubscription? = null
+    private var client: OpcUaClient? = null
+    private var subscription: UaSubscription? = null
 
     private val defaultRetryWaitTime = 5000
 
@@ -287,7 +287,7 @@ class OpcUaVerticle(config: JsonObject) : DriverBase(config) {
         }
     }
 
-    protected fun rdToNodeId(rd: ReferenceDescription): NodeId {
+    private fun rdToNodeId(rd: ReferenceDescription): NodeId {
         return rd.nodeId.toNodeId(client!!.namespaceTable).get()
     }
 

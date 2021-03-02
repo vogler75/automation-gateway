@@ -20,7 +20,7 @@ data class Value(
     val sourcePicoseconds: Int = 0,
     val serverPicoseconds: Int = 0
 ) {
-    // Datatypes. org.eclipse.milo.opcua.stack.core.Identifiers
+    // Datatypes: org.eclipse.milo.opcua.stack.core.Identifiers
 
     fun serverTimeAsISO() = serverTime.toString()
     fun sourceTimeAsISO() = sourceTime.toString()
@@ -123,12 +123,14 @@ data class Value(
         }
 
         fun decodeFromJson(json: JsonObject): Value {
+            val sourceTime : String? = json.getString(SOURCE_TIME, null)
+            val serverTime : String? = json.getString(SERVER_TIME, null)
             return Value(
                 value = json.getValue(VALUE, null),
                 dataTypeId = json.getInteger(DATATYPE_ID, 0),
-                statusCode = json.getLong(STATUS_CODE, StatusCode.BAD.value),
-                sourceTime = Instant.parse(json.getString(SOURCE_TIME, null)),
-                serverTime = Instant.parse(json.getString(SERVER_TIME, null)),
+                statusCode = json.getLong(STATUS_CODE, StatusCode.GOOD.value),
+                sourceTime = if (sourceTime!=null) Instant.parse(sourceTime) else Instant.MIN,
+                serverTime = if (serverTime!=null) Instant.parse(serverTime) else Instant.MIN,
                 serverPicoseconds = json.getInteger(SERVER_PICOSECONDS, 0),
                 sourcePicoseconds = json.getInteger(SOURCE_PICOSECONDS, 0),
             )

@@ -100,7 +100,7 @@ abstract class DriverBase(config: JsonObject) : AbstractVerticle() {
     }
 
     private fun connectHandlers() {
-        println("$uri/Subscribe")
+        logger.info("Connect handlers to [{}]", uri)
         messageHandlers = listOf<MessageConsumer<JsonObject>>(
             vertx.eventBus().consumer("$uri/ServerInfo") { serverInfoHandler(it) },
             vertx.eventBus().consumer("$uri/Subscribe") { subscribeHandler(it) },

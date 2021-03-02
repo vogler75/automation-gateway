@@ -27,9 +27,8 @@ dependencies {
 
     // https://mvnrepository.com/artifact/org.apache.plc4x/plc4j-api
     implementation group: 'org.apache.plc4x', name: 'plc4j-api', version: '0.8.0'
-    // https://mvnrepository.com/artifact/org.apache.plc4x/plc4j-driver-opcua
+    runtimeOnly group: 'org.apache.plc4x', name: 'plc4j-driver-s7', version: '0.8.0'
     runtimeOnly group: 'org.apache.plc4x', name: 'plc4j-driver-opcua', version: '0.8.0'
-    // https://mvnrepository.com/artifact/org.apache.plc4x/plc4j-driver-simulated
     runtimeOnly group: 'org.apache.plc4x', name: 'plc4j-driver-simulated', version: '0.8.0'
 
 

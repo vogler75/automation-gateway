@@ -38,6 +38,8 @@ class GraphQLServer(private val defaultSystem: String) : AbstractVerticle() {
     // TODO: Implement scalar "variant"
     // TODO: Subscribe tp multiple nodes
 
+    val defaultType = "OPC"
+
     companion object {
         fun create(vertx: Vertx, config: JsonObject, defaultSystem: String) {
             //val logger = LoggerFactory.getLogger(this.javaClass.simpleName)
@@ -61,26 +63,34 @@ class GraphQLServer(private val defaultSystem: String) : AbstractVerticle() {
     private val id = this.javaClass.simpleName
     private val logger = LoggerFactory.getLogger(id)
     val graphql : GraphQL
+
     init {
         Logger.getLogger(id).level = Level.ALL
 
+        // enum Type must match the Globals.BUS_ROOT_URI_*
         val schema = """
+            | enum Type { 
+            |   OPC
+            |   PLC
+            | }  
+            | 
             | type Query {
             |   ServerInfo(System: String): ServerInfo
-            |   NodeValue(System: String, NodeId: ID!): Value 
-            |   NodeValues(System: String, NodeIds: [ID!]): [Value]
-            |   BrowseNode(System: String, NodeId: ID, Filter: String): [Node]
-            |   FindNodes(System: String, NodeId: ID, Filter: String): [Node]
+            |   
+            |   NodeValue(Type: Type, System: String, NodeId: ID!): Value 
+            |   NodeValues(Type: Type, System: String, NodeIds: [ID!]): [Value]
+            |   BrowseNode(Type: Type, System: String, NodeId: ID, Filter: String): [Node]
+            |   FindNodes(Type: Type, System: String, NodeId: ID, Filter: String): [Node]
             | }
             | 
             | type Mutation {
-            |   NodeValue(System: String, NodeId: ID!, Value: String!): Boolean
-            |   NodeValues(System: String, NodeIds: [ID!]!, Values: [String!]!): [Boolean]
+            |   NodeValue(Type: Type, System: String, NodeId: ID!, Value: String!): Boolean
+            |   NodeValues(Type: Type, System: String, NodeIds: [ID!]!, Values: [String!]!): [Boolean]
             | }
             | 
             | type Subscription {
-            |   NodeValue(System: String, NodeId: ID!): Value
-            |   NodeValues(System: String, NodeIds: [ID!]!): Value
+            |   NodeValue(Type: Type, System: String, NodeId: ID!): Value
+            |   NodeValues(Type: Type, System: String, NodeIds: [ID!]!): Value
             | }
             | 
             | type Value {
@@ -183,31 +193,55 @@ class GraphQLServer(private val defaultSystem: String) : AbstractVerticle() {
         }
     }
 
+    private fun getEnvArgument(
+        env: DataFetchingEnvironment,
+        name: String
+    ): String? {
+        val ctx: Map<String, Any>? = env.getSource()
+        return env.getArgumentOrDefault(name, ctx?.get(name) as String?)
+    }
+
+    private fun getEnvTypeAndSystem(env: DataFetchingEnvironment): Pair<String, String> {
+        val ctx: Map<String, Any>? = env.getSource()
+        val type: String = env.getArgument("Type")
+            ?: ctx?.get("Type") as String?
+            ?: defaultType
+
+        val system: String = env.getArgument("System")
+            ?: ctx?.get("System") as String?
+            ?: defaultSystem
+
+        return Pair(type, system)
+    }
+
     private fun getNodeValue(): DataFetcher<CompletableFuture<Map<String, Any?>>> {
         return DataFetcher<CompletableFuture<Map<String, Any?>>> { env ->
             val promise = CompletableFuture<Map<String, Any?>>()
-
-            val ctx: Map<String, Any>? = env.getSource()
-
-            val system : String = env?.getArgument("System")
-                ?: (if (ctx!=null) ctx["System"] as String else null)
-                ?: defaultSystem
-
-            val nodeId : String = env?.getArgument("NodeId")
-                ?: (if (ctx!=null) ctx["NodeId"] as String else null)
-                ?: ""
+            val (type, system) = getEnvTypeAndSystem(env)
+            val nodeId: String = getEnvArgument(env,"NodeId") ?: ""
 
             val request = JsonObject()
             request.put("NodeId", nodeId)
 
             try {
                 logger.debug("getNodeValue read request...")
-                vertx.eventBus().request<JsonObject>("${Globals.BUS_ROOT_URI_OPC}/$system/Read", request) {
+                vertx.eventBus().request<JsonObject>("${type.toLowerCase()}/$system/Read", request) {
                     logger.debug("getNodeValue read response [{}] [{}]", it.succeeded(), it.result()?.body())
                     if (it.succeeded()) {
-                        val input = Value.decodeFromJson(it.result().body().getJsonObject("Result"))
-                        val result = valueToGraphQL(system, nodeId, input)
-                        promise.complete(result)
+                        try {
+                            val data = it.result().body().getJsonObject("Result")
+                            if (data!=null) {
+                                val input = Value.decodeFromJson(data)
+                                val result = valueToGraphQL(system, nodeId, input)
+                                promise.complete(result)
+                            } else {
+                                logger.warn("No result in read response!")
+                                promise.complete(null)
+                            }
+                        } catch (e: Exception) {
+                            logger.error(e.message)
+                            promise.complete(null)
+                        }
                     } else {
                         promise.complete(null)
                     }
@@ -224,7 +258,8 @@ class GraphQLServer(private val defaultSystem: String) : AbstractVerticle() {
         return DataFetcher<CompletableFuture<List<Map<String, Any?>>>> { env ->
             val promise = CompletableFuture<List<Map<String, Any?>>>()
 
-            val system = env?.getArgument("System") ?: defaultSystem
+            val (type, system) = getEnvTypeAndSystem(env)
+
             val nodeIds = env?.getArgument("NodeIds") ?: listOf<String>()
 
             val request = JsonObject()
@@ -233,7 +268,7 @@ class GraphQLServer(private val defaultSystem: String) : AbstractVerticle() {
             request.put("NodeId", nodes)
 
             try {
-                vertx.eventBus().request<JsonObject>("${Globals.BUS_ROOT_URI_OPC}/$system/Read", request) { response ->
+                vertx.eventBus().request<JsonObject>("${type}/$system/Read", request) { response ->
                     logger.debug("getNodeValues read response [{}] [{}]", response.succeeded(), response.result()?.body())
                     if (response.succeeded()) {
                         val list = response.result().body().getJsonArray("Result")
@@ -257,24 +292,16 @@ class GraphQLServer(private val defaultSystem: String) : AbstractVerticle() {
         return DataFetcher<CompletableFuture<Boolean>> { env ->
             val promise = CompletableFuture<Boolean>()
 
-            val ctx: Map<String, Any>? = env.getSource()
-
-            val system: String = env?.getArgument("System")
-                ?: (if (ctx!=null) ctx["System"] as String else null)
-                ?: defaultSystem
-
-            val nodeId: String = env?.getArgument("NodeId")
-                ?: (if (ctx!=null) ctx["NodeId"] as String else null)
-                ?: ""
-
-            val value: String = env?.getArgument("Value") ?: ""
+            val (type, system) = getEnvTypeAndSystem(env)
+            val nodeId: String = getEnvArgument(env, "NodeId") ?: ""
+            val value: String = getEnvArgument(env, "Value") ?: ""
 
             val request = JsonObject()
             request.put("NodeId", nodeId)
             request.put("Value", value)
 
             try {
-                vertx.eventBus().request<JsonObject>("${Globals.BUS_ROOT_URI_OPC}/$system/Write", request) {
+                vertx.eventBus().request<JsonObject>("${type}/$system/Write", request) {
                     logger.debug("setNodeValue write response [{}] [{}]", it.succeeded(), it.result()?.body())
                     promise.complete(
                         if (it.succeeded()) {
@@ -291,11 +318,12 @@ class GraphQLServer(private val defaultSystem: String) : AbstractVerticle() {
         }
     }
 
+
+
     private fun setNodeValues(): DataFetcher<CompletableFuture<List<Boolean>>> {
         return DataFetcher<CompletableFuture<List<Boolean>>> { env ->
             val promise = CompletableFuture<List<Boolean>>()
-
-            val system = env.getArgument("System") ?: defaultSystem
+            val (type, system) = getEnvTypeAndSystem(env)
             val nodeIds = env.getArgument("NodeIds") as List<String>
             val values = env.getArgument("Values") as List<String>
 
@@ -304,7 +332,7 @@ class GraphQLServer(private val defaultSystem: String) : AbstractVerticle() {
             request.put("Value", values)
 
             try {
-                vertx.eventBus().request<JsonObject>("${Globals.BUS_ROOT_URI_OPC}/$system/Write", request) {
+                vertx.eventBus().request<JsonObject>("${type}/$system/Write", request) {
                     logger.debug("setNodeValue write response [{}] [{}]", it.succeeded(), it.result()?.body())
                     promise.complete(
                         if (it.succeeded()) {
@@ -328,24 +356,16 @@ class GraphQLServer(private val defaultSystem: String) : AbstractVerticle() {
         return DataFetcher<CompletableFuture<List<Map<String, Any?>>>> { env ->
             val promise = CompletableFuture<List<Map<String, Any?>>>()
 
-            val ctx: Map<String, Any>? = env.getSource()
-
-            val system : String = env?.getArgument("System")
-                ?: (if (ctx!=null) ctx["System"] as String else null)
-                ?: defaultSystem
-
-            val nodeId : String = env?.getArgument("NodeId")
-                ?: (if (ctx!=null) ctx["NodeId"] as String else null)
-                ?: "i=85" // Objects
-
-            val filter : String? = env?.getArgument("Filter")
+            val (type, system) = getEnvTypeAndSystem(env)
+            val nodeId = getEnvArgument(env, "NodeId") ?: "i=85"
+            val filter : String? = getEnvArgument(env,"Filter")
 
             val request = JsonObject()
             request.put("NodeId", nodeId)
 
             try {
                 vertx.eventBus()
-                    .request<JsonObject>("${Globals.BUS_ROOT_URI_OPC}/$system/Browse", request) { message ->
+                    .request<JsonObject>("${type}/$system/Browse", request) { message ->
                     logger.debug("getNodes browse response [{}] [{}]", message.succeeded(), message.result()?.body())
                     if (message.succeeded()) {
                         try {
@@ -380,17 +400,9 @@ class GraphQLServer(private val defaultSystem: String) : AbstractVerticle() {
     private fun getFindNodes(): DataFetcher<CompletableFuture<List<Map<String, Any?>>>> {
         return DataFetcher<CompletableFuture<List<Map<String, Any?>>>> { env ->
 
-            val ctx: Map<String, Any>? = env.getSource()
-
-            val system : String = env?.getArgument("System")
-                ?: (if (ctx!=null) ctx["System"] as String else null)
-                ?: defaultSystem
-
-            val nodeId : String = env?.getArgument("NodeId")
-                ?: (if (ctx!=null) ctx["NodeId"] as String else null)
-                ?: "i=85" // Objects
-
-            val filter : String? = env?.getArgument("Filter")
+            val (system, type) = getEnvTypeAndSystem(env)
+            val nodeId : String = getEnvArgument(env,"NodeId") ?: "i=85"
+            val filter : String? = getEnvArgument(env,"Filter")
 
             val overallResult =  mutableListOf<HashMap<String, Any>>()
 
@@ -399,7 +411,7 @@ class GraphQLServer(private val defaultSystem: String) : AbstractVerticle() {
                 val request = JsonObject()
                 request.put("NodeId", nodeId)
                 vertx.eventBus()
-                    .request<JsonObject>("${Globals.BUS_ROOT_URI_OPC}/$system/Browse", request) { message ->
+                    .request<JsonObject>("${type}/$system/Browse", request) { message ->
                         logger.debug("getNodes browse response [{}] [{}]", message.succeeded(), message.result()?.body())
                         if (message.succeeded()) {
                             val result = message.result().body().getJsonArray("Result")?.filterIsInstance<JsonObject>()
@@ -440,10 +452,11 @@ class GraphQLServer(private val defaultSystem: String) : AbstractVerticle() {
 
     private fun subNodeValue(env: DataFetchingEnvironment): Flowable<Map<String, Any?>> {
         val uuid = UUID.randomUUID().toString()
-        val system : String = env.getArgument("System") ?: defaultSystem
-        val nodeId : String = env.getArgument("NodeId") ?:  ""
 
-        val topic = Topic.parseTopic("${Globals.BUS_ROOT_URI_OPC}/$system/node:json/$nodeId")
+        val (system, type) = getEnvTypeAndSystem(env)
+        val nodeId : String = env.getArgument("NodeId") ?: ""
+
+        val topic = Topic.parseTopic("${type}/$system/node:json/$nodeId")
         val flowable = Flowable.create(FlowableOnSubscribe<Map<String, Any?>> { emitter ->
             val consumer = vertx.eventBus().consumer<Buffer>(topic.topicName) { message ->
                 try {
@@ -479,12 +492,12 @@ class GraphQLServer(private val defaultSystem: String) : AbstractVerticle() {
     private fun subNodeValues(env: DataFetchingEnvironment): Flowable<Map<String, Any?>> {
         val uuid = UUID.randomUUID().toString()
 
-        val system : String = env.getArgument("System") ?: defaultSystem
+        val (system, type) = getEnvTypeAndSystem(env)
         val nodeIds = env.getArgument("NodeIds") ?: listOf<String>()
 
         val flowable = Flowable.create(FlowableOnSubscribe<Map<String, Any?>> { emitter ->
             val consumers = nodeIds.map { nodeId ->
-                val topic = "${Globals.BUS_ROOT_URI_OPC}/$system/node:json/$nodeId"
+                val topic = "${type}/$system/node:json/$nodeId"
                 vertx.eventBus().consumer<Buffer>(topic) { message ->
                     try {
                         val data = message.body().toJsonObject()
@@ -531,16 +544,9 @@ class GraphQLServer(private val defaultSystem: String) : AbstractVerticle() {
             if (env==null) {
                 promise.complete(listOf())
             } else {
-                val ctx: Map<String, Any> = env.getSource()
-
-                val log: String = env.getArgumentOrDefault("Log", "default")
-
-                val system: String = env.getArgument("System")
-                    ?: (ctx["System"] as String)
-                    ?: defaultSystem
-
-                val nodeId: String = env.getArgument("NodeId")
-                    ?: (ctx["NodeId"] as String) ?: ""
+                val log: String = getEnvArgument(env,"Log") ?: "default"
+                val (system, type) = getEnvTypeAndSystem(env)
+                val nodeId: String = getEnvArgument(env, "NodeId") ?: ""
 
                 var t1 = Instant.now()
                 var t2 = Instant.now()
@@ -565,7 +571,7 @@ class GraphQLServer(private val defaultSystem: String) : AbstractVerticle() {
                 request.put("T2", t2.toEpochMilli())
 
                 vertx.eventBus()
-                    .request<JsonObject>("${Globals.BUS_ROOT_URI_LOG}/${log}/QueryHistory", request) { message ->
+                    .request<JsonObject>("${type}/${log}/QueryHistory", request) { message ->
                         val list =  message.result()?.body()?.getJsonArray("Result") ?: JsonArray()
                         logger.info("Query response [{}] size [{}]", message.succeeded(), list.size())
                         val result = list.filterIsInstance<JsonArray>().map {

@@ -1,6 +1,11 @@
 Plc4x:
   Drivers:
-    - Id: "sim"
+    - Id: "plc-sim"
+      Enabled: true
       Url: "simulated://127.0.0.1"
       LogLevel: ALL
 
+    - Id: "plc-opc"
+      Enabled: true
+      Url: "opcua:tcp://centos1:4840?discovery=false"
+      LogLevel: ALL

@@ -39,7 +39,7 @@ object App {
             exitProcess(-1)
         }
 
-        //val logger = LoggerFactory.getLogger(javaClass.simpleName)
+        val logger = LoggerFactory.getLogger(javaClass.simpleName)
 
         val vertx = Vertx.vertx()
 
@@ -49,7 +49,7 @@ object App {
 
         // Read config file
         val configFilePath = if (args.isNotEmpty()) args[0] else "config.yaml"
-        println("Using config file: $configFilePath")
+        logger.info("Gateway config file: $configFilePath")
         val config = Globals.RetrieveConfig(vertx, configFilePath)
 
         KeyStoreLoader.init()

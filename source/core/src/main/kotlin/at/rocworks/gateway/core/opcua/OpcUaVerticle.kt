@@ -355,13 +355,12 @@ class OpcUaVerticle(config: JsonObject) : DriverBase(config) {
         }
     }
 
-
     override fun writeTopicValue(topic: Topic, value: Buffer): Future<Boolean> {
         val ret = Promise.promise<Boolean>()
         try {
             when (topic.topicType) {
                 Topic.TopicType.NodeId -> {
-                    val nodeId = NodeId.parse(topic.topicInfo)
+                    val nodeId = NodeId.parse(topic.payload)
                     val dataValue = when (topic.format) {
                         Topic.Format.Value ->
                             DataValue(getVariantOfValue(value, nodeId), null, writeGetTime())
@@ -544,7 +543,7 @@ class OpcUaVerticle(config: JsonObject) : DriverBase(config) {
         val ret = Promise.promise<Boolean>()
         if (topics.isEmpty()) ret.complete(true)
         else {
-            val nodeIds = topics.map { NodeId.parseOrNull(it.topicInfo) }.toList()
+            val nodeIds = topics.map { NodeId.parseOrNull(it.payload) }.toList()
             val requests = ArrayList<MonitoredItemCreateRequest>()
             nodeIds.forEach { nodeId ->
                 val clientHandle = subscription!!.nextClientHandle()
@@ -615,7 +614,7 @@ class OpcUaVerticle(config: JsonObject) : DriverBase(config) {
                         }
                     }
                     if (items.size < 2) {
-                        logger.warn("Subscribe path with too less items! [{}]", topic.topicInfo)
+                        logger.warn("Subscribe path with too less items! [{}]", topic.payload)
                     } else {
                         val resolvedNodeIds = mutableListOf<NodeId>()
                         fun find(node: String, itemIdx: Int) {
@@ -642,7 +641,7 @@ class OpcUaVerticle(config: JsonObject) : DriverBase(config) {
                                 systemType = topic.systemType,
                                 topicType = topic.topicType,
                                 systemName = topic.systemName,
-                                topicInfo = it.toParseableString(),
+                                payload = it.toParseableString(),
                                 format = topic.format
                             )
                         })

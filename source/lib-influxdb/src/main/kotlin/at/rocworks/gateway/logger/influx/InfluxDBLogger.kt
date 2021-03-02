@@ -190,7 +190,7 @@ class InfluxDBLogger(private val config: JsonObject) : AbstractVerticle() {
             val numeric: Double? = (value.value as String).toDoubleOrNull()
             val point = Point.measurement(topic.systemName)
                 .time(value.serverTime.toEpochMilli(), TimeUnit.MILLISECONDS)
-                .tag("tag", topic.topicInfo)
+                .tag("tag", topic.payload)
                 .tag("system", topic.systemName)
                 .tag("status", value.statusCode.toString())
             if (numeric != null)

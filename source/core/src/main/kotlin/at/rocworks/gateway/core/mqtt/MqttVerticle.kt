@@ -242,7 +242,6 @@ class MqttVerticle(config: JsonObject, private val endpoint: MqttEndpoint) : Abs
                 ret.complete(true)
             } else {
                 consumer.unregister()
-                // TODO: publish error message
                 ret.complete(false)
             }
         }

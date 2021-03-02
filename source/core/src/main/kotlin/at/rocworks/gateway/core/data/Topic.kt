@@ -7,7 +7,7 @@ data class Topic (
     val systemType: SystemType,
     val topicType: TopicType,
     val systemName: String,
-    val topicInfo: String,
+    val payload: String,
     val format: Format = Format.Json
 ) {
 
@@ -26,7 +26,7 @@ data class Topic (
     fun isValid() = systemType != SystemType.Unknown && topicType != TopicType.Unknown
 
     val pathItems : List<String>
-        get() = this.topicInfo.split(Regex("""(?<!\\)/""")).map { it.replace("\\/", "/") }
+        get() = this.payload.split(Regex("""(?<!\\)/""")).map { it.replace("\\/", "/") }
 
     fun encodeToJson() = encodeToJson(this)
 
@@ -48,7 +48,7 @@ data class Topic (
                     topicType = TopicType.NodeId,
                     systemName = it.destructured.component1(),
                     format = getFmt(it.destructured.component2()),
-                    topicInfo = "ns=${it.destructured.component3()};s=${it.destructured.component4()}",
+                    payload = "ns=${it.destructured.component3()};s=${it.destructured.component4()}",
                 )
             } ?: """${opcUri}/(\w+)/Node$optFmt/(.*)$""".toRegex(RegexOption.IGNORE_CASE).find(topic)?.let {
                     Topic(
@@ -57,7 +57,7 @@ data class Topic (
                         topicType = TopicType.NodeId,
                         systemName = it.destructured.component1(),
                         format = getFmt(it.destructured.component2()),
-                        topicInfo = it.destructured.component3()
+                        payload = it.destructured.component3()
                     )
             } ?: """${opcUri}/(\w+)/Symbol$optFmt/(.*)$""".toRegex(RegexOption.IGNORE_CASE).find(topic)?.let {
                 Topic(
@@ -66,7 +66,7 @@ data class Topic (
                     topicType = TopicType.Symbol,
                     systemName = it.destructured.component1(),
                     format = getFmt(it.destructured.component2()),
-                    topicInfo = it.destructured.component3(),
+                    payload = it.destructured.component3(),
                 )
             } ?: """${opcUri}/(\w+)/Path$optFmt/(.*)/(.*)$""".toRegex(RegexOption.IGNORE_CASE).find(topic)?.let {
                 Topic(
@@ -75,7 +75,7 @@ data class Topic (
                     topicType = TopicType.Path,
                     systemName = it.destructured.component1(),
                     format = getFmt(it.destructured.component2()),
-                    topicInfo = """${it.destructured.component3()}/${it.destructured.component4()}""",
+                    payload = """${it.destructured.component3()}/${it.destructured.component4()}""",
                 )
             } ?: """${opcUri}/(\w+)/Rpc/(.*)$""".toRegex(RegexOption.IGNORE_CASE).find(topic)?.let {
                 Topic(
@@ -84,7 +84,7 @@ data class Topic (
                     topicType = TopicType.Rpc,
                     systemName = it.destructured.component1(),
                     format = Format.Json,
-                    topicInfo = it.destructured.component2(),
+                    payload = it.destructured.component2(),
                 )
             } ?: """(\${dollar}SYS)/(.*)$""".toRegex(RegexOption.IGNORE_CASE).find(topic)?.let {
                 Topic(
@@ -92,7 +92,7 @@ data class Topic (
                     systemType = SystemType.Sys,
                     topicType = TopicType.Path,
                     systemName = "",
-                    topicInfo = """${it.destructured.component1()}/${it.destructured.component2()}""",
+                    payload = """${it.destructured.component1()}/${it.destructured.component2()}""",
                 )
             } ?: run {
                 Topic(
@@ -100,7 +100,7 @@ data class Topic (
                     systemType = SystemType.Mqtt,
                     topicType = TopicType.Path,
                     systemName = "",
-                    topicInfo = topic,
+                    payload = topic,
                 )
             }
         }
@@ -109,7 +109,7 @@ data class Topic (
         private const val SYSTEMTYPE = "SystemType"
         private const val ITEMTYPE = "ItemType"
         private const val SYSTEMNAME = "SystemName"
-        private const val TOPICINFO = "TopicInfo"
+        private const val PAYLOAD = "Payload"
         private const val FORMAT = "Format"
 
 
@@ -119,7 +119,7 @@ data class Topic (
                 .put(SYSTEMTYPE, topic.systemType.name)
                 .put(ITEMTYPE, topic.topicType.name)
                 .put(SYSTEMNAME, topic.systemName)
-                .put(TOPICINFO, topic.topicInfo)
+                .put(PAYLOAD, topic.payload)
                 .put(FORMAT, topic.format)
         }
 
@@ -129,7 +129,7 @@ data class Topic (
                 systemType = SystemType.valueOf(json.getString(SYSTEMTYPE, "Invalid")),
                 topicType = TopicType.valueOf(json.getString(ITEMTYPE, "Invalid")),
                 systemName = json.getString(SYSTEMNAME, null),
-                topicInfo = json.getString(TOPICINFO, null),
+                payload = json.getString(PAYLOAD, null),
                 format = Format.valueOf(json.getString(FORMAT, Format.Value.name))
             )
         }

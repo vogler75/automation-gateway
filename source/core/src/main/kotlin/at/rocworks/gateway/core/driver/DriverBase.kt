@@ -159,7 +159,6 @@ abstract class DriverBase(config: JsonObject) : AbstractVerticle() {
         }
     }
 
-
     private fun subscribeTopic(clientId: String, topic: Topic): Future<Boolean> {
         val ret = Promise.promise<Boolean>()
         try {
@@ -191,7 +190,6 @@ abstract class DriverBase(config: JsonObject) : AbstractVerticle() {
         }
     }
 
-
     private fun unsubscribeTopics(clientId: String, topics: List<Topic>): Future<Boolean> {
         val ret = Promise.promise<Boolean>()
         val items = ArrayList<MonitoredItem>()
@@ -213,11 +211,10 @@ abstract class DriverBase(config: JsonObject) : AbstractVerticle() {
         return ret.future()
     }
 
+    // MQTT
     protected abstract fun subscribeTopics(topics: List<Topic>): Future<Boolean>
     protected abstract fun unsubscribeItems(items: List<MonitoredItem>) : Future<Boolean>
-
     protected abstract fun writeTopicValue(topic: Topic, value: Buffer): Future<Boolean>
-
 
     // GraphQL
     protected abstract fun readServerInfo(): JsonObject

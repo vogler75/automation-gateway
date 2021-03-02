@@ -268,7 +268,7 @@ class GraphQLServer(private val defaultSystem: String) : AbstractVerticle() {
             request.put("NodeId", nodes)
 
             try {
-                vertx.eventBus().request<JsonObject>("${type}/$system/Read", request) { response ->
+                vertx.eventBus().request<JsonObject>("${type.toLowerCase()}/$system/Read", request) { response ->
                     logger.debug("getNodeValues read response [{}] [{}]", response.succeeded(), response.result()?.body())
                     if (response.succeeded()) {
                         val list = response.result().body().getJsonArray("Result")
@@ -300,8 +300,9 @@ class GraphQLServer(private val defaultSystem: String) : AbstractVerticle() {
             request.put("NodeId", nodeId)
             request.put("Value", value)
 
+            logger.info("setNodeValue ${type.toLowerCase()} $system $nodeId $value")
             try {
-                vertx.eventBus().request<JsonObject>("${type}/$system/Write", request) {
+                vertx.eventBus().request<JsonObject>("${type.toLowerCase()}/$system/Write", request) {
                     logger.debug("setNodeValue write response [{}] [{}]", it.succeeded(), it.result()?.body())
                     promise.complete(
                         if (it.succeeded()) {
@@ -318,8 +319,6 @@ class GraphQLServer(private val defaultSystem: String) : AbstractVerticle() {
         }
     }
 
-
-
     private fun setNodeValues(): DataFetcher<CompletableFuture<List<Boolean>>> {
         return DataFetcher<CompletableFuture<List<Boolean>>> { env ->
             val promise = CompletableFuture<List<Boolean>>()
@@ -332,7 +331,7 @@ class GraphQLServer(private val defaultSystem: String) : AbstractVerticle() {
             request.put("Value", values)
 
             try {
-                vertx.eventBus().request<JsonObject>("${type}/$system/Write", request) {
+                vertx.eventBus().request<JsonObject>("${type.toLowerCase()}/$system/Write", request) {
                     logger.debug("setNodeValue write response [{}] [{}]", it.succeeded(), it.result()?.body())
                     promise.complete(
                         if (it.succeeded()) {
@@ -365,7 +364,7 @@ class GraphQLServer(private val defaultSystem: String) : AbstractVerticle() {
 
             try {
                 vertx.eventBus()
-                    .request<JsonObject>("${type}/$system/Browse", request) { message ->
+                    .request<JsonObject>("${type.toLowerCase()}/$system/Browse", request) { message ->
                     logger.debug("getNodes browse response [{}] [{}]", message.succeeded(), message.result()?.body())
                     if (message.succeeded()) {
                         try {
@@ -411,7 +410,7 @@ class GraphQLServer(private val defaultSystem: String) : AbstractVerticle() {
                 val request = JsonObject()
                 request.put("NodeId", nodeId)
                 vertx.eventBus()
-                    .request<JsonObject>("${type}/$system/Browse", request) { message ->
+                    .request<JsonObject>("${type.toLowerCase()}/$system/Browse", request) { message ->
                         logger.debug("getNodes browse response [{}] [{}]", message.succeeded(), message.result()?.body())
                         if (message.succeeded()) {
                             val result = message.result().body().getJsonArray("Result")?.filterIsInstance<JsonObject>()
@@ -456,7 +455,7 @@ class GraphQLServer(private val defaultSystem: String) : AbstractVerticle() {
         val (system, type) = getEnvTypeAndSystem(env)
         val nodeId : String = env.getArgument("NodeId") ?: ""
 
-        val topic = Topic.parseTopic("${type}/$system/node:json/$nodeId")
+        val topic = Topic.parseTopic("${type.toLowerCase()}/$system/node:json/$nodeId")
         val flowable = Flowable.create(FlowableOnSubscribe<Map<String, Any?>> { emitter ->
             val consumer = vertx.eventBus().consumer<Buffer>(topic.topicName) { message ->
                 try {
@@ -497,7 +496,7 @@ class GraphQLServer(private val defaultSystem: String) : AbstractVerticle() {
 
         val flowable = Flowable.create(FlowableOnSubscribe<Map<String, Any?>> { emitter ->
             val consumers = nodeIds.map { nodeId ->
-                val topic = "${type}/$system/node:json/$nodeId"
+                val topic = "${type.toLowerCase()}/$system/node:json/$nodeId"
                 vertx.eventBus().consumer<Buffer>(topic) { message ->
                     try {
                         val data = message.body().toJsonObject()
@@ -571,7 +570,7 @@ class GraphQLServer(private val defaultSystem: String) : AbstractVerticle() {
                 request.put("T2", t2.toEpochMilli())
 
                 vertx.eventBus()
-                    .request<JsonObject>("${type}/${log}/QueryHistory", request) { message ->
+                    .request<JsonObject>("${type.toLowerCase()}/${log}/QueryHistory", request) { message ->
                         val list =  message.result()?.body()?.getJsonArray("Result") ?: JsonArray()
                         logger.info("Query response [{}] size [{}]", message.succeeded(), list.size())
                         val result = list.filterIsInstance<JsonArray>().map {

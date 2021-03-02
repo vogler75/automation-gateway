@@ -380,7 +380,6 @@ class OpcUaVerticle(config: JsonObject) : DriverBase(config) {
             logger.warn("Not a valid number [{}] for numeric tag [{}] value!", value.toString(), topic)
             ret.complete(false)
         } catch (e: Exception) {
-            //e.printStackTrace()
             ret.fail(e)
         }
         return ret.future()

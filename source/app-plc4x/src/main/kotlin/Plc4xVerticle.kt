@@ -2,6 +2,7 @@ import at.rocworks.gateway.core.data.Globals
 import at.rocworks.gateway.core.data.Topic
 import at.rocworks.gateway.core.driver.DriverBase
 import at.rocworks.gateway.core.driver.MonitoredItem
+
 import io.vertx.core.Future
 import io.vertx.core.Promise
 import io.vertx.core.buffer.Buffer
@@ -13,6 +14,7 @@ import org.apache.plc4x.java.api.PlcConnection
 import org.apache.plc4x.java.PlcDriverManager
 import org.apache.plc4x.java.api.exceptions.PlcConnectionException
 import org.apache.plc4x.java.api.messages.PlcReadRequest
+import org.apache.plc4x.java.api.messages.PlcWriteRequest
 
 class Plc4xVerticle(config: JsonObject): DriverBase(config) {
     override fun getRootUri() = Globals.BUS_ROOT_URI_PLC
@@ -73,8 +75,10 @@ class Plc4xVerticle(config: JsonObject): DriverBase(config) {
 
     override fun readHandler(message: Message<JsonObject>) {
         val node = message.body().getValue("NodeId")
-        logger.info("Read node $node")
         when {
+            plc?.metadata?.canRead() == false -> {
+                message.reply(JsonObject().put("Ok", false).put("Error", "Read not supported!"))
+            }
             node != null && node is String -> {
                 try {
                     val builder: PlcReadRequest.Builder = plc!!.readRequestBuilder()
@@ -109,7 +113,38 @@ class Plc4xVerticle(config: JsonObject): DriverBase(config) {
     }
 
     override fun writeHandler(message: Message<JsonObject>) {
-        TODO("Not yet implemented")
+        val node = message.body().getValue("NodeId")
+        logger.info("writeHandler [{}]", node)
+        when {
+            node != null && node is String -> {
+                try {
+                    val value = message.body().getString("Value", "")
+                    val builder: PlcWriteRequest.Builder = plc!!.writeRequestBuilder()
+                    builder.addItem("value", node, value)
+                    val request = builder.build()
+                    val response = request.execute()
+                    response.whenComplete { writeResponse, throwable ->
+                        if (writeResponse != null) {
+                            logger.info("Write response [{}]", writeResponse.getResponseCode("value"))
+                            message.reply(JsonObject().put("Ok", true))
+                        } else {
+                            logger.error("An error occurred: " + throwable.message, throwable)
+                            message.reply(JsonObject().put("Ok", false))
+                        }
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+            node != null && node is JsonArray -> {
+
+            }
+            else -> {
+                val err = String.format("Invalid format in write request!")
+                message.reply(JsonObject().put("Ok", false))
+                logger.error(err)
+            }
+        }
     }
 
     override fun browseHandler(message: Message<JsonObject>) {

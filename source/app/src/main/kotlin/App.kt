@@ -1,5 +1,5 @@
 import at.rocworks.gateway.core.data.*
-import at.rocworks.gateway.graphql.GraphQLServer
+import at.rocworks.gateway.core.graphql.GraphQLServer
 import at.rocworks.gateway.logger.influx.InfluxDBLogger
 import at.rocworks.gateway.core.mqtt.MqttVerticle
 import at.rocworks.gateway.core.opcua.KeyStoreLoader

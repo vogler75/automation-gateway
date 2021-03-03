@@ -1,4 +1,4 @@
 rootProject.name = 'gateway'
 include('core')
-include('app', 'app-gateway', 'app-graphql', 'app-plc4x')
-include('lib-cluster', 'lib-graphql', 'lib-influxdb')
+include('app', 'app-gateway', 'app-plc4x')
+include('lib-cluster', 'lib-influxdb')

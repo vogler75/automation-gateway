@@ -5,6 +5,11 @@ MqttServer:
       Host: 0.0.0.0
       LogLevel: ALL # ALL | INFO
 
+GraphQLServer:
+  Listeners:
+    - Port: 4000
+      LogLevel: ALL
+
 OpcUaClient:
   - Id: "test"
     Enabled: true

@@ -1,4 +1,5 @@
 import at.rocworks.gateway.cluster.Cluster
+import at.rocworks.gateway.core.graphql.GraphQLServer
 import at.rocworks.gateway.core.mqtt.MqttVerticle
 import at.rocworks.gateway.core.opcua.OpcUaVerticle
 import at.rocworks.gateway.core.opcua.KeyStoreLoader
@@ -29,6 +30,14 @@ object Gateway {
             ?.filterIsInstance<JsonObject>()
             ?.forEach {
                 MqttVerticle.create(vertx, it)
+            }
+
+        // GraphQL Server
+        config.getJsonObject("GraphQLServer")
+            ?.getJsonArray("Listeners")
+            ?.filterIsInstance<JsonObject>()
+            ?.forEach {
+                GraphQLServer.create(vertx, it, "default")
             }
     }
 }

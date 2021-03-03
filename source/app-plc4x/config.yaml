@@ -1,11 +1,16 @@
 Plc4x:
   Drivers:
-    - Id: "plc-sim"
+    - Id: "sim"
       Enabled: true
       Url: "simulated://127.0.0.1"
       LogLevel: ALL
 
-    - Id: "plc-opc"
-      Enabled: true
+    - Id: "opc"
+      Enabled: false
       Url: "opcua:tcp://centos1:4840?discovery=false"
+      LogLevel: ALL
+
+    - Id: "mod"
+      Enabled: true
+      Url: "modbus://localhost:502"
       LogLevel: ALL

@@ -6,7 +6,6 @@ import io.vertx.core.*
 import io.vertx.core.eventbus.MessageConsumer
 import io.vertx.core.buffer.Buffer
 import io.vertx.core.eventbus.Message
-import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 
 import io.vertx.servicediscovery.Record
@@ -146,7 +145,7 @@ abstract class DriverBase(config: JsonObject) : AbstractVerticle() {
         val data = message.body().getBuffer("Data")
         logger.debug("Publish [{}] [{}]", topic.toString(), data.toString())
         try {
-            writeTopicValue(topic, data).onComplete { result: AsyncResult<Boolean> ->
+            publishTopic(topic, data).onComplete { result: AsyncResult<Boolean> ->
                 if (result.cause() != null) result.cause().printStackTrace()
                 message.reply(JsonObject().put("Ok", result.succeeded() && result.result()))
             }
@@ -169,7 +168,11 @@ abstract class DriverBase(config: JsonObject) : AbstractVerticle() {
                 ret.complete(false)
             } else if (count == 1) {
                 subscribeTopics(listOf(topic)).onComplete {
-                    ret.complete(it.result())
+                    if (it.succeeded()) {
+                        ret.complete(it.result())
+                    } else {
+                        ret.fail(it.cause())
+                    }
                 }
             } else {
                 ret.complete(true)
@@ -214,7 +217,7 @@ abstract class DriverBase(config: JsonObject) : AbstractVerticle() {
     // MQTT
     protected abstract fun subscribeTopics(topics: List<Topic>): Future<Boolean>
     protected abstract fun unsubscribeItems(items: List<MonitoredItem>) : Future<Boolean>
-    protected abstract fun writeTopicValue(topic: Topic, value: Buffer): Future<Boolean>
+    protected abstract fun publishTopic(topic: Topic, value: Buffer): Future<Boolean>
 
     // GraphQL
     protected abstract fun readServerInfo(): JsonObject

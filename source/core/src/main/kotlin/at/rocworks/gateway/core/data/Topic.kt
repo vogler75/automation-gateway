@@ -12,15 +12,25 @@ data class Topic (
 ) {
 
     enum class SystemType {
-        Unknown, Opc, Mqtt, Sys
+        Unknown,
+        Opc,
+        Plc,
+        Mqtt,
+        Sys
     }
 
     enum class TopicType {
-        Unknown, NodeId, Symbol, Path, Rpc
+        Unknown,
+        NodeId,
+        Symbol, // TODO: Remove?
+        Path,
+        Rpc // TODO: Remove?
     }
 
     enum class Format {
-        Json, Pretty, Value
+        Json,
+        Pretty,
+        Value
     }
 
     fun isValid() = systemType != SystemType.Unknown && topicType != TopicType.Unknown
@@ -34,6 +44,7 @@ data class Topic (
         fun parseTopic(topic: String): Topic {
             val dollar = "\$"
             val opcUri = SystemType.Opc.name
+            val plcUri = SystemType.Plc.name
             val optFmt = "(|:Json|:Pretty|:Value)"
             fun getFmt(s: String) = when (s.toLowerCase()) {
                 ":" + Format.Value.name.toLowerCase() -> Format.Value
@@ -59,15 +70,6 @@ data class Topic (
                         format = getFmt(it.destructured.component2()),
                         payload = it.destructured.component3()
                     )
-            } ?: """${opcUri}/(\w+)/Symbol$optFmt/(.*)$""".toRegex(RegexOption.IGNORE_CASE).find(topic)?.let {
-                Topic(
-                    topic,
-                    systemType = SystemType.Opc,
-                    topicType = TopicType.Symbol,
-                    systemName = it.destructured.component1(),
-                    format = getFmt(it.destructured.component2()),
-                    payload = it.destructured.component3(),
-                )
             } ?: """${opcUri}/(\w+)/Path$optFmt/(.*)/(.*)$""".toRegex(RegexOption.IGNORE_CASE).find(topic)?.let {
                 Topic(
                     topic,
@@ -85,6 +87,15 @@ data class Topic (
                     systemName = it.destructured.component1(),
                     format = Format.Json,
                     payload = it.destructured.component2(),
+                )
+            } ?: """${plcUri}/(\w+)/Node$optFmt/(.*)$""".toRegex(RegexOption.IGNORE_CASE).find(topic)?.let {
+                Topic(
+                    topic,
+                    systemType = SystemType.Plc,
+                    topicType = TopicType.NodeId,
+                    systemName = it.destructured.component1(),
+                    format = getFmt(it.destructured.component2()),
+                    payload = it.destructured.component3()
                 )
             } ?: """(\${dollar}SYS)/(.*)$""".toRegex(RegexOption.IGNORE_CASE).find(topic)?.let {
                 Topic(

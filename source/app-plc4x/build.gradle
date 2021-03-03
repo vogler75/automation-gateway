@@ -29,9 +29,8 @@ dependencies {
     implementation group: 'org.apache.plc4x', name: 'plc4j-api', version: '0.8.0'
     runtimeOnly group: 'org.apache.plc4x', name: 'plc4j-driver-s7', version: '0.8.0'
     runtimeOnly group: 'org.apache.plc4x', name: 'plc4j-driver-opcua', version: '0.8.0'
+    runtimeOnly group: 'org.apache.plc4x', name: 'plc4j-driver-modbus', version: '0.8.0'
     runtimeOnly group: 'org.apache.plc4x', name: 'plc4j-driver-simulated', version: '0.8.0'
-
-
 }
 
 application {

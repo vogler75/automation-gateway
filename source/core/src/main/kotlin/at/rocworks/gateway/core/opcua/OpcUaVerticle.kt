@@ -355,7 +355,7 @@ class OpcUaVerticle(config: JsonObject) : DriverBase(config) {
         }
     }
 
-    override fun writeTopicValue(topic: Topic, value: Buffer): Future<Boolean> {
+    override fun publishTopic(topic: Topic, value: Buffer): Future<Boolean> {
         val ret = Promise.promise<Boolean>()
         try {
             when (topic.topicType) {

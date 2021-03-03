@@ -175,7 +175,8 @@ class MqttVerticle(config: JsonObject, private val endpoint: MqttEndpoint) : Abs
             logger.debug("Subscribe request [{}] with QoS [{}]", t, qos)
             when (t.systemType) {
                 Topic.SystemType.Mqtt ->  subscribeMqttTopic(t, qos, ret)
-                Topic.SystemType.Opc -> subscribeOpcUaTopic(t, qos, ret)
+                Topic.SystemType.Opc -> subscribeDriverTopic(Globals.BUS_ROOT_URI_OPC, t, qos, ret)
+                Topic.SystemType.Plc -> subscribeDriverTopic(Globals.BUS_ROOT_URI_PLC, t, qos, ret)
                 else -> {
                     logger.warn("Invalid topic []", t)
                     ret.complete(false)
@@ -193,18 +194,23 @@ class MqttVerticle(config: JsonObject, private val endpoint: MqttEndpoint) : Abs
     }
 
     private fun unsubscribeTopic(topics: List<String>) {
-        val xs = HashMap<String, ArrayList<Topic>>()
+        val opc = HashMap<String, ArrayList<Topic>>()
+        val plc = HashMap<String, ArrayList<Topic>>()
+
+        fun add(list: HashMap<String, ArrayList<Topic>>, topic: Topic) {
+            val l = list.getOrDefault(topic.systemName, ArrayList())
+            if (l.size == 0) list[topic.systemName] = l
+            l.add(topic)
+        }
+
         topics.forEach { topic ->
             if (topics.contains(topic)) {
                 val t = Topic.parseTopic(topic)
                 logger.debug("Unsubscribe request [{}]", t)
                 when (t.systemType) {
-                    Topic.SystemType.Mqtt ->  unsubscribeMqttTopic(t)
-                    Topic.SystemType.Opc -> {
-                        val l = xs.getOrDefault(t.systemName, ArrayList())
-                        if (l.size == 0) xs[t.systemName] = l
-                        l.add(t)
-                    }
+                    Topic.SystemType.Mqtt -> unsubscribeMqttTopic(t)
+                    Topic.SystemType.Opc -> add(opc, t)
+                    Topic.SystemType.Plc -> add(plc, t)
                     else -> {
                         logger.warn("Invalid topic [{}]", t)
                     }
@@ -213,10 +219,9 @@ class MqttVerticle(config: JsonObject, private val endpoint: MqttEndpoint) : Abs
                 logger.warn("Client [{}] not subscribed to [{}]", endpoint.clientIdentifier(), topic)
             }
         }
-        xs.forEach {
-            if (it.value.size > 0) unsubscribeOpcUaTopics(it.key, it.value)
-        }
 
+        opc.forEach { if (it.value.size > 0) unsubscribeDriverTopics(Globals.BUS_ROOT_URI_OPC, it.key, it.value) }
+        plc.forEach { if (it.value.size > 0) unsubscribeDriverTopics(Globals.BUS_ROOT_URI_PLC, it.key, it.value) }
     }
 
     private fun subscribeMqttTopic(t: Topic, qos: MqttQoS, ret: Promise<Boolean>) {
@@ -232,10 +237,10 @@ class MqttVerticle(config: JsonObject, private val endpoint: MqttEndpoint) : Abs
         this.topics.remove(t.topicName)
     }
 
-    private fun subscribeOpcUaTopic(t: Topic, qos: MqttQoS, ret: Promise<Boolean>) {
+    private fun subscribeDriverTopic(type: String, t: Topic, qos: MqttQoS, ret: Promise<Boolean>) {
         val consumer = vertx.eventBus().consumer<Any>(t.topicName) { valueConsumer(t, qos, it.body()) }
         val r = JsonObject().put("ClientId", endpoint.clientIdentifier()).put("Topic", t.encodeToJson())
-        vertx.eventBus().request<JsonObject>("${Globals.BUS_ROOT_URI_OPC}/${t.systemName}/Subscribe", r) {
+        vertx.eventBus().request<JsonObject>("${type}/${t.systemName}/Subscribe", r) {
             logger.debug("Subscribe response [{}] [{}]", it.succeeded(), it.result()?.body())
             if (it.succeeded() && it.result().body().getBoolean("Ok")) {
                 this.topics[t.topicName] = consumer as MessageConsumer<Any>
@@ -247,10 +252,10 @@ class MqttVerticle(config: JsonObject, private val endpoint: MqttEndpoint) : Abs
         }
     }
 
-    private fun unsubscribeOpcUaTopics(systemName: String, list: List<Topic>) {
+    private fun unsubscribeDriverTopics(type: String, systemName: String, list: List<Topic>) {
         val r = JsonObject().put("ClientId", endpoint.clientIdentifier())
         r.put("Topics", JsonArray(list.map { it.encodeToJson() }))
-        vertx.eventBus().request<JsonObject>("${Globals.BUS_ROOT_URI_OPC}/${systemName}/Unsubscribe", r) {
+        vertx.eventBus().request<JsonObject>("${type}/${systemName}/Unsubscribe", r) {
             logger.debug("Unsubscribe response [{}] [{}]", it.succeeded(), it.result()?.body())
             if (it.succeeded() && it.result().body().getBoolean("Ok")) {
                 list.forEach { topic ->
@@ -293,11 +298,13 @@ class MqttVerticle(config: JsonObject, private val endpoint: MqttEndpoint) : Abs
                     Topic.SystemType.Mqtt -> {
                         vertx.eventBus().publish(topic.topicName, value)
                     }
-                    Topic.SystemType.Opc -> {
+                    Topic.SystemType.Opc,
+                    Topic.SystemType.Plc -> {
                         val request = JsonObject()
+                        val type = topic.systemType.name.toLowerCase()
                         request.put("Topic", topic.encodeToJson())
                         request.put("Data", value)
-                        vertx.eventBus().request<JsonObject>("${Globals.BUS_ROOT_URI_OPC}/${topic.systemName}/Publish", request) {
+                        vertx.eventBus().request<JsonObject>("${type}/${topic.systemName}/Publish", request) {
                             logger.debug("Publish response [{}] [{}]", it.succeeded(), it.result()?.body())
                         }
                     }

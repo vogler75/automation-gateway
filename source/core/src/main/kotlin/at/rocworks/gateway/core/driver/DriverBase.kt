@@ -24,7 +24,7 @@ import java.util.logging.Level
 abstract class DriverBase(config: JsonObject) : AbstractVerticle() {
     protected abstract fun getRootUri(): String
 
-    protected val id = config.getString("Id", DriverBase::class.java.simpleName)
+    protected val id: String = config.getString("Id", DriverBase::class.java.simpleName)
 
     protected val uri = "${getRootUri()}/$id"
 
@@ -86,11 +86,10 @@ abstract class DriverBase(config: JsonObject) : AbstractVerticle() {
         val discovery = ServiceDiscovery.create(vertx)
         val record = Record()
             .setName(id)
-            .setType(Topic.SystemType.Opc.toString())
+            .setType(getRootUri())
             .setLocation(JsonObject().put("endpoint", uri))
         discovery.publish(record) { ar ->
             if (ar.succeeded()) {
-                val publishedRecord = ar.result()
                 logger.info("Service registered.")
             } else {
                 logger.warn("Service registration failed!")

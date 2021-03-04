@@ -1,0 +1,14 @@
+Database:
+  Logger:
+    - Id: test
+      Enabled: true
+      Type: InfluxDB
+      Url: http://nuc1:8086
+      Database: test
+      Username: ""
+      Password: ""
+      WriteParameters:
+        QueueSize: 20000
+      Logging:
+        - Topic: opc/test/node:json/ns=2;s=ExampleDP_Arg1
+        - Topic: opc/test/path:json/$objects/Test/+/float

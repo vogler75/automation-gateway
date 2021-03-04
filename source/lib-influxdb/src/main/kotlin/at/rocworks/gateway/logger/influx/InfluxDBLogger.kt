@@ -103,7 +103,7 @@ class InfluxDBLogger(private val config: JsonObject) : AbstractVerticle() {
             fun discover() {
                 discovery.getRecord({ r -> r.name == name && r.type == type }) { ar ->
                     if (ar.succeeded() && ar.result() != null) {
-                        logger.info("Service [{}] logging is now available!", ar.result().location)
+                        logger.info("Service [{}] logging is available!", ar.result().location)
                         promise.complete(ar.result().location.getString("endpoint"))
                     } else {
                         logger.error("Lookup service [{}/{}] failed! Wait and retry...", type, name)
@@ -123,7 +123,7 @@ class InfluxDBLogger(private val config: JsonObject) : AbstractVerticle() {
                 val topic = Topic.parseTopic(it.getString("Topic", ""))
                 if (topic.format == Topic.Format.Json) {
                     // TODO: optimize service lookup, don't do it for every single topic
-                    isServiceAvailable(topic.systemType.toString(), topic.systemName).onComplete { endpoint ->
+                    isServiceAvailable(topic.systemType.name.toLowerCase(), topic.systemName).onComplete { endpoint ->
                         subscribeTopic(endpoint.result(), topic)
                     }
                 } else {
@@ -176,7 +176,6 @@ class InfluxDBLogger(private val config: JsonObject) : AbstractVerticle() {
             }
             writeValueStopped.complete()
         }
-
 
     private var valueCounterInput : Int = 0
     @Volatile var valueCounterOutput : Int = 0

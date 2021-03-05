@@ -35,14 +35,9 @@ class InfluxDBLogger(private val config: JsonObject) : AbstractVerticle() {
     private val id = config.getString("Id", "InfluxDB")
     private val logger = LoggerFactory.getLogger(id)
 
-    private val topics = config
-        .getJsonArray("Logging", JsonArray())
-        .filterIsInstance<JsonObject>()
-        .mapNotNull { it.getString("Topic") }
-        .map { Topic.parseTopic(it) }
-        .filter { it.format == Topic.Format.Json }
+    private val topics : List<Topic>
 
-    private val services = topics.map { Pair(it.systemType, it.systemName) }.distinct()
+    private val services : List<Pair<Topic.SystemType, String>>
 
     private val url = config.getString("Url", "")
     private val username = config.getString("Username", "")
@@ -68,7 +63,19 @@ class InfluxDBLogger(private val config: JsonObject) : AbstractVerticle() {
         else
             InfluxDBFactory.connect(url, username, password)
 
-        logger.info("Valid topics: {}", topics.joinToString(separator = ",") { it.topicName })
+        topics = config
+            .getJsonArray("Logging")
+            ?.asSequence()
+            ?.filterIsInstance<JsonObject>()
+            ?.mapNotNull { it.getString("Topic") }
+            ?.map { Topic.parseTopic(it) }
+            ?.filter { it.format == Topic.Format.Json }
+            ?.toList()
+            ?:listOf()
+
+        services = topics.map { Pair(it.systemType, it.systemName) }.distinct()
+
+        logger.info("Valid topics: {}", topics.joinToString(separator = "|") { it.topicName })
     }
 
     override fun start(startPromise: Promise<Void>) {
@@ -113,7 +120,10 @@ class InfluxDBLogger(private val config: JsonObject) : AbstractVerticle() {
             isServiceAvailable(service.first.name, service.second).onComplete { endpoint ->
                 topics
                     .filter { it.systemType == service.first && it.systemName == service.second }
-                    .forEach { subscribeTopic(endpoint.result(), it) }
+                    .forEach { topic ->
+                        vertx.eventBus().consumer<Any>(topic.topicName) { valueConsumer(it.body()) }
+                        subscribeTopic(endpoint.result(), topic)
+                    }
             }
         }
     }
@@ -148,14 +158,11 @@ class InfluxDBLogger(private val config: JsonObject) : AbstractVerticle() {
     }
 
     private fun subscribeTopic(endpoint: String, topic: Topic) {
-        val consumer = vertx.eventBus().consumer<Any>(topic.topicName) { valueConsumer(it.body()) }
         val request = JsonObject().put("ClientId", this.id).put("Topic", topic.encodeToJson())
         if (endpoint!="") {
+            logger.info("Subscribe to [{}]", endpoint)
             vertx.eventBus().request<JsonObject>("${endpoint}/Subscribe", request) {
                 logger.debug("Subscribe response [{}] [{}]", it.succeeded(), it.result()?.body())
-                if (!(it.succeeded() && it.result().body().getBoolean("Ok"))) {
-                    consumer.unregister()
-                }
             }
         }
     }
@@ -195,6 +202,7 @@ class InfluxDBLogger(private val config: JsonObject) : AbstractVerticle() {
     @Volatile var valueCounterOutput : Int = 0
 
     private fun valueConsumer(data: JsonObject) {
+        println(data.toString())
         valueCounterInput++
         try {
             val topic = Topic.decodeFromJson(data.getJsonObject("Topic"))

@@ -2,6 +2,7 @@ import at.rocworks.gateway.cluster.Cluster
 import at.rocworks.gateway.logger.influx.InfluxDBLogger
 
 import io.vertx.core.Vertx
+import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 
 object InfluxDB {

@@ -9,6 +9,7 @@ import kotlin.Throws
 import kotlin.jvm.JvmStatic
 
 import io.vertx.core.Vertx
+import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 
 import java.lang.Exception
@@ -71,20 +72,24 @@ object App {
     private fun createLogger(vertx: Vertx, config: JsonObject) {
         val logger = LoggerFactory.getLogger(javaClass.simpleName)
         when (val type = config.getString("Type")) {
-            "InfluxDB" -> vertx.deployVerticle(InfluxDBLogger(config))
+            "InfluxDB" -> {
+                vertx.deployVerticle(InfluxDBLogger(config))
+            }
             else -> logger.error("Unknown database type [{}]", type)
         }
     }
 
     private fun createServices(vertx: Vertx, config: JsonObject) {
         // OPC UA Server
-        val enabled: List<JsonObject> = config.getJsonArray("OpcUaClient")
-            .filterIsInstance<JsonObject>()
-            .filter { it.getBoolean("Enabled") }
-        val defaultSystem = enabled.first()
+        val enabled = config.getJsonArray("OpcUaClient")
+            ?.filterIsInstance<JsonObject>()
+            ?.filter { it.getBoolean("Enabled") }
+            ?: listOf()
         enabled.map {
             vertx.deployVerticle(OpcUaVerticle(it))
         }
+
+        val defaultSystem = if (enabled.isNotEmpty()) enabled.first().getString("Id") else "default"
 
         // Mqtt Server
         config.getJsonObject("MqttServer")
@@ -99,7 +104,7 @@ object App {
             ?.getJsonArray("Listeners")
             ?.filterIsInstance<JsonObject>()
             ?.forEach {
-                GraphQLServer.create(vertx, it, defaultSystem.getString("Id"))
+                GraphQLServer.create(vertx, it, defaultSystem)
             }
 
         // DB Logger
@@ -112,16 +117,16 @@ object App {
 
         // Start HTTP Webserver
         /*
-                run {
-                    val router = Router.router(vertx)
-                    router.route("/").handler { ctx ->
-                        val response = ctx.response()
-                        response.putHeader("content-type", "text/plain")
-                        response.end("Hello World from Reactive SCADA.")
-                    }
-                    val httpServer = vertx.createHttpServer()
-                    httpServer.requestHandler(router).listen(8080)
-                }
-                */
+        run {
+            val router = Router.router(vertx)
+            router.route("/").handler { ctx ->
+                val response = ctx.response()
+                response.putHeader("content-type", "text/plain")
+                response.end("Hello World from Reactive SCADA.")
+            }
+            val httpServer = vertx.createHttpServer()
+            httpServer.requestHandler(router).listen(8080)
+        }
+        */
     }
 }

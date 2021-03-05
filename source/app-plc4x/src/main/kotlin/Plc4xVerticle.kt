@@ -23,6 +23,46 @@ class Plc4xVerticle(config: JsonObject): DriverBase(config) {
     private val url: String = config.getString("Url", "")
     private var plc: PlcConnection? = null
 
+    private val pollingTime: Long
+    private val pollingOldNew: Boolean
+
+    private val pollingTopics = HashMap<Topic, PlcValue?>()
+
+    init {
+        val polling = config.getJsonObject("Polling", JsonObject())
+        pollingTime = polling.getLong("Time", 0)
+        pollingOldNew = polling.getBoolean("OldNew", false)
+    }
+
+    override fun start(startPromise: Promise<Void>) {
+        super.start(startPromise)
+        if (pollingTime>0) {
+            vertx.setPeriodic(pollingTime, ::pollingExecutor)
+        }
+    }
+
+    private fun pollingExecutor(id: Long) {
+        val builder: PlcReadRequest.Builder = plc!!.readRequestBuilder()
+        pollingTopics.forEach {
+            builder.addItem(it.key.topicName, it.key.payload)
+        }
+        val request = builder.build()
+        val response = request.execute()
+        response.whenComplete { readResponse, throwable ->
+            if (readResponse != null) {
+                pollingTopics.forEach { topic ->
+                    val value = readResponse.getPlcValue(topic.key.topicName)
+                    if (!pollingOldNew || value.toString() != topic.value.toString()) { // TODO: String Compare?
+                        pollingTopics[topic.key] = value
+                        valueConsumer(topic.key, value)
+                    }
+                }
+            } else {
+                logger.error("An error occurred: " + throwable.message, throwable)
+            }
+        }
+    }
+
     override fun connect(): Future<Boolean> {
         val promise = Promise.promise<Boolean>()
         try {
@@ -59,14 +99,20 @@ class Plc4xVerticle(config: JsonObject): DriverBase(config) {
     }
 
     override fun subscribeTopics(topics: List<Topic>): Future<Boolean> {
-        return subscribeNodes(topics.filter { it.topicType === Topic.TopicType.NodeId })
+        return subscribeTopic(topics.filter { it.topicType === Topic.TopicType.NodeId })
     }
 
-    private fun subscribeNodes(topics: List<Topic>) : Future<Boolean> {
-        logger.info("Subscribe nodes [{}]", topics.size)
+    private fun subscribeTopic(topics: List<Topic>) : Future<Boolean> {
+        logger.info("Subscribe topic [{}]", topics.size)
         val ret = Promise.promise<Boolean>()
         when {
-            plc?.metadata?.canSubscribe() == false -> ret.complete(false)
+            plc?.metadata?.canSubscribe() == false -> {
+                topics.forEach { topic ->
+                    if (!pollingTopics.containsKey(topic))
+                        pollingTopics[topic] = null
+                }
+                ret.complete(true)
+            }
             topics.isEmpty() -> ret.complete(true)
             else -> {
                 val builder: PlcSubscriptionRequest.Builder = plc!!.subscriptionRequestBuilder()
@@ -81,7 +127,7 @@ class Plc4xVerticle(config: JsonObject): DriverBase(config) {
                             val handle = subscribeResponse.getSubscriptionHandle("value")
                             registry.addMonitoredItem(Plc4xMonitoredItem(handle), topic)
                             handle.register {
-                                valueConsumer(topic, it)
+                                valueConsumer(topic, it.asPlcValue)
                             }
                         }
                     } else {
@@ -120,7 +166,7 @@ class Plc4xVerticle(config: JsonObject): DriverBase(config) {
         val data = when {
             value.isStruct && value.keys.isNotEmpty() -> value.struct[value.keys.first()].toString()
             value.isList && value.list.isNotEmpty() -> value.getIndex(0).toString()
-            else -> ""
+            else -> value.toString()
         }
         return Value(
             value = data,
@@ -133,16 +179,16 @@ class Plc4xVerticle(config: JsonObject): DriverBase(config) {
         )
     }
 
-    private fun valueConsumer(topic: Topic, data: PlcSubscriptionEvent) {
+    private fun valueConsumer(topic: Topic, data: PlcValue) {
         logger.debug("Got value [{}] [{}]", topic.topicName, data.toString())
         try {
             fun json() = JsonObject()
                 .put("Topic", topic.encodeToJson())
-                .put("Value", toValue(data.asPlcValue).encodeToJson())
+                .put("Value", toValue(data).encodeToJson())
 
             val buffer : Buffer? = when (topic.format) {
                 Topic.Format.Value -> {
-                    data.asPlcValue.toString().let {
+                    data.toString().let {
                         Buffer.buffer(it)
                     }
                 }
@@ -209,13 +255,13 @@ class Plc4xVerticle(config: JsonObject): DriverBase(config) {
             node != null && node is String -> {
                 try {
                     val builder: PlcReadRequest.Builder = plc!!.readRequestBuilder()
-                    builder.addItem(node, node)
+                    builder.addItem("value", node)
                     val request = builder.build()
                     val response = request.execute()
                     response.whenComplete { readResponse, throwable ->
                         if (readResponse != null) {
                             try {
-                                val result = toValue(readResponse.asPlcValue).encodeToJson()
+                                val result = toValue(readResponse.getPlcValue("value")).encodeToJson()
                                 message.reply(JsonObject().put("Ok", true).put("Result", result))
                             } catch (e: Exception) {
                                 e.printStackTrace()

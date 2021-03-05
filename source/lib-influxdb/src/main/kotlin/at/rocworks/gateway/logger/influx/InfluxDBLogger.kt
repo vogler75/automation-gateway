@@ -202,7 +202,6 @@ class InfluxDBLogger(private val config: JsonObject) : AbstractVerticle() {
     @Volatile var valueCounterOutput : Int = 0
 
     private fun valueConsumer(data: JsonObject) {
-        println(data.toString())
         valueCounterInput++
         try {
             val topic = Topic.decodeFromJson(data.getJsonObject("Topic"))

@@ -22,7 +22,7 @@ import java.util.concurrent.CompletableFuture
 
 
 class Plc4xVerticle(config: JsonObject): DriverBase(config) {
-    override fun getRootUri() = Globals.BUS_ROOT_URI_PLC
+    override fun getType() = Topic.SystemType.Plc
 
     private val url: String = config.getString("Url", "")
     private var plc: PlcConnection? = null

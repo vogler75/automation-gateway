@@ -22,11 +22,11 @@ import java.util.function.Consumer
 import java.util.logging.Level
 
 abstract class DriverBase(config: JsonObject) : AbstractVerticle() {
-    protected abstract fun getRootUri(): String
+    protected abstract fun getType(): Topic.SystemType
 
     protected val id: String = config.getString("Id", DriverBase::class.java.simpleName)
 
-    protected val uri = "${getRootUri()}/$id"
+    protected val uri = "${getType().name}/$id"
 
     protected val logger: Logger
     protected val logLevel: String = config.getString("LogLevel", "INFO")
@@ -86,7 +86,7 @@ abstract class DriverBase(config: JsonObject) : AbstractVerticle() {
         val discovery = ServiceDiscovery.create(vertx)
         val record = Record()
             .setName(id)
-            .setType(getRootUri())
+            .setType(getType().name)
             .setLocation(JsonObject().put("endpoint", uri))
         discovery.publish(record) { ar ->
             if (ar.succeeded()) {
@@ -164,7 +164,7 @@ abstract class DriverBase(config: JsonObject) : AbstractVerticle() {
             logger.debug("Subscribe [{}] [{}]", count, topic)
             if (!added) {
                 logger.warn("Client [{}] already subscribed to [{}]", clientId, topic)
-                ret.complete(false)
+                ret.complete(true)
             } else if (count == 1) {
                 subscribeTopics(listOf(topic)).onComplete {
                     if (it.succeeded()) {

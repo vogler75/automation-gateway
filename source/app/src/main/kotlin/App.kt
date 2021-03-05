@@ -50,7 +50,7 @@ object App {
         // Read config file
         val configFilePath = if (args.isNotEmpty()) args[0] else "config.yaml"
         logger.info("Gateway config file: $configFilePath")
-        val config = Globals.RetrieveConfig(vertx, configFilePath)
+        val config = Globals.retrieveConfig(vertx, configFilePath)
 
         KeyStoreLoader.init()
 

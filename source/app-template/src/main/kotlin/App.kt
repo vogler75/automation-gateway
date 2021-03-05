@@ -2,9 +2,10 @@ import at.rocworks.gateway.cluster.Cluster
 import at.rocworks.gateway.core.opcua.OpcUaVerticle
 
 import io.vertx.core.Vertx
+import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 
-object Plc4x {
+object App {
     @Throws(Exception::class)
     @JvmStatic
     fun main(args: Array<String>) {
@@ -12,11 +13,11 @@ object Plc4x {
     }
 
     private fun services(vertx: Vertx, config: JsonObject) {
-        config.getJsonObject("App")
-            ?.getJsonArray("Module")
-            ?.filterIsInstance<JsonObject>()
-            ?.filter { it.getBoolean("Enabled") }
-            ?.forEach {
+        config.getJsonObject("App", JsonObject())
+            .getJsonArray("Module", JsonArray())
+            .filterIsInstance<JsonObject>()
+            .filter { it.getBoolean("Enabled") }
+            .forEach {
                 vertx.deployVerticle(AppVerticle(it))
             }
     }

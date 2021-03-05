@@ -10,5 +10,5 @@ Database:
       WriteParameters:
         QueueSize: 20000
       Logging:
-        - Topic: opc/test/node:json/ns=2;s=ExampleDP_Arg1
+        - Topic: opc/test/node:json/ns=2;s=ExampleDP_Float.ExampleDP_Arg1
         - Topic: opc/test/path:json/$objects/Test/+/float

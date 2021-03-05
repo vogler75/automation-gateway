@@ -1,6 +1,9 @@
+import at.rocworks.gateway.core.data.Topic
 import io.vertx.core.AbstractVerticle
 import io.vertx.core.Promise
 import io.vertx.core.json.JsonObject
+import io.vertx.servicediscovery.Record
+import io.vertx.servicediscovery.ServiceDiscovery
 
 import java.util.logging.Level
 import java.util.logging.Logger
@@ -15,10 +18,10 @@ class AppVerticle(config: JsonObject): AbstractVerticle() {
     }
 
     override fun start(startPromise: Promise<Void>) {
-        logger.info("Starting...")
+        logger.info("Started.")
     }
 
     override fun stop(stopPromise: Promise<Void>) {
-        logger.info("Stopping...")
+        logger.info("Stopped.")
     }
 }

@@ -175,8 +175,8 @@ class MqttVerticle(config: JsonObject, private val endpoint: MqttEndpoint) : Abs
             logger.debug("Subscribe request [{}] with QoS [{}]", t, qos)
             when (t.systemType) {
                 Topic.SystemType.Mqtt ->  subscribeMqttTopic(t, qos, ret)
-                Topic.SystemType.Opc -> subscribeDriverTopic(Globals.BUS_ROOT_URI_OPC, t, qos, ret)
-                Topic.SystemType.Plc -> subscribeDriverTopic(Globals.BUS_ROOT_URI_PLC, t, qos, ret)
+                Topic.SystemType.Opc,
+                Topic.SystemType.Plc -> subscribeDriverTopic(t.systemType.name, t, qos, ret)
                 else -> {
                     logger.warn("Invalid topic []", t)
                     ret.complete(false)
@@ -188,7 +188,7 @@ class MqttVerticle(config: JsonObject, private val endpoint: MqttEndpoint) : Abs
                 endpoint.clientIdentifier(),
                 mqttTopicSubscription.topicName()
             )
-            ret.complete(false)
+            ret.complete(true)
         }
         return ret
     }
@@ -220,8 +220,8 @@ class MqttVerticle(config: JsonObject, private val endpoint: MqttEndpoint) : Abs
             }
         }
 
-        opc.forEach { if (it.value.size > 0) unsubscribeDriverTopics(Globals.BUS_ROOT_URI_OPC, it.key, it.value) }
-        plc.forEach { if (it.value.size > 0) unsubscribeDriverTopics(Globals.BUS_ROOT_URI_PLC, it.key, it.value) }
+        opc.forEach { if (it.value.size > 0) unsubscribeDriverTopics(Topic.SystemType.Opc.name, it.key, it.value) }
+        plc.forEach { if (it.value.size > 0) unsubscribeDriverTopics(Topic.SystemType.Plc.name, it.key, it.value) }
     }
 
     private fun subscribeMqttTopic(t: Topic, qos: MqttQoS, ret: Promise<Boolean>) {

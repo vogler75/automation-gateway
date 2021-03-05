@@ -1,6 +1,5 @@
 package at.rocworks.gateway.core.opcua
 
-import at.rocworks.gateway.core.data.Globals
 import at.rocworks.gateway.core.data.Topic
 import at.rocworks.gateway.core.data.Value
 import at.rocworks.gateway.core.driver.DriverBase
@@ -53,7 +52,7 @@ import kotlin.concurrent.thread
 
 
 class OpcUaVerticle(config: JsonObject) : DriverBase(config) {
-    override fun getRootUri() = Globals.BUS_ROOT_URI_OPC
+    override fun getType() = Topic.SystemType.Opc
 
     private val endpointUrl: String = config.getString("EndpointUrl", "")
     private val updateEndpointUrl: String? = config.getString("UpdateEndpointUrl", null)

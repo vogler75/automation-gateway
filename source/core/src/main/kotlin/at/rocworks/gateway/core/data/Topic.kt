@@ -22,9 +22,9 @@ data class Topic (
     enum class TopicType {
         Unknown,
         NodeId,
-        Symbol, // TODO: Remove?
+        Symbol,
         Path,
-        Rpc // TODO: Remove?
+        Rpc
     }
 
     enum class Format {

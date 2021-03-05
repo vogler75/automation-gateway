@@ -7,12 +7,9 @@ import io.vertx.core.Vertx
 import io.vertx.core.json.JsonObject
 
 object Globals {
-    const val BUS_ROOT_URI_OPC = "opc"
-    const val BUS_ROOT_URI_PLC = "plc"
-    const val BUS_ROOT_URI_LOG = "log"
+    const val BUS_ROOT_URI_LOG = "Log"
 
-    fun RetrieveConfig(vertx: Vertx, configFilePath: String)
-    = ConfigRetriever.create(
+    fun retrieveConfig(vertx: Vertx, configFilePath: String): ConfigRetriever = ConfigRetriever.create(
         vertx,
         ConfigRetrieverOptions().addStore(
             ConfigStoreOptions()

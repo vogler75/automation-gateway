@@ -55,7 +55,7 @@ object Cluster {
                 vertx.eventBus().registerDefaultCodec(Value::class.java, ValueCodec())
 
                 // Retrieve Config
-                val config = Globals.RetrieveConfig(vertx, configFilePath)
+                val config = Globals.retrieveConfig(vertx, configFilePath)
 
                 // Go through the configuration file
                 config.getConfig { cfg ->

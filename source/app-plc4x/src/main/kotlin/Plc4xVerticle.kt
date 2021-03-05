@@ -1,9 +1,7 @@
-import at.rocworks.gateway.core.data.Globals
 import at.rocworks.gateway.core.data.Topic
 import at.rocworks.gateway.core.data.Value
 import at.rocworks.gateway.core.driver.DriverBase
 import at.rocworks.gateway.core.driver.MonitoredItem
-import io.vertx.core.CompositeFuture
 
 import io.vertx.core.Future
 import io.vertx.core.Promise
@@ -16,10 +14,8 @@ import org.apache.plc4x.java.api.PlcConnection
 import org.apache.plc4x.java.PlcDriverManager
 import org.apache.plc4x.java.api.exceptions.PlcConnectionException
 import org.apache.plc4x.java.api.messages.*
+import org.apache.plc4x.java.api.value.PlcValue
 import java.time.Instant
-
-import java.util.concurrent.CompletableFuture
-
 
 class Plc4xVerticle(config: JsonObject): DriverBase(config) {
     override fun getType() = Topic.SystemType.Plc
@@ -75,14 +71,14 @@ class Plc4xVerticle(config: JsonObject): DriverBase(config) {
             else -> {
                 val builder: PlcSubscriptionRequest.Builder = plc!!.subscriptionRequestBuilder()
                 topics.forEach {
-                    builder.addEventField(it.payload, it.payload)
+                    builder.addEventField("value", it.payload)
                 }
                 val request = builder.build()
 
                 request.execute().whenComplete { subscribeResponse, throwable ->
                     if (subscribeResponse != null) {
                         topics.forEach { topic ->
-                            val handle = subscribeResponse.getSubscriptionHandle(topic.payload)
+                            val handle = subscribeResponse.getSubscriptionHandle("value")
                             registry.addMonitoredItem(Plc4xMonitoredItem(handle), topic)
                             handle.register {
                                 valueConsumer(topic, it)
@@ -98,15 +94,42 @@ class Plc4xVerticle(config: JsonObject): DriverBase(config) {
         return ret.future()
     }
 
-    private fun toValue(v: PlcSubscriptionEvent): Value {
+    /*
+        v.isNull -> ""
+        v.isBoolean -> v.boolean
+        v.isByte -> v.byte
+        v.isShort -> v.short
+        v.isInteger -> v.integer
+        v.isLong -> v.long
+        v.isBigInteger -> v.bigInteger
+        v.isFloat -> v.float
+        v.isDouble -> v.double
+        v.isBigInteger -> v.bigInteger
+        v.isString -> v.string
+        v.isDuration -> v.duration
+        v.isTime -> v.time
+        v.isDate -> v.date
+        v.isDateTime -> v.dateTime
+        v.isList -> "<list>"
+        v.isStruct -> "<struct>"
+        else -> "unhandled"
+     */
+
+    private fun toValue(value: PlcValue): Value {
+        val now = Instant.now()
+        val data = when {
+            value.isStruct && value.keys.isNotEmpty() -> value.struct[value.keys.first()].toString()
+            value.isList && value.list.isNotEmpty() -> value.getIndex(0).toString()
+            else -> ""
+        }
         return Value(
-            value = v.asPlcValue.toString(),
+            value = data,
             dataTypeId = 0,
             statusCode = 0,
-            sourceTime = v.timestamp,
-            serverTime = v.timestamp,
+            sourceTime = now,
+            serverTime = now,
             sourcePicoseconds = 0,
-            serverPicoseconds = 0,
+            serverPicoseconds = 0
         )
     }
 
@@ -115,7 +138,7 @@ class Plc4xVerticle(config: JsonObject): DriverBase(config) {
         try {
             fun json() = JsonObject()
                 .put("Topic", topic.encodeToJson())
-                .put("Value", toValue(data).encodeToJson())
+                .put("Value", toValue(data.asPlcValue).encodeToJson())
 
             val buffer : Buffer? = when (topic.format) {
                 Topic.Format.Value -> {
@@ -191,9 +214,12 @@ class Plc4xVerticle(config: JsonObject): DriverBase(config) {
                     val response = request.execute()
                     response.whenComplete { readResponse, throwable ->
                         if (readResponse != null) {
-                            val value = readResponse.getAllBytes(node)
-                            val result = JsonObject().put("Value", value)
-                            message.reply(JsonObject().put("Ok", true).put("Result", result))
+                            try {
+                                val result = toValue(readResponse.asPlcValue).encodeToJson()
+                                message.reply(JsonObject().put("Ok", true).put("Result", result))
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                            }
                         } else {
                             logger.error("An error occurred: " + throwable.message, throwable)
                             val result = JsonObject().put("Value", throwable.message)
@@ -243,7 +269,7 @@ class Plc4xVerticle(config: JsonObject): DriverBase(config) {
     private fun writeValueAsync(node: String, value: String): Future<Boolean> {
         val promise = Promise.promise<Boolean>()
         val builder: PlcWriteRequest.Builder = plc!!.writeRequestBuilder()
-        builder.addItem(node, node, value)
+        builder.addItem("value", node, value)
         val request = builder.build()
         val response = request.execute()
         response.whenComplete { writeResponse, throwable ->

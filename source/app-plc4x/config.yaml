@@ -14,6 +14,6 @@ Plc4x:
       Enabled: true
       Url: "modbus://localhost:502"
       Polling:
-        Time: 1000
+        Time: 100
         OldNew: true
       LogLevel: ALL

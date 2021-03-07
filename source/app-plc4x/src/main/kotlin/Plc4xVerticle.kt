@@ -42,23 +42,25 @@ class Plc4xVerticle(config: JsonObject): DriverBase(config) {
     }
 
     private fun pollingExecutor(id: Long) {
-        val builder: PlcReadRequest.Builder = plc!!.readRequestBuilder()
-        pollingTopics.forEach {
-            builder.addItem(it.key.topicName, it.key.payload)
-        }
-        val request = builder.build()
-        val response = request.execute()
-        response.whenComplete { readResponse, throwable ->
-            if (readResponse != null) {
-                pollingTopics.forEach { topic ->
-                    val value = readResponse.getPlcValue(topic.key.topicName)
-                    if (!pollingOldNew || value.toString() != topic.value.toString()) { // TODO: String Compare?
-                        pollingTopics[topic.key] = value
-                        valueConsumer(topic.key, value)
+        if (plc!=null && pollingTopics.isNotEmpty()) {
+            val builder: PlcReadRequest.Builder = plc!!.readRequestBuilder()
+            pollingTopics.forEach {
+                builder.addItem(it.key.topicName, it.key.payload)
+            }
+            val request = builder.build()
+            val response = request.execute()
+            response.whenComplete { readResponse, throwable ->
+                if (readResponse != null) {
+                    pollingTopics.forEach { topic ->
+                        val value = readResponse.getPlcValue(topic.key.topicName)
+                        if (!pollingOldNew || value.toString() != topic.value.toString()) { // TODO: String Compare?
+                            pollingTopics[topic.key] = value
+                            valueConsumer(topic.key, value)
+                        }
                     }
+                } else {
+                    logger.error("An error occurred: " + throwable.message, throwable)
                 }
-            } else {
-                logger.error("An error occurred: " + throwable.message, throwable)
             }
         }
     }

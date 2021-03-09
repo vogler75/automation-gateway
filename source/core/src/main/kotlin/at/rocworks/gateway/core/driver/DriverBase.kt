@@ -1,6 +1,7 @@
 package at.rocworks.gateway.core.driver
 
 import at.rocworks.gateway.core.data.Topic
+import at.rocworks.gateway.core.service.ServiceHandler
 
 import io.vertx.core.*
 import io.vertx.core.eventbus.MessageConsumer
@@ -83,13 +84,9 @@ abstract class DriverBase(config: JsonObject) : AbstractVerticle() {
     }
 
     private fun registerService() {
-        val discovery = ServiceDiscovery.create(vertx)
-        val record = Record()
-            .setName(id)
-            .setType(getType().name)
-            .setLocation(JsonObject().put("endpoint", uri))
-        discovery.publish(record) { ar ->
-            if (ar.succeeded()) {
+        val handler = ServiceHandler(vertx)
+        handler.registerService(getType().name, id, uri).onComplete {
+            if (it.succeeded()) {
                 logger.info("Service registered.")
             } else {
                 logger.warn("Service registration failed!")

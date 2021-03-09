@@ -363,8 +363,7 @@ class GraphQLServer(private val defaultSystem: String) : AbstractVerticle() {
             request.put("NodeId", nodeId)
 
             try {
-                vertx.eventBus()
-                    .request<JsonObject>("$type/$system/Browse", request) { message ->
+                vertx.eventBus().request<JsonObject>("$type/$system/Browse", request) { message ->
                     logger.debug("getNodes browse response [{}] [{}]", message.succeeded(), message.result()?.body())
                     if (message.succeeded()) {
                         try {

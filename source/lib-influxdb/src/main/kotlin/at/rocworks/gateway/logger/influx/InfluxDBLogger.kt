@@ -3,17 +3,13 @@ package at.rocworks.gateway.logger.influx
 import at.rocworks.gateway.core.data.Globals
 import at.rocworks.gateway.core.data.Topic
 import at.rocworks.gateway.core.data.Value
+import at.rocworks.gateway.core.service.ServiceHandler
 import io.vertx.core.AbstractVerticle
-import io.vertx.core.Future
 import io.vertx.core.Promise
 import io.vertx.core.buffer.Buffer
 import io.vertx.core.eventbus.Message
 import io.vertx.core.json.Json
-import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
-import io.vertx.servicediscovery.Record
-import io.vertx.servicediscovery.ServiceDiscovery
-import io.vertx.servicediscovery.Status
 import org.influxdb.BatchOptions
 import org.influxdb.InfluxDB
 import org.influxdb.InfluxDBFactory
@@ -92,8 +88,7 @@ class InfluxDBLogger(private val config: JsonObject) : AbstractVerticle() {
                         db.query(Query("CREATE DATABASE $database"))
                         db.setDatabase(database)
                         db.enableBatch(BatchOptions.DEFAULTS) // TODO: make batch options configurable
-                        subscribeTopics()
-                        onServiceChanged()
+                        this.subscribeTopics()
                         vertx.setPeriodic(1000, ::metricCalculator)
                         vertx.eventBus().consumer("${Globals.BUS_ROOT_URI_LOG}/$id/QueryHistory", ::queryHandler)
                         startPromise.complete()
@@ -116,45 +111,19 @@ class InfluxDBLogger(private val config: JsonObject) : AbstractVerticle() {
     }
 
     private fun subscribeTopics() {
-        services.forEach { service ->
-            isServiceAvailable(service.first.name, service.second).onComplete { endpoint ->
+        val handler = ServiceHandler(vertx)
+        services.forEach { it ->
+            handler.observeService(it.first.name, it.second) { service ->
+                logger.info("Service for [{}] got available!", service.name)
                 topics
-                    .filter { it.systemType == service.first && it.systemName == service.second }
+                    .filter { it.systemType.name == service.type && it.systemName == service.name }
                     .forEach { topic ->
                         vertx.eventBus().consumer<Any>(topic.topicName) { valueConsumer(it.body()) }
-                        subscribeTopic(endpoint.result(), topic)
+                        subscribeTopic(ServiceHandler.endpointOf(service), topic)
                     }
             }
         }
-    }
 
-    private fun onServiceChanged() {
-        val discovery = ServiceDiscovery.create(vertx)
-        vertx.eventBus().consumer<JsonObject>(discovery.options().announceAddress) { message ->
-            val record = Record(message.body())
-            if (record.status == Status.UP) {
-                val endpoint = record.location.getString("endpoint")
-                topics.filter { it.systemType.name == record.type && it.systemName == record.name }.forEach {
-                    logger.info("Service for [{}] got available!", it.topicName)
-                    subscribeTopic(endpoint, it)
-                }
-            }
-        }
-    }
-
-    private fun isServiceAvailable(type: String, name: String): Future<String> {
-        val promise = Promise.promise<String>()
-        val discovery = ServiceDiscovery.create(vertx)
-        discovery.getRecord({ r -> r.name == name && r.type == type }) { ar ->
-            if (ar.succeeded() && ar.result() != null) {
-                logger.info("Service [{}] is available!", ar.result().location)
-                promise.complete(ar.result().location.getString("endpoint"))
-            } else {
-                logger.error("Lookup service [{}] [{}] failed!", type, name)
-                promise.complete(null)
-            }
-        }
-        return promise.future()
     }
 
     private fun subscribeTopic(endpoint: String, topic: Topic) {

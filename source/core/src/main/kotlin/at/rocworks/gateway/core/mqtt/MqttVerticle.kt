@@ -301,7 +301,7 @@ class MqttVerticle(config: JsonObject, private val endpoint: MqttEndpoint) : Abs
                     Topic.SystemType.Opc,
                     Topic.SystemType.Plc -> {
                         val request = JsonObject()
-                        val type = topic.systemType.name.toLowerCase()
+                        val type = topic.systemType.name
                         request.put("Topic", topic.encodeToJson())
                         request.put("Data", value)
                         vertx.eventBus().request<JsonObject>("${type}/${topic.systemName}/Publish", request) {

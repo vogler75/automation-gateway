@@ -40,9 +40,13 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned
 import org.eclipse.milo.opcua.stack.core.types.enumerated.*
 import org.eclipse.milo.opcua.stack.core.types.structured.*
 import org.eclipse.milo.opcua.stack.core.util.EndpointUtil
+import java.io.File
 import java.lang.IllegalStateException
 import java.lang.NumberFormatException
 import java.nio.charset.StandardCharsets
+import java.time.Duration
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 import java.util.*
 import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.ExecutionException
@@ -51,7 +55,7 @@ import java.util.function.BiConsumer
 import kotlin.concurrent.thread
 
 
-class OpcUaVerticle(config: JsonObject) : DriverBase(config) {
+class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
     override fun getType() = Topic.SystemType.Opc
 
     private val endpointUrl: String = config.getString("EndpointUrl", "")
@@ -87,6 +91,8 @@ class OpcUaVerticle(config: JsonObject) : DriverBase(config) {
     private var subscription: UaSubscription? = null
 
     private val defaultRetryWaitTime = 5000
+
+    private val objectTree = JsonObject()
 
     companion object {
         init {
@@ -186,6 +192,14 @@ class OpcUaVerticle(config: JsonObject) : DriverBase(config) {
                             client!!.subscriptionManager.addSubscriptionListener(subscriptionListener)
                             createSubscription()
                             promise.complete()
+
+                            if (config.getBoolean("BrowseOnStartup", false)) {
+                                logger.info("Start object browsing...")
+                                val tree = browseNode(NodeId.parse("i=85"), -1)
+                                objectTree.put("Objects", tree)
+                                logger.info("Object browsing finished.")
+                                //File("opc-ua-${id}.json".toLowerCase()).writeText(tree.encodePrettily())
+                            }
                         }
                     }
                 }
@@ -700,65 +714,86 @@ class OpcUaVerticle(config: JsonObject) : DriverBase(config) {
     }
 
     private fun browseNode(browseRoot: NodeId, maxLevel: Int=1, flat: Boolean=false): JsonArray {
-        return browseNode(browseRoot, maxLevel, 1, flat)
-    }
+        val tStart = Instant.now()
+        var tLast = tStart
+        var counter = 0
 
-    private fun browseNode(browseRoot: NodeId, maxLevel: Int, level: Int, flat: Boolean): JsonArray {
-        val result = JsonArray()
+        fun browseNode(browseRoot: NodeId, maxLevel: Int, level: Int, flat: Boolean): JsonArray {
+            val result = JsonArray()
 
-        fun addResult(references: List<ReferenceDescription>) {
-            references.forEach { rd ->
-                val item = JsonObject()
-                item.put("BrowseName", rd.browseName.name)
-                item.put("DisplayName", rd.displayName.text)
-                item.put("NodeId", rd.nodeId.toParseableString())
-                item.put("NodeClass", rd.nodeClass.toString())
-                //logger.debug("$flat : $level : $item")
+            fun addResult(references: List<ReferenceDescription>) {
+                references.forEach { rd ->
+                    counter++
+                    if (counter % 1000 == 0) { // It's faster not do get the current time with every item
+                        val tNow = Instant.now()
+                        if (Duration.between(tLast, tNow).seconds > 1 ) {
+                            tLast = tNow
+                            logger.info("Browsed [{}] items...", counter)
+                        }
+                    }
+                    val item = JsonObject()
+                    item.put("BrowseName", rd.browseName.name)
+                    item.put("DisplayName", rd.displayName.text)
+                    item.put("NodeId", rd.nodeId.toParseableString())
+                    item.put("NodeClass", rd.nodeClass.toString())
+                    //logger.debug("$flat : $level : $item")
 
-                if (rd.nodeClass === NodeClass.Variable || !flat) result.add(item)
+                    if (rd.nodeClass === NodeClass.Variable || !flat) result.add(item)
 
-                // recursively browse to children if it is an object node
-                if ((maxLevel == -1 || level < maxLevel) && rd.nodeClass === NodeClass.Object) {
-                    val nodeId = rd.nodeId.toNodeId(client!!.namespaceTable)
-                    if (nodeId.isPresent) {
-                        val next = browseNode(nodeId.get(), maxLevel, level + 1, flat)
-                        if (flat) {
-                            result.addAll(next)
-                        } else {
-                            item.put("Nodes", next)
+                    // recursively browse to children if it is an object node
+                    if ((maxLevel == -1 || level < maxLevel) && rd.nodeClass === NodeClass.Object) {
+                        val nodeId = rd.nodeId.toNodeId(client!!.namespaceTable)
+                        if (nodeId.isPresent) {
+                            val next = browseNode(nodeId.get(), maxLevel, level + 1, flat)
+                            if (flat) {
+                                result.addAll(next)
+                            } else {
+                                item.put("Nodes", next)
+                            }
                         }
                     }
                 }
             }
-        }
 
-        val browse = BrowseDescription(
-            browseRoot,
-            BrowseDirection.Forward,
-            Identifiers.References,
-            true,
-            Unsigned.uint(NodeClass.Object.value or NodeClass.Variable.value),
-            Unsigned.uint(BrowseResultMask.All.value)
-        )
+            val browse = BrowseDescription(
+                browseRoot,
+                BrowseDirection.Forward,
+                Identifiers.References,
+                true,
+                Unsigned.uint(NodeClass.Object.value or NodeClass.Variable.value),
+                Unsigned.uint(BrowseResultMask.All.value)
+            )
 
-        try {
-            val browseResult = client!!.browse(browse).get()
-            if (browseResult.statusCode.isGood &&  browseResult.references != null) {
-                addResult(browseResult.references.asList())
-                var continuationPoint = browseResult.continuationPoint
-                while (continuationPoint != null && continuationPoint.isNotNull) {
-                    val nextResult = client!!.browseNext(false, continuationPoint).get()
-                    addResult(nextResult.references.asList())
-                    continuationPoint = nextResult.continuationPoint
+            try {
+                val browseResult = client!!.browse(browse).get()
+                if (browseResult.statusCode.isGood && browseResult.references != null) {
+                    addResult(browseResult.references.asList())
+                    var continuationPoint = browseResult.continuationPoint
+                    while (continuationPoint != null && continuationPoint.isNotNull) {
+                        val nextResult = client!!.browseNext(false, continuationPoint).get()
+                        addResult(nextResult.references.asList())
+                        continuationPoint = nextResult.continuationPoint
+                    }
+                } else {
+                    logger.error("Browsing nodeId [{}] failed [{}]", browseRoot, browseResult.statusCode.toString())
                 }
-            } else {
-                logger.error("Browsing nodeId [{}] failed [{}]", browseRoot, browseResult.statusCode.toString())
+            } catch (e: InterruptedException) {
+                logger.error(String.format("Browsing nodeId=%s failed: %s", browseRoot, e.message, e))
+            } catch (e: ExecutionException) {
+                logger.error(String.format("Browsing nodeId=%s failed: %s", browseRoot, e.message, e))
             }
-        } catch (e: InterruptedException) {
-            logger.error(String.format("Browsing nodeId=%s failed: %s", browseRoot, e.message, e))
-        } catch (e: ExecutionException) {
-            logger.error(String.format("Browsing nodeId=%s failed: %s", browseRoot, e.message, e))
+            return result
         }
+
+        val result = browseNode(browseRoot, maxLevel, 1, flat)
+        val duration = Duration.between(tStart, Instant.now())
+        val seconds = duration.seconds + duration.nano/1_000_000_000.0
+        logger.info(
+            "Browsed [{}] items in [{}] seconds [{}] items/s.",
+            counter,
+            seconds,
+            if (seconds>0) counter / seconds else 0
+        )
 
         return result
     }

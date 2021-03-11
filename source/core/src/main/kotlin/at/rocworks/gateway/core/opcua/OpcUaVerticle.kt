@@ -37,6 +37,7 @@ import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy
 import org.eclipse.milo.opcua.stack.core.types.builtin.*
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned
+import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint
 import org.eclipse.milo.opcua.stack.core.types.enumerated.*
 import org.eclipse.milo.opcua.stack.core.types.structured.*
 import org.eclipse.milo.opcua.stack.core.util.EndpointUtil
@@ -562,6 +563,13 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
         else {
             val nodeIds = topics.map { NodeId.parseOrNull(it.payload) }.toList()
             val requests = ArrayList<MonitoredItemCreateRequest>()
+
+            val dataChangeFilter = ExtensionObject.encode(client!!.serializationContext, DataChangeFilter(
+                DataChangeTrigger.StatusValueTimestamp,
+                uint(DeadbandType.None.value),
+                0.0
+            ));
+
             nodeIds.forEach { nodeId ->
                 val clientHandle = subscription!!.nextClientHandle()
                 requests.add(
@@ -571,7 +579,7 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
                         MonitoringParameters(
                             clientHandle,
                             monitoringParametersSamplingInterval,
-                            null,
+                            dataChangeFilter,
                             monitoringParametersBufferSize,
                             monitoringParametersDiscardOldest
                         )

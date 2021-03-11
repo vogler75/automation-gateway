@@ -46,7 +46,6 @@ import java.lang.NumberFormatException
 import java.nio.charset.StandardCharsets
 import java.time.Duration
 import java.time.Instant
-import java.time.temporal.ChronoUnit
 import java.util.*
 import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.ExecutionException
@@ -92,7 +91,7 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
 
     private val defaultRetryWaitTime = 5000
 
-    private val objectTree = JsonObject()
+    private val schema = JsonObject()
 
     companion object {
         init {
@@ -191,14 +190,16 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
                             }
                             client!!.subscriptionManager.addSubscriptionListener(subscriptionListener)
                             createSubscription()
-                            promise.complete()
 
                             if (config.getBoolean("BrowseOnStartup", false)) {
                                 logger.info("Start object browsing...")
                                 val tree = browseNode(NodeId.parse("i=85"), -1)
-                                objectTree.put("Objects", tree)
+                                schema.put("Objects", tree)
                                 logger.info("Object browsing finished.")
-                                //File("opc-ua-${id}.json".toLowerCase()).writeText(tree.encodePrettily())
+                                File("opcua-${id}.json".toLowerCase()).writeText(tree.encodePrettily())
+                                promise.complete()
+                            } else {
+                                promise.complete()
                             }
                         }
                     }
@@ -317,6 +318,10 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
             message.fail(-1, e.message)
             e.printStackTrace()
         }
+    }
+
+    override fun schemaHandler(message: Message<JsonObject>) {
+        message.reply(schema)
     }
 
     override fun subscribeTopics(topics: List<Topic>): Future<Boolean> {

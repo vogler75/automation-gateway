@@ -3,6 +3,7 @@ package at.rocworks.gateway.core.graphql
 import at.rocworks.gateway.core.data.Globals
 import at.rocworks.gateway.core.data.Topic
 import at.rocworks.gateway.core.data.Value
+import at.rocworks.gateway.core.service.ServiceHandler
 
 import graphql.GraphQL
 import graphql.schema.DataFetcher
@@ -12,6 +13,8 @@ import graphql.schema.idl.*
 import io.reactivex.*
 
 import io.vertx.core.AbstractVerticle
+import io.vertx.core.Future
+import io.vertx.core.Promise
 import io.vertx.core.Vertx
 import io.vertx.core.buffer.Buffer
 import io.vertx.core.http.HttpServerOptions
@@ -24,6 +27,7 @@ import io.vertx.ext.web.handler.graphql.ApolloWSHandler
 import io.vertx.ext.web.handler.graphql.GraphQLHandler
 
 import org.slf4j.LoggerFactory
+import java.io.File
 import java.time.Instant
 import java.util.*
 import java.util.concurrent.CompletableFuture
@@ -33,7 +37,7 @@ import java.time.format.DateTimeFormatter
 import java.util.logging.Level
 import java.util.logging.Logger
 
-class GraphQLServer(private val defaultSystem: String) : AbstractVerticle() {
+class GraphQLServer(private val config: JsonObject, private val defaultSystem: String) : AbstractVerticle() {
     // TODO: Implement scalar "variant"
     // TODO: Subscribe to multiple nodes
 
@@ -41,31 +45,151 @@ class GraphQLServer(private val defaultSystem: String) : AbstractVerticle() {
 
     companion object {
         fun create(vertx: Vertx, config: JsonObject, defaultSystem: String) {
-            //val logger = LoggerFactory.getLogger(this.javaClass.simpleName)
-
-            val graphQL = GraphQLServer(defaultSystem)
-            vertx.deployVerticle(graphQL)
-
-            val router = Router.router(vertx)
-            router.route().handler(BodyHandler.create())
-            router.route("/graphql").handler(ApolloWSHandler.create(graphQL.graphql))
-            router.route("/graphql").handler(GraphQLHandler.create(graphQL.graphql))
-
-            val httpServerOptions = HttpServerOptions()
-                .setWebSocketSubProtocols(listOf("graphql-ws"))
-            val httpServer = vertx.createHttpServer(httpServerOptions)
-            val httpPort = config.getInteger("Port", 4000)
-            httpServer.requestHandler(router).listen(httpPort)
+            vertx.deployVerticle(GraphQLServer(config, defaultSystem))
         }
     }
 
     private val id = this.javaClass.simpleName
     private val logger = LoggerFactory.getLogger(id)
-    val graphql : GraphQL
+
+    private val schemas: JsonObject = JsonObject()
 
     init {
         Logger.getLogger(id).level = Level.ALL
+    }
 
+    override fun start(startPromise: Promise<Void>) {
+        fun build(schema: String, wiring: RuntimeWiring.Builder): GraphQL{
+            try {
+                val typeDefinitionRegistry = SchemaParser().parse(schema)
+                val graphQLSchema = SchemaGenerator().makeExecutableSchema(typeDefinitionRegistry, wiring.build())
+                return GraphQL.newGraphQL(graphQLSchema).build()
+            } catch (e: Exception) {
+                e.printStackTrace()
+                throw java.lang.Exception(e.message)
+            }
+        }
+
+        val system = config.getString("SystemSchema", "")
+        if (system == "") {
+            getGenericSchema().let { (schema, wiring) ->
+                startGraphQLServer(build(schema, wiring))
+                startPromise.complete()
+            }
+        } else {
+            logger.info("Fetch schema...")
+            fetchSchema(system).onComplete {
+                logger.info("Build GraphQL schema...")
+                getSystemSchema(system).let { (schema, wiring) ->
+                    logger.info("Generate GraphQL schema...")
+                    val graphql = build(schema, wiring)
+                    logger.info("Startup GraphQL server...")
+                    startGraphQLServer(graphql)
+                    logger.info("GraphQL ready")
+                    startPromise.complete()
+                }
+            }
+        }
+    }
+
+    private fun fetchSchema(system: String): Future<Boolean> {
+        val promise = Promise.promise<Boolean>()
+        val serviceHandler = ServiceHandler(vertx)
+
+        val type = Topic.SystemType.Opc.name
+        serviceHandler.observeService(type, system) {
+            logger.info("Fetch schema [{}][{}]", type, system)
+            vertx.eventBus().request<JsonObject>("${type}/${system}/Schema", JsonObject()) {
+                logger.info("Schema response [{}]", it.succeeded())
+                schemas.put(system, it.result()?.body() ?: JsonObject())
+                promise.complete(it.succeeded())
+            }
+        }
+        return promise.future()
+    }
+
+    private fun getSystemSchema(system: String): Pair<String, RuntimeWiring.Builder> {
+        val (schema, wiring) = getGenericSchema(withObjects = true)
+
+        val types = mutableListOf<String>()
+
+        class Recursion { // needed, otherwise inline functions cannot be called from each other
+             fun addNode(node: JsonObject, path: String, wiring: TypeRuntimeWiring.Builder): String? {
+                 val browseName = "[^A-Za-z0-9]".toRegex().replace(node.getString("BrowseName"), "_")
+                 val displayName = node.getString("DisplayName")
+                 val nodeId = node.getString("NodeId")
+                 val nodeClass = node.getString("NodeClass")
+                 val nodes = node.getJsonArray("Nodes", JsonArray())
+
+                 val dataFetcher = getSchemaNode(system, nodeId, nodeClass, browseName, displayName)
+                 wiring.dataFetcher(browseName, dataFetcher)
+
+                 val result = when (nodeClass) {
+                     "Variable" -> {
+                         "$browseName : Node"
+                     }
+                     "Object" -> {
+                         val newTypeName = "${path}_${browseName}"
+                         if (addNodes(nodes, newTypeName))
+                            "$browseName : $newTypeName"
+                         else {
+                             logger.error("cannot add nodes of $newTypeName")
+                             null
+                         }
+                     }
+                     else -> {
+                         logger.error("unhandled node class $nodeClass")
+                         null
+                     }
+                 }
+                 return result
+            }
+
+            fun addNodes(nodes: JsonArray, path: String): Boolean {
+                val items = mutableListOf<String>()
+                val validNodes = nodes.filterIsInstance<JsonObject>()
+                if (validNodes.isEmpty()) return false
+
+                val newTypeWiring = TypeRuntimeWiring.newTypeWiring(path)
+                /*
+                validNodes.forEach { node ->
+                    addNode(node, path, newTypeWiring)?.let {
+                        items.add(it)
+                    }
+                }*/
+
+                val addedNodes = validNodes.mapNotNull { node -> addNode(node, path, newTypeWiring) }
+                if (addedNodes.isEmpty()) return false
+
+                addedNodes.forEach { items.add(it) }
+
+                wiring.type(newTypeWiring)
+                types.add("type $path { \n ${items.joinToString(separator = "\n ")} \n}")
+                return true;
+            }
+        }
+
+        try {
+            val rootPath = "Objects"
+            val dataFetcher = getSchemaNode(system, "", "", "", "")
+            wiring.type(
+                TypeRuntimeWiring.newTypeWiring("Query")
+                    .dataFetcher("Objects", dataFetcher))
+            schemas
+                .getJsonObject(system, JsonObject())
+                .getJsonArray(rootPath, JsonArray())
+                .let { Recursion().addNodes(it, rootPath) }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
+        val schemaWithObjects = schema + types.joinToString(separator = "\n")
+        File("opcua-${id}.gql".toLowerCase()).writeText(schemaWithObjects)
+
+        return Pair(schemaWithObjects, wiring)
+    }
+
+    private fun getGenericSchema(withObjects: Boolean = false): Pair<String, RuntimeWiring.Builder> {
         // enum Type must match the Globals.BUS_ROOT_URI_*
         val schema = """
             | enum Type { 
@@ -80,6 +204,8 @@ class GraphQLServer(private val defaultSystem: String) : AbstractVerticle() {
             |   NodeValues(Type: Type, System: String, NodeIds: [ID!]): [Value]
             |   BrowseNode(Type: Type, System: String, NodeId: ID, Filter: String): [Node]
             |   FindNodes(Type: Type, System: String, NodeId: ID, Filter: String): [Node]
+            |   
+            |   ${if (withObjects) "Objects: Objects" else ""}
             | }
             | 
             | type Mutation {
@@ -124,44 +250,54 @@ class GraphQLServer(private val defaultSystem: String) : AbstractVerticle() {
             |   CurrentTime: String
             |   ServerStatus: String
             | }
+            |
+            |
             """.trimMargin()
-        val schemaParser = SchemaParser()
-        val typeDefinitionRegistry = schemaParser.parse(schema)
-        val runtimeWiring =
-            RuntimeWiring.newRuntimeWiring()
-                .type(
-                    TypeRuntimeWiring.newTypeWiring("Query")
-                        .dataFetcher("ServerInfo", getServerInfo())
-                        .dataFetcher("NodeValue", getNodeValue())
-                        .dataFetcher("NodeValues", getNodeValues())
-                        .dataFetcher("BrowseNode", getBrowseNode())
-                        .dataFetcher("FindNodes", getFindNodes())
-                )
-                .type(
-                    TypeRuntimeWiring.newTypeWiring("Mutation")
-                        .dataFetcher("NodeValue", setNodeValue())
-                        .dataFetcher("NodeValues", setNodeValues())
-                )
-                .type(
-                    TypeRuntimeWiring.newTypeWiring("Subscription")
-                        .dataFetcher("NodeValue", this::subNodeValue)
-                        .dataFetcher("NodeValues", this::subNodeValues)
-                )
-                .type(
-                    TypeRuntimeWiring.newTypeWiring("Node")
-                        .dataFetcher("Value", getNodeValue())
-                        .dataFetcher("Nodes", getBrowseNode())
-                        .dataFetcher("History", getValueHistory())
-                        .dataFetcher("SetValue", setNodeValue())
-                )
-                .type(
-                    TypeRuntimeWiring.newTypeWiring("Value")
-                        .dataFetcher("History", getValueHistory())
-                )
-                .build()
-        val schemaGenerator = SchemaGenerator()
-        val graphQLSchema = schemaGenerator.makeExecutableSchema(typeDefinitionRegistry, runtimeWiring)
-        graphql = GraphQL.newGraphQL(graphQLSchema).build()
+
+        val runtimeWiring = RuntimeWiring.newRuntimeWiring()
+            .type(
+                TypeRuntimeWiring.newTypeWiring("Query")
+                    .dataFetcher("ServerInfo", getServerInfo())
+                    .dataFetcher("NodeValue", getNodeValue())
+                    .dataFetcher("NodeValues", getNodeValues())
+                    .dataFetcher("BrowseNode", getBrowseNode())
+                    .dataFetcher("FindNodes", getFindNodes())
+            )
+            .type(
+                TypeRuntimeWiring.newTypeWiring("Mutation")
+                    .dataFetcher("NodeValue", setNodeValue())
+                    .dataFetcher("NodeValues", setNodeValues())
+            )
+            .type(
+                TypeRuntimeWiring.newTypeWiring("Subscription")
+                    .dataFetcher("NodeValue", this::subNodeValue)
+                    .dataFetcher("NodeValues", this::subNodeValues)
+            )
+            .type(
+                TypeRuntimeWiring.newTypeWiring("Node")
+                    .dataFetcher("Value", getNodeValue())
+                    .dataFetcher("Nodes", getBrowseNode())
+                    .dataFetcher("History", getValueHistory())
+                    .dataFetcher("SetValue", setNodeValue())
+            )
+            .type(
+                TypeRuntimeWiring.newTypeWiring("Value")
+                    .dataFetcher("History", getValueHistory())
+            )
+        return Pair(schema, runtimeWiring)
+    }
+
+    private fun startGraphQLServer(graphql: GraphQL) {
+        val router = Router.router(vertx)
+        router.route().handler(BodyHandler.create())
+        router.route("/graphql").handler(ApolloWSHandler.create(graphql))
+        router.route("/graphql").handler(GraphQLHandler.create(graphql))
+
+        val httpServerOptions = HttpServerOptions()
+            .setWebSocketSubProtocols(listOf("graphql-ws"))
+        val httpServer = vertx.createHttpServer(httpServerOptions)
+        val httpPort = config.getInteger("Port", 4000)
+        httpServer.requestHandler(router).listen(httpPort)
     }
 
     private fun getServerInfo(): DataFetcher<CompletableFuture<Map<String, Any?>>> {
@@ -357,7 +493,7 @@ class GraphQLServer(private val defaultSystem: String) : AbstractVerticle() {
 
             val (type, system) = getEnvTypeAndSystem(env)
             val nodeId = getEnvArgument(env, "NodeId") ?: "i=85"
-            val filter : String? = getEnvArgument(env,"Filter")
+            val filter: String? = getEnvArgument(env,"Filter")
 
             val request = JsonObject()
             request.put("NodeId", nodeId)
@@ -399,8 +535,8 @@ class GraphQLServer(private val defaultSystem: String) : AbstractVerticle() {
         return DataFetcher<CompletableFuture<List<Map<String, Any?>>>> { env ->
 
             val (type, system) = getEnvTypeAndSystem(env)
-            val nodeId : String = getEnvArgument(env,"NodeId") ?: "i=85"
-            val filter : String? = getEnvArgument(env,"Filter")
+            val nodeId: String = getEnvArgument(env,"NodeId") ?: "i=85"
+            val filter: String? = getEnvArgument(env,"Filter")
 
             val overallResult =  mutableListOf<HashMap<String, Any>>()
 
@@ -452,7 +588,7 @@ class GraphQLServer(private val defaultSystem: String) : AbstractVerticle() {
         val uuid = UUID.randomUUID().toString()
 
         val (type, system) = getEnvTypeAndSystem(env)
-        val nodeId : String = env.getArgument("NodeId") ?: ""
+        val nodeId: String = env.getArgument("NodeId") ?: ""
 
         val topic = Topic.parseTopic("$type/$system/node:json/$nodeId")
         val flowable = Flowable.create(FlowableOnSubscribe<Map<String, Any?>> { emitter ->
@@ -585,6 +721,23 @@ class GraphQLServer(private val defaultSystem: String) : AbstractVerticle() {
                         promise.complete(result)
                     }
             }
+            promise
+        }
+    }
+
+    private fun getSchemaNode(system: String, nodeId: String, nodeClass: String, browseName: String, displayName: String): DataFetcher<CompletableFuture<Map<String, Any?>>> {
+        return DataFetcher<CompletableFuture<Map<String, Any?>>> {
+            println("getSchemaNode/DataFetcher $system $nodeId $browseName")
+            val promise = CompletableFuture<Map<String, Any?>>()
+            val item = HashMap<String, Any>()
+            if (nodeClass=="Variable") {
+                item["System"] = system
+                item["NodeId"] = nodeId
+                item["Name"] = browseName
+                item["DisplayName"] = displayName
+                item["NodeClass"] = nodeClass
+            }
+            promise.complete(item)
             promise
         }
     }

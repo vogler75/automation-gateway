@@ -103,7 +103,8 @@ abstract class DriverBase(config: JsonObject) : AbstractVerticle() {
             vertx.eventBus().consumer("$uri/Publish") { publishHandler(it) },
             vertx.eventBus().consumer("$uri/Read") { readHandler(it) },
             vertx.eventBus().consumer("$uri/Write") { writeHandler(it) },
-            vertx.eventBus().consumer("$uri/Browse") { browseHandler(it) }
+            vertx.eventBus().consumer("$uri/Browse") { browseHandler(it) },
+            vertx.eventBus().consumer("$uri/Schema") { schemaHandler(it) },
         )
     }
 
@@ -220,4 +221,5 @@ abstract class DriverBase(config: JsonObject) : AbstractVerticle() {
     protected abstract fun readHandler(message: Message<JsonObject>)
     protected abstract fun writeHandler(message: Message<JsonObject>)
     protected abstract fun browseHandler(message: Message<JsonObject>)
+    protected abstract fun schemaHandler(message: Message<JsonObject>)
 }

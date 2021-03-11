@@ -40,6 +40,7 @@ import java.util.logging.Logger
 class GraphQLServer(private val config: JsonObject, private val defaultSystem: String) : AbstractVerticle() {
     // TODO: Implement scalar "variant"
     // TODO: Subscribe to multiple nodes
+    // TODO: Replace "Name" with "BrowseName"
 
     private val defaultType = Topic.SystemType.Opc.name
 
@@ -53,6 +54,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
     private val logger = LoggerFactory.getLogger(id)
 
     private val schemas: JsonObject = JsonObject()
+    private var nodeName: String = "DisplayName"
 
     init {
         Logger.getLogger(id).level = Level.ALL
@@ -70,7 +72,9 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
             }
         }
 
-        val system = config.getString("SystemSchema", "")
+        val schema = config.getJsonObject("Schema", JsonObject())
+        val system = schema.getString("System", "")
+        nodeName = config.getString("NodeName", nodeName)
         if (system == "") {
             getGenericSchema().let { (schema, wiring) ->
                 startGraphQLServer(build(schema, wiring))
@@ -114,55 +118,54 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
         val types = mutableListOf<String>()
 
         class Recursion { // needed, otherwise inline functions cannot be called from each other
-             fun addNode(node: JsonObject, path: String, wiring: TypeRuntimeWiring.Builder): String? {
-                 val browseName = "[^A-Za-z0-9]".toRegex().replace(node.getString("BrowseName"), "_")
-                 val displayName = node.getString("DisplayName")
-                 val nodeId = node.getString("NodeId")
-                 val nodeClass = node.getString("NodeClass")
-                 val nodes = node.getJsonArray("Nodes", JsonArray())
+            fun addNode(node: JsonObject, path: String, wiring: TypeRuntimeWiring.Builder): String? {
+                val browseName = node.getString("BrowseName")
+                val displayName = node.getString("DisplayName")
+                val nodeId = node.getString("NodeId")
+                val nodeClass = node.getString("NodeClass")
+                val nodes = node.getJsonArray("Nodes", JsonArray())
 
-                 val dataFetcher = getSchemaNode(system, nodeId, nodeClass, browseName, displayName)
-                 wiring.dataFetcher(browseName, dataFetcher)
+                // TODO: configurable if displayName or browseName should be used
+                val graphqlName0 = node.getString(nodeName, browseName)
+                val graphqlName1 = "[^A-Za-z0-9]".toRegex().replace(graphqlName0, "_")
+                val graphqlName2 = "^_*".toRegex().replace(graphqlName1, "")
+                val graphqlName = if (Character.isDigit(graphqlName2[0])) "_$graphqlName2" else graphqlName2
 
-                 val result = when (nodeClass) {
-                     "Variable" -> {
-                         "$browseName : Node"
-                     }
-                     "Object" -> {
-                         val newTypeName = "${path}_${browseName}"
-                         if (addNodes(nodes, newTypeName))
-                            "$browseName : $newTypeName"
-                         else {
-                             logger.error("cannot add nodes of $newTypeName")
-                             null
-                         }
-                     }
-                     else -> {
-                         logger.error("unhandled node class $nodeClass")
-                         null
-                     }
-                 }
-                 return result
+                // TODO: what happens when the names are not unique anymore (because of substitutions...)
+                val dataFetcher = getSchemaNode(system, nodeId, nodeClass, browseName, displayName)
+                wiring.dataFetcher(graphqlName, dataFetcher)
+
+                return when (nodeClass) {
+                    "Variable" -> {
+                        "$graphqlName : Node"
+                    }
+                    "Object" -> {
+                        val newTypeName = "${path}_${graphqlName}"
+                        if (addNodes(nodes, newTypeName))
+                           "$graphqlName : $newTypeName"
+                        else {
+                            logger.error("cannot add nodes of $newTypeName")
+                            null
+                        }
+                    }
+                    else -> {
+                        logger.error("unhandled node class $nodeClass")
+                        null
+                    }
+                }
             }
 
             fun addNodes(nodes: JsonArray, path: String): Boolean {
                 val items = mutableListOf<String>()
+
                 val validNodes = nodes.filterIsInstance<JsonObject>()
                 if (validNodes.isEmpty()) return false
 
                 val newTypeWiring = TypeRuntimeWiring.newTypeWiring(path)
-                /*
-                validNodes.forEach { node ->
-                    addNode(node, path, newTypeWiring)?.let {
-                        items.add(it)
-                    }
-                }*/
-
                 val addedNodes = validNodes.mapNotNull { node -> addNode(node, path, newTypeWiring) }
                 if (addedNodes.isEmpty()) return false
 
                 addedNodes.forEach { items.add(it) }
-
                 wiring.type(newTypeWiring)
                 types.add("type $path { \n ${items.joinToString(separator = "\n ")} \n}")
                 return true;
@@ -680,7 +683,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
             } else {
                 val log: String = getEnvArgument(env,"Log") ?: "default"
 
-                val (type, system) = getEnvTypeAndSystem(env)
+                val (_, system) = getEnvTypeAndSystem(env)
                 val nodeId: String = getEnvArgument(env, "NodeId") ?: ""
 
                 var t1 = Instant.now()
@@ -727,7 +730,6 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
 
     private fun getSchemaNode(system: String, nodeId: String, nodeClass: String, browseName: String, displayName: String): DataFetcher<CompletableFuture<Map<String, Any?>>> {
         return DataFetcher<CompletableFuture<Map<String, Any?>>> {
-            println("getSchemaNode/DataFetcher $system $nodeId $browseName")
             val promise = CompletableFuture<Map<String, Any?>>()
             val item = HashMap<String, Any>()
             if (nodeClass=="Variable") {

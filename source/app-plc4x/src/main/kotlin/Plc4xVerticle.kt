@@ -41,6 +41,7 @@ class Plc4xVerticle(config: JsonObject): DriverBase(config) {
         }
     }
 
+    @Suppress("UNUSED_PARAMETER")
     private fun pollingExecutor(id: Long) {
         if (plc!=null && pollingTopics.isNotEmpty()) {
             val builder: PlcReadRequest.Builder = plc!!.readRequestBuilder()
@@ -333,6 +334,10 @@ class Plc4xVerticle(config: JsonObject): DriverBase(config) {
     }
 
     override fun browseHandler(message: Message<JsonObject>) {
+        TODO("Not yet implemented")
+    }
+
+    override fun schemaHandler(message: Message<JsonObject>) {
         TODO("Not yet implemented")
     }
 }

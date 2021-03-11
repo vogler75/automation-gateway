@@ -565,7 +565,7 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
             val requests = ArrayList<MonitoredItemCreateRequest>()
 
             val dataChangeFilter = ExtensionObject.encode(client!!.serializationContext, DataChangeFilter(
-                DataChangeTrigger.StatusValueTimestamp,
+                DataChangeTrigger.StatusValueTimestamp, // TODO: make this configurable in the config file
                 uint(DeadbandType.None.value),
                 0.0
             ));

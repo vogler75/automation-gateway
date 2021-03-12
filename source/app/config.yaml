@@ -10,8 +10,8 @@ GraphQLServer:
     - Port: 4000
       LogLevel: ALL
       Schema:
-        System: winccoa
-        NodeName: DisplayName
+        System: ignition
+        NodeName: DisplayName # BrowseName | DisplayName
 
 Database:
   Logger:
@@ -28,7 +28,7 @@ Database:
 
 OpcUaClient:
   - Id: "winccoa"
-    Enabled: true
+    Enabled: false
     LogLevel: ALL
     EndpointUrl: "opc.tcp://centos1:4840"
     UpdateEndpointUrl: centos1
@@ -45,8 +45,8 @@ OpcUaClient:
       BufferSize: 10
       SamplingInterval: 0
       DiscardOldest: true
+      DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
     BrowseOnStartup: true
-
 
   - Id: "ignition"
     Enabled: true
@@ -68,10 +68,11 @@ OpcUaClient:
       BufferSize: 100
       SamplingInterval: 0.0
       DiscardOldest: false
+      DataChangeTrigger: StatusValueTimestamp # Status | StatusValue | StatusValueTimestamp
     BrowseOnStartup: true
 
   - Id: "unified"
-    Enabled: true
+    Enabled: false
     LogLevel: INFO
     EndpointUrl:  "opc.tcp://desktop-9o6hthf:4890"
     SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#Basic128Rsa15

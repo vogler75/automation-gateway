@@ -78,6 +78,9 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
     private val monitoringParametersDiscardOldest : Boolean
     private val monitoringParametersDiscardOldestDef = false
 
+    private val dataChangeTrigger : DataChangeTrigger
+    private val dataChangeTriggerDef = DataChangeTrigger.StatusValueTimestamp
+
     private val writeParameterQueueSize : Int
     private val writeParameterQueueSizeDef = 1000
 
@@ -122,10 +125,15 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
         monitoringParametersBufferSize = Unsigned.uint(monitoringParameters?.getInteger("BufferSize", monitoringParametersBufferSizeDef) ?: monitoringParametersBufferSizeDef)
         monitoringParametersSamplingInterval = monitoringParameters?.getDouble("SamplingInterval", monitoringParametersSamplingIntervalDef) ?: monitoringParametersSamplingIntervalDef
         monitoringParametersDiscardOldest = monitoringParameters?.getBoolean("DiscardOldest", monitoringParametersDiscardOldestDef) ?: monitoringParametersDiscardOldestDef
+        val dataChangeFilterStr = monitoringParameters?.getString("DataChangeTrigger")
+        dataChangeTrigger = if (dataChangeFilterStr == null) dataChangeTriggerDef else {
+            DataChangeTrigger.valueOf(dataChangeFilterStr)
+        }
         logger.info("MonitoringParameters: "+
                 "BufferSize=$monitoringParametersBufferSize " +
                 "SamplingInterval=$monitoringParametersSamplingInterval " +
-                "DiscardOldest=$monitoringParametersDiscardOldest ")
+                "DiscardOldest=$monitoringParametersDiscardOldest "+
+                "DataChangeTrigger=$dataChangeTrigger")
 
         val writeParameters = config.getJsonObject("WriteParameters")
         writeParameterQueueSize = writeParameters?.getInteger("QueueSize", writeParameterQueueSizeDef) ?: writeParameterQueueSizeDef
@@ -565,7 +573,7 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
             val requests = ArrayList<MonitoredItemCreateRequest>()
 
             val dataChangeFilter = ExtensionObject.encode(client!!.serializationContext, DataChangeFilter(
-                DataChangeTrigger.StatusValueTimestamp, // TODO: make this configurable in the config file
+                dataChangeTrigger,
                 uint(DeadbandType.None.value),
                 0.0
             ));

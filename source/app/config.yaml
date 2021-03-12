@@ -9,6 +9,9 @@ GraphQLServer:
   Listeners:
     - Port: 4000
       LogLevel: ALL
+      Schema:
+        System: winccoa
+        NodeName: DisplayName
 
 Database:
   Logger:
@@ -24,7 +27,7 @@ Database:
         #- Topic: opc/default/path:json/$objects/Test/+/float
 
 OpcUaClient:
-  - Id: "test"
+  - Id: "winccoa"
     Enabled: true
     LogLevel: ALL
     EndpointUrl: "opc.tcp://centos1:4840"
@@ -42,3 +45,47 @@ OpcUaClient:
       BufferSize: 10
       SamplingInterval: 0
       DiscardOldest: true
+    BrowseOnStartup: true
+
+
+  - Id: "ignition"
+    Enabled: true
+    LogLevel: INFO
+    EndpointUrl: "opc.tcp://ubuntu1:62541/discovery"
+    SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#None
+    ConnectTimeout: 5000
+    RequestTimeout: 5000
+    KeepAliveFailuresAllowed: 10
+    SubscriptionSamplingInterval: 0
+    UsernameProvider:
+      Username: opcuauser
+      Password: password
+    WriteParameters:
+      QueueSize: 1000
+      BlockSize: 100
+      WithTime: true
+    MonitoringParameters:
+      BufferSize: 100
+      SamplingInterval: 0.0
+      DiscardOldest: false
+    BrowseOnStartup: true
+
+  - Id: "unified"
+    Enabled: true
+    LogLevel: INFO
+    EndpointUrl:  "opc.tcp://desktop-9o6hthf:4890"
+    SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#Basic128Rsa15
+    SubscriptionSamplingInterval: 0
+    UsernameProvider:
+      Username: opcuauser
+      Password: password1
+    WriteParameters:
+      QueueSize: 1000
+      BlockSize: 100
+      WithTime: true
+    MonitoringParameters:
+      BufferSize: 10
+      SamplingInterval: 0.0
+      DiscardOldest: true
+    BrowseOnStartup: true
+

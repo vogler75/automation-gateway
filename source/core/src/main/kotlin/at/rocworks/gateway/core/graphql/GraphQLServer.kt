@@ -40,7 +40,6 @@ import java.util.logging.Logger
 class GraphQLServer(private val config: JsonObject, private val defaultSystem: String) : AbstractVerticle() {
     // TODO: Implement scalar "variant"
     // TODO: Subscribe to multiple nodes
-    // TODO: Replace "Name" with "BrowseName"
 
     private val defaultType = Topic.SystemType.Opc.name
 
@@ -236,7 +235,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
             | type Node {
             |   System: String
             |   NodeId: ID
-            |   Name: String
+            |   BrowseName: String
             |   DisplayName: String
             |   NodeClass: String
             |   Value: Value
@@ -331,10 +330,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
         }
     }
 
-    private fun getEnvArgument(
-        env: DataFetchingEnvironment,
-        name: String
-    ): String? {
+    private fun getEnvArgument(env: DataFetchingEnvironment, name: String): String? {
         val ctx: Map<String, Any>? = env.getSource()
         return env.getArgumentOrDefault(name, ctx?.get(name) as String?)
     }
@@ -514,7 +510,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
                                 val item = HashMap<String, Any>()
                                 item["System"] = system
                                 item["NodeId"] = input.getString("NodeId")
-                                item["Name"] = input.getString("BrowseName")
+                                item["BrowseName"] = input.getString("BrowseName")
                                 item["DisplayName"] = input.getString("DisplayName")
                                 item["NodeClass"] = input.getString("NodeClass")
                                 item
@@ -560,7 +556,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
                                         val item = HashMap<String, Any>()
                                         item["System"] = system
                                         item["NodeId"] = input.getString("NodeId")
-                                        item["Name"] = input.getString("BrowseName")
+                                        item["BrowseName"] = input.getString("BrowseName")
                                         item["DisplayName"] = input.getString("DisplayName")
                                         item["NodeClass"] = input.getString("NodeClass")
                                         item
@@ -735,7 +731,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
             if (nodeClass=="Variable") {
                 item["System"] = system
                 item["NodeId"] = nodeId
-                item["Name"] = browseName
+                item["BrowseName"] = browseName
                 item["DisplayName"] = displayName
                 item["NodeClass"] = nodeClass
             }

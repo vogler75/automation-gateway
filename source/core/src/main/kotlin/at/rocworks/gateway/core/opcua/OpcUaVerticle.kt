@@ -369,7 +369,7 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
                 }
             }
         } catch (e: Exception) {
-            logger.warn("Converting value to variant exception []", e.message)
+            logger.warn("Converting value to variant exception [{}] [{}] [{}]", nodeId, value, e.message)
             return Variant.NULL_VALUE
         }
     }

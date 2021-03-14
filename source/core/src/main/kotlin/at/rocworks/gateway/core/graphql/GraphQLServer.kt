@@ -11,11 +11,8 @@ import graphql.schema.DataFetchingEnvironment
 import graphql.schema.idl.*
 
 import io.reactivex.*
+import io.vertx.core.*
 
-import io.vertx.core.AbstractVerticle
-import io.vertx.core.Future
-import io.vertx.core.Promise
-import io.vertx.core.Vertx
 import io.vertx.core.buffer.Buffer
 import io.vertx.core.http.HttpServerOptions
 import io.vertx.core.json.JsonArray
@@ -53,7 +50,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
     private val logger = LoggerFactory.getLogger(id)
 
     private val schemas: JsonObject = JsonObject()
-    private var nodeName: String = "DisplayName"
+    private val defaultFieldName: String = "DisplayName"
 
     init {
         Logger.getLogger(id).level = Level.ALL
@@ -70,27 +67,49 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
                 throw java.lang.Exception(e.message)
             }
         }
-
-        val schema = config.getJsonObject("Schema", JsonObject())
-        val system = schema.getString("System", "")
-        nodeName = config.getString("NodeName", nodeName)
-        if (system == "") {
+        val schemas = config.getJsonArray("Schemas", JsonArray())
+        if (schemas.isEmpty) {
             getGenericSchema().let { (schema, wiring) ->
                 startGraphQLServer(build(schema, wiring))
                 startPromise.complete()
             }
         } else {
-            logger.info("Fetch schema...")
-            fetchSchema(system).onComplete {
-                logger.info("Build GraphQL schema...")
-                getSystemSchema(system).let { (schema, wiring) ->
-                    logger.info("Generate GraphQL schema...")
-                    val graphql = build(schema, wiring)
-                    logger.info("Startup GraphQL server...")
-                    startGraphQLServer(graphql)
-                    logger.info("GraphQL ready")
-                    startPromise.complete()
+            logger.info("Fetch schemas...")
+            val (generic, wiring) = getGenericSchema(withSytems = true)
+
+            val systems = schemas.filterIsInstance<JsonObject>().map { it.getString("System") }
+
+            val results = systems.map { system ->
+                val promise = Promise.promise<String>()
+                val fieldName = config.getString("FieldName", defaultFieldName) // DisplayName or BrowseName
+                fetchSchema(system).onComplete {
+                    logger.info("Build GraphQL [{}] ...", system)
+                    val result = getSystemSchema(system, fieldName, wiring)
+                    logger.info("Build GraphQL [{}] [{}]...complete", system, result.length)
+                    promise.complete(result)
                 }
+                promise.future()
+            }
+
+            val systemTypes = "type Systems {\n" + systems.joinToString(separator = "\n") { "  $it: $it" } + "\n}"
+
+            val dataFetcher = getSchemaNode("", "", "", "", "")
+            wiring.type(
+                TypeRuntimeWiring.newTypeWiring("Query")
+                    .dataFetcher("Systems", dataFetcher))
+
+            CompositeFuture.all(results).onComplete {
+                val schema = generic + systemTypes + (results.map { it.result() }.joinToString(separator = "\n"))
+
+                File("schema.gql").writeText(schema)
+
+                logger.info("Generate GraphQL schema...")
+                val graphql = build(schema, wiring)
+                logger.info("Startup GraphQL server...")
+                startGraphQLServer(graphql)
+                logger.info("GraphQL ready")
+                startPromise.complete()
+
             }
         }
     }
@@ -111,9 +130,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
         return promise.future()
     }
 
-    private fun getSystemSchema(system: String): Pair<String, RuntimeWiring.Builder> {
-        val (schema, wiring) = getGenericSchema(withObjects = true)
-
+    private fun getSystemSchema(system: String, fieldName: String, wiring: RuntimeWiring.Builder): String {
         val types = mutableListOf<String>()
 
         class Recursion { // needed, otherwise inline functions cannot be called from each other
@@ -124,8 +141,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
                 val nodeClass = node.getString("NodeClass")
                 val nodes = node.getJsonArray("Nodes", JsonArray())
 
-                // TODO: configurable if displayName or browseName should be used
-                val graphqlName0 = node.getString(nodeName, browseName)
+                val graphqlName0 = node.getString(fieldName, browseName)
                 val graphqlName1 = "[^A-Za-z0-9]".toRegex().replace(graphqlName0, "_")
                 val graphqlName2 = "^_*".toRegex().replace(graphqlName1, "")
                 val graphqlName = if (Character.isDigit(graphqlName2[0])) "_$graphqlName2" else graphqlName2
@@ -172,26 +188,25 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
         }
 
         try {
-            val rootPath = "Objects"
             val dataFetcher = getSchemaNode(system, "", "", "", "")
             wiring.type(
-                TypeRuntimeWiring.newTypeWiring("Query")
-                    .dataFetcher("Objects", dataFetcher))
+                TypeRuntimeWiring.newTypeWiring("Systems")
+                    .dataFetcher(system, dataFetcher))
             schemas
                 .getJsonObject(system, JsonObject())
-                .getJsonArray(rootPath, JsonArray())
-                .let { Recursion().addNodes(it, rootPath) }
+                .getJsonArray("Objects", JsonArray())
+                .let { Recursion().addNodes(it, system) }
         } catch (e: Exception) {
             e.printStackTrace()
         }
 
-        val schemaWithObjects = schema + types.joinToString(separator = "\n")
-        File("opcua-${id}.gql".toLowerCase()).writeText(schemaWithObjects)
+        val schema = types.joinToString(separator = "\n")
+        File("opcua-${system}.gql".toLowerCase()).writeText(schema)
 
-        return Pair(schemaWithObjects, wiring)
+        return schema
     }
 
-    private fun getGenericSchema(withObjects: Boolean = false): Pair<String, RuntimeWiring.Builder> {
+    private fun getGenericSchema(withSytems: Boolean = false): Pair<String, RuntimeWiring.Builder> {
         // enum Type must match the Globals.BUS_ROOT_URI_*
         val schema = """
             | enum Type { 
@@ -207,7 +222,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
             |   BrowseNode(Type: Type, System: String, NodeId: ID, Filter: String): [Node]
             |   FindNodes(Type: Type, System: String, NodeId: ID, Filter: String): [Node]
             |   
-            |   ${if (withObjects) "Objects: Objects" else ""}
+            |   ${if (withSytems) "Systems: Systems" else ""}
             | }
             | 
             | type Mutation {

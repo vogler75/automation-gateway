@@ -9,9 +9,11 @@ GraphQLServer:
   Listeners:
     - Port: 4000
       LogLevel: ALL
-      Schema:
-        System: ignition
-        NodeName: DisplayName # BrowseName | DisplayName
+      Schemas:
+        - System: ignition
+          FieldName: BrowseName # BrowseName | DisplayName
+        - System: unified
+          FieldName: DisplayName # BrowseName | DisplayName
 
 Database:
   Logger:
@@ -72,7 +74,7 @@ OpcUaClient:
     BrowseOnStartup: true
 
   - Id: "unified"
-    Enabled: false
+    Enabled: true
     LogLevel: INFO
     EndpointUrl:  "opc.tcp://desktop-9o6hthf:4890"
     SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#Basic128Rsa15

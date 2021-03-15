@@ -22,78 +22,28 @@ App is a single program with GraphQL, MQTT and the OPC UA connections in one sin
 See config.yaml in the app directory for an example how to configure the Gateway. You can pass a configuration file name to the program as the first argument. If no argument is given then config.yaml will be used. If there are any questions about the configuration, please get in touch with me. 
 
 ## Example MQTT Topics
+Note: remove the blanks between the slashes! (just here for better readabilty)
 
-### Using the NodeId
-Just the value  
-> opc/test/node/ns=2;s=ExampleDP_Float.ExampleDP_Arg1   
-> opc/test/node/2/ExampleDP_Float.ExampleDP_Arg1   
+Using the NodeId 
+> opc / test / node / ns=2;s=ExampleDP_Float.ExampleDP_Arg1   
+> opc / test / node / 2 / ExampleDP_Float.ExampleDP_Arg1   
 
 Value as JSON with timestamp, quality, ...  
-> opc/test/node:json/ns=2;s=ExampleDP_Float.ExampleDP_Arg1  
-> opc/test/node:json/2/ExampleDP_Float.ExampleDP_Arg1  
+> opc / test / node:**json** / ns=2;s=ExampleDP_Float.ExampleDP_Arg1  
+> opc / test / node:**json** / 2 / ExampleDP_Float.ExampleDP_Arg1  
 
 Using the browse path instead of the NodeId  
-> opc/test/path/**root-node-id**/**browse-name**/**browse-name**/...   
+> opc / test / **path** / *root-node-id* / *browse-name* / *browse-name* /...   
 
 Wildcard "+" can also be used as a browsename
-> opc/ua/path:json/ns=1;s=16|Tags/+  
+> opc / ua / **path**:json / *ns=1;s=16|Tags* / **+**  
 
 $objects can be used as root node and will be replace with "i=85"
-> opc/test/path/$objects/Test/Test00003/float
-> opc/test/path/$objects/Test/Test00003/+
+> opc / test / path / **$objects** / Test / Test00003 / float  
+> opc / test / path / **$objects** / Test / Test00003 / +
 
 Be careful when using wildcards when there are a lot of nodes, it can lead to a lot of browsing round trips  
-> opc/test/path/$objects/Test/+/float
-
-## Using PLC4X
-
-You have to start the app-gateway plus app-plc4x. See config.yaml in each folder of the app. Because some PLC4X drivers / plc's do not support subscriptions we have added a simple polling options. (currently only one polling time per connection). 
-
-```
-> cd app-gateway
-> gradle run  
-
-> cd app-plc4x
-cat config.yaml
-Plc4x:
-  Drivers:    
-    - Id: "mod"
-      Enabled: true
-      Url: "modbus://localhost:502"
-      Polling:
-        Time: 100  # ms
-        OldNew: true  # old new comparions on or off
-      LogLevel: ALL
-
-> gradle run
-```
-
-Example GraphQL Query:
-```
-{
-  a: NodeValue(
-    Type: Plc,
-    System: "mod"
-    NodeId: "coil:1"
-  ) {
-    Value
-  }
-  b: NodeValue(
-    Type: Plc
-    System: "mod"
-    NodeId: "holding-register:1:INT"
-  ) {
-    Value
-    SourceTime
-  }  
-}
-```
-
-Example MQTT Topic:
-> plc/mod/node:json/holding-register:1:INT  
-> plc/mod/node/holding-register:2:INT  
-> plc/mod/node:json/coil:1  
-> plc/mod/node/coil:1  
+> opc / test / path / $objects / Test / + / float
 
 ## Enable OPC UA Schema in GraphQL
 
@@ -166,3 +116,53 @@ fragment Value on Node {
 
 You have to build the program before with gradle. Then you can use the shell script `docker/build.sh` to build a docker image.  
 `docker run --rm --name gateway -p 4000:4000 -p 1883:1883 -v $PWD/config.yaml:/app/config.yaml gateway`
+
+## Using PLC4X
+
+You have to start the app-gateway plus app-plc4x. See config.yaml in each folder of the app. Because some PLC4X drivers  /  plc's do not support subscriptions we have added a simple polling options. (currently only one polling time per connection). 
+
+```
+> cd app-gateway
+> gradle run  
+
+> cd app-plc4x
+cat config.yaml
+Plc4x:
+  Drivers:    
+    - Id: "mod"
+      Enabled: true
+      Url: "modbus://localhost:502"
+      Polling:
+        Time: 100  # ms
+        OldNew: true  # old new comparions on or off
+      LogLevel: ALL
+
+> gradle run
+```
+
+Example GraphQL Query:
+```
+{
+  a: NodeValue(
+    Type: Plc,
+    System: "mod"
+    NodeId: "coil:1"
+  ) {
+    Value
+  }
+  b: NodeValue(
+    Type: Plc
+    System: "mod"
+    NodeId: "holding-register:1:INT"
+  ) {
+    Value
+    SourceTime
+  }  
+}
+```
+
+Example MQTT Topic:
+> plc/mod/node:json/holding-register:1:INT  
+> plc/mod/node/holding-register:2:INT  
+> plc/mod/node:json/coil:1  
+> plc/mod/node/coil:1  

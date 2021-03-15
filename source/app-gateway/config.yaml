@@ -9,6 +9,9 @@ GraphQLServer:
   Listeners:
     - Port: 4000
       LogLevel: ALL
+      Schemas:
+        - System: "test"
+          FieldName: BrowseName # BrowseName | DisplayName      
 
 OpcUaClient:
   - Id: "test"
@@ -28,3 +31,4 @@ OpcUaClient:
       BufferSize: 10
       SamplingInterval: 0
       DiscardOldest: true
+    BrowseOnStartup: true

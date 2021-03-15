@@ -30,7 +30,7 @@ Database:
 
 OpcUaClient:
   - Id: "winccoa"
-    Enabled: false
+    Enabled: true
     LogLevel: ALL
     EndpointUrl: "opc.tcp://centos1:4840"
     UpdateEndpointUrl: centos1

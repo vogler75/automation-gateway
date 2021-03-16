@@ -143,8 +143,8 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
 
                 val graphqlName0 = node.getString(fieldName, browseName)
                 val graphqlName1 = "[^A-Za-z0-9]".toRegex().replace(graphqlName0, "_")
-                val graphqlName2 = "^_*".toRegex().replace(graphqlName1, "")
-                val graphqlName = if (Character.isDigit(graphqlName2[0])) "_$graphqlName2" else graphqlName2
+                val graphqlName2 = if (Character.isDigit(graphqlName1[0])) "_$graphqlName1" else graphqlName1
+                val graphqlName = "^__".toRegex().replace(graphqlName2, "_") // __ is reserved GraphQL internal
 
                 // TODO: what happens when the names are not unique anymore (because of substitutions...)
                 val dataFetcher = getSchemaNode(system, nodeId, nodeClass, browseName, displayName)

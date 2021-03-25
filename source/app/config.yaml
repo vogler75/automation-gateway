@@ -9,6 +9,8 @@ GraphQLServer:
   Listeners:
     - Port: 4000
       LogLevel: ALL
+      GraphiQL: true
+      WriteSchemaToFile: false
       Schemas:
         - System: ignition
           FieldName: BrowseName # BrowseName | DisplayName
@@ -48,7 +50,8 @@ OpcUaClient:
       SamplingInterval: 0
       DiscardOldest: true
       DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: true
+    BrowseOnStartup: false
+    WriteSchemaToFile: false
 
   - Id: "ignition"
     Enabled: true
@@ -72,6 +75,7 @@ OpcUaClient:
       DiscardOldest: false
       DataChangeTrigger: StatusValueTimestamp # Status | StatusValue | StatusValueTimestamp
     BrowseOnStartup: true
+    WriteSchemaToFile: false
 
   - Id: "unified"
     Enabled: true
@@ -91,4 +95,4 @@ OpcUaClient:
       SamplingInterval: 0.0
       DiscardOldest: true
     BrowseOnStartup: true
-
+    WriteSchemaToFile: false

@@ -33,6 +33,12 @@ import kotlin.collections.HashMap
 import java.time.format.DateTimeFormatter
 import java.util.logging.Level
 import java.util.logging.Logger
+import io.vertx.ext.web.handler.graphql.GraphiQLHandler
+
+import io.vertx.ext.web.handler.graphql.GraphiQLHandlerOptions
+
+
+
 
 class GraphQLServer(private val config: JsonObject, private val defaultSystem: String) : AbstractVerticle() {
     // TODO: Implement scalar "variant"
@@ -51,6 +57,8 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
 
     private val schemas: JsonObject = JsonObject()
     private val defaultFieldName: String = "DisplayName"
+    private val enableGraphiQL: Boolean = config.getBoolean("GraphiQL", false)
+    private val writeSchemaFiles: Boolean = config.getBoolean("WriteSchemaToFile", false)
 
     init {
         Logger.getLogger(id).level = Level.ALL
@@ -101,7 +109,8 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
             CompositeFuture.all(results).onComplete {
                 val schema = generic + systemTypes + (results.map { it.result() }.joinToString(separator = "\n"))
 
-                File("schema.gql").writeText(schema)
+                if (writeSchemaFiles)
+                    File("graphql.gql").writeText(schema)
 
                 logger.info("Generate GraphQL schema...")
                 val graphql = build(schema, wiring)
@@ -109,7 +118,6 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
                 startGraphQLServer(graphql)
                 logger.info("GraphQL ready")
                 startPromise.complete()
-
             }
         }
     }
@@ -201,7 +209,8 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
         }
 
         val schema = types.joinToString(separator = "\n")
-        File("opcua-${system}.gql".toLowerCase()).writeText(schema)
+        if (writeSchemaFiles)
+            File("graphql-${system}.gql".toLowerCase()).writeText(schema)
 
         return schema
     }
@@ -309,6 +318,11 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
         router.route().handler(BodyHandler.create())
         router.route("/graphql").handler(ApolloWSHandler.create(graphql))
         router.route("/graphql").handler(GraphQLHandler.create(graphql))
+
+        if (enableGraphiQL) {
+            val options = GraphiQLHandlerOptions().setEnabled(true)
+            router.route("/graphiql/*").handler(GraphiQLHandler.create(options))
+        }
 
         val httpServerOptions = HttpServerOptions()
             .setWebSocketSubProtocols(listOf("graphql-ws"))

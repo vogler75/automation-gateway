@@ -90,6 +90,9 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
     private val writeParametersWithTime : Boolean
     private val writeParametersWithTimeDef = false
 
+    private val browseOnStartup : Boolean = config.getBoolean("BrowseOnStartup", false)
+    private val writeSchemaToFile: Boolean = config.getBoolean("WriteSchemaToFile", false)
+
     private var client: OpcUaClient? = null
     private var subscription: UaSubscription? = null
 
@@ -200,12 +203,13 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
                             client!!.subscriptionManager.addSubscriptionListener(subscriptionListener)
                             createSubscription()
 
-                            if (config.getBoolean("BrowseOnStartup", false)) {
+                            if (browseOnStartup) {
                                 logger.info("Start object browsing...")
                                 val tree = browseNode(NodeId.parse("i=85"), -1)
                                 schema.put("Objects", tree)
                                 logger.info("Object browsing finished.")
-                                File("opcua-${id}.json".toLowerCase()).writeText(tree.encodePrettily())
+                                if (writeSchemaToFile)
+                                    File("schema-${id}.json".toLowerCase()).writeText(tree.encodePrettily())
                                 promise.complete()
                             } else {
                                 promise.complete()

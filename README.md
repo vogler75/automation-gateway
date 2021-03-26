@@ -166,3 +166,39 @@ Example MQTT Topic:
 > plc/mod/node/holding-register:2:INT  
 > plc/mod/node:json/coil:1  
 > plc/mod/node/coil:1  
+
+# Version History
+
+## v1.6
+Added GraphiQL to the Gateway and optionally write the browsed schemas (OPC UA and generated GraphQL scheam) to files.
+```
+GraphQLServer:
+  Listeners:
+    - Port: 4000
+      LogLevel: ALL
+      GraphiQL: true  # Enable GraphiQL
+      WriteSchemaToFile: false  # Write GraphQL Schema to a file
+      Schemas:
+        - System: ignition
+          FieldName: BrowseName # BrowseName | DisplayName
+OpcUaClient:
+  - Id: "ignition"
+    Enabled: true
+    BrowseOnStartup: true           
+```
+
+## v1.5
+Support multiple OPC UA schemas in GraphQL. Be sure that you have set `BrowseOnStartup: true` for the OPC UA servers which you want to embed in the GraphQL schema. Additionally it can be defined which OPC UA field should be taken as the GraphQL field name: it can be "BrowseName" or "DisplayName". But be careful, the DisplayName must not be unique below a node, so it can lead to an invalid schema. 
+```
+GraphQLServer:
+  Listeners:
+    - Port: 4000
+      LogLevel: ALL
+      Schemas:
+        - System: ignition
+          FieldName: BrowseName # BrowseName | DisplayName
+OpcUaClient:
+  - Id: "ignition"
+    Enabled: true
+    BrowseOnStartup: false 
+```

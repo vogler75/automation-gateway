@@ -320,6 +320,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
         router.route("/graphql").handler(GraphQLHandler.create(graphql))
 
         if (enableGraphiQL) {
+            logger.info("Enable GraphiQL")
             val options = GraphiQLHandlerOptions().setEnabled(true)
             router.route("/graphiql/*").handler(GraphiQLHandler.create(options))
         }

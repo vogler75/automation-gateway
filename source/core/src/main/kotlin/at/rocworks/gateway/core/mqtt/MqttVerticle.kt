@@ -176,7 +176,8 @@ class MqttVerticle(config: JsonObject, private val endpoint: MqttEndpoint) : Abs
             when (t.systemType) {
                 Topic.SystemType.Mqtt ->  subscribeMqttTopic(t, qos, ret)
                 Topic.SystemType.Opc,
-                Topic.SystemType.Plc -> subscribeDriverTopic(t.systemType.name, t, qos, ret)
+                Topic.SystemType.Plc,
+                Topic.SystemType.Dds -> subscribeDriverTopic(t.systemType.name, t, qos, ret)
                 else -> {
                     logger.warn("Invalid topic []", t)
                     ret.complete(false)
@@ -196,6 +197,7 @@ class MqttVerticle(config: JsonObject, private val endpoint: MqttEndpoint) : Abs
     private fun unsubscribeTopic(topics: List<String>) {
         val opc = HashMap<String, ArrayList<Topic>>()
         val plc = HashMap<String, ArrayList<Topic>>()
+        val dds = HashMap<String, ArrayList<Topic>>()
 
         fun add(list: HashMap<String, ArrayList<Topic>>, topic: Topic) {
             val l = list.getOrDefault(topic.systemName, ArrayList())
@@ -211,6 +213,7 @@ class MqttVerticle(config: JsonObject, private val endpoint: MqttEndpoint) : Abs
                     Topic.SystemType.Mqtt -> unsubscribeMqttTopic(t)
                     Topic.SystemType.Opc -> add(opc, t)
                     Topic.SystemType.Plc -> add(plc, t)
+                    Topic.SystemType.Dds -> add(dds, t)
                     else -> {
                         logger.warn("Invalid topic [{}]", t)
                     }
@@ -222,6 +225,7 @@ class MqttVerticle(config: JsonObject, private val endpoint: MqttEndpoint) : Abs
 
         opc.forEach { if (it.value.size > 0) unsubscribeDriverTopics(Topic.SystemType.Opc.name, it.key, it.value) }
         plc.forEach { if (it.value.size > 0) unsubscribeDriverTopics(Topic.SystemType.Plc.name, it.key, it.value) }
+        dds.forEach { if (it.value.size > 0) unsubscribeDriverTopics(Topic.SystemType.Dds.name, it.key, it.value) }
     }
 
     private fun subscribeMqttTopic(t: Topic, qos: MqttQoS, ret: Promise<Boolean>) {

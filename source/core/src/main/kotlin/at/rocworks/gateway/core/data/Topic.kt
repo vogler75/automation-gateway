@@ -13,10 +13,11 @@ data class Topic (
 
     enum class SystemType {
         Unknown,
+        Sys,
         Opc,
         Plc,
+        Dds,
         Mqtt,
-        Sys
     }
 
     enum class TopicType {
@@ -43,8 +44,11 @@ data class Topic (
     companion object {
         fun parseTopic(topic: String): Topic {
             val dollar = "\$"
+
             val opcUri = SystemType.Opc.name
             val plcUri = SystemType.Plc.name
+            val ddsUri = SystemType.Dds.name
+
             val optFmt = "(|:Json|:Pretty|:Value)"
             fun getFmt(s: String) = when (s.toLowerCase()) {
                 ":" + Format.Value.name.toLowerCase() -> Format.Value
@@ -52,6 +56,8 @@ data class Topic (
                 ":" + Format.Pretty.name.toLowerCase() -> Format.Pretty
                 else -> Format.Value
             }
+
+            // --- OPC ---
             return """${opcUri}/(\w+)/Node$optFmt/([0-9])+/(.*)$""".toRegex(RegexOption.IGNORE_CASE).find(topic)?.let {
                 Topic(
                     topic,
@@ -88,7 +94,9 @@ data class Topic (
                     format = Format.Json,
                     payload = it.destructured.component2(),
                 )
-            } ?: """${plcUri}/(\w+)/Node$optFmt/(.*)$""".toRegex(RegexOption.IGNORE_CASE).find(topic)?.let {
+            }
+            // --- PLC ---
+            ?: """${plcUri}/(\w+)/Node$optFmt/(.*)$""".toRegex(RegexOption.IGNORE_CASE).find(topic)?.let {
                 Topic(
                     topic,
                     systemType = SystemType.Plc,
@@ -97,7 +105,20 @@ data class Topic (
                     format = getFmt(it.destructured.component2()),
                     payload = it.destructured.component3()
                 )
-            } ?: """(\${dollar}SYS)/(.*)$""".toRegex(RegexOption.IGNORE_CASE).find(topic)?.let {
+            }
+            // --- DDS ---
+            ?: """${ddsUri}/(\w+)/Path$optFmt/(.*)$""".toRegex(RegexOption.IGNORE_CASE).find(topic)?.let {
+                Topic(
+                    topic,
+                    systemType = SystemType.Dds,
+                    topicType = TopicType.Path,
+                    systemName = it.destructured.component1(),
+                    format = getFmt(it.destructured.component2()),
+                    payload = it.destructured.component3()
+                )
+            }
+            // --- SYS ---
+            ?: """(\${dollar}SYS)/(.*)$""".toRegex(RegexOption.IGNORE_CASE).find(topic)?.let {
                 Topic(
                     topic,
                     systemType = SystemType.Sys,
@@ -105,7 +126,9 @@ data class Topic (
                     systemName = "",
                     payload = """${it.destructured.component1()}/${it.destructured.component2()}""",
                 )
-            } ?: run {
+            }
+            // --- MQTT ---
+            ?: run {
                 Topic(
                     topic,
                     systemType = SystemType.Mqtt,

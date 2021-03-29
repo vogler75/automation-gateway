@@ -1,0 +1,12 @@
+DDS:
+  Domains:
+    - Id: "demo"
+      Enabled: true
+      LogLevel: ALL
+      DCPSConfigFile: rtps.ini
+      Domain: 0
+      TopicTypes:
+        - Id: "shape"
+          TopicTypeName: "org.omg.dds.demo.ShapeType"
+        - Id: "message"
+          TopicTypeName: "org.omg.dds.demo.Message"

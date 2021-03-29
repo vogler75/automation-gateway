@@ -1,0 +1,46 @@
+plugins {
+    id 'gateway.kotlin-application-conventions'
+}
+
+compileKotlin {
+    kotlinOptions {
+        jvmTarget = "11"
+    }
+}
+
+repositories {
+    mavenLocal()
+    maven {
+        url = uri('https://repo.maven.apache.org/maven2/')
+    }
+}
+
+if (System.env.DDS_ROOT == null) {
+    throw new GradleException("Environment variable DDS_ROOT is not set.")
+}
+
+dependencies {
+    implementation project(':core')
+    implementation project(':lib-cluster')
+    implementation 'org.slf4j:slf4j-api:1.7.30'
+    implementation 'org.slf4j:slf4j-jdk14:1.7.30'
+    implementation 'io.vertx:vertx-core:4.0.2'
+    implementation 'io.vertx:vertx-config-yaml:4.0.2'
+    implementation 'io.vertx:vertx-reactive-streams:4.0.2'
+    implementation 'io.vertx:vertx-service-discovery:4.0.2'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.11.4' // Needed for Vertx Json
+    compile fileTree(dir: 'lib', include: ['*.jar', '*.dylib'])
+    compile fileTree(dir: System.env.DDS_ROOT + '/lib', include: ['*.jar', '*.dylib'])
+}
+
+application {
+    // Define the main class for the application.
+    mainClass = 'App'
+    applicationDefaultJvmArgs = ['-Djava.library.path='+System.env.DDS_ROOT+'/lib:./lib']
+}
+
+run {
+    // systemProperty "java.library.path", System.env.DDS_ROOT + '/lib:./lib'
+    environment "DYLD_LIBRARY_PATH", System.env.DDS_ROOT + "/lib:" + System.env.DDS_ROOT + "/ACE_wrappers/lib"
+}
+

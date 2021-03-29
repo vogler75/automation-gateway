@@ -1,0 +1,10 @@
+*.h
+*.cpp
+*.inl
+lib*
+.depend*
+.shobj
+GNUmakefile*
+*TypeSupport.idl
+org
+classes

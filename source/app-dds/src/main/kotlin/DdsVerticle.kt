@@ -5,7 +5,6 @@ import at.rocworks.gateway.core.data.Topic
 import at.rocworks.gateway.core.data.Value
 import at.rocworks.gateway.core.driver.DriverBase
 import at.rocworks.gateway.core.driver.MonitoredItem
-import at.rocworks.gateway.core.opcua.OpcUaMonitoredItem
 import io.vertx.core.Future
 import io.vertx.core.Promise
 import io.vertx.core.buffer.Buffer
@@ -14,6 +13,10 @@ import io.vertx.core.json.Json
 import io.vertx.core.json.JsonObject
 import org.omg.CORBA.StringSeqHolder
 import java.time.Instant
+import DDS.PUBLISHER_QOS_DEFAULT
+import DDS.DATAWRITER_QOS_DEFAULT
+import org.omg.dds.demo.ShapeType
+
 
 class DdsVerticle(val config: JsonObject) : DriverBase(config) {
     override fun getType() = Topic.SystemType.Dds
@@ -26,9 +29,12 @@ class DdsVerticle(val config: JsonObject) : DriverBase(config) {
 
     class TopicType(val topicTypeName: String) {
         val typeSupportImplClass = Class.forName(topicTypeName + "TypeSupportImpl")
+
         val typeSupportInstance = typeSupportImplClass.getConstructor().newInstance()
+
         val typeSupportRegisterType =
             typeSupportImplClass.getMethod("register_type", DDS.DomainParticipant::class.java, String::class.java)
+
         val typeSupportGetTypeName = typeSupportImplClass.getMethod("get_type_name")
 
         fun registerType(domainParticipant: DomainParticipant) =
@@ -155,15 +161,69 @@ class DdsVerticle(val config: JsonObject) : DriverBase(config) {
 
     override fun unsubscribeItems(items: List<MonitoredItem>): Future<Boolean> {
         val promise = Promise.promise<Boolean>()
-        items.filterIsInstance<DdsMonitoredItem>().forEach { item ->
-            subscriber!!.delete_datareader(item.item)
+        items.filterIsInstance<DdsMonitoredItem>().forEach { reader ->
+            subscriber!!.delete_datareader(reader.item)
         }
         promise.complete(true)
         return promise.future()
     }
 
     override fun publishTopic(topic: Topic, value: Buffer): Future<Boolean> {
-        TODO("Not yet implemented")
+        val promise = Promise.promise<Boolean>()
+        try {
+            logger.info("Publish...$topic")
+            val topicTypeName = topic.pathItems.component1()
+            val topicName = topic.pathItems.component2()
+            val topicType = topicTypes[topicTypeName]
+            if (topicType != null) {
+                logger.debug("Create Topic...")
+                val ddsTopic = domainParticipant!!.create_topic(
+                    topicName,
+                    topicType.getTypeName(),
+                    TOPIC_QOS_DEFAULT.get(), null,
+                    DEFAULT_STATUS_MASK.value
+                )
+
+                logger.debug("Create Publisher...")
+                val ddsPublisher: Publisher = domainParticipant!!.create_publisher(
+                    PUBLISHER_QOS_DEFAULT.get(),
+                    null,
+                    DEFAULT_STATUS_MASK.value
+                )
+
+                logger.debug("Create DataWriter...")
+                val ddsDataWriter = ddsPublisher.create_datawriter(
+                    ddsTopic, DATAWRITER_QOS_DEFAULT.get(), null, DEFAULT_STATUS_MASK.value
+                )
+
+                val dataWriterClass = Class.forName(topicType.topicTypeName + "DataWriter")
+                val dataWriterHelperClass = Class.forName(topicType.topicTypeName + "DataWriterHelper")
+                val dataWriterHelperNarrow = dataWriterHelperClass.getMethod("narrow", org.omg.CORBA.Object::class.java)
+
+                logger.debug("Parse Value...")
+                val topicClass = Class.forName(topicType.topicTypeName )
+                val topicValue = Json.decodeValue(value, topicClass) as ShapeType
+
+                val dataWriter = dataWriterHelperNarrow(null, ddsDataWriter)
+
+                logger.debug("Write Topic...")
+                val handle: Int = dataWriterClass.getMethod("register_instance", topicClass).invoke(dataWriter, topicValue) as Int
+                val ret: Int = dataWriterClass.getMethod("write", topicClass, Int::class.java).invoke(dataWriter, topicValue, handle) as Int
+                logger.debug("Write Done.")
+
+                ddsDataWriter._release()
+                ddsPublisher._release()
+                ddsTopic._release()
+
+                promise.complete(ret == 0)
+            } else {
+                logger.warn("Unhandled topic type ${topicTypeName}!")
+                promise.complete(false)
+            }
+        } catch (e: java.lang.Exception) {
+            e.printStackTrace()
+        }
+        return promise.future()
     }
 
     override fun readServerInfo(): JsonObject {

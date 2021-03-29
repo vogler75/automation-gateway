@@ -175,9 +175,9 @@ Added a first version of DDS support. Currently only MQTT subscriptions to DDS t
 You need to install OpenDDS and build it with Java support. And you also have to compile your DDS IDL files with Java support. See the ReadMe.txt in the idl directory of app-dds.
 
 Example MQTT Topic: 
-> dds/system-id/path/topic-type-name/topic-name
-> dds/demo/path/shape/Circle
-> dds/demo/path/shape/Square
+> dds/system-id/path/topic-type-name/topic-name  
+> dds/demo/path/shape/Circle  
+> dds/demo/path/shape/Square  
 
 Configuration
 ```

@@ -170,7 +170,7 @@ Example MQTT Topic:
 # Version History
 
 ## v1.7
-Added a first version of DDS support. Currently only MQTT subscriptions to DDS topics are functional. It is the app-dds application, the app-gateway must also be up and running.
+Added a first version of DDS support. Currently only MQTT subscribe and publish to DDS topics are functional. It is the app-dds application, the app-gateway must also be up and running.
 
 You need to install OpenDDS and build it with Java support. And you also have to compile your DDS IDL files with Java support. See the ReadMe.txt in the idl directory of app-dds.
 

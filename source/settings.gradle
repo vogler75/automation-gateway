@@ -1,11 +1,12 @@
 rootProject.name = 'gateway'
 
-include('core')
-include('app', 'app-template', 'app-gateway', 'app-influxdb', 'app-plc4x')
-include('lib-cluster', 'lib-influxdb')
+include('app')
+include('cluster-template', 'cluster-gateway', 'cluster-influxdb', 'cluster-plc4x')
+include('lib-core', 'lib-cluster', 'lib-influxdb')
 
 if (System.env.DDS_ROOT) {
-    include ('app-dds')
+    include ('cluster-dds')
 } else {
     print "Environment variable DDS_ROOT is not set."
 }
+

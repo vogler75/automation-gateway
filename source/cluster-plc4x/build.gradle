@@ -16,13 +16,13 @@ repositories {
 }
 
 dependencies {
-    implementation project(':core')
+    implementation project(':lib-core')
     implementation project(':lib-cluster')
     implementation 'org.slf4j:slf4j-api:1.7.30'
     implementation 'org.slf4j:slf4j-jdk14:1.7.30'
-    implementation 'io.vertx:vertx-core:4.0.2'
-    implementation 'io.vertx:vertx-config-yaml:4.0.2'
-    implementation 'io.vertx:vertx-service-discovery:4.0.2'
+    implementation 'io.vertx:vertx-core:4.0.3'
+    implementation 'io.vertx:vertx-config-yaml:4.0.3'
+    implementation 'io.vertx:vertx-service-discovery:4.0.3'
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.11.4' // Needed for Vertx Json
 
     // https://mvnrepository.com/artifact/org.apache.plc4x/plc4j-api

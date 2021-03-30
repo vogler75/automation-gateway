@@ -16,12 +16,12 @@ repositories {
 }
 
 dependencies {
-    api project(':core')
+    api project(':lib-core')
     implementation 'org.slf4j:slf4j-api:1.7.30'
     implementation 'org.slf4j:slf4j-jdk14:1.7.30'
-    implementation 'io.vertx:vertx-core:4.0.2'
-    implementation 'io.vertx:vertx-config-yaml:4.0.2'
-    implementation 'io.vertx:vertx-service-discovery:4.0.2'
+    implementation 'io.vertx:vertx-core:4.0.3'
+    implementation 'io.vertx:vertx-config-yaml:4.0.3'
+    implementation 'io.vertx:vertx-service-discovery:4.0.3'
     implementation 'io.reactivex.rxjava2:rxjava:2.2.20'
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.11.4'
     implementation 'org.influxdb:influxdb-java:2.21'

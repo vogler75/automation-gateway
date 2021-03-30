@@ -1,5 +1,5 @@
 import at.rocworks.gateway.core.data.Topic
-import at.rocworks.gateway.core.data.Value
+import at.rocworks.gateway.core.data.TopicValueOpc
 import at.rocworks.gateway.core.driver.DriverBase
 import at.rocworks.gateway.core.driver.MonitoredItem
 
@@ -164,14 +164,14 @@ class Plc4xVerticle(config: JsonObject): DriverBase(config) {
         else -> "unhandled"
      */
 
-    private fun toValue(value: PlcValue): Value {
+    private fun toValue(value: PlcValue): TopicValueOpc {
         val now = Instant.now()
         val data = when {
             value.isStruct && value.keys.isNotEmpty() -> value.struct[value.keys.first()].toString()
             value.isList && value.list.isNotEmpty() -> value.getIndex(0).toString()
             else -> value.toString()
         }
-        return Value(
+        return TopicValueOpc(
             value = data,
             dataTypeId = 0,
             statusCode = 0,

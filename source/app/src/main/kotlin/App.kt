@@ -9,7 +9,6 @@ import kotlin.Throws
 import kotlin.jvm.JvmStatic
 
 import io.vertx.core.Vertx
-import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 
 import java.lang.Exception
@@ -45,8 +44,12 @@ object App {
         val vertx = Vertx.vertx()
 
         // Register Message Types
-        vertx.eventBus().registerDefaultCodec(Topic::class.java, TopicCodec())
-        vertx.eventBus().registerDefaultCodec(Value::class.java, ValueCodec())
+        vertx.eventBus().registerDefaultCodec(Topic::class.java,
+            CodecTopic()
+        )
+        vertx.eventBus().registerDefaultCodec(TopicValueOpc::class.java,
+            CodecTopicValueOpc()
+        )
 
         // Read config file
         val configFilePath = if (args.isNotEmpty()) args[0] else "config.yaml"

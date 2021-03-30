@@ -11,7 +11,7 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UShort
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint
 import java.time.Instant
 
-data class Value(
+data class TopicValueOpc(
     val value: Any?,
     val dataTypeId: Int,
     val statusCode: Long,
@@ -78,8 +78,8 @@ data class Value(
     }
 
     companion object {
-        fun fromDataValue(v: DataValue): Value {
-            return Value(
+        fun fromDataValue(v: DataValue): TopicValueOpc {
+            return TopicValueOpc(
                 value = if (v.value.isNotNull) v.value.value else null,
                 dataTypeId = if (v.value.value==null) -1 else (v.value.dataType.get().identifier as? UInteger)?.toInt() ?: -1,
                 statusCode = v.statusCode?.value ?: StatusCode.BAD.value,
@@ -90,7 +90,7 @@ data class Value(
             )
         }
 
-        fun toDataValue(v: Value): DataValue {
+        fun toDataValue(v: TopicValueOpc): DataValue {
             return DataValue(
                 Variant(v.value),
                 StatusCode(v.statusCode),
@@ -110,7 +110,7 @@ data class Value(
         private const val SERVER_PICOSECONDS = "ServerPicoseconds"
         private const val SOURCE_PICOSECONDS = "SourcePicoseconds"
 
-        fun encodeToJson(v: Value) : JsonObject {
+        fun encodeToJson(v: TopicValueOpc) : JsonObject {
             return JsonObject()
                 .put(VALUE, v.value?.toString())
                 .put(DATATYPE, v.dataTypeName)
@@ -122,10 +122,10 @@ data class Value(
                 .put(SOURCE_PICOSECONDS, v.sourcePicoseconds)
         }
 
-        fun decodeFromJson(json: JsonObject): Value {
+        fun decodeFromJson(json: JsonObject): TopicValueOpc {
             val sourceTime : String? = json.getString(SOURCE_TIME, null)
             val serverTime : String? = json.getString(SERVER_TIME, null)
-            return Value(
+            return TopicValueOpc(
                 value = json.getValue(VALUE, null),
                 dataTypeId = json.getInteger(DATATYPE_ID, 0),
                 statusCode = json.getLong(STATUS_CODE, StatusCode.GOOD.value),

@@ -2,7 +2,7 @@ package at.rocworks.gateway.logger.influx
 
 import at.rocworks.gateway.core.data.Globals
 import at.rocworks.gateway.core.data.Topic
-import at.rocworks.gateway.core.data.Value
+import at.rocworks.gateway.core.data.TopicValueOpc
 import at.rocworks.gateway.core.service.ServiceHandler
 import io.vertx.core.AbstractVerticle
 import io.vertx.core.Promise
@@ -123,7 +123,6 @@ class InfluxDBLogger(private val config: JsonObject) : AbstractVerticle() {
                     }
             }
         }
-
     }
 
     private fun subscribeTopic(endpoint: String, topic: Topic) {
@@ -174,7 +173,7 @@ class InfluxDBLogger(private val config: JsonObject) : AbstractVerticle() {
         valueCounterInput++
         try {
             val topic = Topic.decodeFromJson(data.getJsonObject("Topic"))
-            val value = Value.decodeFromJson(data.getJsonObject("Value"))
+            val value = TopicValueOpc.decodeFromJson(data.getJsonObject("Value"))
             if (value.value == null) return
             val numeric: Double? = (value.value as String).toDoubleOrNull()
             val point = Point.measurement(topic.systemName)

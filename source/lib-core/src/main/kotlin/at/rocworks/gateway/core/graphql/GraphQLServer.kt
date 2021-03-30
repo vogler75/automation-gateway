@@ -2,7 +2,7 @@ package at.rocworks.gateway.core.graphql
 
 import at.rocworks.gateway.core.data.Globals
 import at.rocworks.gateway.core.data.Topic
-import at.rocworks.gateway.core.data.Value
+import at.rocworks.gateway.core.data.TopicValueOpc
 import at.rocworks.gateway.core.service.ServiceHandler
 
 import graphql.GraphQL
@@ -396,7 +396,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
                         try {
                             val data = it.result().body().getJsonObject("Result")
                             if (data!=null) {
-                                val input = Value.decodeFromJson(data)
+                                val input = TopicValueOpc.decodeFromJson(data)
                                 val result = valueToGraphQL(type, system, nodeId, input)
                                 promise.complete(result)
                             } else {
@@ -437,7 +437,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
                     if (response.succeeded()) {
                         val list = response.result().body().getJsonArray("Result")
                         val result = nodeIds.zip(list.filterIsInstance<JsonObject>()).map {
-                            valueToGraphQL(type, system, it.first, Value.decodeFromJson(it.second))
+                            valueToGraphQL(type, system, it.first, TopicValueOpc.decodeFromJson(it.second))
                         }
                         promise.complete(result)
                     } else {
@@ -624,7 +624,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
             val consumer = vertx.eventBus().consumer<Buffer>(topic.topicName) { message ->
                 try {
                     val data = message.body().toJsonObject()
-                    val output = Value.decodeFromJson(data.getJsonObject("Value"))
+                    val output = TopicValueOpc.decodeFromJson(data.getJsonObject("Value"))
                     if (!emitter.isCancelled) emitter.onNext(valueToGraphQL(type, system, nodeId, output))
                 } catch (e: Exception) {
                     e.printStackTrace()
@@ -664,7 +664,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
                 vertx.eventBus().consumer<Buffer>(topic) { message ->
                     try {
                         val data = message.body().toJsonObject()
-                        val output = Value.decodeFromJson(data.getJsonObject("Value"))
+                        val output = TopicValueOpc.decodeFromJson(data.getJsonObject("Value"))
                         if (!emitter.isCancelled) emitter.onNext(valueToGraphQL(type, system, nodeId, output))
                     } catch (e: Exception) {
                         e.printStackTrace()
@@ -770,7 +770,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
         }
     }
 
-    private fun valueToGraphQL(type: String, system: String, nodeId: String, input: Value): HashMap<String, Any?> {
+    private fun valueToGraphQL(type: String, system: String, nodeId: String, input: TopicValueOpc): HashMap<String, Any?> {
         val item = HashMap<String, Any?>()
         item["Type"] = type
         item["System"] = system

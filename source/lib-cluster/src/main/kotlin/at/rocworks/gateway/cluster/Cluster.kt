@@ -1,8 +1,8 @@
 package at.rocworks.gateway.cluster
 
 import at.rocworks.gateway.core.data.*
-import at.rocworks.gateway.core.data.TopicCodec
-import at.rocworks.gateway.core.data.ValueCodec
+import at.rocworks.gateway.core.data.CodecTopic
+import at.rocworks.gateway.core.data.CodecTopicValueOpc
 
 import org.slf4j.LoggerFactory
 
@@ -51,8 +51,12 @@ object Cluster {
 
             try {
                 // Register Message Types
-                vertx.eventBus().registerDefaultCodec(Topic::class.java, TopicCodec())
-                vertx.eventBus().registerDefaultCodec(Value::class.java, ValueCodec())
+                vertx.eventBus().registerDefaultCodec(Topic::class.java,
+                    CodecTopic()
+                )
+                vertx.eventBus().registerDefaultCodec(TopicValueOpc::class.java,
+                    CodecTopicValueOpc()
+                )
 
                 // Retrieve Config
                 val config = Globals.retrieveConfig(vertx, configFilePath)

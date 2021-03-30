@@ -5,25 +5,25 @@ import io.vertx.core.eventbus.MessageCodec;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 
-public class TopicCodec implements MessageCodec<Topic, Topic> {
+public class CodecTopicValueOpc implements MessageCodec<TopicValueOpc, TopicValueOpc> {
 
     @Override
-    public void encodeToWire(Buffer buffer, Topic mqttTopic) {
-        var data = mqttTopic.encodeToJson().toBuffer();
+    public void encodeToWire(Buffer buffer, TopicValueOpc value) {
+        var data = value.encodeToJson().toBuffer();
         buffer.appendInt(data.length());
         buffer.appendBuffer(data);
     }
 
     @Override
-    public Topic decodeFromWire(int i, Buffer buffer) {
+    public TopicValueOpc decodeFromWire(int i, Buffer buffer) {
         int len = buffer.getInt(i);
-        var json = (JsonObject)Json.decodeValue(buffer.getBuffer(i, i+len));
-        return Topic.Companion.decodeFromJson(json);
+        var json = (JsonObject) Json.decodeValue(buffer.getBuffer(i, i+len));
+        return TopicValueOpc.Companion.decodeFromJson(json);
     }
 
     @Override
-    public Topic transform(Topic mqttTopic) {
-        return mqttTopic;
+    public TopicValueOpc transform(TopicValueOpc value) {
+        return value;
     }
 
     @Override
@@ -36,3 +36,4 @@ public class TopicCodec implements MessageCodec<Topic, Topic> {
         return -1;
     }
 }
+

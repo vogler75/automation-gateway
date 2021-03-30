@@ -1,7 +1,7 @@
 package at.rocworks.gateway.core.opcua
 
 import at.rocworks.gateway.core.data.Topic
-import at.rocworks.gateway.core.data.Value
+import at.rocworks.gateway.core.data.TopicValueOpc
 import at.rocworks.gateway.core.driver.DriverBase
 import at.rocworks.gateway.core.driver.MonitoredItem
 
@@ -511,7 +511,7 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
             node != null && node is String -> {
                 val nodeId = NodeId.parse(node)
                 client!!.readValue(0.0, TimestampsToReturn.Both, nodeId).thenAccept { value ->
-                    val result = Value.fromDataValue(value).encodeToJson()
+                    val result = TopicValueOpc.fromDataValue(value).encodeToJson()
                     message.reply(JsonObject().put("Ok", true).put("Result", result))
                 }
             }
@@ -520,7 +520,7 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
                 client!!.readValues(0.0, TimestampsToReturn.Both, nodeIds).thenAccept { list ->
                     val result = JsonArray()
                     list.forEach {
-                        result.add(Value.fromDataValue(it).encodeToJson())
+                        result.add(TopicValueOpc.fromDataValue(it).encodeToJson())
                     }
                     message.reply(JsonObject().put("Ok", true).put("Result", result))
                 }
@@ -721,7 +721,7 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
         try {
             fun json() = JsonObject()
                 .put("Topic", topic.encodeToJson())
-                .put("Value", Value.fromDataValue(data).encodeToJson())
+                .put("Value", TopicValueOpc.fromDataValue(data).encodeToJson())
 
             val buffer : Buffer? = when (topic.format) {
                 Topic.Format.Value -> {

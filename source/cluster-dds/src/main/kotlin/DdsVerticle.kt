@@ -2,7 +2,7 @@ import DDS.*
 import OpenDDS.DCPS.DEFAULT_STATUS_MASK
 import OpenDDS.DCPS.TheParticipantFactory
 import at.rocworks.gateway.core.data.Topic
-import at.rocworks.gateway.core.data.Value
+import at.rocworks.gateway.core.data.TopicValueOpc
 import at.rocworks.gateway.core.driver.DriverBase
 import at.rocworks.gateway.core.driver.MonitoredItem
 import io.vertx.core.Future
@@ -15,7 +15,6 @@ import org.omg.CORBA.StringSeqHolder
 import java.time.Instant
 import DDS.PUBLISHER_QOS_DEFAULT
 import DDS.DATAWRITER_QOS_DEFAULT
-import org.omg.dds.demo.ShapeType
 
 
 class DdsVerticle(val config: JsonObject) : DriverBase(config) {
@@ -136,7 +135,7 @@ class DdsVerticle(val config: JsonObject) : DriverBase(config) {
                 val ms = sampleInfo.source_timestamp.nanosec.toLong() / 1_000_000
                 val ts = Instant.ofEpochMilli(sec * 1_000 + ms)
 
-                val value = Value(  // TODO: create a new value subtype with json as value
+                val value = TopicValueOpc(  // TODO: create a new value subtype with json as value
                     json,
                     0,
                     sampleInfo.sample_state.toLong(),
@@ -202,7 +201,7 @@ class DdsVerticle(val config: JsonObject) : DriverBase(config) {
 
                 logger.debug("Parse Value...")
                 val topicClass = Class.forName(topicType.topicTypeName )
-                val topicValue = Json.decodeValue(value, topicClass) as ShapeType
+                val topicValue = Json.decodeValue(value, topicClass)
 
                 val dataWriter = dataWriterHelperNarrow(null, ddsDataWriter)
 

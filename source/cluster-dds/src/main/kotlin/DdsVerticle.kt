@@ -15,6 +15,7 @@ import org.omg.CORBA.StringSeqHolder
 import java.time.Instant
 import DDS.PUBLISHER_QOS_DEFAULT
 import DDS.DATAWRITER_QOS_DEFAULT
+import java.lang.reflect.Method
 
 
 class DdsVerticle(val config: JsonObject) : DriverBase(config) {
@@ -27,16 +28,16 @@ class DdsVerticle(val config: JsonObject) : DriverBase(config) {
     private var subscriber: DDS.Subscriber? = null
 
     class TopicType(val topicTypeName: String) {
-        val typeSupportImplClass = Class.forName(topicTypeName + "TypeSupportImpl")
+        private val typeSupportImplClass: Class<*> = Class.forName(topicTypeName + "TypeSupportImpl")
 
-        val typeSupportInstance = typeSupportImplClass.getConstructor().newInstance()
+        private val typeSupportInstance: Any = typeSupportImplClass.getConstructor().newInstance()
 
-        val typeSupportRegisterType =
+        private val typeSupportRegisterType: Method =
             typeSupportImplClass.getMethod("register_type", DDS.DomainParticipant::class.java, String::class.java)
 
-        val typeSupportGetTypeName = typeSupportImplClass.getMethod("get_type_name")
+        private val typeSupportGetTypeName: Method = typeSupportImplClass.getMethod("get_type_name")
 
-        fun registerType(domainParticipant: DomainParticipant) =
+        fun registerType(domainParticipant: DomainParticipant): Any =
             typeSupportRegisterType.invoke(typeSupportInstance, domainParticipant, "")
 
         fun getTypeName() = typeSupportGetTypeName.invoke(typeSupportInstance) as String
@@ -80,7 +81,7 @@ class DdsVerticle(val config: JsonObject) : DriverBase(config) {
                         DEFAULT_STATUS_MASK.value
                     )
 
-                    topicTypes.forEach { (id, topicType) ->
+                    topicTypes.forEach { (_, topicType) ->
                         if (topicType.registerType(domainParticipant!!) == RETCODE_OK.value) {
                             logger.info("Registered type ${topicType.topicTypeName}.")
                         } else {

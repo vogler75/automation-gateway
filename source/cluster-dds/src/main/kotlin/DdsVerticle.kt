@@ -15,6 +15,7 @@ import org.omg.CORBA.StringSeqHolder
 import java.time.Instant
 import DDS.PUBLISHER_QOS_DEFAULT
 import DDS.DATAWRITER_QOS_DEFAULT
+import at.rocworks.gateway.core.data.TopicValueDds
 import java.lang.reflect.Method
 
 
@@ -131,19 +132,12 @@ class DdsVerticle(val config: JsonObject) : DriverBase(config) {
             )
 
             val listener = DataReaderListenerImpl(topicType.topicTypeName) { sampleInfo, data ->
-                val json = Json.encode(data)
+                val json = JsonObject.mapFrom(data)
                 val sec = sampleInfo.source_timestamp.sec.toLong()
                 val ms = sampleInfo.source_timestamp.nanosec.toLong() / 1_000_000
                 val ts = Instant.ofEpochMilli(sec * 1_000 + ms)
-
-                val value = TopicValueOpc(  // TODO: create a new value subtype with json as value
-                    json,
-                    0,
-                    sampleInfo.sample_state.toLong(),
-                    ts,
-                    ts
-                )
-                vertx.eventBus().publish(topic.topicName, json)
+                val value = TopicValueDds(json, ts, sampleInfo.sample_state)
+                vertx.eventBus().publish(topic.topicName, value.encodeToJson())
             }
 
             val reader = subscriber!!.create_datareader(

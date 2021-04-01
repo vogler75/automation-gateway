@@ -2,6 +2,7 @@ package at.rocworks.gateway.logger.influx
 
 import at.rocworks.gateway.core.data.Globals
 import at.rocworks.gateway.core.data.Topic
+import at.rocworks.gateway.core.data.TopicValue
 import at.rocworks.gateway.core.data.TopicValueOpc
 import at.rocworks.gateway.core.service.ServiceHandler
 import io.vertx.core.AbstractVerticle
@@ -173,18 +174,21 @@ class InfluxDBLogger(private val config: JsonObject) : AbstractVerticle() {
         valueCounterInput++
         try {
             val topic = Topic.decodeFromJson(data.getJsonObject("Topic"))
-            val value = TopicValueOpc.decodeFromJson(data.getJsonObject("Value"))
-            if (value.value == null) return
-            val numeric: Double? = (value.value as String).toDoubleOrNull()
+            val value = TopicValue.fromJsonObject(data.getJsonObject("Value"))
+            if (value.valueAsString()=="") return
+            val numeric: Double? = value.valueAsDouble()
             val point = Point.measurement(topic.systemName)
-                .time(value.serverTime.toEpochMilli(), TimeUnit.MILLISECONDS)
+                .time(value.sourceTime().toEpochMilli(), TimeUnit.MILLISECONDS)
                 .tag("tag", topic.payload)
                 .tag("system", topic.systemName)
-                .tag("status", value.statusCode.toString())
-            if (numeric != null)
+                .tag("status", value.statusAsString())
+            if (numeric != null) {
+                //logger.debug("topic [$topic] numeric [$numeric]")
                 point.addField("value", numeric)
-            else
-                point.addField("text", value.value.toString())
+            } else {
+                //logger.debug("topic [$topic] text [${value.valueAsString()}]")
+                point.addField("text", value.valueAsString())
+            }
 
             try {
                 writeValueQueue.add(point.build())

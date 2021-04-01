@@ -1,6 +1,5 @@
 package at.rocworks.gateway.core.mqtt
 
-import at.rocworks.gateway.core.data.Globals
 import at.rocworks.gateway.core.data.Topic
 import io.netty.handler.codec.mqtt.MqttQoS
 import io.vertx.core.AbstractVerticle

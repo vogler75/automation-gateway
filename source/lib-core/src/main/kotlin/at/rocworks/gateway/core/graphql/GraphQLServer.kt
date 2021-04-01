@@ -1,8 +1,6 @@
 package at.rocworks.gateway.core.graphql
 
-import at.rocworks.gateway.core.data.Globals
-import at.rocworks.gateway.core.data.Topic
-import at.rocworks.gateway.core.data.TopicValueOpc
+import at.rocworks.gateway.core.data.*
 import at.rocworks.gateway.core.service.ServiceHandler
 
 import graphql.GraphQL
@@ -34,11 +32,7 @@ import java.time.format.DateTimeFormatter
 import java.util.logging.Level
 import java.util.logging.Logger
 import io.vertx.ext.web.handler.graphql.GraphiQLHandler
-
 import io.vertx.ext.web.handler.graphql.GraphiQLHandlerOptions
-
-
-
 
 class GraphQLServer(private val config: JsonObject, private val defaultSystem: String) : AbstractVerticle() {
     // TODO: Implement scalar "variant"
@@ -249,7 +243,6 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
             |   NodeId: ID
             |   Value: String
             |   DataType: String
-            |   DataTypeId: Int
             |   StatusCode: String
             |   SourceTime: String
             |   ServerTime: String
@@ -396,7 +389,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
                         try {
                             val data = it.result().body().getJsonObject("Result")
                             if (data!=null) {
-                                val input = TopicValueOpc.decodeFromJson(data)
+                                val input = TopicValue.fromJsonObject(data)
                                 val result = valueToGraphQL(type, system, nodeId, input)
                                 promise.complete(result)
                             } else {
@@ -437,7 +430,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
                     if (response.succeeded()) {
                         val list = response.result().body().getJsonArray("Result")
                         val result = nodeIds.zip(list.filterIsInstance<JsonObject>()).map {
-                            valueToGraphQL(type, system, it.first, TopicValueOpc.decodeFromJson(it.second))
+                            valueToGraphQL(type, system, it.first, TopicValue.fromJsonObject(it.second))
                         }
                         promise.complete(result)
                     } else {
@@ -624,7 +617,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
             val consumer = vertx.eventBus().consumer<Buffer>(topic.topicName) { message ->
                 try {
                     val data = message.body().toJsonObject()
-                    val output = TopicValueOpc.decodeFromJson(data.getJsonObject("Value"))
+                    val output = TopicValue.fromJsonObject(data.getJsonObject("Value"))
                     if (!emitter.isCancelled) emitter.onNext(valueToGraphQL(type, system, nodeId, output))
                 } catch (e: Exception) {
                     e.printStackTrace()
@@ -664,7 +657,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
                 vertx.eventBus().consumer<Buffer>(topic) { message ->
                     try {
                         val data = message.body().toJsonObject()
-                        val output = TopicValueOpc.decodeFromJson(data.getJsonObject("Value"))
+                        val output = TopicValue.fromJsonObject(data.getJsonObject("Value"))
                         if (!emitter.isCancelled) emitter.onNext(valueToGraphQL(type, system, nodeId, output))
                     } catch (e: Exception) {
                         e.printStackTrace()
@@ -770,18 +763,16 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
         }
     }
 
-    private fun valueToGraphQL(type: String, system: String, nodeId: String, input: TopicValueOpc): HashMap<String, Any?> {
+    private fun valueToGraphQL(type: String, system: String, nodeId: String, input: TopicValue): HashMap<String, Any?> {
         val item = HashMap<String, Any?>()
         item["Type"] = type
         item["System"] = system
         item["NodeId"] = nodeId
-        item["Value"] = input.value?.toString()
-        item["DataType"] = input.dataTypeName
-        item["DataTypeId"] = input.dataTypeId
-        item["StatusCode"] = input.statusCode.toString()
+        item["Value"] = input.valueAsString()
+        item["DataType"] = input.dataTypeName()
+        item["StatusCode"] = input.statusAsString()
         item["SourceTime"] = input.sourceTimeAsISO()
         item["ServerTime"] = input.serverTimeAsISO()
         return item
     }
-
 }

@@ -16,6 +16,8 @@ GraphQLServer:
           FieldName: BrowseName # BrowseName | DisplayName
         - System: unified
           FieldName: DisplayName # BrowseName | DisplayName
+        - System: winccoa
+          FieldName: BrowseName # BrowseName | DisplayName
 
 Database:
   Logger:
@@ -50,7 +52,7 @@ OpcUaClient:
       SamplingInterval: 0
       DiscardOldest: true
       DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
+    BrowseOnStartup: true
     WriteSchemaToFile: false
 
   - Id: "ignition"

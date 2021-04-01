@@ -10,12 +10,16 @@ data class TopicValuePlc(
     // default constructor needed for json to object mapping
     constructor() : this(null, Instant.MAX)
 
-    override fun dataTypeName() = "Unknown"
+    override fun dataTypeName() = value?.javaClass?.simpleName ?: ""
 
-    override fun valueAsString() = value?.toString() ?: ""
     override fun statusAsString() = ""
 
-    override fun valueAsDouble(): Double? = valueAsString().toDoubleOrNull()
+    override fun valueAsString() = value?.toString() ?: ""
+
+    override fun valueAsDouble(): Double? = when (value) {
+        is Boolean -> if (value) 1.0 else 0.0
+        else -> valueAsString().toDoubleOrNull()
+    }
 
     override fun serverTime() = time
     override fun sourceTime() = time

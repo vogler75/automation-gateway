@@ -165,11 +165,14 @@ class Plc4xVerticle(config: JsonObject): DriverBase(config) {
      */
 
     private fun toValue(value: PlcValue): TopicValuePlc {
-        val now = Instant.now()
         val data = when {
-            value.isStruct && value.keys.isNotEmpty() -> value.struct[value.keys.first()].toString()
-            value.isList && value.list.isNotEmpty() -> value.getIndex(0).toString()
-            else -> value.toString()
+            value.isStruct && value.keys.isNotEmpty() -> {
+                value.struct[value.keys.first()]?.`object`
+            }
+            value.isList && value.list.isNotEmpty() -> {
+                value.getIndex(0).`object`
+            }
+            else -> value.`object`
         }
         return TopicValuePlc(value = data)
     }

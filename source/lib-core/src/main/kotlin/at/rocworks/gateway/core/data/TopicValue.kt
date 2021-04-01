@@ -9,8 +9,8 @@ abstract class TopicValue {
 
     fun encodeToJson(): JsonObject = JsonObject.mapFrom(this)
 
-    abstract fun valueAsString(): String
     abstract fun statusAsString(): String
+    abstract fun valueAsString(): String
 
     open fun valueAsDouble(): Double? = valueAsString().toDoubleOrNull()
 

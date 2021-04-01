@@ -4,11 +4,8 @@ package at.rocworks.gateway.core.data
 import io.vertx.core.json.JsonObject
 import org.eclipse.milo.opcua.stack.core.Identifiers
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue
-import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode
-import org.eclipse.milo.opcua.stack.core.types.builtin.Variant
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger
-import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UShort
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint
 import java.time.Instant
 
@@ -24,8 +21,9 @@ data class TopicValueOpc (
     // default constructor needed for json to object mapping
     constructor() : this(null, 0, 0, Instant.MIN, Instant.MIN, 0, 0)
 
-    override fun valueAsString() = value?.toString() ?: ""
     override fun statusAsString() = statusCode.toString()
+
+    override fun valueAsString() = value?.toString() ?: ""
 
     override fun serverTime() = serverTime
     override fun sourceTime() = sourceTime

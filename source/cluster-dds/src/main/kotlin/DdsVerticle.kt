@@ -137,7 +137,22 @@ class DdsVerticle(val config: JsonObject) : DriverBase(config) {
                 val ms = sampleInfo.source_timestamp.nanosec.toLong() / 1_000_000
                 val ts = Instant.ofEpochMilli(sec * 1_000 + ms)
                 val value = TopicValueDds(json, ts, sampleInfo.sample_state)
-                vertx.eventBus().publish(topic.topicName, value.encodeToJson())
+
+                fun json() = JsonObject()
+                    .put("Topic", topic.encodeToJson())
+                    .put("Value", value.encodeToJson())
+
+                val buffer : Buffer? = when (topic.format) {
+                    Topic.Format.Value -> {
+                        value.encodeToJson().let {
+                            Buffer.buffer(it.encode())
+                        }
+                    }
+                    Topic.Format.Json -> Buffer.buffer(json().encode())
+                    Topic.Format.Pretty -> Buffer.buffer(json().encodePrettily())
+                }
+
+                if (buffer!=null) vertx.eventBus().publish(topic.topicName, buffer)
             }
 
             val reader = subscriber!!.create_datareader(

@@ -169,6 +169,9 @@ Example MQTT Topic:
 
 # Version History
 
+## v1.8  
+Upgraded to VertX 4.0.3 and splitted the value type to a base class with subclasses for Opc, Plc and DDS. Also the app names have been changed. The clustered apps are now named with "cluster". 
+
 ## v1.7
 Added a first version of DDS support. Currently only MQTT subscribe and publish to DDS topics are functional. It is the app-dds application, the app-gateway must also be up and running.
 

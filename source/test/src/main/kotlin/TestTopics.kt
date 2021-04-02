@@ -1,13 +1,9 @@
-package at.rocworks.tests
-import at.rocworks.data.Topic
+import at.rocworks.gateway.core.data.Topic
 
 object TestTopics {
-    @JvmStatic
     val dollar = "\$"
 
-    @JvmStatic
-    fun main(args: Array<String>) {
-        println(Topic.SystemType.Opc.toString())
+    fun main() {
         listOf(
             "opc/unified/node/1/16.687.1.0.0.0",
             "opc/unified/node:Value/1/16.687.1.0.0.0",

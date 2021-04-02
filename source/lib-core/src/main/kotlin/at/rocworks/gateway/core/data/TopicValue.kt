@@ -9,6 +9,9 @@ abstract class TopicValue {
 
     fun encodeToJson(): JsonObject = JsonObject.mapFrom(this)
 
+    abstract fun isNull(): Boolean
+    fun isNotNull() = !isNull()
+
     abstract fun statusAsString(): String
     abstract fun valueAsString(): String
 
@@ -22,11 +25,15 @@ abstract class TopicValue {
 
     open fun dataTypeName(): String = ""
 
+    abstract fun isStruct(): Boolean
+    abstract fun asFlatMap(): Map<String, Any>
+
     companion object {
         fun fromJsonObject(json: JsonObject): TopicValue {
             return when (val objectClassName = json.getString("className", "")) {
-                TopicValueOpc::class.java.simpleName -> json.mapTo(TopicValueOpc::class.java)
-                TopicValuePlc::class.java.simpleName -> json.mapTo(TopicValuePlc::class.java)
+                TopicValueOpc::class.java.simpleName -> TopicValueOpc.fromJsonObject(json)
+                TopicValuePlc::class.java.simpleName -> TopicValuePlc.fromJsonObject(json)
+                TopicValueDds::class.java.simpleName -> TopicValueDds.fromJsonObject(json)
                 else -> throw Exception("Unhandled class [$objectClassName] in JsonObject!")
             }
         }

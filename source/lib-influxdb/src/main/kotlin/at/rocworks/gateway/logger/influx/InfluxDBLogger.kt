@@ -175,19 +175,29 @@ class InfluxDBLogger(private val config: JsonObject) : AbstractVerticle() {
         try {
             val topic = Topic.decodeFromJson(data.getJsonObject("Topic"))
             val value = TopicValue.fromJsonObject(data.getJsonObject("Value"))
-            if (value.valueAsString()=="") return
-            val numeric: Double? = value.valueAsDouble()
+            if (value.isNull()) return
+
             val point = Point.measurement(topic.systemName)
                 .time(value.sourceTime().toEpochMilli(), TimeUnit.MILLISECONDS)
                 .tag("tag", topic.payload)
                 .tag("system", topic.systemName)
                 .tag("status", value.statusAsString())
-            if (numeric != null) {
-                //logger.debug("topic [$topic] numeric [$numeric]")
-                point.addField("value", numeric)
+
+            if (value.isStruct()) {
+                value.asFlatMap().forEach { (k, v) ->
+                    val d = v.toString().toDoubleOrNull()
+                    if (d!=null) point.addField(k, d)
+                    else point.addField(k, v.toString())
+                }
             } else {
-                //logger.debug("topic [$topic] text [${value.valueAsString()}]")
-                point.addField("text", value.valueAsString())
+                val numeric: Double? = value.valueAsDouble()
+                if (numeric != null) {
+                    //logger.debug("topic [$topic] numeric [$numeric]")
+                    point.addField("value", numeric)
+                } else {
+                    //logger.debug("topic [$topic] text [${value.valueAsString()}]")
+                    point.addField("text", value.valueAsString())
+                }
             }
 
             try {

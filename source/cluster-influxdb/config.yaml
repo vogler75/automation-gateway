@@ -14,3 +14,4 @@ Database:
         #- Topic: opc/winccoa/path:json/$objects/Test/+/float
         - Topic: plc/mod/node:json/coil:1
         - Topic: plc/mod/node:json/holding-register:1:INT
+        - Topic: dds/demo/path:json/shape/Circle

@@ -21,8 +21,8 @@ data class TopicValueOpc (
     // default constructor needed for json to object mapping
     constructor() : this(null, 0, 0, Instant.MIN, Instant.MIN, 0, 0)
 
+    override fun isNull() = value==null
     override fun statusAsString() = statusCode.toString()
-
     override fun valueAsString() = value?.toString() ?: ""
 
     override fun serverTime() = serverTime
@@ -76,6 +76,12 @@ data class TopicValueOpc (
         Identifiers.UtcTime.identifier -> "UtcTime"
         Identifiers.XmlElement.identifier -> "XmlElement"
         else -> "Unknown"
+    }
+
+    override fun isStruct() = false
+
+    override fun asFlatMap(): Map<String, Any> {
+        return if (value!=null) mapOf(Pair("value", value)) else mapOf()
     }
 
     companion object {

@@ -68,14 +68,14 @@ data class Topic (
                     payload = "ns=${it.destructured.component3()};s=${it.destructured.component4()}",
                 )
             } ?: """${opcUri}/(\w+)/Node$optFmt/(.*)$""".toRegex(RegexOption.IGNORE_CASE).find(topic)?.let {
-                    Topic(
-                        topic,
-                        systemType = SystemType.Opc,
-                        topicType = TopicType.NodeId,
-                        systemName = it.destructured.component1(),
-                        format = getFmt(it.destructured.component2()),
-                        payload = it.destructured.component3()
-                    )
+                Topic(
+                    topic,
+                    systemType = SystemType.Opc,
+                    topicType = TopicType.NodeId,
+                    systemName = it.destructured.component1(),
+                    format = getFmt(it.destructured.component2()),
+                    payload = it.destructured.component3()
+                )
             } ?: """${opcUri}/(\w+)/Path$optFmt/(.*)/(.*)$""".toRegex(RegexOption.IGNORE_CASE).find(topic)?.let {
                 Topic(
                     topic,

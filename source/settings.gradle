@@ -1,6 +1,6 @@
 rootProject.name = 'gateway'
 
-include('app')
+include('app', 'test')
 include('cluster-template', 'cluster-gateway', 'cluster-influxdb', 'cluster-plc4x')
 include('lib-core', 'lib-cluster', 'lib-influxdb')
 

@@ -12,8 +12,8 @@ data class TopicValuePlc(
 
     override fun dataTypeName() = value?.javaClass?.simpleName ?: ""
 
+    override fun isNull() = value==null
     override fun statusAsString() = ""
-
     override fun valueAsString() = value?.toString() ?: ""
 
     override fun valueAsDouble(): Double? = when (value) {
@@ -23,6 +23,12 @@ data class TopicValuePlc(
 
     override fun serverTime() = time
     override fun sourceTime() = time
+
+    override fun isStruct() = false
+
+    override fun asFlatMap(): Map<String, Any> {
+        return if (value!=null) mapOf(Pair("value", value)) else mapOf()
+    }
 
     companion object {
         fun fromJsonObject(json: JsonObject): TopicValuePlc = json.mapTo(TopicValuePlc::class.java)

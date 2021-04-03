@@ -3,7 +3,6 @@ package at.rocworks.gateway.logger.influx
 import at.rocworks.gateway.core.data.Globals
 import at.rocworks.gateway.core.data.Topic
 import at.rocworks.gateway.core.data.TopicValue
-import at.rocworks.gateway.core.data.TopicValueOpc
 import at.rocworks.gateway.core.service.ServiceHandler
 import io.vertx.core.AbstractVerticle
 import io.vertx.core.Promise
@@ -175,7 +174,7 @@ class InfluxDBLogger(private val config: JsonObject) : AbstractVerticle() {
         try {
             val topic = Topic.decodeFromJson(data.getJsonObject("Topic"))
             val value = TopicValue.fromJsonObject(data.getJsonObject("Value"))
-            if (value.isNull()) return
+            if (!value.hasValue()) return
 
             val point = Point.measurement(topic.systemName)
                 .time(value.sourceTime().toEpochMilli(), TimeUnit.MILLISECONDS)
@@ -183,7 +182,7 @@ class InfluxDBLogger(private val config: JsonObject) : AbstractVerticle() {
                 .tag("system", topic.systemName)
                 .tag("status", value.statusAsString())
 
-            if (value.isStruct()) {
+            if (value.hasStruct()) {
                 value.asFlatMap().forEach { (k, v) ->
                     val d = v.toString().toDoubleOrNull()
                     if (d!=null) point.addField(k, d)

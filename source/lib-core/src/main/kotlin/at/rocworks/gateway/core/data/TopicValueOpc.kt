@@ -9,7 +9,7 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint
 import java.time.Instant
 
-data class TopicValueOpc (
+class TopicValueOpc (
     val value: Any?,
     val dataTypeId: Int,
     val statusCode: Long,
@@ -21,7 +21,7 @@ data class TopicValueOpc (
     // default constructor needed for json to object mapping
     constructor() : this(null, 0, 0, Instant.MIN, Instant.MIN, 0, 0)
 
-    override fun isNull() = value==null
+    override fun hasValue() = value!=null
     override fun statusAsString() = statusCode.toString()
     override fun valueAsString() = value?.toString() ?: ""
 
@@ -78,7 +78,7 @@ data class TopicValueOpc (
         else -> "Unknown"
     }
 
-    override fun isStruct() = false
+    override fun hasStruct() = false
 
     override fun asFlatMap(): Map<String, Any> {
         return if (value!=null) mapOf(Pair("value", value)) else mapOf()

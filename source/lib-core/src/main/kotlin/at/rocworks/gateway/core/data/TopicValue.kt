@@ -9,8 +9,7 @@ abstract class TopicValue {
 
     fun encodeToJson(): JsonObject = JsonObject.mapFrom(this)
 
-    abstract fun isNull(): Boolean
-    fun isNotNull() = !isNull()
+    abstract fun hasValue() : Boolean
 
     abstract fun statusAsString(): String
     abstract fun valueAsString(): String
@@ -25,7 +24,7 @@ abstract class TopicValue {
 
     open fun dataTypeName(): String = ""
 
-    abstract fun isStruct(): Boolean
+    abstract fun hasStruct(): Boolean
     abstract fun asFlatMap(): Map<String, Any>
 
     companion object {

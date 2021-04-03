@@ -3,7 +3,7 @@ package at.rocworks.gateway.core.data
 import io.vertx.core.json.JsonObject
 import java.time.Instant
 
-data class TopicValuePlc(
+class TopicValuePlc(
     val value: Any?,
     val time: Instant = Instant.now(),
 ) : TopicValue() {
@@ -12,7 +12,7 @@ data class TopicValuePlc(
 
     override fun dataTypeName() = value?.javaClass?.simpleName ?: ""
 
-    override fun isNull() = value==null
+    override fun hasValue() = value!=null
     override fun statusAsString() = ""
     override fun valueAsString() = value?.toString() ?: ""
 
@@ -24,7 +24,7 @@ data class TopicValuePlc(
     override fun serverTime() = time
     override fun sourceTime() = time
 
-    override fun isStruct() = false
+    override fun hasStruct() = false
 
     override fun asFlatMap(): Map<String, Any> {
         return if (value!=null) mapOf(Pair("value", value)) else mapOf()

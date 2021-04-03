@@ -84,7 +84,7 @@ abstract class DriverBase(config: JsonObject) : AbstractVerticle() {
     }
 
     private fun registerService() {
-        val handler = ServiceHandler(vertx)
+        val handler = ServiceHandler(vertx, logger)
         handler.registerService(getType().name, id, uri).onComplete {
             if (it.succeeded()) {
                 logger.info("Service registered.")

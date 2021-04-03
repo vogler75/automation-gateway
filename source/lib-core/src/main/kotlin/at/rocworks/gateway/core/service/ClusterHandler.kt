@@ -1,8 +1,9 @@
-package at.rocworks.gateway.cluster
+package at.rocworks.gateway.core.service
 
 import at.rocworks.gateway.core.data.*
 import at.rocworks.gateway.core.data.CodecTopic
 import at.rocworks.gateway.core.data.CodecTopicValueOpc
+import com.hazelcast.cluster.MembershipListener
 
 import org.slf4j.LoggerFactory
 
@@ -18,10 +19,13 @@ import java.util.logging.LogManager
 
 import kotlin.concurrent.thread
 import kotlin.system.exitProcess
+import com.hazelcast.cluster.MembershipEvent
+import io.vertx.core.spi.cluster.ClusterManager
 
-object Cluster {
+object ClusterHandler {
+    var manager : ClusterManager? = null
     fun setup(args: Array<String>, services: (Vertx, JsonObject) -> Unit) {
-        val stream = Cluster::class.java.classLoader.getResourceAsStream("logging.properties")
+        val stream = ClusterHandler::class.java.classLoader.getResourceAsStream("logging.properties")
         try {
             LogManager.getLogManager().readConfiguration(stream)
         } catch (e: Exception) {
@@ -40,20 +44,40 @@ object Cluster {
             logger.info("Cluster default configuration.")
             HazelcastClusterManager()
         }
+
         val vertxOptions = VertxOptions().setClusterManager(clusterManager)
         val vertxClusterResult = Vertx.clusteredVertx(vertxOptions)
 
         vertxClusterResult.onComplete {
+            manager = clusterManager
+            logger.info("Cluster nodeId: ${manager?.nodeId}")
+
             val configFilePath = if (args.isNotEmpty()) args[0] else "config.yaml"
             logger.info("Gateway config file: $configFilePath")
 
             val vertx = it.result()
+
+            val serviceHandler = ServiceHandler(vertx, logger)
+
+            val listener = object : MembershipListener {
+                override fun memberAdded(membershipEvent: MembershipEvent) {
+                    logger.info("Added nodeId: ${membershipEvent.member.uuid}")
+                }
+
+                override fun memberRemoved(membershipEvent: MembershipEvent) {
+                    logger.info("Removed nodeId: ${membershipEvent.member.uuid}")
+                    serviceHandler.removeClusterNode(membershipEvent.member.uuid)
+                }
+            }
+
+            clusterManager.hazelcastInstance.cluster.addMembershipListener(listener)
 
             try {
                 // Register Message Types
                 vertx.eventBus().registerDefaultCodec(Topic::class.java, CodecTopic())
                 vertx.eventBus().registerDefaultCodec(TopicValueOpc::class.java, CodecTopicValueOpc())
                 vertx.eventBus().registerDefaultCodec(TopicValuePlc::class.java, CodecTopicValuePlc())
+                vertx.eventBus().registerDefaultCodec(TopicValueDds::class.java, CodecTopicValueDds())
 
                 // Retrieve Config
                 val config = Globals.retrieveConfig(vertx, configFilePath)

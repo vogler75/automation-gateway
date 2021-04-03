@@ -10,6 +10,7 @@ import io.vertx.core.buffer.Buffer
 import io.vertx.core.eventbus.Message
 import io.vertx.core.json.Json
 import io.vertx.core.json.JsonObject
+import io.vertx.servicediscovery.Status
 import org.influxdb.BatchOptions
 import org.influxdb.InfluxDB
 import org.influxdb.InfluxDBFactory
@@ -111,16 +112,18 @@ class InfluxDBLogger(private val config: JsonObject) : AbstractVerticle() {
     }
 
     private fun subscribeTopics() {
-        val handler = ServiceHandler(vertx)
+        val handler = ServiceHandler(vertx, logger)
         services.forEach { it ->
             handler.observeService(it.first.name, it.second) { service ->
-                logger.info("Service for [{}] got available!", service.name)
-                topics
-                    .filter { it.systemType.name == service.type && it.systemName == service.name }
-                    .forEach { topic ->
-                        vertx.eventBus().consumer<Any>(topic.topicName) { valueConsumer(it.body()) }
-                        subscribeTopic(ServiceHandler.endpointOf(service), topic)
-                    }
+                logger.info("Service [{}] changed status [{}]", service.name, service.status)
+                if (service.status == Status.UP) {
+                    topics
+                        .filter { it.systemType.name == service.type && it.systemName == service.name }
+                        .forEach { topic ->
+                            vertx.eventBus().consumer<Any>(topic.topicName) { valueConsumer(it.body()) }
+                            subscribeTopic(ServiceHandler.endpointOf(service), topic)
+                        }
+                }
             }
         }
     }

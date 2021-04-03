@@ -3,21 +3,21 @@ MqttServer:
     - Id: Mqtt
       Port: 1883
       Host: 0.0.0.0
-      LogLevel: ALL # ALL | INFO
+      LogLevel: INFO # ALL | INFO
 
 GraphQLServer:
   Listeners:
     - Port: 4000
-      LogLevel: ALL
+      LogLevel: INFO
       GraphiQL: true
       WriteSchemaToFile: false
       Schemas:
-        - System: ignition
-          FieldName: BrowseName # BrowseName | DisplayName
-        - System: unified
-          FieldName: DisplayName # BrowseName | DisplayName
-        - System: winccoa
-          FieldName: BrowseName # BrowseName | DisplayName
+        #- System: ignition
+        #  FieldName: BrowseName # BrowseName | DisplayName
+        #- System: unified
+        #  FieldName: DisplayName # BrowseName | DisplayName
+        #- System: winccoa
+        #  FieldName: BrowseName # BrowseName | DisplayName
 
 Database:
   Logger:
@@ -30,12 +30,14 @@ Database:
       WriteParameters:
         QueueSize: 20000
       Logging:
-        #- Topic: opc/default/path:json/$objects/Test/+/float
+        - Topic: opc/winccoa/node/ns=2;s=ExampleDP_Float.ExampleDP_Arg1
+        - Topic: opc/winccoa/path/$objects/Test/+/float
+        - Topic: opc/ignition/node/ns=2;s=[default]/Input_Watt
 
 OpcUaClient:
   - Id: "winccoa"
     Enabled: true
-    LogLevel: ALL
+    LogLevel: INFO
     EndpointUrl: "opc.tcp://centos1:4840"
     UpdateEndpointUrl: centos1
     SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#None
@@ -52,7 +54,7 @@ OpcUaClient:
       SamplingInterval: 0
       DiscardOldest: true
       DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: true
+    BrowseOnStartup: false
     WriteSchemaToFile: false
 
   - Id: "ignition"
@@ -76,7 +78,7 @@ OpcUaClient:
       SamplingInterval: 0.0
       DiscardOldest: false
       DataChangeTrigger: StatusValueTimestamp # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: true
+    BrowseOnStartup: false
     WriteSchemaToFile: false
 
   - Id: "unified"
@@ -96,5 +98,5 @@ OpcUaClient:
       BufferSize: 10
       SamplingInterval: 0.0
       DiscardOldest: true
-    BrowseOnStartup: true
+    BrowseOnStartup: false
     WriteSchemaToFile: false

@@ -118,7 +118,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
 
     private fun fetchSchema(system: String): Future<Boolean> {
         val promise = Promise.promise<Boolean>()
-        val serviceHandler = ServiceHandler(vertx)
+        val serviceHandler = ServiceHandler(vertx, logger)
 
         val type = Topic.SystemType.Opc.name
         serviceHandler.observeService(type, system) {

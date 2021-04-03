@@ -6,8 +6,10 @@ import io.vertx.core.Vertx
 import io.vertx.core.json.JsonObject
 import io.vertx.servicediscovery.Record
 import io.vertx.servicediscovery.ServiceDiscovery
+import org.slf4j.Logger
+import java.util.*
 
-class ServiceHandler(val vertx: Vertx) {
+class ServiceHandler(val vertx: Vertx, val logger: Logger) {
     private val discovery = ServiceDiscovery.create(vertx)!!
     private val observers : MutableMap<String, (Record)->Unit> = mutableMapOf()
 
@@ -29,9 +31,20 @@ class ServiceHandler(val vertx: Vertx) {
         val record = Record()
             .setType(type)
             .setName(name)
-            .setLocation(JsonObject().put("endpoint", endpoint))
+            .setLocation(JsonObject()
+                .put("node", ClusterHandler.manager?.nodeId ?: "")
+                .put("endpoint", endpoint))
         discovery.publish(record, promise)
         return promise.future()
+    }
+
+    fun removeClusterNode(uuid: UUID) {
+        discovery.getRecords({ r -> r.location.getString("node", "") == uuid.toString()}) {
+            it.result().forEach { record ->
+                logger.info("Remove service [${record.location.getString("endpoint")}] of node [$uuid]")
+                try { discovery.unpublish(record.registration) } catch (e: java.lang.Exception) { e.printStackTrace() }
+            }
+        }
     }
 
     companion object {

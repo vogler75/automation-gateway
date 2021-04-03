@@ -1,4 +1,4 @@
-import at.rocworks.gateway.cluster.Cluster
+import at.rocworks.gateway.core.service.ClusterHandler
 import at.rocworks.gateway.core.graphql.GraphQLServer
 import at.rocworks.gateway.core.mqtt.MqttVerticle
 import at.rocworks.gateway.core.opcua.OpcUaVerticle
@@ -12,7 +12,7 @@ object Gateway {
     @JvmStatic
     fun main(args: Array<String>) {
         KeyStoreLoader.init()
-        Cluster.setup(args) { vertx, config -> services(vertx, config) }
+        ClusterHandler.setup(args) { vertx, config -> services(vertx, config) }
     }
 
     private fun services(vertx: Vertx, config: JsonObject) {

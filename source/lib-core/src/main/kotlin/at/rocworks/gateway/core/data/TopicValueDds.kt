@@ -4,7 +4,7 @@ import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import java.time.Instant
 
-class TopicValueDds (
+data class TopicValueDds (
     val value: JsonObject?,
     val time: Instant = Instant.now(),
     val state: Int = 0
@@ -29,8 +29,8 @@ class TopicValueDds (
         val recursion = object {
             fun flatten(key: String, value: Any) {
                 when (value) {
-                    is JsonObject -> flattenObject("${key}_", value as JsonObject)
-                    is JsonArray -> flattenArray("${key}_", value as JsonArray)
+                    is JsonObject -> flattenObject("${key}_", value)
+                    is JsonArray -> flattenArray("${key}_", value)
                     else -> result[key] = value
                 }
             }

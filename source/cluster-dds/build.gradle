@@ -21,7 +21,6 @@ if (System.env.DDS_ROOT == null) {
 
 dependencies {
     implementation project(':lib-core')
-    implementation project(':lib-cluster')
     implementation 'org.slf4j:slf4j-api:1.7.30'
     implementation 'org.slf4j:slf4j-jdk14:1.7.30'
     implementation 'io.vertx:vertx-core:4.0.3'
@@ -35,7 +34,7 @@ dependencies {
 
 application {
     // Define the main class for the application.
-    mainClass = 'App'
+    mainClass = 'Dds'
     applicationDefaultJvmArgs = ['-Djava.library.path='+System.env.DDS_ROOT+'/lib:./lib']
 }
 

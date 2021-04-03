@@ -80,7 +80,7 @@ OpcUaClient:
     WriteSchemaToFile: false
 
   - Id: "unified"
-    Enabled: false
+    Enabled: true
     LogLevel: INFO
     EndpointUrl:  "opc.tcp://desktop-9o6hthf:4890"
     SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#Basic128Rsa15

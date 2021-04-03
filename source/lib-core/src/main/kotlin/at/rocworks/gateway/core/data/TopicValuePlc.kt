@@ -3,7 +3,7 @@ package at.rocworks.gateway.core.data
 import io.vertx.core.json.JsonObject
 import java.time.Instant
 
-class TopicValuePlc(
+data class TopicValuePlc(
     val value: Any?,
     val time: Instant = Instant.now(),
 ) : TopicValue() {

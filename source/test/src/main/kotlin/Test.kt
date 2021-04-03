@@ -37,49 +37,6 @@ object Test {
         )
 
         println("Hello Automation Gateway!")
-        //TestTopics.main()
-
-        fun flatten(o: JsonObject): HashMap<String, Any> {
-            val result = HashMap<String, Any>()
-
-            val recursion = object {
-                fun flattenObject(base: String, o: JsonObject) {
-                    o.forEach { kv ->
-                        val key = "${base}${kv.key}"
-                        when (kv.value) {
-                            is JsonObject -> flattenObject("${key}_", kv.value as JsonObject)
-                            is JsonArray -> flattenArray("${key}_", kv.value as JsonArray)
-                            else -> result[key] = kv.value
-                        }
-                    }
-                }
-
-                fun flattenArray(base: String, o: JsonArray) {
-                    o.forEachIndexed { i, v ->
-                        val key = "${base}${i}"
-                        when (v) {
-                            is JsonObject -> flattenObject("${key}_", v as JsonObject)
-                            is JsonArray -> flattenArray("${key}_", v as JsonArray)
-                            else -> result[key] = v
-                        }
-                    }
-                }
-            }
-
-            recursion.flattenObject("", o)
-            return result
-        }
-
-        val o = JsonObject()
-            .put("test1", "value 1")
-            .put("test2", "value 2")
-            .put("test3", JsonObject()
-                .put("test3a", "value 3a")
-                .put("test3b", "value 3b"))
-            .put("test4", JsonArray().add("value 4a").add("value 4b"))
-            .put("test5", JsonArray().add("value 5a").add(JsonObject().put("x1", "v1").put("x2", "v2")))
-        val x = flatten(o)
-        println(x)
-
+        TestTopics.main()
     }
 }

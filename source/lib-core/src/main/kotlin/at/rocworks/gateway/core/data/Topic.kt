@@ -10,7 +10,6 @@ data class Topic (
     val payload: String,
     val format: Format = Format.Json
 ) {
-
     enum class SystemType {
         Unknown,
         Sys,
@@ -54,7 +53,7 @@ data class Topic (
                 ":" + Format.Value.name.toLowerCase() -> Format.Value
                 ":" + Format.Json.name.toLowerCase() -> Format.Json
                 ":" + Format.Pretty.name.toLowerCase() -> Format.Pretty
-                else -> Format.Value
+                else -> Format.Json
             }
 
             // --- OPC ---
@@ -139,30 +138,29 @@ data class Topic (
             }
         }
 
-        private const val TOPICNAME = "TopicName"
-        private const val SYSTEMTYPE = "SystemType"
-        private const val ITEMTYPE = "ItemType"
-        private const val SYSTEMNAME = "SystemName"
-        private const val PAYLOAD = "Payload"
-        private const val FORMAT = "Format"
-
+        private const val TOPIC_NAME = "topicName"
+        private const val SYSTEM_TYPE = "systemType"
+        private const val ITEM_TYPE = "itemType"
+        private const val SYSTEM_NAME = "systemName"
+        private const val PAYLOAD = "payload"
+        private const val FORMAT = "format"
 
         fun encodeToJson(topic: Topic) : JsonObject {
             return JsonObject()
-                .put(TOPICNAME, topic.topicName)
-                .put(SYSTEMTYPE, topic.systemType.name)
-                .put(ITEMTYPE, topic.topicType.name)
-                .put(SYSTEMNAME, topic.systemName)
+                .put(TOPIC_NAME, topic.topicName)
+                .put(SYSTEM_TYPE, topic.systemType.name)
+                .put(ITEM_TYPE, topic.topicType.name)
+                .put(SYSTEM_NAME, topic.systemName)
                 .put(PAYLOAD, topic.payload)
                 .put(FORMAT, topic.format)
         }
 
         fun decodeFromJson(json: JsonObject): Topic {
             return Topic(
-                topicName = json.getString(TOPICNAME, ""),
-                systemType = SystemType.valueOf(json.getString(SYSTEMTYPE, "Invalid")),
-                topicType = TopicType.valueOf(json.getString(ITEMTYPE, "Invalid")),
-                systemName = json.getString(SYSTEMNAME, null),
+                topicName = json.getString(TOPIC_NAME, ""),
+                systemType = SystemType.valueOf(json.getString(SYSTEM_TYPE, "Invalid")),
+                topicType = TopicType.valueOf(json.getString(ITEM_TYPE, "Invalid")),
+                systemName = json.getString(SYSTEM_NAME, null),
                 payload = json.getString(PAYLOAD, null),
                 format = Format.valueOf(json.getString(FORMAT, Format.Value.name))
             )

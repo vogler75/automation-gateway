@@ -9,7 +9,7 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint
 import java.time.Instant
 
-class TopicValueOpc (
+data class TopicValueOpc (
     val value: Any?,
     val dataTypeId: Int,
     val statusCode: Long,

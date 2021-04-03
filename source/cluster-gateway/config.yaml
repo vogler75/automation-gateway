@@ -3,21 +3,21 @@ MqttServer:
     - Id: Mqtt
       Port: 1883
       Host: 0.0.0.0
-      LogLevel: ALL # ALL | INFO
+      LogLevel: INFO # ALL | INFO
 
 GraphQLServer:
   Listeners:
     - Port: 4000
-      LogLevel: ALL
+      LogLevel: INFO
       GraphiQL: true
       WriteSchemaToFile: false
       Schemas:
-        - System: ignition
-          FieldName: BrowseName # BrowseName | DisplayName
-        - System: unified
-          FieldName: DisplayName # BrowseName | DisplayName
-        - System: winccoa
-          FieldName: BrowseName # BrowseName | DisplayName
+        #- System: ignition
+        #  FieldName: BrowseName # BrowseName | DisplayName
+        #- System: unified
+        #  FieldName: DisplayName # BrowseName | DisplayName
+        #- System: winccoa
+        #  FieldName: BrowseName # BrowseName | DisplayName
 
 Database:
   Logger:
@@ -35,7 +35,7 @@ Database:
 OpcUaClient:
   - Id: "winccoa"
     Enabled: true
-    LogLevel: ALL
+    LogLevel: INFO
     EndpointUrl: "opc.tcp://centos1:4840"
     UpdateEndpointUrl: centos1
     SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#None
@@ -52,7 +52,7 @@ OpcUaClient:
       SamplingInterval: 0
       DiscardOldest: true
       DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: true
+    BrowseOnStartup: false
     WriteSchemaToFile: false
 
   - Id: "ignition"
@@ -76,11 +76,11 @@ OpcUaClient:
       SamplingInterval: 0.0
       DiscardOldest: false
       DataChangeTrigger: StatusValueTimestamp # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: true
+    BrowseOnStartup: false
     WriteSchemaToFile: false
 
   - Id: "unified"
-    Enabled: true
+    Enabled: false
     LogLevel: INFO
     EndpointUrl:  "opc.tcp://desktop-9o6hthf:4890"
     SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#Basic128Rsa15
@@ -96,5 +96,5 @@ OpcUaClient:
       BufferSize: 10
       SamplingInterval: 0.0
       DiscardOldest: true
-    BrowseOnStartup: true
+    BrowseOnStartup: false
     WriteSchemaToFile: false

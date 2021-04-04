@@ -3,24 +3,24 @@ package at.rocworks.gateway.core.service
 import at.rocworks.gateway.core.data.*
 import at.rocworks.gateway.core.data.CodecTopic
 import at.rocworks.gateway.core.data.CodecTopicValueOpc
-import com.hazelcast.cluster.MembershipListener
 
 import org.slf4j.LoggerFactory
 
-import com.hazelcast.config.FileSystemYamlConfig
 
 import io.vertx.core.Vertx
 import io.vertx.core.VertxOptions
 import io.vertx.core.json.JsonObject
-import io.vertx.spi.cluster.hazelcast.HazelcastClusterManager
 
 import java.io.FileNotFoundException
 import java.util.logging.LogManager
 
 import kotlin.concurrent.thread
 import kotlin.system.exitProcess
-import com.hazelcast.cluster.MembershipEvent
 import io.vertx.core.spi.cluster.ClusterManager
+import io.vertx.core.spi.cluster.NodeListener
+
+import io.vertx.spi.cluster.hazelcast.HazelcastClusterManager
+import com.hazelcast.config.FileSystemYamlConfig
 
 object ClusterHandler {
     var manager : ClusterManager? = null
@@ -59,6 +59,7 @@ object ClusterHandler {
 
             val serviceHandler = ServiceHandler(vertx, logger)
 
+            /*
             val listener = object : MembershipListener {
                 override fun memberAdded(membershipEvent: MembershipEvent) {
                     logger.info("Added nodeId: ${membershipEvent.member.uuid}")
@@ -71,6 +72,22 @@ object ClusterHandler {
             }
 
             clusterManager.hazelcastInstance.cluster.addMembershipListener(listener)
+            */
+
+
+
+            val nodeListener = object : NodeListener {
+                override fun nodeAdded(nodeID: String) {
+                    logger.info("Added nodeId: ${nodeID}")
+                }
+
+                override fun nodeLeft(nodeID: String) {
+                    logger.info("Removed nodeId: ${nodeID}")
+                    serviceHandler.removeClusterNode(nodeID)
+                }
+
+            }
+            clusterManager.nodeListener(nodeListener)
 
             try {
                 // Register Message Types

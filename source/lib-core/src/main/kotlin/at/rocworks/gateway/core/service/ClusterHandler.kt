@@ -59,33 +59,15 @@ object ClusterHandler {
 
             val serviceHandler = ServiceHandler(vertx, logger)
 
-            /*
-            val listener = object : MembershipListener {
-                override fun memberAdded(membershipEvent: MembershipEvent) {
-                    logger.info("Added nodeId: ${membershipEvent.member.uuid}")
-                }
-
-                override fun memberRemoved(membershipEvent: MembershipEvent) {
-                    logger.info("Removed nodeId: ${membershipEvent.member.uuid}")
-                    serviceHandler.removeClusterNode(membershipEvent.member.uuid)
-                }
-            }
-
-            clusterManager.hazelcastInstance.cluster.addMembershipListener(listener)
-            */
-
-
-
             val nodeListener = object : NodeListener {
                 override fun nodeAdded(nodeID: String) {
-                    logger.info("Added nodeId: ${nodeID}")
+                    logger.info("Added nodeId: $nodeID")
                 }
 
                 override fun nodeLeft(nodeID: String) {
-                    logger.info("Removed nodeId: ${nodeID}")
+                    logger.info("Removed nodeId: $nodeID")
                     serviceHandler.removeClusterNode(nodeID)
                 }
-
             }
             clusterManager.nodeListener(nodeListener)
 

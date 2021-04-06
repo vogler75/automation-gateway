@@ -2,21 +2,28 @@ package at.rocworks.gateway.core.data
 
 import org.apache.ignite.cache.query.annotations.QuerySqlField
 import java.sql.Timestamp
+import kotlin.math.pow
 
 class PiOpcValue(topic: Topic, topicValue: TopicValue) {
     fun key(): String = "$systemName/$address"
 
-    @QuerySqlField
-    val topicName = topic.topicName
-
-    @QuerySqlField(index = true)
+    @QuerySqlField(index = true, inlineSize = 100)
     val topicType = topic.topicType.name
 
-    @QuerySqlField(index = true)
+    @QuerySqlField(index = true, inlineSize = 100)
     val systemName = topic.systemName
 
-    @QuerySqlField(index = true)
+    @QuerySqlField(index = true, inlineSize = 100)
     val systemType = topic.systemType.name
+
+    @QuerySqlField(index = true, inlineSize = 100)
+    val statusString: String = topicValue.statusAsString()
+
+    @QuerySqlField(index = true, inlineSize = 100)
+    val dataTypeName: String = topicValue.dataTypeName()
+
+    @QuerySqlField
+    val topicName = topic.topicName
 
     @QuerySqlField
     val address = topic.address
@@ -32,10 +39,4 @@ class PiOpcValue(topic: Topic, topicValue: TopicValue) {
 
     @QuerySqlField
     val serverTime: Timestamp = Timestamp.from(topicValue.serverTime())
-
-    @QuerySqlField(index = true)
-    val statusString: String = topicValue.statusAsString()
-
-    @QuerySqlField(index = true)
-    val dataTypeName: String = topicValue.dataTypeName()
 }

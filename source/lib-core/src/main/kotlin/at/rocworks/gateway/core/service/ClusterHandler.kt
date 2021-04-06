@@ -52,7 +52,6 @@ object ClusterHandler {
         Vertx.clusteredVertx(vertxOptions).onComplete { vertx ->
             if (vertx.succeeded()) {
                 setupCluster(args, vertx.result(), services)
-
                 if (clusterManager is IgniteClusterManager) {
                     createCache(clusterManager as IgniteClusterManager)
                 }
@@ -138,14 +137,15 @@ object ClusterHandler {
     private fun createCache(clusterManager: IgniteClusterManager) {
         /*
           select table_name from information_schema.tables where table_schema='PUBLIC';
-          select column_name, data_type, type_name, column_type from information_schema.columns where table_name='OPCCACHE';
+          select column_name, data_type, type_name, column_type from information_schema.columns where table_name='PIOPCVALUE';
          */
         try {
             val ignite: Ignite = clusterManager.igniteInstance
-            val topicCacheCfg = CacheConfiguration<String, PiOpcValue>()
-            topicCacheCfg.name = "PUBLIC"
-            topicCacheCfg.setIndexedTypes(String::class.java, PiOpcValue::class.java)
-            piOpcCache = ignite.getOrCreateCache(topicCacheCfg)
+            val config = CacheConfiguration<String, PiOpcValue>()
+            config.name = "PUBLIC"
+            config.sqlIndexMaxInlineSize = 100 // TODO: how to determine this size?
+            config.setIndexedTypes(String::class.java, PiOpcValue::class.java)
+            piOpcCache = ignite.getOrCreateCache(config)
         } catch (e: java.lang.Exception) {
             e.printStackTrace()
         }

@@ -7,7 +7,6 @@ import io.vertx.core.json.JsonObject
 import io.vertx.servicediscovery.Record
 import io.vertx.servicediscovery.ServiceDiscovery
 import org.slf4j.Logger
-import java.util.*
 
 class ServiceHandler(val vertx: Vertx, val logger: Logger) {
     private val discovery = ServiceDiscovery.create(vertx)!!
@@ -32,7 +31,7 @@ class ServiceHandler(val vertx: Vertx, val logger: Logger) {
             .setType(type)
             .setName(name)
             .setLocation(JsonObject()
-                .put("node", ClusterHandler.manager?.nodeId ?: "")
+                .put("node", ClusterHandler.clusterManager?.nodeId ?: "")
                 .put("endpoint", endpoint))
         discovery.publish(record, promise)
         return promise.future()

@@ -13,6 +13,8 @@ data class TopicValuePlc(
     override fun dataTypeName() = value?.javaClass?.simpleName ?: ""
 
     override fun hasValue() = value!=null
+
+    override fun valueAsObject() = value
     override fun statusAsString() = ""
     override fun valueAsString() = value?.toString() ?: ""
 

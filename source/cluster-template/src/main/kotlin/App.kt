@@ -8,7 +8,7 @@ object App {
     @Throws(Exception::class)
     @JvmStatic
     fun main(args: Array<String>) {
-        ClusterHandler.setup(args) { vertx, config -> services(vertx, config) }
+        ClusterHandler.init(args) { vertx, config -> services(vertx, config) }
     }
 
     private fun services(vertx: Vertx, config: JsonObject) {

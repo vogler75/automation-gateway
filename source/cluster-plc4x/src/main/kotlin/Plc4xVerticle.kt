@@ -15,7 +15,6 @@ import org.apache.plc4x.java.PlcDriverManager
 import org.apache.plc4x.java.api.exceptions.PlcConnectionException
 import org.apache.plc4x.java.api.messages.*
 import org.apache.plc4x.java.api.value.PlcValue
-import java.time.Instant
 
 class Plc4xVerticle(config: JsonObject): DriverBase(config) {
     override fun getType() = Topic.SystemType.Plc
@@ -46,7 +45,7 @@ class Plc4xVerticle(config: JsonObject): DriverBase(config) {
         if (plc!=null && pollingTopics.isNotEmpty()) {
             val builder: PlcReadRequest.Builder = plc!!.readRequestBuilder()
             pollingTopics.forEach {
-                builder.addItem(it.key.topicName, it.key.payload)
+                builder.addItem(it.key.topicName, it.key.address)
             }
             val request = builder.build()
             val response = request.execute()
@@ -120,7 +119,7 @@ class Plc4xVerticle(config: JsonObject): DriverBase(config) {
             else -> {
                 val builder: PlcSubscriptionRequest.Builder = plc!!.subscriptionRequestBuilder()
                 topics.forEach {
-                    builder.addEventField("value", it.payload)
+                    builder.addEventField("value", it.address)
                 }
                 val request = builder.build()
 
@@ -223,7 +222,7 @@ class Plc4xVerticle(config: JsonObject): DriverBase(config) {
                 Topic.TopicType.NodeId -> {
                     when (topic.format) {
                         Topic.Format.Value -> {
-                            writeValueAsync(topic.payload, value.toString()).onComplete(ret)
+                            writeValueAsync(topic.address, value.toString()).onComplete(ret)
                         }
                         Topic.Format.Json,
                         Topic.Format.Pretty -> {

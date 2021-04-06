@@ -2,6 +2,7 @@ package at.rocworks.gateway.core.data
 
 
 import io.vertx.core.json.JsonObject
+import org.apache.ignite.cache.query.annotations.QuerySqlField
 import org.eclipse.milo.opcua.stack.core.Identifiers
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode
@@ -22,6 +23,8 @@ data class TopicValueOpc (
     constructor() : this(null, 0, 0, Instant.MIN, Instant.MIN, 0, 0)
 
     override fun hasValue() = value!=null
+
+    override fun valueAsObject() = value
     override fun statusAsString() = statusCode.toString()
     override fun valueAsString() = value?.toString() ?: ""
 

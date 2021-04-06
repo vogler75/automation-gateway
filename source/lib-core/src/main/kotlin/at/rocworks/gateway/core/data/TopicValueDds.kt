@@ -10,11 +10,12 @@ data class TopicValueDds (
     val state: Int = 0
 ) : TopicValue() {
     // default constructor needed for json to object mapping
-    constructor() : this(null, Instant.MAX, 0)
+    constructor() : this(null, Instant.MIN, 0)
 
     override fun dataTypeName() = value?.javaClass?.simpleName ?: ""
     override fun hasValue() = value!=null
 
+    override fun valueAsObject() = value
     override fun statusAsString() = state.toString()
     override fun valueAsString() = value?.encode() ?: ""
     override fun valueAsDouble(): Double? = null

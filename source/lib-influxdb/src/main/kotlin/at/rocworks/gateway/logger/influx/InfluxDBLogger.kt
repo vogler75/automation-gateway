@@ -181,7 +181,7 @@ class InfluxDBLogger(private val config: JsonObject) : AbstractVerticle() {
 
             val point = Point.measurement(topic.systemName)
                 .time(value.sourceTime().toEpochMilli(), TimeUnit.MILLISECONDS)
-                .tag("tag", topic.payload)
+                .tag("tag", topic.address)
                 .tag("system", topic.systemName)
                 .tag("status", value.statusAsString())
 

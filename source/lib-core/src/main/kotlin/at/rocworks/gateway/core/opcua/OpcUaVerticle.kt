@@ -4,6 +4,7 @@ import at.rocworks.gateway.core.data.Topic
 import at.rocworks.gateway.core.data.TopicValueOpc
 import at.rocworks.gateway.core.driver.DriverBase
 import at.rocworks.gateway.core.driver.MonitoredItem
+import at.rocworks.gateway.core.service.ClusterHandler
 
 import io.vertx.core.AsyncResult
 import io.vertx.core.CompositeFuture
@@ -391,7 +392,7 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
         try {
             when (topic.topicType) {
                 Topic.TopicType.NodeId -> {
-                    val nodeId = NodeId.parse(topic.payload)
+                    val nodeId = NodeId.parse(topic.address)
                     val dataValue = when (topic.format) {
                         Topic.Format.Value ->
                             DataValue(getVariantOfValue(value, nodeId), null, writeGetTime())
@@ -573,7 +574,7 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
         val ret = Promise.promise<Boolean>()
         if (topics.isEmpty()) ret.complete(true)
         else {
-            val nodeIds = topics.map { NodeId.parseOrNull(it.payload) }.toList()
+            val nodeIds = topics.map { NodeId.parseOrNull(it.address) }.toList()
             val requests = ArrayList<MonitoredItemCreateRequest>()
 
             val dataChangeFilter = ExtensionObject.encode(client!!.serializationContext, DataChangeFilter(
@@ -651,7 +652,7 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
                         }
                     }
                     if (items.size < 2) {
-                        logger.warn("Subscribe path with too less items! [{}]", topic.payload)
+                        logger.warn("Subscribe path with too less items! [{}]", topic.address)
                     } else {
                         val resolvedNodeIds = mutableListOf<NodeId>()
                         fun find(node: String, itemIdx: Int) {
@@ -678,7 +679,7 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
                                 systemType = topic.systemType,
                                 topicType = topic.topicType,
                                 systemName = topic.systemName,
-                                payload = it.toParseableString(),
+                                address = it.toParseableString(),
                                 format = topic.format
                             )
                         })
@@ -719,9 +720,10 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
     private fun valueConsumer(topic: Topic, data: DataValue) {
         logger.debug("Got value [{}] [{}]", topic.topicName, data.value.toString())
         try {
+            val value = TopicValueOpc.fromDataValue(data)
             fun json() = JsonObject()
                 .put("Topic", topic.encodeToJson())
-                .put("Value", TopicValueOpc.fromDataValue(data).encodeToJson())
+                .put("Value", value.encodeToJson())
 
             val buffer : Buffer? = when (topic.format) {
                 Topic.Format.Value -> {
@@ -732,7 +734,10 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
                 Topic.Format.Json -> Buffer.buffer(json().encode())
                 Topic.Format.Pretty -> Buffer.buffer(json().encodePrettily())
             }
-            if (buffer!=null) vertx.eventBus().publish(topic.topicName, buffer)
+            if (buffer!=null) {
+                vertx.eventBus().publish(topic.topicName, buffer)
+                ClusterHandler.storeTopicValue(topic, value)
+            }
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -813,12 +818,14 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
         val result = browseNode(browseRoot, maxLevel, 1, flat)
         val duration = Duration.between(tStart, Instant.now())
         val seconds = duration.seconds + duration.nano/1_000_000_000.0
-        logger.info(
-            "Browsed [{}] items in [{}] seconds [{}] items/s.",
-            counter,
-            seconds,
-            if (seconds>0) counter / seconds else 0
-        )
+        if (seconds > 1.0) {
+            logger.info(
+                "Browsed [{}] items in [{}] seconds [{}] items/s.",
+                counter,
+                seconds,
+                if (seconds>0) counter / seconds else 0
+            )
+        }
 
         return result
     }

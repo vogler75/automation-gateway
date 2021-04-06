@@ -7,7 +7,7 @@ data class Topic (
     val systemType: SystemType,
     val topicType: TopicType,
     val systemName: String,
-    val payload: String,
+    val address: String,
     val format: Format = Format.Json
 ) {
     enum class SystemType {
@@ -36,7 +36,7 @@ data class Topic (
     fun isValid() = systemType != SystemType.Unknown && topicType != TopicType.Unknown
 
     val pathItems : List<String>
-        get() = this.payload.split(Regex("""(?<!\\)/""")).map { it.replace("\\/", "/") }
+        get() = this.address.split(Regex("""(?<!\\)/""")).map { it.replace("\\/", "/") }
 
     fun encodeToJson() = encodeToJson(this)
 
@@ -64,7 +64,7 @@ data class Topic (
                     topicType = TopicType.NodeId,
                     systemName = it.destructured.component1(),
                     format = getFmt(it.destructured.component2()),
-                    payload = "ns=${it.destructured.component3()};s=${it.destructured.component4()}",
+                    address = "ns=${it.destructured.component3()};s=${it.destructured.component4()}",
                 )
             } ?: """${opcUri}/(\w+)/Node$optFmt/(.*)$""".toRegex(RegexOption.IGNORE_CASE).find(topic)?.let {
                 Topic(
@@ -73,7 +73,7 @@ data class Topic (
                     topicType = TopicType.NodeId,
                     systemName = it.destructured.component1(),
                     format = getFmt(it.destructured.component2()),
-                    payload = it.destructured.component3()
+                    address = it.destructured.component3()
                 )
             } ?: """${opcUri}/(\w+)/Path$optFmt/(.*)/(.*)$""".toRegex(RegexOption.IGNORE_CASE).find(topic)?.let {
                 Topic(
@@ -82,7 +82,7 @@ data class Topic (
                     topicType = TopicType.Path,
                     systemName = it.destructured.component1(),
                     format = getFmt(it.destructured.component2()),
-                    payload = """${it.destructured.component3()}/${it.destructured.component4()}""",
+                    address = """${it.destructured.component3()}/${it.destructured.component4()}""",
                 )
             } ?: """${opcUri}/(\w+)/Rpc/(.*)$""".toRegex(RegexOption.IGNORE_CASE).find(topic)?.let {
                 Topic(
@@ -91,7 +91,7 @@ data class Topic (
                     topicType = TopicType.Rpc,
                     systemName = it.destructured.component1(),
                     format = Format.Json,
-                    payload = it.destructured.component2(),
+                    address = it.destructured.component2(),
                 )
             }
             // --- PLC ---
@@ -102,7 +102,7 @@ data class Topic (
                     topicType = TopicType.NodeId,
                     systemName = it.destructured.component1(),
                     format = getFmt(it.destructured.component2()),
-                    payload = it.destructured.component3()
+                    address = it.destructured.component3()
                 )
             }
             // --- DDS ---
@@ -113,7 +113,7 @@ data class Topic (
                     topicType = TopicType.Path,
                     systemName = it.destructured.component1(),
                     format = getFmt(it.destructured.component2()),
-                    payload = it.destructured.component3()
+                    address = it.destructured.component3()
                 )
             }
             // --- SYS ---
@@ -123,7 +123,7 @@ data class Topic (
                     systemType = SystemType.Sys,
                     topicType = TopicType.Path,
                     systemName = "",
-                    payload = """${it.destructured.component1()}/${it.destructured.component2()}""",
+                    address = """${it.destructured.component1()}/${it.destructured.component2()}""",
                 )
             }
             // --- MQTT ---
@@ -133,7 +133,7 @@ data class Topic (
                     systemType = SystemType.Mqtt,
                     topicType = TopicType.Path,
                     systemName = "",
-                    payload = topic,
+                    address = topic,
                 )
             }
         }
@@ -151,7 +151,7 @@ data class Topic (
                 .put(SYSTEM_TYPE, topic.systemType.name)
                 .put(ITEM_TYPE, topic.topicType.name)
                 .put(SYSTEM_NAME, topic.systemName)
-                .put(PAYLOAD, topic.payload)
+                .put(PAYLOAD, topic.address)
                 .put(FORMAT, topic.format)
         }
 
@@ -161,7 +161,7 @@ data class Topic (
                 systemType = SystemType.valueOf(json.getString(SYSTEM_TYPE, "Invalid")),
                 topicType = TopicType.valueOf(json.getString(ITEM_TYPE, "Invalid")),
                 systemName = json.getString(SYSTEM_NAME, null),
-                payload = json.getString(PAYLOAD, null),
+                address = json.getString(PAYLOAD, null),
                 format = Format.valueOf(json.getString(FORMAT, Format.Value.name))
             )
         }

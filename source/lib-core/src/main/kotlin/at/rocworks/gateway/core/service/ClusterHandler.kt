@@ -1,5 +1,7 @@
 package at.rocworks.gateway.core.service
 
+import at.rocworks.gateway.core.cache.OpcNode
+import at.rocworks.gateway.core.cache.OpcValue
 import at.rocworks.gateway.core.data.*
 import at.rocworks.gateway.core.data.CodecTopic
 import at.rocworks.gateway.core.data.CodecTopicValueOpc
@@ -37,7 +39,9 @@ object ClusterHandler {
     var clusterManager: ClusterManager = igniteClusterManager()
     //val clusterManager: ClusterManager = hazelcastClusterManager()
 
-    var piOpcCache: IgniteCache<String, PiOpcValue>? = null
+    var cacheOpc: IgniteCache<String, Any>? = null
+    //var cacheOpcNodes: IgniteCache<String, OpcNode>? = null
+    //var cacheOpcValues: IgniteCache<String, OpcValue>? = null
 
     fun init(args: Array<String>, services: (Vertx, JsonObject) -> Unit) {
         val stream = ClusterHandler::class.java.classLoader.getResourceAsStream("logging.properties")
@@ -137,24 +141,21 @@ object ClusterHandler {
     private fun createCache(clusterManager: IgniteClusterManager) {
         /*
           select table_name from information_schema.tables where table_schema='PUBLIC';
-          select column_name, data_type, type_name, column_type from information_schema.columns where table_name='PIOPCVALUE';
+          select column_name, data_type, type_name, column_type from information_schema.columns where table_name='OPCVALUES';
          */
         try {
             val ignite: Ignite = clusterManager.igniteInstance
-            val config = CacheConfiguration<String, PiOpcValue>()
-            config.name = "PUBLIC"
-            config.sqlIndexMaxInlineSize = 100 // TODO: how to determine this size?
-            config.setIndexedTypes(String::class.java, PiOpcValue::class.java)
-            piOpcCache = ignite.getOrCreateCache(config)
-        } catch (e: java.lang.Exception) {
-            e.printStackTrace()
-        }
-    }
 
-    fun storeTopicValue(topic: Topic, value: TopicValue) {
-        try {
-            val piValue = PiOpcValue(topic, value)
-            piOpcCache?.put(piValue.key(), piValue)
+            cacheOpc = run {
+                val config = CacheConfiguration<String, Any>()
+                config.name = "PUBLIC"
+                config.sqlIndexMaxInlineSize = 100
+                config.setIndexedTypes(
+                    String::class.java, OpcNode::class.java,
+                    String::class.java, OpcValue::class.java
+                )
+                ignite.getOrCreateCache(config)
+            }
         } catch (e: java.lang.Exception) {
             e.printStackTrace()
         }

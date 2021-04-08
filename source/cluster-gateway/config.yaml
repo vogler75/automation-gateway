@@ -19,19 +19,6 @@ GraphQLServer:
         #- System: winccoa
         #  FieldName: BrowseName # BrowseName | DisplayName
 
-Database:
-  Logger:
-    - Id: default
-      Type: InfluxDB
-      Url: http://nuc1:8086
-      Database: test
-      Username: ""
-      Password: ""
-      WriteParameters:
-        QueueSize: 20000
-      Logging:
-        #- Topic: opc/default/path:json/$objects/Test/+/float
-
 OpcUaClient:
   - Id: "winccoa"
     Enabled: true
@@ -52,8 +39,12 @@ OpcUaClient:
       SamplingInterval: 0
       DiscardOldest: true
       DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
+    BrowseOnStartup: true
     WriteSchemaToFile: false
+    WriteSchemaToCache: true
+    SubscribeOnStartup:
+      - node/ns=2;s=ExampleDP_Float.ExampleDP_Arg1
+      - path/$objects/Test/+/+
 
   - Id: "ignition"
     Enabled: true

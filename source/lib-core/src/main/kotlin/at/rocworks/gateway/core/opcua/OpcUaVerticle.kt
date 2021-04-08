@@ -1,5 +1,7 @@
 package at.rocworks.gateway.core.opcua
 
+import at.rocworks.gateway.core.cache.OpcNode
+import at.rocworks.gateway.core.cache.OpcValue
 import at.rocworks.gateway.core.data.Topic
 import at.rocworks.gateway.core.data.TopicValueOpc
 import at.rocworks.gateway.core.driver.DriverBase
@@ -93,6 +95,7 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
 
     private val browseOnStartup : Boolean = config.getBoolean("BrowseOnStartup", false)
     private val writeSchemaToFile: Boolean = config.getBoolean("WriteSchemaToFile", false)
+    private val writeSchemaToCache: Boolean = config.getBoolean("WriteSchemaToCache", false)
 
     private var client: OpcUaClient? = null
     private var subscription: UaSubscription? = null
@@ -209,8 +212,12 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
                                 val tree = browseNode(NodeId.parse("i=85"), -1)
                                 schema.put("Objects", tree)
                                 logger.info("Object browsing finished.")
-                                if (writeSchemaToFile)
+                                if (writeSchemaToFile) {
                                     File("schema-${id}.json".toLowerCase()).writeText(tree.encodePrettily())
+                                }
+                                if (writeSchemaToCache) {
+                                    writeSchemaToCache(tree)
+                                }
                                 promise.complete()
                             } else {
                                 promise.complete()
@@ -224,6 +231,30 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
             promise.fail(e)
         }
         return promise.future()
+    }
+
+    private fun writeSchemaToCache(tree: JsonArray) {
+        ClusterHandler.cacheOpc?.let { cache ->
+            fun add(path: String, node: JsonObject) {
+                val browseName = node.getString("BrowseName", "")
+                val browsePath = "$path$browseName"
+                OpcNode(
+                    systemName = id,
+                    nodeId = node.getString("NodeId", ""),
+                    nodeClass = node.getString("NodeClass", ""),
+                    browsePath = browsePath,
+                    parentPath = path,
+                    browseName = browseName,
+                    displayName = node.getString("DisplayName", ""),
+                ).let {
+                    cache.put(browsePath, it)
+                }
+                node.getJsonArray("Nodes")?.filterIsInstance<JsonObject>()?.forEach { node ->
+                    add("$browsePath/", node)
+                }
+            }
+            tree.filterIsInstance<JsonObject>().forEach { add("", it) }
+        }
     }
 
     override fun disconnect(): Future<Boolean> {
@@ -344,6 +375,7 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
             subscribeNodes(topics.filter { it.topicType === Topic.TopicType.NodeId }),
             subscribePath(topics.filter { it.topicType === Topic.TopicType.Path })
         ).onComplete { promise.complete(it.succeeded()) }
+
         return promise.future()
     }
 
@@ -570,10 +602,10 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
     }
 
     private fun subscribeNodes(topics: List<Topic>) : Future<Boolean> {
-        logger.info("Subscribe nodes [{}] sampling interval [{}]", topics.size, monitoringParametersSamplingInterval)
         val ret = Promise.promise<Boolean>()
         if (topics.isEmpty()) ret.complete(true)
         else {
+            logger.info("Subscribe nodes [{}] sampling interval [{}]", topics.size, monitoringParametersSamplingInterval)
             val nodeIds = topics.map { NodeId.parseOrNull(it.address) }.toList()
             val requests = ArrayList<MonitoredItemCreateRequest>()
 
@@ -641,6 +673,8 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
 
     private fun subscribePath(topics: List<Topic>) : Future<Boolean> {
         return vertx.executeBlocking { ret ->
+            if (topics.isEmpty()) ret.complete(true)
+            else
             try {
                 val resolvedTopics = mutableListOf<Topic>()
                 topics.forEach { topic ->
@@ -736,7 +770,11 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
             }
             if (buffer!=null) {
                 vertx.eventBus().publish(topic.topicName, buffer)
-                ClusterHandler.storeTopicValue(topic, value)
+                ClusterHandler.cacheOpc?.let { cache ->
+                    OpcValue(topic, value).let {
+                        cache.put(it.key(), it)
+                    }
+                }
             }
         } catch (e: Exception) {
             e.printStackTrace()
@@ -766,6 +804,7 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
                     item.put("DisplayName", rd.displayName.text)
                     item.put("NodeId", rd.nodeId.toParseableString())
                     item.put("NodeClass", rd.nodeClass.toString())
+
                     //logger.debug("$flat : $level : $item")
 
                     if (rd.nodeClass === NodeClass.Variable || !flat) result.add(item)
@@ -808,9 +847,9 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
                     logger.error("Browsing nodeId [{}] failed [{}]", browseRoot, browseResult.statusCode.toString())
                 }
             } catch (e: InterruptedException) {
-                logger.error(String.format("Browsing nodeId=%s failed: %s", browseRoot, e.message, e))
+                logger.error(String.format("Browsing nodeId=%s failed: %s", browseRoot, e.message))
             } catch (e: ExecutionException) {
-                logger.error(String.format("Browsing nodeId=%s failed: %s", browseRoot, e.message, e))
+                logger.error(String.format("Browsing nodeId=%s failed: %s", browseRoot, e.message))
             }
             return result
         }

@@ -7,6 +7,7 @@ import io.vertx.core.*
 import io.vertx.core.eventbus.MessageConsumer
 import io.vertx.core.buffer.Buffer
 import io.vertx.core.eventbus.Message
+import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 
 import io.vertx.servicediscovery.Record
@@ -27,12 +28,15 @@ abstract class DriverBase(config: JsonObject) : AbstractVerticle() {
 
     protected val id: String = config.getString("Id", DriverBase::class.java.simpleName)
 
-    protected val uri = "${getType().name}/$id"
+    private val uri = "${getType().name}/$id"
 
     protected val logger: Logger
-    protected val logLevel: String = config.getString("LogLevel", "INFO")
+    private val logLevel: String = config.getString("LogLevel", "INFO")
 
-    protected var messageHandlers: List<MessageConsumer<*>> = ArrayList()
+    private val subscribeOnStartup: List<String>
+            = config.getJsonArray("SubscribeOnStartup", JsonArray()).filterIsInstance<String>().toList()
+
+    private var messageHandlers: List<MessageConsumer<*>> = ArrayList()
 
     protected val registry = Registry()
 
@@ -61,6 +65,11 @@ abstract class DriverBase(config: JsonObject) : AbstractVerticle() {
                 connect().onSuccess {
                     connectHandlers()
                     registerService()
+                    subscribeOnStartup.forEach {
+                        val topic = Topic.parseTopic("$uri/$it")
+                        logger.info("Subscribe to topic [$topic]")
+                        if (topic.isValid()) subscribeTopic(id, topic)
+                    }
                     startPromise.complete()
                 }.onFailure { result: Throwable -> startPromise.fail(result.message) }
             } catch (e: Exception) {
@@ -155,7 +164,7 @@ abstract class DriverBase(config: JsonObject) : AbstractVerticle() {
         }
     }
 
-    private fun subscribeTopic(clientId: String, topic: Topic): Future<Boolean> {
+    protected fun subscribeTopic(clientId: String, topic: Topic): Future<Boolean> {
         val ret = Promise.promise<Boolean>()
         try {
             val (count, added) = registry.addClient(clientId, topic)

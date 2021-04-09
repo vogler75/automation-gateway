@@ -5,6 +5,7 @@ import at.rocworks.gateway.core.opcua.OpcUaVerticle
 import at.rocworks.gateway.core.opcua.KeyStoreLoader
 
 import io.vertx.core.Vertx
+import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 
 object Gateway {
@@ -16,14 +17,6 @@ object Gateway {
     }
 
     private fun services(vertx: Vertx, config: JsonObject) {
-        // OPC UA Server
-        val enabled: List<JsonObject> = config.getJsonArray("OpcUaClient")
-            .filterIsInstance<JsonObject>()
-            .filter { it.getBoolean("Enabled") }
-        enabled.map {
-            vertx.deployVerticle(OpcUaVerticle(it))
-        }
-
         // Mqtt Server
         config.getJsonObject("MqttServer")
             ?.getJsonArray("Listeners")
@@ -38,6 +31,14 @@ object Gateway {
             ?.filterIsInstance<JsonObject>()
             ?.forEach {
                 GraphQLServer.create(vertx, it, "default")
+            }
+
+        // OPC UA Server
+        config.getJsonArray("OpcUaClient", JsonArray())
+            .filterIsInstance<JsonObject>()
+            .filter { it.getBoolean("Enabled") }
+            .forEach {
+                vertx.deployVerticle(OpcUaVerticle(it))
             }
     }
 }

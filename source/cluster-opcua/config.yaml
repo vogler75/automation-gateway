@@ -1,39 +1,3 @@
-MqttServer:
-  Listeners:
-    - Id: Mqtt
-      Port: 1883
-      Host: 0.0.0.0
-      LogLevel: INFO # ALL | INFO
-
-GraphQLServer:
-  Listeners:
-    - Port: 4000
-      LogLevel: INFO
-      GraphiQL: true
-      WriteSchemaToFile: false
-      Schemas:
-        - System: ignition
-          FieldName: BrowseName # BrowseName | DisplayName
-        - System: unified
-          FieldName: DisplayName # BrowseName | DisplayName
-        - System: winccoa
-          FieldName: BrowseName # BrowseName | DisplayName
-
-Database:
-  Logger:
-    - Id: default
-      Type: InfluxDB
-      Url: http://nuc1:8086
-      Database: test
-      Username: ""
-      Password: ""
-      WriteParameters:
-        QueueSize: 20000
-      Logging:
-        - Topic: opc/winccoa/node/ns=2;s=ExampleDP_Float.ExampleDP_Arg1
-        - Topic: opc/winccoa/path/$objects/Test/+/float
-        - Topic: opc/ignition/node/ns=2;s=[default]/Input_Watt
-
 OpcUaClient:
   - Id: "winccoa"
     Enabled: true
@@ -56,6 +20,10 @@ OpcUaClient:
       DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
     BrowseOnStartup: false
     WriteSchemaToFile: false
+    WriteSchemaToCache: true
+    SubscribeOnStartup:
+      - node/ns=2;s=ExampleDP_Float.ExampleDP_Arg1
+      - path/$objects/Test/+/+
 
   - Id: "ignition"
     Enabled: true

@@ -25,13 +25,17 @@ class ServiceHandler(val vertx: Vertx, val logger: Logger) {
         }
     }
 
+    fun unobserveService(type: String, name: String) {
+        observers.remove(idOf(type, name))
+    }
+
     fun registerService(type: String, name: String, endpoint: String): Future<Record> {
         val promise = Promise.promise<Record>()
         val record = Record()
             .setType(type)
             .setName(name)
             .setLocation(JsonObject()
-                .put("node", ClusterHandler.clusterManager?.nodeId ?: "")
+                .put("node", ClusterHandler.clusterManager.nodeId ?: "")
                 .put("endpoint", endpoint))
         discovery.publish(record, promise)
         return promise.future()

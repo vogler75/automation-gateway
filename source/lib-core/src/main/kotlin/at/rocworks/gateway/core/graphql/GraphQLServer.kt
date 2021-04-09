@@ -12,6 +12,7 @@ import io.reactivex.*
 import io.vertx.core.*
 
 import io.vertx.core.buffer.Buffer
+import io.vertx.core.eventbus.DeliveryOptions
 import io.vertx.core.http.HttpServerOptions
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
@@ -33,6 +34,7 @@ import java.util.logging.Level
 import java.util.logging.Logger
 import io.vertx.ext.web.handler.graphql.GraphiQLHandler
 import io.vertx.ext.web.handler.graphql.GraphiQLHandlerOptions
+import io.vertx.servicediscovery.Status
 
 class GraphQLServer(private val config: JsonObject, private val defaultSystem: String) : AbstractVerticle() {
     // TODO: Implement scalar "variant"
@@ -76,7 +78,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
                 startPromise.complete()
             }
         } else {
-            logger.info("Fetch schemas...")
+            logger.info("Build schema...")
             val (generic, wiring) = getGenericSchema(withSytems = true)
 
             val systems = schemas.filterIsInstance<JsonObject>().map { it.getString("System") }
@@ -119,14 +121,22 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
     private fun fetchSchema(system: String): Future<Boolean> {
         val promise = Promise.promise<Boolean>()
         val serviceHandler = ServiceHandler(vertx, logger)
-
         val type = Topic.SystemType.Opc.name
-        serviceHandler.observeService(type, system) {
-            logger.info("Fetch schema [{}][{}]", type, system)
-            vertx.eventBus().request<JsonObject>("${type}/${system}/Schema", JsonObject()) {
-                logger.info("Schema response [{}]", it.succeeded())
-                schemas.put(system, it.result()?.body() ?: JsonObject())
-                promise.complete(it.succeeded())
+        logger.info("Wait for service [{}]...", system)
+        var done = false
+        serviceHandler.observeService(type, system) { record ->
+            if (record.status == Status.UP && !done) {
+                logger.info("Request schema [{}]...", system)
+                vertx.eventBus().request<JsonObject>(
+                    "${type}/${system}/Schema",
+                    JsonObject(),
+                    DeliveryOptions().setSendTimeout(60000*3))
+                {
+                    done = true
+                    logger.info("Schema response [{}] [{}] [{}]", system, it.succeeded(), it.cause()?.message ?: "")
+                    schemas.put(system, it.result().body() ?: JsonObject())
+                    promise.complete(it.succeeded())
+                }
             }
         }
         return promise.future()

@@ -1,0 +1,26 @@
+OpcUaClient:
+  - Id: "winccoa"
+    Enabled: true
+    LogLevel: INFO
+    EndpointUrl: "opc.tcp://centos1:4840"
+    UpdateEndpointUrl: centos1
+    SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#None
+    ConnectTimeout: 5000
+    RequestTimeout: 5000
+    KeepAliveFailuresAllowed: 0
+    SubscriptionSamplingInterval: 0.0
+    WriteParameters:
+      QueueSize: 10000
+      BlockSize: 200
+      WithTime: false
+    MonitoringParameters:
+      BufferSize: 10
+      SamplingInterval: 0
+      DiscardOldest: true
+      DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
+    BrowseOnStartup: false
+    WriteSchemaToFile: false
+    WriteSchemaToCache: true
+    SubscribeOnStartup:
+      - node/ns=2;s=ExampleDP_Float.ExampleDP_Arg1
+      - path/$objects/Test/+/+

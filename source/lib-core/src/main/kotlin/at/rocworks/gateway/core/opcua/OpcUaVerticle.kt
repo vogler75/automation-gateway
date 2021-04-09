@@ -208,16 +208,7 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
                             createSubscription()
 
                             if (browseOnStartup) {
-                                logger.info("Start object browsing...")
-                                val tree = browseNode(NodeId.parse("i=85"), -1)
-                                schema.put("Objects", tree)
-                                logger.info("Object browsing finished.")
-                                if (writeSchemaToFile) {
-                                    File("schema-${id}.json".toLowerCase()).writeText(tree.encodePrettily())
-                                }
-                                if (writeSchemaToCache) {
-                                    writeSchemaToCache(tree)
-                                }
+                                schema.put("Objects", browseSchema())
                                 promise.complete()
                             } else {
                                 promise.complete()
@@ -231,6 +222,19 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
             promise.fail(e)
         }
         return promise.future()
+    }
+
+    private fun browseSchema(): JsonArray {
+        logger.info("Start object browsing...")
+        val tree = browseNode(NodeId.parse("i=85"), -1)
+        logger.info("Object browsing finished.")
+        if (writeSchemaToFile) {
+            File("schema-${id}.json".toLowerCase()).writeText(tree.encodePrettily())
+        }
+        if (writeSchemaToCache) {
+            writeSchemaToCache(tree)
+        }
+        return tree
     }
 
     private fun writeSchemaToCache(tree: JsonArray) {
@@ -249,8 +253,8 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
                 ).let {
                     cache.put(browsePath, it)
                 }
-                node.getJsonArray("Nodes")?.filterIsInstance<JsonObject>()?.forEach { node ->
-                    add("$browsePath/", node)
+                node.getJsonArray("Nodes")?.filterIsInstance<JsonObject>()?.forEach { it ->
+                    add("$browsePath/", it)
                 }
             }
             tree.filterIsInstance<JsonObject>().forEach { add("", it) }
@@ -291,7 +295,7 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
     }
 
     private fun createClientThread(ret: Promise<Boolean>) {
-        Thread {
+        thread {
             try {
                 client = OpcUaClient.create(
                     endpointUrl,
@@ -321,7 +325,7 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
             } catch (e: Exception) {
                 ret.fail(e)
             }
-        }.start()
+        }
     }
 
     private fun connectClientAsync(): Future<Boolean> {
@@ -366,7 +370,14 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
     }
 
     override fun schemaHandler(message: Message<JsonObject>) {
-        message.reply(schema)
+        if (schema.containsKey("Objects"))
+            message.reply(schema)
+        else {
+            thread {
+                schema.put("Objects", browseSchema())
+                message.reply(schema)
+            }
+        }
     }
 
     override fun subscribeTopics(topics: List<Topic>): Future<Boolean> {

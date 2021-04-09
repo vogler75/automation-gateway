@@ -69,7 +69,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
                 throw java.lang.Exception(e.message)
             }
         }
-        val schemas = config.getJsonArray("Schemas", JsonArray())
+        val schemas = config.getJsonArray("Schemas", JsonArray()) ?: JsonArray()
         if (schemas.isEmpty) {
             getGenericSchema().let { (schema, wiring) ->
                 startGraphQLServer(build(schema, wiring))

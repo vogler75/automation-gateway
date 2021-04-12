@@ -33,8 +33,8 @@ abstract class DriverBase(config: JsonObject) : AbstractVerticle() {
     protected val logger: Logger
     private val logLevel: String = config.getString("LogLevel", "INFO")
 
-    private val subscribeOnStartup: List<String>
-            = config.getJsonArray("SubscribeOnStartup", JsonArray()).filterIsInstance<String>().toList()
+    private val subscribeOnStartup: List<String> =
+        config.getJsonArray("SubscribeOnStartup", JsonArray()).filterIsInstance<String>().toList()
 
     private var messageHandlers: List<MessageConsumer<*>> = ArrayList()
 
@@ -139,7 +139,9 @@ abstract class DriverBase(config: JsonObject) : AbstractVerticle() {
     private fun unsubscribeHandler(message: Message<JsonObject>) {
         val request = message.body()
         val clientId = request.getString("ClientId")
-        val tagTopics = request.getJsonArray("Topics").map { Topic.decodeFromJson(it as JsonObject) }
+        val tagTopics = if (request.containsKey("Topic")) listOf(Topic.decodeFromJson(request.getJsonObject("Topic")))
+        else request.getJsonArray("Topics").map { Topic.decodeFromJson(it as JsonObject) }
+
         unsubscribeTopics(clientId, tagTopics).onComplete { result: AsyncResult<Boolean> ->
             if (result.cause() != null) result.cause().printStackTrace()
             message.reply(JsonObject().put("Ok", result.succeeded() && result.result()))
@@ -222,7 +224,7 @@ abstract class DriverBase(config: JsonObject) : AbstractVerticle() {
 
     // MQTT
     protected abstract fun subscribeTopics(topics: List<Topic>): Future<Boolean>
-    protected abstract fun unsubscribeItems(items: List<MonitoredItem>) : Future<Boolean>
+    protected abstract fun unsubscribeItems(items: List<MonitoredItem>): Future<Boolean>
     protected abstract fun publishTopic(topic: Topic, value: Buffer): Future<Boolean>
 
     // GraphQL

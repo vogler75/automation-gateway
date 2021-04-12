@@ -29,4 +29,7 @@ class OpcNode(
 
     @QuerySqlField()
     val topic: String = "opc/$systemName/node/$nodeId"
+
+    @QuerySqlField()
+    val subscribe: Boolean? = null
 }

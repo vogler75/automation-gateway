@@ -27,6 +27,8 @@ object ClusterCache {
 
     private var vertx: Vertx? = null
 
+    private val uuid = UUID.randomUUID().toString()
+
     fun init(manager: ClusterManager, vertx: Vertx) {
         /*
           select table_name from information_schema.tables where table_schema='PUBLIC';
@@ -61,49 +63,70 @@ object ClusterCache {
     fun registerSystem(systemType: Topic.SystemType, systemName: String) {
         val manager = this.manager
         if (manager is IgniteClusterManager) {
-            try {
-                // This optional local callback is called for each event notification that passed remote predicate listener.
-                val localListener: IgniteBiPredicate<UUID, CacheEvent> = IgniteBiPredicate { _, e ->
-                    try {
-                        if (e.hasNewValue()) {
-                            val value = e.newValue()
-                            if (value is BinaryObject && value.type().typeName() == OpcValue::class.qualifiedName) {
-                                val opcValue = value.deserialize<OpcValue>()
-                                val data = JsonObject()
-                                    .put("NodeId", opcValue.nodeId)
-                                    .put("Value", opcValue.updateValue)
-                                vertx?.eventBus()?.publish("${systemType.name}/$systemName/Write", data)
+            // This optional local callback is called for each event notification that passed remote predicate listener.
+            val localListener: IgniteBiPredicate<UUID, CacheEvent> = IgniteBiPredicate { _, e ->
+                try {
+                    if (e.hasNewValue()) {
+                        when (val value = e.newValue()) {
+                            is BinaryObject -> {
+                                when (value.type().typeName()) {
+                                    OpcNode::class.qualifiedName -> {
+                                        val opcNode = value.deserialize<OpcNode>()
+                                        if (opcNode.subscribe != null) {
+                                            val topic = Topic.parseTopic("${systemType.name}/$systemName/node/${opcNode.nodeId}")
+                                            val data = JsonObject()
+                                                .put("ClientId", uuid)
+                                                .put("Topic", topic.encodeToJson())
+                                            val action = if (opcNode.subscribe) "Subscribe" else "Unsubscribe"
+                                            println("$action: "+topic.topicName)
+                                            vertx?.eventBus()?.publish("${systemType.name}/$systemName/$action", data)
+                                        }
+                                    }
+                                    OpcValue::class.qualifiedName -> {
+                                        val opcValue = value.deserialize<OpcValue>()
+                                        if (opcValue.updateValue!=null) {
+                                            val data = JsonObject()
+                                                .put("NodeId", opcValue.nodeId)
+                                                .put("Value", opcValue.updateValue)
+                                            vertx?.eventBus()?.publish("${systemType.name}/$systemName/Write", data)
+                                        }
+                                    }
+                                }
                             }
+                        }
+                    }
+                } catch (e: java.lang.Exception) {
+                    e.printStackTrace()
+                }
+                true
+            }
+
+            val remoteFilter =
+                IgnitePredicate<CacheEvent> { e ->
+                    try {
+                        when (val value = e.newValue()) {
+                            is BinaryObject -> {
+                                when (value.type().typeName()) {
+                                    OpcNode::class.qualifiedName -> {
+                                        (value.field<Boolean>("subscribe") != null)
+                                    }
+                                    OpcValue::class.qualifiedName -> {
+                                        (value.field<String>("updateValue") != null &&
+                                                value.field<String>("systemType") == systemType.name &&
+                                                value.field<String>("systemName") == systemName)
+                                    }
+                                    else -> false
+                                }
+                            }
+                            else -> false
                         }
                     } catch (e: java.lang.Exception) {
                         e.printStackTrace()
+                        false
                     }
-                    true
                 }
 
-                val remoteFilter =
-                    IgnitePredicate<CacheEvent> { e ->
-                        try {
-                            when (val value = e.newValue()) {
-                                is BinaryObject -> {
-                                    (value.type().typeName() == OpcValue::class.qualifiedName &&
-                                            value.field<String>("updateValue") != null &&
-                                            value.field<String>("systemType") == systemType.name &&
-                                            value.field<String>("systemName") == systemName)
-                                }
-                                is OpcValue -> {
-                                    (value.updateValue != null &&
-                                            value.systemType == systemType.name &&
-                                            value.systemName == systemName)
-                                }
-                                else -> false
-                            }
-                        } catch (e: java.lang.Exception) {
-                            e.printStackTrace()
-                            false
-                        }
-                    }
-
+            try {
                 // Subscribe to specified cache events on all nodes that have cache running.
                 manager.igniteInstance.let {
                     val group = it.cluster().forCacheNodes(cache?.name)

@@ -21,30 +21,27 @@ import io.vertx.core.spi.cluster.ClusterManager
 import io.vertx.core.spi.cluster.NodeListener
 import java.io.File
 import java.net.URL
+import org.slf4j.Logger
 
 import io.vertx.spi.cluster.ignite.IgniteClusterManager
-
-import io.vertx.spi.cluster.hazelcast.HazelcastClusterManager
-import com.hazelcast.config.FileSystemYamlConfig
 import io.vertx.spi.cluster.ignite.impl.VertxLogger
-import org.slf4j.Logger
-import org.apache.ignite.IgniteCache
-import org.apache.ignite.binary.BinaryObject
-import org.apache.ignite.configuration.CacheConfiguration
+import io.vertx.spi.cluster.hazelcast.HazelcastClusterManager
 
-import org.apache.ignite.events.CacheEvent
 import org.apache.ignite.events.EventType
-
-import org.apache.ignite.lang.IgnitePredicate
 import org.apache.ignite.configuration.IgniteConfiguration
-import org.apache.ignite.lang.IgniteBiPredicate
-import java.util.*
+
+import com.hazelcast.config.FileSystemYamlConfig
 
 object ClusterHandler {
     private val logger: Logger = LoggerFactory.getLogger(javaClass.simpleName)
 
-    var clusterManager: ClusterManager = getIgniteClusterManager()
-    //val clusterManager: ClusterManager = hazelcastClusterManager()
+    private val clusterType = (System.getenv("cluster") ?: "ignite").toLowerCase()
+
+    private val clusterManager: ClusterManager = when (clusterType) {
+        "hazelcast" -> getHazelcastClusterManager()
+        "ignite" -> getIgniteClusterManager()
+        else -> throw IllegalArgumentException("Unknown cluster type '$clusterType'")
+    }
 
     fun init(args: Array<String>, services: (Vertx, JsonObject) -> Unit) {
         val stream = ClusterHandler::class.java.classLoader.getResourceAsStream("logging.properties")
@@ -59,17 +56,21 @@ object ClusterHandler {
         Vertx.clusteredVertx(vertxOptions).onComplete { vertx ->
             if (vertx.succeeded()) {
                 initCluster(args, vertx.result(), services)
-                ClusterCache.init(clusterManager)
+                ClusterCache.init(clusterManager, vertx.result())
             } else {
                 logger.error("Error initializing cluster!")
             }
         }
     }
 
+    fun getNodeId(): String {
+        return clusterManager.nodeId
+    }
+
     private fun initCluster(args: Array<String>, vertx: Vertx, services: (Vertx, JsonObject) -> Unit) {
         logger.info("Cluster nodeId: ${clusterManager.nodeId}")
 
-        val configFilePath = if (args.isNotEmpty()) args[0] else "config.yaml"
+        val configFilePath = if (args.isNotEmpty()) args[0] else System.getenv("config") ?: "config.yaml"
         logger.info("Gateway config file: $configFilePath")
 
         val serviceHandler = ServiceHandler(vertx, logger)
@@ -143,6 +144,4 @@ object ClusterHandler {
         logger.info("Cluster default configuration.")
         HazelcastClusterManager()
     }
-
-
 }

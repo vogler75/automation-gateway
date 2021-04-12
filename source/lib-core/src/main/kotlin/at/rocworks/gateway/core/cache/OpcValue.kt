@@ -42,5 +42,5 @@ class OpcValue(topic: Topic, topicValue: TopicValue) {
     val serverTime: Timestamp = Timestamp.from(topicValue.serverTime())
 
     @QuerySqlField
-    val updateSource: Boolean = false
+    val updateValue: String? = null
 }

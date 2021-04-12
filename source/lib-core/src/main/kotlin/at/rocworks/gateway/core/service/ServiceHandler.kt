@@ -35,7 +35,7 @@ class ServiceHandler(val vertx: Vertx, val logger: Logger) {
             .setType(type)
             .setName(name)
             .setLocation(JsonObject()
-                .put("node", ClusterHandler.clusterManager.nodeId ?: "")
+                .put("node", ClusterHandler.getNodeId())
                 .put("endpoint", endpoint))
         discovery.publish(record, promise)
         return promise.future()

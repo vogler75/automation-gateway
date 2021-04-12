@@ -212,6 +212,8 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
                                 vertx.eventBus().publish("$uri/Schema", JsonObject())
                             }
 
+                            ClusterCache.registerSystem(getType(), id)
+
                             promise.complete()
                         }
                     }

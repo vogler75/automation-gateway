@@ -8,7 +8,6 @@ import at.rocworks.gateway.core.data.CodecTopicValueOpc
 
 import org.slf4j.LoggerFactory
 
-
 import io.vertx.core.Vertx
 import io.vertx.core.VertxOptions
 import io.vertx.core.json.JsonObject
@@ -27,21 +26,25 @@ import io.vertx.spi.cluster.ignite.IgniteClusterManager
 
 import io.vertx.spi.cluster.hazelcast.HazelcastClusterManager
 import com.hazelcast.config.FileSystemYamlConfig
-import org.apache.ignite.Ignite
+import io.vertx.spi.cluster.ignite.impl.VertxLogger
 import org.slf4j.Logger
 import org.apache.ignite.IgniteCache
+import org.apache.ignite.binary.BinaryObject
 import org.apache.ignite.configuration.CacheConfiguration
 
+import org.apache.ignite.events.CacheEvent
+import org.apache.ignite.events.EventType
+
+import org.apache.ignite.lang.IgnitePredicate
+import org.apache.ignite.configuration.IgniteConfiguration
+import org.apache.ignite.lang.IgniteBiPredicate
+import java.util.*
 
 object ClusterHandler {
-    val logger: Logger = LoggerFactory.getLogger(javaClass.simpleName)
+    private val logger: Logger = LoggerFactory.getLogger(javaClass.simpleName)
 
-    var clusterManager: ClusterManager = igniteClusterManager()
+    var clusterManager: ClusterManager = getIgniteClusterManager()
     //val clusterManager: ClusterManager = hazelcastClusterManager()
-
-    var cacheOpc: IgniteCache<String, Any>? = null
-    //var cacheOpcNodes: IgniteCache<String, OpcNode>? = null
-    //var cacheOpcValues: IgniteCache<String, OpcValue>? = null
 
     fun init(args: Array<String>, services: (Vertx, JsonObject) -> Unit) {
         val stream = ClusterHandler::class.java.classLoader.getResourceAsStream("logging.properties")
@@ -55,17 +58,15 @@ object ClusterHandler {
         val vertxOptions = VertxOptions().setClusterManager(clusterManager)
         Vertx.clusteredVertx(vertxOptions).onComplete { vertx ->
             if (vertx.succeeded()) {
-                setupCluster(args, vertx.result(), services)
-                if (clusterManager is IgniteClusterManager) {
-                    createCache(clusterManager as IgniteClusterManager)
-                }
+                initCluster(args, vertx.result(), services)
+                ClusterCache.init(clusterManager)
             } else {
                 logger.error("Error initializing cluster!")
             }
         }
     }
 
-    private fun setupCluster(args: Array<String>, vertx: Vertx, services: (Vertx, JsonObject) -> Unit) {
+    private fun initCluster(args: Array<String>, vertx: Vertx, services: (Vertx, JsonObject) -> Unit) {
         logger.info("Cluster nodeId: ${clusterManager.nodeId}")
 
         val configFilePath = if (args.isNotEmpty()) args[0] else "config.yaml"
@@ -112,17 +113,28 @@ object ClusterHandler {
         }
     }
 
-    private fun igniteClusterManager() = try {
+    private fun getIgniteClusterManager() = try {
         val fileName = File("ignite.xml")
         val clusterConfig = URL(fileName.readText())
         logger.info("Cluster config file [{}]", fileName)
         IgniteClusterManager(clusterConfig)
     } catch (e: FileNotFoundException) {
         logger.info("Cluster default configuration.")
-        IgniteClusterManager()
+        val config = IgniteConfiguration()
+        config.gridLogger = VertxLogger()
+        config.metricsLogFrequency = 0
+        config.setIncludeEventTypes(
+            EventType.EVT_CACHE_OBJECT_PUT,
+            EventType.EVT_CACHE_OBJECT_READ,
+            EventType.EVT_CACHE_OBJECT_REMOVED,
+            EventType.EVT_NODE_JOINED,
+            EventType.EVT_NODE_LEFT,
+            EventType.EVT_NODE_FAILED
+        )
+        IgniteClusterManager(config)
     }
 
-    private fun hazelcastClusterManager() = try {
+    private fun getHazelcastClusterManager() = try {
         val fileName = "hazelcast.yaml"
         val clusterConfig = FileSystemYamlConfig(fileName)
         logger.info("Cluster config file [{}]", fileName)
@@ -132,32 +144,5 @@ object ClusterHandler {
         HazelcastClusterManager()
     }
 
-    private fun commonCacheTest(clusterManager: ClusterManager) {
-        // Clustered Map
-        val map: MutableMap<String, String> = clusterManager.getSyncMap("mapName") // shared distributed map
-        map["test"] = "test"
-    }
 
-    private fun createCache(clusterManager: IgniteClusterManager) {
-        /*
-          select table_name from information_schema.tables where table_schema='PUBLIC';
-          select column_name, data_type, type_name, column_type from information_schema.columns where table_name='OPCVALUES';
-         */
-        try {
-            val ignite: Ignite = clusterManager.igniteInstance
-
-            cacheOpc = run {
-                val config = CacheConfiguration<String, Any>()
-                config.name = "PUBLIC"
-                config.sqlIndexMaxInlineSize = 100
-                config.setIndexedTypes(
-                    String::class.java, OpcNode::class.java,
-                    String::class.java, OpcValue::class.java
-                )
-                ignite.getOrCreateCache(config)
-            }
-        } catch (e: java.lang.Exception) {
-            e.printStackTrace()
-        }
-    }
 }

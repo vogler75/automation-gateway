@@ -12,10 +12,11 @@ GraphQLServer:
       GraphiQL: true
       WriteSchemaToFile: false
       Schemas:
-        #- System: ignition
-        #  FieldName: BrowseName # BrowseName | DisplayName
-        #- System: unified
-        #  FieldName: DisplayName # BrowseName | DisplayName
-        #- System: winccoa
-        #  FieldName: BrowseName # BrowseName | DisplayName
+        - System: winccoa
+          FieldName: BrowseName # BrowseName | DisplayName
+        - System: ignition
+          FieldName: BrowseName # BrowseName | DisplayName
+        - System: unified
+          FieldName: DisplayName # BrowseName | DisplayName
+
 

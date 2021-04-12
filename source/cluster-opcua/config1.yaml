@@ -18,9 +18,10 @@ OpcUaClient:
       SamplingInterval: 0
       DiscardOldest: true
       DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
+    BrowseOnStartup: true
     WriteSchemaToFile: false
     WriteSchemaToCache: true
     SubscribeOnStartup:
       - node/ns=2;s=ExampleDP_Float.ExampleDP_Arg1
+      - node/ns=2;s=ExampleDP_Text.ExampleDP_Text1
       - path/$objects/Test/+/+

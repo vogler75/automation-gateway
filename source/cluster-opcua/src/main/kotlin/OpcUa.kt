@@ -11,7 +11,7 @@ object OpcUa {
     @JvmStatic
     fun main(args: Array<String>) {
         KeyStoreLoader.init()
-        ClusterHandler.init(args) { vertx, config -> services(vertx, config) }
+        ClusterHandler.init(args, ::services)
     }
 
     private fun services(vertx: Vertx, config: JsonObject) {

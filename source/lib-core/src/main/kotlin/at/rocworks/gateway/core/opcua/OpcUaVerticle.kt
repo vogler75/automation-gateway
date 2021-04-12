@@ -6,6 +6,7 @@ import at.rocworks.gateway.core.data.Topic
 import at.rocworks.gateway.core.data.TopicValueOpc
 import at.rocworks.gateway.core.driver.DriverBase
 import at.rocworks.gateway.core.driver.MonitoredItem
+import at.rocworks.gateway.core.service.ClusterCache
 import at.rocworks.gateway.core.service.ClusterHandler
 
 import io.vertx.core.AsyncResult
@@ -16,6 +17,7 @@ import io.vertx.core.buffer.Buffer
 import io.vertx.core.eventbus.Message
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
+import org.apache.ignite.binary.BinaryObject
 
 import java.lang.Exception
 import java.security.Security
@@ -56,7 +58,6 @@ import java.util.concurrent.ExecutionException
 import java.util.concurrent.TimeUnit
 import java.util.function.BiConsumer
 import kotlin.concurrent.thread
-
 
 class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
     override fun getType() = Topic.SystemType.Opc
@@ -193,7 +194,7 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
             createSubscription()
         }
     }
-
+    
     override fun connect(): Future<Boolean> {
         val promise = Promise.promise<Boolean>()
         try {
@@ -208,11 +209,10 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
                             createSubscription()
 
                             if (browseOnStartup) {
-                                schema.put("Objects", browseSchema())
-                                promise.complete()
-                            } else {
-                                promise.complete()
+                                vertx.eventBus().publish("$uri/Schema", JsonObject())
                             }
+
+                            promise.complete()
                         }
                     }
                 }
@@ -238,27 +238,25 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
     }
 
     private fun writeSchemaToCache(tree: JsonArray) {
-        ClusterHandler.cacheOpc?.let { cache ->
-            fun add(path: String, node: JsonObject) {
-                val browseName = node.getString("BrowseName", "")
-                val browsePath = "$path$browseName"
-                OpcNode(
-                    systemName = id,
-                    nodeId = node.getString("NodeId", ""),
-                    nodeClass = node.getString("NodeClass", ""),
-                    browsePath = browsePath,
-                    parentPath = path,
-                    browseName = browseName,
-                    displayName = node.getString("DisplayName", ""),
-                ).let {
-                    cache.put(browsePath, it)
-                }
-                node.getJsonArray("Nodes")?.filterIsInstance<JsonObject>()?.forEach { it ->
-                    add("$browsePath/", it)
-                }
+        fun add(path: String, node: JsonObject) {
+            val browseName = node.getString("BrowseName", "")
+            val browsePath = "$path$browseName"
+            OpcNode(
+                systemName = id,
+                nodeId = node.getString("NodeId", ""),
+                nodeClass = node.getString("NodeClass", ""),
+                browsePath = browsePath,
+                parentPath = path,
+                browseName = browseName,
+                displayName = node.getString("DisplayName", ""),
+            ).let {
+                ClusterCache.put(browsePath, it)
             }
-            tree.filterIsInstance<JsonObject>().forEach { add("", it) }
+            node.getJsonArray("Nodes")?.filterIsInstance<JsonObject>()?.forEach { it ->
+                add("$browsePath/", it)
+            }
         }
+        tree.filterIsInstance<JsonObject>().forEach { add("", it) }
     }
 
     override fun disconnect(): Future<Boolean> {
@@ -781,9 +779,9 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
             }
             if (buffer!=null) {
                 vertx.eventBus().publish(topic.topicName, buffer)
-                ClusterHandler.cacheOpc?.let { cache ->
+                if (ClusterCache.isEnabled()) {
                     OpcValue(topic, value).let {
-                        cache.put(it.key(), it)
+                        ClusterCache.put(it.key(), it)
                     }
                 }
             }

@@ -28,7 +28,7 @@ abstract class DriverBase(config: JsonObject) : AbstractVerticle() {
 
     protected val id: String = config.getString("Id", DriverBase::class.java.simpleName)
 
-    private val uri = "${getType().name}/$id"
+    protected val uri = "${getType().name}/$id"
 
     protected val logger: Logger
     private val logLevel: String = config.getString("LogLevel", "INFO")

@@ -54,9 +54,15 @@ object ClusterCache {
 
     fun isEnabled() = cache != null
 
-    fun put(key: String, value: Any) {
+    fun put(value: OpcValue) {
         cache?.let {
-            it.put(key, value)
+            it.put(value.key(), value)
+        }
+    }
+
+    fun put(value: OpcNode) {
+        cache?.let {
+            it.put(value.key(), value)
         }
     }
 
@@ -70,27 +76,10 @@ object ClusterCache {
                         when (val value = e.newValue()) {
                             is BinaryObject -> {
                                 when (value.type().typeName()) {
-                                    OpcNode::class.qualifiedName -> {
-                                        val opcNode = value.deserialize<OpcNode>()
-                                        if (opcNode.subscribe != null) {
-                                            val topic = Topic.parseTopic("${systemType.name}/$systemName/node/${opcNode.nodeId}")
-                                            val data = JsonObject()
-                                                .put("ClientId", uuid)
-                                                .put("Topic", topic.encodeToJson())
-                                            val action = if (opcNode.subscribe) "Subscribe" else "Unsubscribe"
-                                            println("$action: "+topic.topicName)
-                                            vertx?.eventBus()?.publish("${systemType.name}/$systemName/$action", data)
-                                        }
-                                    }
-                                    OpcValue::class.qualifiedName -> {
-                                        val opcValue = value.deserialize<OpcValue>()
-                                        if (opcValue.updateValue!=null) {
-                                            val data = JsonObject()
-                                                .put("NodeId", opcValue.nodeId)
-                                                .put("Value", opcValue.updateValue)
-                                            vertx?.eventBus()?.publish("${systemType.name}/$systemName/Write", data)
-                                        }
-                                    }
+                                    OpcNode::class.qualifiedName ->
+                                        handleOpcNode(value.deserialize(), systemType, systemName)
+                                    OpcValue::class.qualifiedName ->
+                                        handleOpcValue(value.deserialize(), systemType, systemName)
                                 }
                             }
                         }
@@ -138,6 +127,35 @@ object ClusterCache {
             } catch (e: java.lang.Exception) {
                 e.printStackTrace()
             }
+        }
+    }
+
+    private fun handleOpcNode(
+        opcNode: OpcNode,
+        systemType: Topic.SystemType,
+        systemName: String
+    ) {
+        if (opcNode.subscribe != null) {
+            val topic = Topic.parseTopic("${systemType.name}/$systemName/node/${opcNode.nodeId}")
+            val data = JsonObject()
+                .put("ClientId", uuid)
+                .put("Topic", topic.encodeToJson())
+            val action = if (opcNode.subscribe) "Subscribe" else "Unsubscribe"
+            println("$action: " + topic.topicName)
+            vertx?.eventBus()?.publish("${systemType.name}/$systemName/$action", data)
+        }
+    }
+
+    private fun handleOpcValue(
+        opcValue: OpcValue,
+        systemType: Topic.SystemType,
+        systemName: String
+    ) {
+        if (opcValue.updateValue != null) {
+            val data = JsonObject()
+                .put("NodeId", opcValue.nodeId)
+                .put("Value", opcValue.updateValue)
+            vertx?.eventBus()?.publish("${systemType.name}/$systemName/Write", data)
         }
     }
 

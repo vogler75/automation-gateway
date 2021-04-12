@@ -243,7 +243,7 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
         fun add(path: String, node: JsonObject) {
             val browseName = node.getString("BrowseName", "")
             val browsePath = "$path$browseName"
-            OpcNode(
+            ClusterCache.put(OpcNode(
                 systemName = id,
                 nodeId = node.getString("NodeId", ""),
                 nodeClass = node.getString("NodeClass", ""),
@@ -251,9 +251,7 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
                 parentPath = path,
                 browseName = browseName,
                 displayName = node.getString("DisplayName", ""),
-            ).let {
-                ClusterCache.put(browsePath, it)
-            }
+            ))
             node.getJsonArray("Nodes")?.filterIsInstance<JsonObject>()?.forEach { it ->
                 add("$browsePath/", it)
             }
@@ -783,7 +781,7 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
                 vertx.eventBus().publish(topic.topicName, buffer)
                 if (ClusterCache.isEnabled()) {
                     OpcValue(topic, value).let {
-                        ClusterCache.put(it.key(), it)
+                        ClusterCache.put(it)
                     }
                 }
             }

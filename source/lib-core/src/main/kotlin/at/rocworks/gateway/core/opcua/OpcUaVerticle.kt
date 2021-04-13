@@ -477,15 +477,18 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
                     got = writeValueQueue.poll()?.let(::addIt) ?: false
                 }
                 if (nodeIds.size > 0) {
-                    val results = client!!.writeValues(nodeIds, dataValues).get()
-                    results.zip(promises).forEach {
-                        if (!it.first.isGood) logger.warn("Writing value was not good [{}]", it.first.toString())
-                        it.second.complete(it.first.isGood)
+                    try {
+                        val results = client!!.writeValues(nodeIds, dataValues).get()
+                        results.zip(promises).forEach {
+                            if (!it.first.isGood) logger.warn("Writing value was not good [{}]", it.first.toString())
+                            it.second.complete(it.first.isGood)
+                        }
+                    } catch (e: UaException) {
+                        logger.warn("Write value throwed exception [{}]", e.message)
                     }
                 }
             }
         }
-
 
     private fun writeValueAsync(nodeId: NodeId, dataValue: DataValue): Future<Boolean> {
         val promise = Promise.promise<Boolean>()

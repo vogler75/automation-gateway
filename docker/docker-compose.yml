@@ -2,6 +2,7 @@ version: '3'
 services:
   gateway:
     image: cluster-gateway
+    hostname: gateway
     restart: always
     ports: 
     - 1883:1883
@@ -11,16 +12,19 @@ services:
     - ./configs/gateway.yaml:/app/config.yaml
   winccoa:
     image: cluster-opcua
+    hostname: winccoa
     restart: always
     volumes:
     - ./configs/winccoa.yaml:/app/config.yaml
   ignition:
     image: cluster-opcua
+    hostname: ignition
     restart: always
     volumes:
     - ./configs/ignition.yaml:/app/config.yaml
   unified:
     image: cluster-opcua
+    hostname: unified
     restart: always
     volumes:
     - ./configs/unified.yaml:/app/config.yaml

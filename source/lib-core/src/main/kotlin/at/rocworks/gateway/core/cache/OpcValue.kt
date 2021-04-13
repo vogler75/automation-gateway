@@ -27,7 +27,7 @@ class OpcValue(topic: Topic, topicValue: TopicValue) {
     val dataTypeName: String = topicValue.dataTypeName()
 
     @QuerySqlField
-    val topicName = topic.topicName
+    val topic = topic.topicName
 
     @QuerySqlField
     val stringValue: String = topicValue.valueAsString()

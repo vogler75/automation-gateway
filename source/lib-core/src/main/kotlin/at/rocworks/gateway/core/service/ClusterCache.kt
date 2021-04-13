@@ -44,7 +44,7 @@ object ClusterCache {
     private fun getCache(manager: IgniteClusterManager): IgniteCache<String, Any> {
         val config = CacheConfiguration<String, Any>()
         config.name = cacheName
-        config.sqlIndexMaxInlineSize = 100 // TODO: should be configurable
+        config.sqlIndexMaxInlineSize = 1000 // TODO: should be configurable
         config.setIndexedTypes(
             String::class.java, OpcNode::class.java,
             String::class.java, OpcValue::class.java

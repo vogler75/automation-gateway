@@ -1,7 +1,5 @@
 package at.rocworks.gateway.core.service
 
-import at.rocworks.gateway.core.cache.OpcNode
-import at.rocworks.gateway.core.cache.OpcValue
 import at.rocworks.gateway.core.data.*
 import at.rocworks.gateway.core.data.CodecTopic
 import at.rocworks.gateway.core.data.CodecTopicValueOpc
@@ -34,20 +32,20 @@ import com.hazelcast.config.FileSystemYamlConfig
 import io.vertx.core.eventbus.EventBusOptions
 import java.net.InetAddress
 
-
-
-
 object ClusterHandler {
     private val logger: Logger = LoggerFactory.getLogger(javaClass.simpleName)
 
-    private val clusterType = (System.getenv("GATEWAY_CLUSTER_TYPE") ?: "ignite").toLowerCase()
-    private val hostAddress = System.getenv("GATEWAY_BUS_HOST") ?: ""
-    private val portAddress = System.getenv("GATEWAY_BUS_PORT") ?: ""
+    private val envClusterType = (System.getenv("GATEWAY_CLUSTER_TYPE") ?: "ignite").toLowerCase()
+    private val envClusterHost = System.getenv("GATEWAY_CLUSTER_HOST") ?: ""
+    private val envClusterPort = System.getenv("GATEWAY_CLUSTER_PORT") ?: ""
 
-    private val clusterManager: ClusterManager = when (clusterType) {
+    private val clusterHost = if (envClusterHost=="") InetAddress.getLocalHost().hostAddress else envClusterHost
+    private val clusterPort = envClusterPort
+
+    private val clusterManager: ClusterManager = when (envClusterType) {
         "hazelcast" -> getHazelcastClusterManager()
         "ignite" -> getIgniteClusterManager()
-        else -> throw IllegalArgumentException("Unknown cluster type '$clusterType'")
+        else -> throw IllegalArgumentException("Unknown cluster type '$envClusterType'")
     }
 
     fun init(args: Array<String>, services: (Vertx, JsonObject) -> Unit) {
@@ -59,18 +57,18 @@ object ClusterHandler {
             exitProcess(-1)
         }
 
-        logger.info("Config bus host [{}] port [{}]", hostAddress, portAddress)
+        logger.info("Config bus host [{}] port [{}]", clusterHost, clusterPort)
         val eventBusOptions = EventBusOptions()
-        (if (hostAddress=="") InetAddress.getLocalHost().hostAddress else hostAddress).let {
+        (if (clusterHost=="") InetAddress.getLocalHost().hostAddress else clusterHost).let {
             logger.info("Set bus host to [{}]", it)
             eventBusOptions.host = it
             eventBusOptions.clusterPublicHost = it
         }
 
-        if (portAddress!="") {
-            logger.info("Set bus port to [{}]", portAddress)
-            eventBusOptions.port = portAddress.toInt()
-            eventBusOptions.clusterPublicPort = portAddress.toInt()
+        if (clusterPort!="") {
+            logger.info("Set bus port to [{}]", clusterPort)
+            eventBusOptions.port = clusterPort.toInt()
+            eventBusOptions.clusterPublicPort = clusterPort.toInt()
         }
 
         val vertxOptions = VertxOptions()
@@ -156,6 +154,7 @@ object ClusterHandler {
             EventType.EVT_NODE_LEFT,
             EventType.EVT_NODE_FAILED
         )
+        config.localHost = clusterHost
         IgniteClusterManager(config)
     }
 

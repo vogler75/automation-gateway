@@ -10,9 +10,6 @@ import io.vertx.core.eventbus.Message
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 
-import io.vertx.servicediscovery.Record
-import io.vertx.servicediscovery.ServiceDiscovery
-
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 

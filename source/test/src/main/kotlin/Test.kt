@@ -27,7 +27,7 @@ object Test {
             exitProcess(-1)
         }
 
-        val logger = LoggerFactory.getLogger(javaClass.simpleName)
+        //val logger = LoggerFactory.getLogger(javaClass.simpleName)
 
         val vertx = Vertx.vertx()
 

@@ -35,10 +35,12 @@ public class KeyStoreLoader {
     private KeyPair clientKeyPair;
 
     public static void init() throws Exception {
-        Path securityTempDir = Paths.get(System.getProperty("java.io.tmpdir"), "security");
+        String dirName = System.getenv("GATEWAY_SECURITY_DIRECTORY");
+        if (dirName == null) dirName = "."; // System.getProperty("java.io.tmpdir");
+        Path securityTempDir = Paths.get(dirName, "security");
         Files.createDirectories(securityTempDir);
         if (!Files.exists(securityTempDir)) {
-            throw new Exception("unable to create security dir: " + securityTempDir);
+            throw new Exception("Unable to create security dir: " + securityTempDir);
         }
         keyStoreLoader = new KeyStoreLoader().load(securityTempDir);
     }
@@ -51,6 +53,7 @@ public class KeyStoreLoader {
         logger.info("Loading KeyStore at "+serverKeyStore);
 
         if (!Files.exists(serverKeyStore)) {
+            logger.info("Create new certificate...");
             keyStore.load(null, PASSWORD);
 
             KeyPair keyPair = SelfSignedCertificateGenerator.generateRsaKeyPair(2048);
@@ -83,6 +86,7 @@ public class KeyStoreLoader {
                 keyStore.store(out, PASSWORD);
             }
         } else {
+            logger.info("Load existing certificate...");
             try (InputStream in = Files.newInputStream(serverKeyStore)) {
                 keyStore.load(in, PASSWORD);
             }

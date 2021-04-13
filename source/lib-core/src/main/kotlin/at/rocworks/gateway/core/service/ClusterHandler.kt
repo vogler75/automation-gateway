@@ -31,11 +31,18 @@ import org.apache.ignite.events.EventType
 import org.apache.ignite.configuration.IgniteConfiguration
 
 import com.hazelcast.config.FileSystemYamlConfig
+import io.vertx.core.eventbus.EventBusOptions
+import java.net.InetAddress
+
+
+
 
 object ClusterHandler {
     private val logger: Logger = LoggerFactory.getLogger(javaClass.simpleName)
 
-    private val clusterType = (System.getenv("cluster") ?: "ignite").toLowerCase()
+    private val clusterType = (System.getenv("GATEWAY_CLUSTER_TYPE") ?: "ignite").toLowerCase()
+    private val hostAddress = System.getenv("GATEWAY_BUS_HOST") ?: ""
+    private val portAddress = System.getenv("GATEWAY_BUS_PORT") ?: ""
 
     private val clusterManager: ClusterManager = when (clusterType) {
         "hazelcast" -> getHazelcastClusterManager()
@@ -52,7 +59,22 @@ object ClusterHandler {
             exitProcess(-1)
         }
 
-        val vertxOptions = VertxOptions().setClusterManager(clusterManager)
+        val eventBusOptions = EventBusOptions()
+        logger.info("HostAddress [{}] [{}]", hostAddress, portAddress)
+        (if (hostAddress=="") InetAddress.getLocalHost().hostAddress else hostAddress).let {
+            eventBusOptions.host = it
+            eventBusOptions.clusterPublicHost = it
+        }
+
+        if (portAddress!="") {
+            eventBusOptions.port = portAddress.toInt()
+            eventBusOptions.clusterPublicPort = portAddress.toInt()
+        }
+
+        val vertxOptions = VertxOptions()
+            .setEventBusOptions(eventBusOptions)
+            .setClusterManager(clusterManager)
+
         Vertx.clusteredVertx(vertxOptions).onComplete { vertx ->
             if (vertx.succeeded()) {
                 initCluster(args, vertx.result(), services)

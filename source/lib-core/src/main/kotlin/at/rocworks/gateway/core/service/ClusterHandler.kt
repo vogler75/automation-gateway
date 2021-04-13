@@ -59,14 +59,16 @@ object ClusterHandler {
             exitProcess(-1)
         }
 
+        logger.info("Config bus host [{}] port [{}]", hostAddress, portAddress)
         val eventBusOptions = EventBusOptions()
-        logger.info("HostAddress [{}] [{}]", hostAddress, portAddress)
         (if (hostAddress=="") InetAddress.getLocalHost().hostAddress else hostAddress).let {
+            logger.info("Set bus host to [{}]", it)
             eventBusOptions.host = it
             eventBusOptions.clusterPublicHost = it
         }
 
         if (portAddress!="") {
+            logger.info("Set bus port to [{}]", portAddress)
             eventBusOptions.port = portAddress.toInt()
             eventBusOptions.clusterPublicPort = portAddress.toInt()
         }

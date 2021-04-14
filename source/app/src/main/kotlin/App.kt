@@ -52,7 +52,7 @@ object App {
         )
 
         // Read config file
-        val configFilePath = if (args.isNotEmpty()) args[0] else "config.yaml"
+        val configFilePath = if (args.isNotEmpty()) args[0] else System.getenv("CONFIG") ?: "config.yaml"
         logger.info("Gateway config file: $configFilePath")
         val config = Globals.retrieveConfig(vertx, configFilePath)
 

@@ -4,10 +4,10 @@ import org.apache.ignite.cache.query.annotations.QuerySqlField
 import org.apache.ignite.cache.query.annotations.QuerySqlField.Group
 
 class OpcNode(
-    @QuerySqlField(index = true, orderedGroups = [Group(name = "opcnode_pk", order = 0, descending = true)])
+    @QuerySqlField(index = true, orderedGroups = [Group(name = "opcnode_unique_idx", order = 0, descending = true)])
     val systemName: String,
 
-    @QuerySqlField(index = true, orderedGroups = [Group(name = "opcnode_pk", order = 1, descending = true)])
+    @QuerySqlField(index = true, orderedGroups = [Group(name = "opcnode_unique_idx", order = 1, descending = true)])
     val nodeId: String,
 
     @QuerySqlField()
@@ -17,7 +17,7 @@ class OpcNode(
     val browsePath: String,
 
     @QuerySqlField(index = true)
-    val parentPath: String,
+    val parentNodeId: String,
 
     @QuerySqlField()
     val browseName: String,
@@ -25,7 +25,7 @@ class OpcNode(
     @QuerySqlField()
     val displayName: String,
 ) {
-    fun key(): String = browsePath
+    fun key(): String = "$systemName/$nodeId"
 
     @QuerySqlField()
     val topic: String = "opc/$systemName/node/$nodeId"

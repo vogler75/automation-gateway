@@ -240,23 +240,24 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
     }
 
     private fun writeSchemaToCache(tree: JsonArray) {
-        fun add(path: String, node: JsonObject) {
+        fun add(parentNodeId: String, path: String, node: JsonObject) {
             val browseName = node.getString("BrowseName", "")
-            val browsePath = "$path$browseName"
+            val browsePath = "$path/$browseName"
+            val nodeId = node.getString("NodeId", "")
             ClusterCache.put(OpcNode(
                 systemName = id,
-                nodeId = node.getString("NodeId", ""),
+                nodeId = nodeId,
                 nodeClass = node.getString("NodeClass", ""),
                 browsePath = browsePath,
-                parentPath = path,
+                parentNodeId = parentNodeId,
                 browseName = browseName,
                 displayName = node.getString("DisplayName", ""),
             ))
             node.getJsonArray("Nodes")?.filterIsInstance<JsonObject>()?.forEach { it ->
-                add("$browsePath/", it)
+                add(nodeId, browsePath, it)
             }
         }
-        tree.filterIsInstance<JsonObject>().forEach { add("", it) }
+        tree.filterIsInstance<JsonObject>().forEach { add("", "Root/Objects", it) }
     }
 
     override fun disconnect(): Future<Boolean> {

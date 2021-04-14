@@ -8,10 +8,10 @@ import java.sql.Timestamp
 class OpcValue(topic: Topic, topicValue: TopicValue) {
     fun key(): String = "$systemName/$nodeId"
 
-    @QuerySqlField(index = true, orderedGroups = [QuerySqlField.Group(name = "opcvalue_pk", order = 0, descending = true)])
+    @QuerySqlField(index = true, orderedGroups = [QuerySqlField.Group(name = "opcvalue_unique_idx", order = 0, descending = true)])
     val systemName = topic.systemName
 
-    @QuerySqlField(index = true, orderedGroups = [QuerySqlField.Group(name = "opcvalue_pk", order = 1, descending = true)])
+    @QuerySqlField(index = true, orderedGroups = [QuerySqlField.Group(name = "opcvalue_unique_idx", order = 1, descending = true)])
     val nodeId = topic.address
 
     @QuerySqlField(index = true)

@@ -31,6 +31,10 @@ import org.apache.ignite.configuration.IgniteConfiguration
 import com.hazelcast.config.FileSystemYamlConfig
 import io.vertx.core.eventbus.EventBusOptions
 import java.net.InetAddress
+import org.apache.ignite.configuration.DataStorageConfiguration
+
+
+
 
 object ClusterHandler {
     private val logger: Logger = LoggerFactory.getLogger(javaClass.simpleName)
@@ -39,7 +43,9 @@ object ClusterHandler {
     private val envClusterHost = System.getenv("GATEWAY_CLUSTER_HOST") ?: ""
     private val envClusterPort = System.getenv("GATEWAY_CLUSTER_PORT") ?: ""
 
-    private val clusterHost = if (envClusterHost=="") InetAddress.getLocalHost().hostAddress else envClusterHost
+    private val envConfigFile = System.getenv("CONFIG") ?: "config.yaml"
+
+    private val clusterHost = if (envClusterHost=="*") InetAddress.getLocalHost().hostAddress else envClusterHost
     private val clusterPort = envClusterPort
 
     private val clusterManager: ClusterManager = when (envClusterType) {
@@ -57,16 +63,17 @@ object ClusterHandler {
             exitProcess(-1)
         }
 
-        logger.info("Config bus host [{}] port [{}]", clusterHost, clusterPort)
+        logger.info("Config cluster host [{}] port [{}]", clusterHost, clusterPort)
+
         val eventBusOptions = EventBusOptions()
-        (if (clusterHost=="") InetAddress.getLocalHost().hostAddress else clusterHost).let {
-            logger.info("Set bus host to [{}]", it)
-            eventBusOptions.host = it
-            eventBusOptions.clusterPublicHost = it
+        if (clusterHost!="") {
+            logger.info("Set cluster host to [{}]", clusterHost)
+            eventBusOptions.host = clusterHost
+            eventBusOptions.clusterPublicHost = clusterHost
         }
 
         if (clusterPort!="") {
-            logger.info("Set bus port to [{}]", clusterPort)
+            logger.info("Set cluster port to [{}]", clusterPort)
             eventBusOptions.port = clusterPort.toInt()
             eventBusOptions.clusterPublicPort = clusterPort.toInt()
         }
@@ -92,7 +99,7 @@ object ClusterHandler {
     private fun initCluster(args: Array<String>, vertx: Vertx, services: (Vertx, JsonObject) -> Unit) {
         logger.info("Cluster nodeId: ${clusterManager.nodeId}")
 
-        val configFilePath = if (args.isNotEmpty()) args[0] else System.getenv("config") ?: "config.yaml"
+        val configFilePath = if (args.isNotEmpty()) args[0] else envConfigFile
         logger.info("Gateway config file: $configFilePath")
 
         val serviceHandler = ServiceHandler(vertx, logger)
@@ -154,7 +161,14 @@ object ClusterHandler {
             EventType.EVT_NODE_LEFT,
             EventType.EVT_NODE_FAILED
         )
-        config.localHost = clusterHost
+        if (clusterHost!="") config.localHost = clusterHost
+
+        // https://ignite.apache.org/docs/2.9.1/security/authentication
+        //val storageConfig = DataStorageConfiguration()
+        //storageConfig.defaultDataRegionConfiguration.isPersistenceEnabled = true
+        //config.dataStorageConfiguration = storageConfig
+        //config.isAuthenticationEnabled = false
+
         IgniteClusterManager(config)
     }
 

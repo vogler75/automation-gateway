@@ -57,10 +57,11 @@ abstract class DriverBase(config: JsonObject) : AbstractVerticle() {
 
     override fun start(startPromise: Promise<Void>) {
         logger.info("Driver start [{}]", id)
-        Thread {
+        vertx.executeBlocking<Void> {
             try {
-                connect().onSuccess {
-                    connectHandlers()
+                connectHandlers()
+                connect().onComplete {
+                    logger.info("Connect complete")
                     registerService()
                     subscribeOnStartup.forEach {
                         val topic = Topic.parseTopic("$uri/$it")
@@ -68,25 +69,27 @@ abstract class DriverBase(config: JsonObject) : AbstractVerticle() {
                         if (topic.isValid()) subscribeTopic(id, topic)
                     }
                     startPromise.complete()
-                }.onFailure { result: Throwable -> startPromise.fail(result.message) }
+                }.onFailure { result: Throwable ->
+                    startPromise.fail(result.message)
+                }
             } catch (e: Exception) {
                 startPromise.fail(e)
             }
-        }.start()
+        }
     }
 
     override fun stop(stopPromise: Promise<Void>) {
         logger.info("Driver stop [{}]", id)
-        Thread {
+        vertx.executeBlocking<Void> {
             try {
+                disconnectHandlers()
                 disconnect().onSuccess {
-                    disconnectHandlers()
                     stopPromise.complete()
                 }.onFailure { result: Throwable -> stopPromise.fail(result.message) }
             } catch (e: Exception) {
                 stopPromise.fail(e)
             }
-        }.start()
+        }
     }
 
     private fun registerService() {

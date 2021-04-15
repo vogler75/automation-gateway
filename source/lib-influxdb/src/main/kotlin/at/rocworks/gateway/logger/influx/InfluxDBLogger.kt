@@ -1,6 +1,6 @@
 package at.rocworks.gateway.logger.influx
 
-import at.rocworks.gateway.core.data.Globals
+import at.rocworks.gateway.core.service.Common
 import at.rocworks.gateway.core.data.Topic
 import at.rocworks.gateway.core.data.TopicValue
 import at.rocworks.gateway.core.service.ServiceHandler
@@ -91,7 +91,7 @@ class InfluxDBLogger(private val config: JsonObject) : AbstractVerticle() {
                         db.enableBatch(BatchOptions.DEFAULTS) // TODO: make batch options configurable
                         this.subscribeTopics()
                         vertx.setPeriodic(1000, ::metricCalculator)
-                        vertx.eventBus().consumer("${Globals.BUS_ROOT_URI_LOG}/$id/QueryHistory", ::queryHandler)
+                        vertx.eventBus().consumer("${Common.BUS_ROOT_URI_LOG}/$id/QueryHistory", ::queryHandler)
                         startPromise.complete()
                     }
                 } catch (e: InfluxDBIOException) {

@@ -7,7 +7,6 @@ import at.rocworks.gateway.core.data.TopicValueOpc
 import at.rocworks.gateway.core.driver.DriverBase
 import at.rocworks.gateway.core.driver.MonitoredItem
 import at.rocworks.gateway.core.service.ClusterCache
-import at.rocworks.gateway.core.service.ClusterHandler
 
 import io.vertx.core.AsyncResult
 import io.vertx.core.CompositeFuture
@@ -17,7 +16,6 @@ import io.vertx.core.buffer.Buffer
 import io.vertx.core.eventbus.Message
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
-import org.apache.ignite.binary.BinaryObject
 
 import java.lang.Exception
 import java.security.Security
@@ -42,10 +40,11 @@ import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy
 import org.eclipse.milo.opcua.stack.core.types.builtin.*
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned
-import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint
+import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.*
 import org.eclipse.milo.opcua.stack.core.types.enumerated.*
 import org.eclipse.milo.opcua.stack.core.types.structured.*
 import org.eclipse.milo.opcua.stack.core.util.EndpointUtil
+
 import java.io.File
 import java.lang.IllegalStateException
 import java.lang.NumberFormatException
@@ -63,7 +62,7 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
     override fun getType() = Topic.SystemType.Opc
 
     private val endpointUrl: String = config.getString("EndpointUrl", "")
-    private val updateEndpointUrl: String? = config.getString("UpdateEndpointUrl", null)
+    private val updateEndpointUrl: Boolean = config.getBoolean("UpdateEndpointUrl", false)
 
     private val securityPolicy: SecurityPolicy?
     private val identityProvider: IdentityProvider
@@ -159,17 +158,28 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
 
     private fun endpointFilter(): Predicate<EndpointDescription> {
         return Predicate { e: EndpointDescription ->
-            if (updateEndpointUrl != null) {
-                logger.info("Update endpoint to $updateEndpointUrl")
-                EndpointUtil.updateUrl(e, updateEndpointUrl)
-            }
+            //endpointUpdater(e)
             securityPolicy == null || e.securityPolicyUri == securityPolicy.uri
         }
     }
 
     private fun endpointUpdater(endpoint: EndpointDescription): EndpointDescription {
-        return if (updateEndpointUrl != null) {
-            EndpointUtil.updateUrl(endpoint, updateEndpointUrl)
+        return if (updateEndpointUrl) {
+            val parts = endpointUrl.split("://", ":", "/")
+            when {
+                parts.size == 1 -> {
+                    logger.info("Update endpoint to host [{}]!", parts[1])
+                    EndpointUtil.updateUrl(endpoint, parts[1])
+                }
+                parts.size > 1 -> {
+                    logger.info("Update endpoint to host [{}] and port [{}]!", parts[1], parts[2])
+                    EndpointUtil.updateUrl(endpoint, parts[1], parts[2].toInt())
+                }
+                else -> {
+                    logger.warn("Cannot split endpoint url [{}]", endpoint.endpointUrl)
+                    endpoint
+                }
+            }
         } else {
             endpoint
         }
@@ -202,9 +212,11 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
                 if (createResult.succeeded()) {
                     connectClientAsync().onComplete { connectResult: AsyncResult<Boolean> ->
                         if (connectResult.succeeded()) {
+                            logger.info("Connect succeeded")
                             client!!.addFaultListener { serviceFault ->
                                 logger.warn("Service Fault: $serviceFault")
                             }
+
                             client!!.subscriptionManager.addSubscriptionListener(subscriptionListener)
                             createSubscription()
 
@@ -214,7 +226,7 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
 
                             ClusterCache.registerSystem(getType(), id)
 
-                            promise.complete()
+                            promise.complete(true)
                         }
                     }
                 }
@@ -244,7 +256,7 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
             val browseName = node.getString("BrowseName", "")
             val browsePath = "$path/$browseName"
             val nodeId = node.getString("NodeId", "")
-            ClusterCache.put(OpcNode(
+            ClusterCache.putOpcNode { OpcNode(
                 systemName = id,
                 nodeId = nodeId,
                 nodeClass = node.getString("NodeClass", ""),
@@ -252,7 +264,7 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
                 parentNodeId = parentNodeId,
                 browseName = browseName,
                 displayName = node.getString("DisplayName", ""),
-            ))
+            )}
             node.getJsonArray("Nodes")?.filterIsInstance<JsonObject>()?.forEach { it ->
                 add(nodeId, browsePath, it)
             }
@@ -317,7 +329,7 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
                         .build()
                 }
                 logger.info("OpcUaClient created.")
-                ret.complete()
+                ret.complete(true)
             } catch (e: UaException) {
                 logger.info("OpcUaClient create failed! Wait and retry... " + e.message)
                 vertx.setTimer(defaultRetryWaitTime.toLong()) { createClientThread(ret) }
@@ -403,17 +415,21 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
                 Identifiers.String.identifier -> Variant(value)
                 Identifiers.Float.identifier -> Variant(value.toFloat())
                 Identifiers.Double.identifier -> Variant(value.toDouble())
-                Identifiers.UInteger.identifier,
-                Identifiers.Integer.identifier,
-                Identifiers.UInt16.identifier,
-                Identifiers.Int16.identifier,
-                Identifiers.UInt32.identifier,
-                Identifiers.Int32.identifier,
-                Identifiers.UInt64.identifier,
-                Identifiers.Int64.identifier -> Variant(value.toString().toInt())
+
+                Identifiers.Int16.identifier -> Variant(value.toShort())
+                Identifiers.Int32.identifier -> Variant(value.toInt())
+                Identifiers.Integer.identifier -> Variant(value.toInt())
+
+                Identifiers.UInt16.identifier -> Variant(ushort(value.toShort()))
+                Identifiers.UInt32.identifier -> Variant(uint(value.toInt()))
+                Identifiers.UInteger.identifier -> Variant(uint(value.toInt()))
+
+                Identifiers.Int64.identifier -> Variant(value.toLong())
+                Identifiers.UInt64.identifier -> Variant(ulong(value.toLong()))
+
                 Identifiers.SByte.identifier,
                 Identifiers.Byte.identifier -> Variant(
-                    Unsigned.ubyte(value.toByteArray(StandardCharsets.UTF_8)[0])
+                    ubyte(value.toByteArray(StandardCharsets.UTF_8)[0])
                 )
                 Identifiers.Boolean.identifier -> Variant(
                     !(value == "0" || value.equals("false", ignoreCase = true))
@@ -485,7 +501,7 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
                             it.second.complete(it.first.isGood)
                         }
                     } catch (e: UaException) {
-                        logger.warn("Write value throwed exception [{}]", e.message)
+                        logger.warn("Write value threw exception [{}]", e.message)
                     }
                 }
             }
@@ -692,11 +708,14 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
                 val resolvedTopics = mutableListOf<Topic>()
                 topics.forEach { topic ->
                     logger.debug("Subscribe path [{}]", topic)
-                    val items = topic.pathItems.map {
-                        when (it.toLowerCase()) {
-                            "\$objects" -> "i=85"
-                            else -> it
-                        }
+                    val items = topic.pathItems.mapIndexed { i, item ->
+                        if (i == 0) when (item) {
+                            "Root" -> "i=84"
+                            "Objects" -> "i=85"
+                            "Types" -> "i=86"
+                            "Views" -> "i=87"
+                            else -> item
+                        } else item
                     }
                     if (items.size < 2) {
                         logger.warn("Subscribe path with too less items! [{}]", topic.address)
@@ -732,7 +751,7 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
                         })
                     }
                 }
-                logger.info("Path result size [{}]", resolvedTopics.size)
+                logger.info("Browse path result size [{}]", resolvedTopics.size)
                 if (topics.isEmpty()) {
                     ret.complete(true)
                 } else if (resolvedTopics.size>0) {
@@ -783,11 +802,7 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
             }
             if (buffer!=null) {
                 vertx.eventBus().publish(topic.topicName, buffer)
-                if (ClusterCache.isEnabled()) {
-                    OpcValue(topic, value).let {
-                        ClusterCache.put(it)
-                    }
-                }
+                ClusterCache.putOpcValue { OpcValue(topic, value) }
             }
         } catch (e: Exception) {
             e.printStackTrace()

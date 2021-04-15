@@ -1,9 +1,9 @@
-import at.rocworks.gateway.core.data.*
 import at.rocworks.gateway.core.graphql.GraphQLServer
 import at.rocworks.gateway.logger.influx.InfluxDBLogger
 import at.rocworks.gateway.core.mqtt.MqttVerticle
 import at.rocworks.gateway.core.opcua.KeyStoreLoader
 import at.rocworks.gateway.core.opcua.OpcUaVerticle
+import at.rocworks.gateway.core.service.Common
 
 import kotlin.Throws
 import kotlin.jvm.JvmStatic
@@ -12,11 +12,8 @@ import io.vertx.core.Vertx
 import io.vertx.core.json.JsonObject
 
 import java.lang.Exception
-import java.util.logging.LogManager
-import kotlin.system.exitProcess
 
 import org.slf4j.LoggerFactory
-import kotlin.concurrent.thread
 
 object App {
 
@@ -31,45 +28,9 @@ object App {
     @Throws(Exception::class)
     @JvmStatic
     fun main(args: Array<String>) {
-        val stream = App::class.java.classLoader.getResourceAsStream("logging.properties")
-        try {
-            LogManager.getLogManager().readConfiguration(stream)
-        } catch (e: Exception) {
-            println("Error loading logging.properties!")
-            exitProcess(-1)
-        }
-
-        val logger = LoggerFactory.getLogger(javaClass.simpleName)
-
-        val vertx = Vertx.vertx()
-
-        // Register Message Types
-        vertx.eventBus().registerDefaultCodec(Topic::class.java,
-            CodecTopic()
-        )
-        vertx.eventBus().registerDefaultCodec(TopicValueOpc::class.java,
-            CodecTopicValueOpc()
-        )
-
-        // Read config file
-        val configFilePath = if (args.isNotEmpty()) args[0] else System.getenv("CONFIG") ?: "config.yaml"
-        logger.info("Gateway config file: $configFilePath")
-        val config = Globals.retrieveConfig(vertx, configFilePath)
-
         KeyStoreLoader.init()
-
-        // Go through the configuration file
-        config.getConfig { cfg ->
-            if (cfg==null || cfg.failed()) {
-                println("Missing or invalid $configFilePath file!")
-                config.close()
-                vertx.close()
-            } else {
-                thread { // because it will block
-                    createServices(vertx, cfg.result())
-                }
-            }
-        }
+        Common.initLogging()
+        Common.initVertx(args, Vertx.vertx(), App::createServices)
     }
 
     private fun createLogger(vertx: Vertx, config: JsonObject) {

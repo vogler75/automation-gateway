@@ -24,4 +24,4 @@ OpcUaClient:
     SubscribeOnStartup:
       - node/ns=2;s=ExampleDP_Float.ExampleDP_Arg1
       - node/ns=2;s=ExampleDP_Text.ExampleDP_Text1
-      - path/$objects/Test/+/+
+      - path/Objects/Test/+/+

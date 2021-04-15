@@ -38,12 +38,12 @@ Using the browse path instead of the NodeId
 Wildcard "+" can also be used as a browsename
 > opc / ua / **path**:json / *ns=1;s=16|Tags* / **+**  
 
-$objects can be used as root node and will be replace with "i=85"
-> opc / test / path / **$objects** / Test / Test00003 / float  
-> opc / test / path / **$objects** / Test / Test00003 / +
+"Objects" can be used as root node and will be replace with "i=85"
+> opc / test / path / **Objects** / Test / Test00003 / float  
+> opc / test / path / **Objects** / Test / Test00003 / +
 
 Be careful when using wildcards when there are a lot of nodes, it can lead to a lot of browsing round trips  
-> opc / test / path / $objects / Test / + / float
+> opc / test / path / Objects / Test / + / float
 
 ## Enable OPC UA Schema in GraphQL
 

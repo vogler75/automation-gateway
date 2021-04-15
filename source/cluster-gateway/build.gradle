@@ -28,4 +28,5 @@ dependencies {
 application {
     // Define the main class for the application.
     mainClass = 'Gateway'
+    applicationDefaultJvmArgs = ['-Xms512m', '-Xmx512m', '-XX:MaxDirectMemorySize=1024m', '-XX:+DisableExplicitGC']
 }

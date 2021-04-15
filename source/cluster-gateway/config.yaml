@@ -10,13 +10,15 @@ GraphQLServer:
     - Port: 4000
       LogLevel: INFO
       GraphiQL: true
-      WriteSchemaToFile: false
+      WriteSchemaToFile: true
       Schemas:
-        - System: winccoa
+        #- System: winccoa
+        #  FieldName: BrowseName # BrowseName | DisplayName
+        #- System: ignition
+        #  FieldName: BrowseName # BrowseName | DisplayName
+        #- System: unified
+        #  FieldName: DisplayName # BrowseName | DisplayName
+        - System: dotnet01
           FieldName: BrowseName # BrowseName | DisplayName
-        - System: ignition
-          FieldName: BrowseName # BrowseName | DisplayName
-        - System: unified
-          FieldName: DisplayName # BrowseName | DisplayName
 
 

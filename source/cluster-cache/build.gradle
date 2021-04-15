@@ -28,6 +28,6 @@ dependencies {
 
 application {
     // Define the main class for the application.
-    mainClass = 'OpcUa'
+    mainClass = 'Cache'
     applicationDefaultJvmArgs = ['-Xms512m', '-Xmx512m', '-XX:MaxDirectMemorySize=1024m', '-XX:+DisableExplicitGC']
 }

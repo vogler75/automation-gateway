@@ -1,6 +1,7 @@
 package at.rocworks.gateway.core.graphql
 
 import at.rocworks.gateway.core.data.*
+import at.rocworks.gateway.core.service.Common
 import at.rocworks.gateway.core.service.ServiceHandler
 
 import graphql.GraphQL
@@ -738,7 +739,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
                 request.put("T2", t2.toEpochMilli())
 
                 vertx.eventBus()
-                    .request<JsonObject>("${Globals.BUS_ROOT_URI_LOG}/$log/QueryHistory", request) { message ->
+                    .request<JsonObject>("${Common.BUS_ROOT_URI_LOG}/$log/QueryHistory", request) { message ->
                         val list =  message.result()?.body()?.getJsonArray("Result") ?: JsonArray()
                         logger.info("Query response [{}] size [{}]", message.succeeded(), list.size())
                         val result = list.filterIsInstance<JsonArray>().map {

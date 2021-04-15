@@ -1,4 +1,4 @@
-import at.rocworks.gateway.core.service.ClusterHandler
+import at.rocworks.gateway.core.service.Cluster
 
 import io.vertx.core.Vertx
 import io.vertx.core.json.JsonObject
@@ -7,7 +7,7 @@ object Plc4x {
     @Throws(Exception::class)
     @JvmStatic
     fun main(args: Array<String>) {
-        ClusterHandler.init(args) { vertx, config -> services(vertx, config) }
+        Cluster.init(args) { vertx, config -> services(vertx, config) }
     }
 
     private fun services(vertx: Vertx, config: JsonObject) {

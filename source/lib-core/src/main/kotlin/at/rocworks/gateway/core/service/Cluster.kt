@@ -1,9 +1,5 @@
 package at.rocworks.gateway.core.service
 
-import at.rocworks.gateway.core.data.*
-import at.rocworks.gateway.core.data.CodecTopic
-import at.rocworks.gateway.core.data.CodecTopicValueOpc
-
 import org.slf4j.LoggerFactory
 
 import io.vertx.core.Vertx
@@ -11,10 +7,7 @@ import io.vertx.core.VertxOptions
 import io.vertx.core.json.JsonObject
 
 import java.io.FileNotFoundException
-import java.util.logging.LogManager
 
-import kotlin.concurrent.thread
-import kotlin.system.exitProcess
 import io.vertx.core.spi.cluster.ClusterManager
 import io.vertx.core.spi.cluster.NodeListener
 import java.io.File
@@ -31,39 +24,25 @@ import org.apache.ignite.configuration.IgniteConfiguration
 import com.hazelcast.config.FileSystemYamlConfig
 import io.vertx.core.eventbus.EventBusOptions
 import java.net.InetAddress
-import org.apache.ignite.configuration.DataStorageConfiguration
 
-
-
-
-object ClusterHandler {
+object Cluster {
     private val logger: Logger = LoggerFactory.getLogger(javaClass.simpleName)
 
-    private val envClusterType = (System.getenv("GATEWAY_CLUSTER_TYPE") ?: "ignite").toLowerCase()
     private val envClusterHost = System.getenv("GATEWAY_CLUSTER_HOST") ?: ""
     private val envClusterPort = System.getenv("GATEWAY_CLUSTER_PORT") ?: ""
+    private val envClientMode = System.getenv("GATEWAY_CLUSTER_CLIENT") ?: ""
 
-    private val envConfigFile = System.getenv("CONFIG") ?: "config.yaml"
-
+    private val clusterType = (System.getenv("GATEWAY_CLUSTER_TYPE") ?: "ignite").toLowerCase()
     private val clusterHost = if (envClusterHost=="*") InetAddress.getLocalHost().hostAddress else envClusterHost
     private val clusterPort = envClusterPort
+    private val clientMode = (envClientMode == "true")
 
-    private val clusterManager: ClusterManager = when (envClusterType) {
-        "hazelcast" -> getHazelcastClusterManager()
-        "ignite" -> getIgniteClusterManager()
-        else -> throw IllegalArgumentException("Unknown cluster type '$envClusterType'")
-    }
+    private var clusterManager: ClusterManager? = null
 
-    fun init(args: Array<String>, services: (Vertx, JsonObject) -> Unit) {
-        val stream = ClusterHandler::class.java.classLoader.getResourceAsStream("logging.properties")
-        try {
-            LogManager.getLogManager().readConfiguration(stream)
-        } catch (e: Exception) {
-            println("Error loading logging.properties!")
-            exitProcess(-1)
-        }
+    fun init(args: Array<String>, clientMode: Boolean? = null, services: (Vertx, JsonObject) -> Unit) {
+        Common.initLogging()
 
-        logger.info("Config cluster host [{}] port [{}]", clusterHost, clusterPort)
+        logger.info("Cluster type [{}] host [{}] port [{}]", clusterType, clusterHost, clusterPort)
 
         val eventBusOptions = EventBusOptions()
         if (clusterHost!="") {
@@ -78,29 +57,31 @@ object ClusterHandler {
             eventBusOptions.clusterPublicPort = clusterPort.toInt()
         }
 
-        val vertxOptions = VertxOptions()
-            .setEventBusOptions(eventBusOptions)
-            .setClusterManager(clusterManager)
+        getClusterManager(clientMode ?: this.clientMode).let { clusterManager ->
+            this.clusterManager = clusterManager
+            val vertxOptions = VertxOptions()
+                .setEventBusOptions(eventBusOptions)
+                .setClusterManager(clusterManager)
 
-        Vertx.clusteredVertx(vertxOptions).onComplete { vertx ->
-            if (vertx.succeeded()) {
-                initCluster(args, vertx.result(), services)
-                ClusterCache.init(clusterManager, vertx.result())
-            } else {
-                logger.error("Error initializing cluster!")
+            Vertx.clusteredVertx(vertxOptions).onComplete { result ->
+                if (result.succeeded()) {
+                    val vertx = result.result()
+                    initCluster(clusterManager, vertx)
+                    ClusterCache.init(clusterManager, vertx)
+                    Common.initVertx(args, vertx, services)
+                } else {
+                    logger.error("Error initializing cluster!")
+                }
             }
         }
     }
 
     fun getNodeId(): String {
-        return clusterManager.nodeId
+        return clusterManager?.nodeId ?: "?"
     }
 
-    private fun initCluster(args: Array<String>, vertx: Vertx, services: (Vertx, JsonObject) -> Unit) {
+    private fun initCluster(clusterManager: ClusterManager, vertx: Vertx) {
         logger.info("Cluster nodeId: ${clusterManager.nodeId}")
-
-        val configFilePath = if (args.isNotEmpty()) args[0] else envConfigFile
-        logger.info("Gateway config file: $configFilePath")
 
         val serviceHandler = ServiceHandler(vertx, logger)
 
@@ -115,53 +96,40 @@ object ClusterHandler {
             }
         }
         clusterManager.nodeListener(nodeListener)
+    }
 
-        try {
-            // Register Message Types
-            vertx.eventBus().registerDefaultCodec(Topic::class.java, CodecTopic())
-            vertx.eventBus().registerDefaultCodec(TopicValueOpc::class.java, CodecTopicValueOpc())
-            vertx.eventBus().registerDefaultCodec(TopicValuePlc::class.java, CodecTopicValuePlc())
-            vertx.eventBus().registerDefaultCodec(TopicValueDds::class.java, CodecTopicValueDds())
-
-            // Retrieve Config
-            val config = Globals.retrieveConfig(vertx, configFilePath)
-
-            // Go through the configuration file
-            config.getConfig { cfg ->
-                if (cfg == null || cfg.failed()) {
-                    println("Missing or invalid $configFilePath file!")
-                    config.close()
-                    vertx.close()
-                } else {
-                    thread { // because it will block
-                        services(vertx, cfg.result())
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
+    private fun getClusterManager(clientMode: Boolean): ClusterManager {
+        return when (clusterType) {
+            "hazelcast" -> getHazelcastClusterManager()
+            "ignite" -> getIgniteClusterManager(clientMode)
+            else -> throw IllegalArgumentException("Unknown cluster type '$clusterType'")
         }
     }
 
-    private fun getIgniteClusterManager() = try {
+    private fun getIgniteClusterManager(clientMode: Boolean) = try {
         val fileName = File("ignite.xml")
         val clusterConfig = URL(fileName.readText())
         logger.info("Cluster config file [{}]", fileName)
         IgniteClusterManager(clusterConfig)
     } catch (e: FileNotFoundException) {
-        logger.info("Cluster default configuration.")
+        logger.info("Cluster default configuration [{}]", (if (clientMode) "Client" else "Server"))
         val config = IgniteConfiguration()
+        config.isClientMode = clientMode
         config.gridLogger = VertxLogger()
         config.metricsLogFrequency = 0
         config.setIncludeEventTypes(
             EventType.EVT_CACHE_OBJECT_PUT,
             EventType.EVT_CACHE_OBJECT_READ,
             EventType.EVT_CACHE_OBJECT_REMOVED,
+            EventType.EVT_CACHE_NODES_LEFT,
+            EventType.EVT_CLIENT_NODE_DISCONNECTED,
+            EventType.EVT_CLIENT_NODE_RECONNECTED,
             EventType.EVT_NODE_JOINED,
             EventType.EVT_NODE_LEFT,
             EventType.EVT_NODE_FAILED
         )
-        if (clusterHost!="") config.localHost = clusterHost
+        if (clusterHost!="")
+            config.localHost = clusterHost
 
         // https://ignite.apache.org/docs/2.9.1/security/authentication
         //val storageConfig = DataStorageConfiguration()

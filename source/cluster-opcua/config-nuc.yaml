@@ -1,0 +1,181 @@
+OpcUaClient:
+  - Id: "dotnet01"
+    Enabled: true
+    LogLevel: INFO
+    EndpointUrl: "opc.tcp://nuc1:20001/Quickstarts/ReferenceServer"
+    UpdateEndpointUrl: true
+    SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#None
+    SubscriptionSamplingInterval: 0
+    WriteParameters:
+      QueueSize: 1000
+      BlockSize: 100
+      WithTime: false
+    MonitoringParameters:
+      BufferSize: 10
+      SamplingInterval: 0.0
+      DiscardOldest: true
+    BrowseOnStartup: true
+    WriteSchemaToFile: false
+    WriteSchemaToCache: true
+  - Id: "dotnet02"
+    Enabled: true
+    LogLevel: INFO
+    EndpointUrl: "opc.tcp://nuc1:20002/Quickstarts/ReferenceServer"
+    UpdateEndpointUrl: true
+    SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#None
+    SubscriptionSamplingInterval: 0
+    WriteParameters:
+      QueueSize: 1000
+      BlockSize: 100
+      WithTime: false
+    MonitoringParameters:
+      BufferSize: 10
+      SamplingInterval: 0.0
+      DiscardOldest: true
+    BrowseOnStartup: true
+    WriteSchemaToFile: false
+    WriteSchemaToCache: true
+  - Id: "dotnet03"
+    Enabled: true
+    LogLevel: INFO
+    EndpointUrl: "opc.tcp://nuc1:20003/Quickstarts/ReferenceServer"
+    UpdateEndpointUrl: true
+    SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#None
+    SubscriptionSamplingInterval: 0
+    WriteParameters:
+      QueueSize: 1000
+      BlockSize: 100
+      WithTime: false
+    MonitoringParameters:
+      BufferSize: 10
+      SamplingInterval: 0.0
+      DiscardOldest: true
+    BrowseOnStartup: true
+    WriteSchemaToFile: false
+    WriteSchemaToCache: true
+  - Id: "dotnet04"
+    Enabled: true
+    LogLevel: INFO
+    EndpointUrl: "opc.tcp://nuc1:20004/Quickstarts/ReferenceServer"
+    UpdateEndpointUrl: true
+    SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#None
+    SubscriptionSamplingInterval: 0
+    WriteParameters:
+      QueueSize: 1000
+      BlockSize: 100
+      WithTime: false
+    MonitoringParameters:
+      BufferSize: 10
+      SamplingInterval: 0.0
+      DiscardOldest: true
+    BrowseOnStartup: true
+    WriteSchemaToFile: false
+    WriteSchemaToCache: true
+  - Id: "dotnet05"
+    Enabled: true
+    LogLevel: INFO
+    EndpointUrl: "opc.tcp://nuc1:20005/Quickstarts/ReferenceServer"
+    UpdateEndpointUrl: true
+    SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#None
+    SubscriptionSamplingInterval: 0
+    WriteParameters:
+      QueueSize: 1000
+      BlockSize: 100
+      WithTime: false
+    MonitoringParameters:
+      BufferSize: 10
+      SamplingInterval: 0.0
+      DiscardOldest: true
+    BrowseOnStartup: true
+    WriteSchemaToFile: false
+    WriteSchemaToCache: true
+  - Id: "dotnet06"
+    Enabled: true
+    LogLevel: INFO
+    EndpointUrl: "opc.tcp://nuc1:20006/Quickstarts/ReferenceServer"
+    UpdateEndpointUrl: true
+    SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#None
+    SubscriptionSamplingInterval: 0
+    WriteParameters:
+      QueueSize: 1000
+      BlockSize: 100
+      WithTime: false
+    MonitoringParameters:
+      BufferSize: 10
+      SamplingInterval: 0.0
+      DiscardOldest: true
+    BrowseOnStartup: true
+    WriteSchemaToFile: false
+    WriteSchemaToCache: true
+  - Id: "dotnet07"
+    Enabled: true
+    LogLevel: INFO
+    EndpointUrl: "opc.tcp://nuc1:20007/Quickstarts/ReferenceServer"
+    UpdateEndpointUrl: true
+    SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#None
+    SubscriptionSamplingInterval: 0
+    WriteParameters:
+      QueueSize: 1000
+      BlockSize: 100
+      WithTime: false
+    MonitoringParameters:
+      BufferSize: 10
+      SamplingInterval: 0.0
+      DiscardOldest: true
+    BrowseOnStartup: true
+    WriteSchemaToFile: false
+    WriteSchemaToCache: true
+  - Id: "dotnet08"
+    Enabled: true
+    LogLevel: INFO
+    EndpointUrl: "opc.tcp://nuc1:20008/Quickstarts/ReferenceServer"
+    UpdateEndpointUrl: true
+    SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#None
+    SubscriptionSamplingInterval: 0
+    WriteParameters:
+      QueueSize: 1000
+      BlockSize: 100
+      WithTime: false
+    MonitoringParameters:
+      BufferSize: 10
+      SamplingInterval: 0.0
+      DiscardOldest: true
+    BrowseOnStartup: true
+    WriteSchemaToFile: false
+    WriteSchemaToCache: true
+  - Id: "dotnet09"
+    Enabled: true
+    LogLevel: INFO
+    EndpointUrl: "opc.tcp://nuc1:20009/Quickstarts/ReferenceServer"
+    UpdateEndpointUrl: true
+    SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#None
+    SubscriptionSamplingInterval: 0
+    WriteParameters:
+      QueueSize: 1000
+      BlockSize: 100
+      WithTime: false
+    MonitoringParameters:
+      BufferSize: 10
+      SamplingInterval: 0.0
+      DiscardOldest: true
+    BrowseOnStartup: true
+    WriteSchemaToFile: false
+    WriteSchemaToCache: true
+  - Id: "dotnet10"
+    Enabled: true
+    LogLevel: INFO
+    EndpointUrl: "opc.tcp://nuc1:20010/Quickstarts/ReferenceServer"
+    UpdateEndpointUrl: true
+    SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#None
+    SubscriptionSamplingInterval: 0
+    WriteParameters:
+      QueueSize: 1000
+      BlockSize: 100
+      WithTime: false
+    MonitoringParameters:
+      BufferSize: 10
+      SamplingInterval: 0.0
+      DiscardOldest: true
+    BrowseOnStartup: true
+    WriteSchemaToFile: false
+    WriteSchemaToCache: true

@@ -1,6 +1,6 @@
 import at.rocworks.gateway.core.opcua.KeyStoreLoader
 import at.rocworks.gateway.core.opcua.OpcUaVerticle
-import at.rocworks.gateway.core.service.ClusterHandler
+import at.rocworks.gateway.core.service.Cluster
 
 import io.vertx.core.Vertx
 import io.vertx.core.json.JsonArray
@@ -11,7 +11,7 @@ object OpcUa {
     @JvmStatic
     fun main(args: Array<String>) {
         KeyStoreLoader.init()
-        ClusterHandler.init(args, ::services)
+        Cluster.init(args) { vertx, config -> services(vertx, config) }
     }
 
     private fun services(vertx: Vertx, config: JsonObject) {

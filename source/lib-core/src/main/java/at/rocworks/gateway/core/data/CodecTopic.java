@@ -9,7 +9,7 @@ public class CodecTopic implements MessageCodec<Topic, Topic> {
 
     @Override
     public void encodeToWire(Buffer buffer, Topic mqttTopic) {
-        var data = mqttTopic.encodeToJson().toBuffer();
+        Buffer data = mqttTopic.encodeToJson().toBuffer();
         buffer.appendInt(data.length());
         buffer.appendBuffer(data);
     }
@@ -17,7 +17,7 @@ public class CodecTopic implements MessageCodec<Topic, Topic> {
     @Override
     public Topic decodeFromWire(int i, Buffer buffer) {
         int len = buffer.getInt(i);
-        var json = (JsonObject)Json.decodeValue(buffer.getBuffer(i, i+len));
+        JsonObject json = (JsonObject)Json.decodeValue(buffer.getBuffer(i, i+len));
         return Topic.Companion.decodeFromJson(json);
     }
 

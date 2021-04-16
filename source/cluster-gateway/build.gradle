@@ -4,7 +4,7 @@ plugins {
 
 compileKotlin {
     kotlinOptions {
-        jvmTarget = "11"
+        jvmTarget = "1.8"
     }
 }
 
@@ -18,7 +18,8 @@ repositories {
 dependencies {
     implementation project(':lib-core')
     implementation 'org.slf4j:slf4j-api:1.7.30'
-    implementation 'org.slf4j:slf4j-jdk14:1.7.30'
+    //implementation 'org.slf4j:slf4j-jdk14:1.7.30'
+    implementation 'org.slf4j:slf4j-simple:1.7.30'
     implementation 'io.vertx:vertx-core:4.0.3'
     implementation 'io.vertx:vertx-config-yaml:4.0.3'
     implementation 'io.vertx:vertx-service-discovery:4.0.3'

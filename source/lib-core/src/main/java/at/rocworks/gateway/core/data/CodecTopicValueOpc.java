@@ -9,7 +9,7 @@ public class CodecTopicValueOpc implements MessageCodec<TopicValueOpc, TopicValu
 
     @Override
     public void encodeToWire(Buffer buffer, TopicValueOpc value) {
-        var data = value.encodeToJson().toBuffer();
+        Buffer data = value.encodeToJson().toBuffer();
         buffer.appendInt(data.length());
         buffer.appendBuffer(data);
     }
@@ -17,7 +17,7 @@ public class CodecTopicValueOpc implements MessageCodec<TopicValueOpc, TopicValu
     @Override
     public TopicValueOpc decodeFromWire(int i, Buffer buffer) {
         int len = buffer.getInt(i);
-        var json = (JsonObject) Json.decodeValue(buffer.getBuffer(i, i+len));
+        JsonObject json = (JsonObject) Json.decodeValue(buffer.getBuffer(i, i+len));
         return TopicValueOpc.Companion.fromJsonObject(json);
     }
 

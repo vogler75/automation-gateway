@@ -4,7 +4,7 @@ plugins {
 
 compileKotlin {
     kotlinOptions {
-        jvmTarget = "11"
+        jvmTarget = "1.8"
     }
 }
 
@@ -17,7 +17,8 @@ repositories {
 
 dependencies {
     implementation 'org.slf4j:slf4j-api:1.7.30'
-    implementation 'org.slf4j:slf4j-jdk14:1.7.30'
+    //implementation 'org.slf4j:slf4j-jdk14:1.7.30'
+    implementation 'org.slf4j:slf4j-simple:1.7.30'
 
     implementation 'commons-cli:commons-cli:1.4'
     implementation 'org.apache.commons:commons-collections4:4.4'
@@ -40,7 +41,3 @@ dependencies {
 
     testImplementation 'org.jetbrains.kotlin:kotlin-test:1.4.30'
 }
-
-group = 'at.rocworks.gateway'
-version = '1.0-SNAPSHOT'
-description = 'Gateway Core Library'

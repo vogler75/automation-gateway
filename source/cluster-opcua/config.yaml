@@ -2,8 +2,8 @@ OpcUaClient:
   - Id: "winccoa"
     Enabled: true
     LogLevel: INFO
-    EndpointUrl: "opc.tcp://centos1:4840"
-    UpdateEndpointUrl: centos1
+    EndpointUrl: "opc.tcp://centos1.rocworks.local:4840"
+    UpdateEndpointUrl: true
     SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#None
     ConnectTimeout: 5000
     RequestTimeout: 5000
@@ -27,7 +27,8 @@ OpcUaClient:
   - Id: "ignition"
     Enabled: true
     LogLevel: INFO
-    EndpointUrl: "opc.tcp://ubuntu1:62541/discovery"
+    EndpointUrl: "opc.tcp://ubuntu1.rocworks.local:62541/discovery"
+    UpdateEndpointUrl: true
     SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#None
     ConnectTimeout: 5000
     RequestTimeout: 5000
@@ -51,7 +52,8 @@ OpcUaClient:
   - Id: "unified"
     Enabled: true
     LogLevel: INFO
-    EndpointUrl:  "opc.tcp://desktop-9o6hthf:4890"
+    EndpointUrl: "opc.tcp://desktop-9o6hthf.rocworks.local:4890"
+    UpdateEndpointUrl: true
     SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#Basic128Rsa15
     SubscriptionSamplingInterval: 0
     UsernameProvider:

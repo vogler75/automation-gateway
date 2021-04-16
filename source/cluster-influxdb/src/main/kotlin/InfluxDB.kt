@@ -8,7 +8,7 @@ object InfluxDB {
     @Throws(Exception::class)
     @JvmStatic
     fun main(args: Array<String>) {
-        Cluster.init(args, clientMode = true) { vertx, config -> services(vertx, config) }
+        Cluster.init(args) { vertx, config -> services(vertx, config) }
     }
 
     private fun services(vertx: Vertx, config: JsonObject) {

@@ -13,7 +13,7 @@ object Gateway {
     @JvmStatic
     fun main(args: Array<String>) {
         KeyStoreLoader.init()
-        Cluster.init(args, clientMode = true) { vertx, config -> services(vertx, config) }
+        Cluster.init(args) { vertx, config -> services(vertx, config) }
     }
 
     private fun services(vertx: Vertx, config: JsonObject) {

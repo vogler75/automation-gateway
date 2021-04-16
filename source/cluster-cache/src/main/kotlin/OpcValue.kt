@@ -1,5 +1,3 @@
-package at.rocworks.gateway.core.cache
-
 import at.rocworks.gateway.core.data.Topic
 import at.rocworks.gateway.core.data.TopicValue
 import org.apache.ignite.cache.query.annotations.QuerySqlField

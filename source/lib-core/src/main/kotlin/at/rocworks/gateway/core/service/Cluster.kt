@@ -32,12 +32,12 @@ object Cluster {
     private val envClusterPort = System.getenv("GATEWAY_CLUSTER_PORT") ?: ""
     private val envClientMode = System.getenv("GATEWAY_CLUSTER_CLIENT") ?: ""
 
-    private val clusterType = (System.getenv("GATEWAY_CLUSTER_TYPE") ?: "ignite").toLowerCase()
+    private val clusterType = (System.getenv("GATEWAY_CLUSTER_TYPE") ?: "hazelcast").toLowerCase()
     private val clusterHost = if (envClusterHost=="*") InetAddress.getLocalHost().hostAddress else envClusterHost
     private val clusterPort = envClusterPort
     private val clientMode = (envClientMode == "true")
 
-    private var clusterManager: ClusterManager? = null
+    var clusterManager: ClusterManager? = null
 
     fun init(args: Array<String>, clientMode: Boolean? = null, services: (Vertx, JsonObject) -> Unit) {
         Common.initLogging()
@@ -67,7 +67,6 @@ object Cluster {
                 if (result.succeeded()) {
                     val vertx = result.result()
                     initCluster(clusterManager, vertx)
-                    ClusterCache.init(clusterManager, vertx)
                     Common.initVertx(args, vertx, services)
                 } else {
                     logger.error("Error initializing cluster!")
@@ -117,17 +116,18 @@ object Cluster {
         config.isClientMode = clientMode
         config.gridLogger = VertxLogger()
         config.metricsLogFrequency = 0
+
         config.setIncludeEventTypes(
             EventType.EVT_CACHE_OBJECT_PUT,
             EventType.EVT_CACHE_OBJECT_READ,
             EventType.EVT_CACHE_OBJECT_REMOVED,
-            EventType.EVT_CACHE_NODES_LEFT,
-            EventType.EVT_CLIENT_NODE_DISCONNECTED,
-            EventType.EVT_CLIENT_NODE_RECONNECTED,
             EventType.EVT_NODE_JOINED,
             EventType.EVT_NODE_LEFT,
-            EventType.EVT_NODE_FAILED
+            EventType.EVT_NODE_FAILED,
+            EventType.EVT_CLIENT_NODE_DISCONNECTED,
+            EventType.EVT_CLIENT_NODE_RECONNECTED,
         )
+
         if (clusterHost!="")
             config.localHost = clusterHost
 

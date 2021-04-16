@@ -1,5 +1,5 @@
 OpcUaClient:
-  - Id: "dotnet01"
+  - Id: "test01"
     Enabled: true
     LogLevel: INFO
     EndpointUrl: "opc.tcp://nuc1:20001/Quickstarts/ReferenceServer"
@@ -16,8 +16,7 @@ OpcUaClient:
       DiscardOldest: true
     BrowseOnStartup: true
     WriteSchemaToFile: false
-    WriteSchemaToCache: true
-  - Id: "dotnet02"
+  - Id: "test02"
     Enabled: true
     LogLevel: INFO
     EndpointUrl: "opc.tcp://nuc1:20002/Quickstarts/ReferenceServer"
@@ -34,8 +33,7 @@ OpcUaClient:
       DiscardOldest: true
     BrowseOnStartup: true
     WriteSchemaToFile: false
-    WriteSchemaToCache: true
-  - Id: "dotnet03"
+  - Id: "test03"
     Enabled: true
     LogLevel: INFO
     EndpointUrl: "opc.tcp://nuc1:20003/Quickstarts/ReferenceServer"
@@ -53,7 +51,7 @@ OpcUaClient:
     BrowseOnStartup: true
     WriteSchemaToFile: false
     WriteSchemaToCache: true
-  - Id: "dotnet04"
+  - Id: "test04"
     Enabled: true
     LogLevel: INFO
     EndpointUrl: "opc.tcp://nuc1:20004/Quickstarts/ReferenceServer"
@@ -70,8 +68,7 @@ OpcUaClient:
       DiscardOldest: true
     BrowseOnStartup: true
     WriteSchemaToFile: false
-    WriteSchemaToCache: true
-  - Id: "dotnet05"
+  - Id: "test05"
     Enabled: true
     LogLevel: INFO
     EndpointUrl: "opc.tcp://nuc1:20005/Quickstarts/ReferenceServer"
@@ -88,8 +85,7 @@ OpcUaClient:
       DiscardOldest: true
     BrowseOnStartup: true
     WriteSchemaToFile: false
-    WriteSchemaToCache: true
-  - Id: "dotnet06"
+  - Id: "test06"
     Enabled: true
     LogLevel: INFO
     EndpointUrl: "opc.tcp://nuc1:20006/Quickstarts/ReferenceServer"
@@ -106,8 +102,7 @@ OpcUaClient:
       DiscardOldest: true
     BrowseOnStartup: true
     WriteSchemaToFile: false
-    WriteSchemaToCache: true
-  - Id: "dotnet07"
+  - Id: "test07"
     Enabled: true
     LogLevel: INFO
     EndpointUrl: "opc.tcp://nuc1:20007/Quickstarts/ReferenceServer"
@@ -124,8 +119,7 @@ OpcUaClient:
       DiscardOldest: true
     BrowseOnStartup: true
     WriteSchemaToFile: false
-    WriteSchemaToCache: true
-  - Id: "dotnet08"
+  - Id: "test08"
     Enabled: true
     LogLevel: INFO
     EndpointUrl: "opc.tcp://nuc1:20008/Quickstarts/ReferenceServer"
@@ -143,7 +137,7 @@ OpcUaClient:
     BrowseOnStartup: true
     WriteSchemaToFile: false
     WriteSchemaToCache: true
-  - Id: "dotnet09"
+  - Id: "test09"
     Enabled: true
     LogLevel: INFO
     EndpointUrl: "opc.tcp://nuc1:20009/Quickstarts/ReferenceServer"
@@ -160,8 +154,7 @@ OpcUaClient:
       DiscardOldest: true
     BrowseOnStartup: true
     WriteSchemaToFile: false
-    WriteSchemaToCache: true
-  - Id: "dotnet10"
+  - Id: "test10"
     Enabled: true
     LogLevel: INFO
     EndpointUrl: "opc.tcp://nuc1:20010/Quickstarts/ReferenceServer"
@@ -178,4 +171,3 @@ OpcUaClient:
       DiscardOldest: true
     BrowseOnStartup: true
     WriteSchemaToFile: false
-    WriteSchemaToCache: true

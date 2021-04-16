@@ -1,5 +1,4 @@
-package at.rocworks.gateway.core.cache
-
+import at.rocworks.gateway.core.data.Topic
 import org.apache.ignite.cache.query.annotations.QuerySqlField
 import org.apache.ignite.cache.query.annotations.QuerySqlField.Group
 
@@ -28,7 +27,10 @@ class OpcNode(
     fun key(): String = "$systemName/$nodeId"
 
     @QuerySqlField()
-    val topic: String = "opc/$systemName/node/$nodeId"
+    val systemType: String = Topic.SystemType.Opc.name
+
+    @QuerySqlField()
+    val topic: String = "${systemType}/$systemName/node/$nodeId"
 
     @QuerySqlField()
     val subscribe: Boolean? = null

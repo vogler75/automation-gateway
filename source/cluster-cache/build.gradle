@@ -24,6 +24,9 @@ dependencies {
     implementation 'io.vertx:vertx-reactive-streams:4.0.3'
     implementation 'io.vertx:vertx-service-discovery:4.0.3'
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.11.4' // Needed for Vertx Json
+
+    implementation group: 'io.vertx', name: 'vertx-ignite', version: '4.0.3'
+    implementation group: 'org.apache.ignite', name: 'ignite-indexing', version: '2.9.1'
 }
 
 application {

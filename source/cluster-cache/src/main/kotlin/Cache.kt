@@ -1,6 +1,9 @@
+import at.rocworks.gateway.core.mqtt.MqttVerticle
+import at.rocworks.gateway.core.opcua.OpcUaVerticle
 import at.rocworks.gateway.core.service.Cluster
 
 import io.vertx.core.Vertx
+import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 
 object Cache {
@@ -10,7 +13,12 @@ object Cache {
         Cluster.init(args, clientMode = false) { vertx, config -> services(vertx, config) }
     }
 
-    @Suppress("UNUSED_PARAMETER")
     private fun services(vertx: Vertx, config: JsonObject) {
+        config.getJsonArray("Cache", JsonArray())
+            .filterIsInstance<JsonObject>()
+            .filter { it.getBoolean("Enabled") }
+            .forEach {
+                vertx.deployVerticle(CacheVerticle(it))
+            }
     }
 }

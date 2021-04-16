@@ -33,13 +33,12 @@ dependencies {
 
     implementation 'io.vertx:vertx-hazelcast:4.0.3'
     implementation 'io.vertx:vertx-ignite:4.0.3'
+    implementation group: 'org.apache.ignite', name: 'ignite-indexing', version: '2.9.1'
 
     implementation 'io.reactivex.rxjava2:rxjava:2.2.20'
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.11.4'
 
     testImplementation 'org.jetbrains.kotlin:kotlin-test:1.4.30'
-
-    implementation group: 'org.apache.ignite', name: 'ignite-indexing', version: '2.9.1'
 }
 
 group = 'at.rocworks.gateway'

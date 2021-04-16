@@ -22,7 +22,6 @@ OpcUaClient:
       DataChangeTrigger: StatusValueTimestamp # Status | StatusValue | StatusValueTimestamp
     BrowseOnStartup: true
     WriteSchemaToFile: false
-    WriteSchemaToCache: true
     SubscribeOnStartup:
       - node/ns=2;s=[default]/Pump_1/flow
       - node/ns=2;s=[default]/Pump_1/speed

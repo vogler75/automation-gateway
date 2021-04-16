@@ -1,22 +1,19 @@
 OpcUaClient:
-  - Id: "unified"
+  - Id: "test01"
     Enabled: true
     LogLevel: INFO
-    EndpointUrl:  "opc.tcp://desktop-9o6hthf:4890"
+    EndpointUrl: "opc.tcp://nuc1:20001/Quickstarts/ReferenceServer"
     UpdateEndpointUrl: true
-    SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#Basic128Rsa15
+    SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#None
     SubscriptionSamplingInterval: 0
-    UsernameProvider:
-      Username: opcuauser
-      Password: password1
     WriteParameters:
       QueueSize: 1000
       BlockSize: 100
-      WithTime: true
+      WithTime: false
     MonitoringParameters:
       BufferSize: 10
       SamplingInterval: 0.0
       DiscardOldest: true
     BrowseOnStartup: true
     WriteSchemaToFile: false
-    WriteSchemaToCache: true
+

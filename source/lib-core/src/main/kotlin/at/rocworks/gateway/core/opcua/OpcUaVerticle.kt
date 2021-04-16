@@ -1,12 +1,9 @@
 package at.rocworks.gateway.core.opcua
 
-import at.rocworks.gateway.core.cache.OpcNode
-import at.rocworks.gateway.core.cache.OpcValue
 import at.rocworks.gateway.core.data.Topic
 import at.rocworks.gateway.core.data.TopicValueOpc
 import at.rocworks.gateway.core.driver.DriverBase
 import at.rocworks.gateway.core.driver.MonitoredItem
-import at.rocworks.gateway.core.service.ClusterCache
 
 import io.vertx.core.AsyncResult
 import io.vertx.core.CompositeFuture
@@ -95,7 +92,6 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
 
     private val browseOnStartup : Boolean = config.getBoolean("BrowseOnStartup", false)
     private val writeSchemaToFile: Boolean = config.getBoolean("WriteSchemaToFile", false)
-    private val writeSchemaToCache: Boolean = config.getBoolean("WriteSchemaToCache", false)
 
     private var client: OpcUaClient? = null
     private var subscription: UaSubscription? = null
@@ -224,8 +220,6 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
                                 vertx.eventBus().publish("$uri/Schema", JsonObject())
                             }
 
-                            ClusterCache.registerSystem(getType(), id)
-
                             promise.complete(true)
                         }
                     }
@@ -245,31 +239,7 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
         if (writeSchemaToFile) {
             File("schema-${id}.json".toLowerCase()).writeText(tree.encodePrettily())
         }
-        if (writeSchemaToCache) {
-            writeSchemaToCache(tree)
-        }
         return tree
-    }
-
-    private fun writeSchemaToCache(tree: JsonArray) {
-        fun add(parentNodeId: String, path: String, node: JsonObject) {
-            val browseName = node.getString("BrowseName", "")
-            val browsePath = "$path/$browseName"
-            val nodeId = node.getString("NodeId", "")
-            ClusterCache.putOpcNode { OpcNode(
-                systemName = id,
-                nodeId = nodeId,
-                nodeClass = node.getString("NodeClass", ""),
-                browsePath = browsePath,
-                parentNodeId = parentNodeId,
-                browseName = browseName,
-                displayName = node.getString("DisplayName", ""),
-            )}
-            node.getJsonArray("Nodes")?.filterIsInstance<JsonObject>()?.forEach { it ->
-                add(nodeId, browsePath, it)
-            }
-        }
-        tree.filterIsInstance<JsonObject>().forEach { add("", "Root/Objects", it) }
     }
 
     override fun disconnect(): Future<Boolean> {
@@ -802,7 +772,6 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
             }
             if (buffer!=null) {
                 vertx.eventBus().publish(topic.topicName, buffer)
-                ClusterCache.putOpcValue { OpcValue(topic, value) }
             }
         } catch (e: Exception) {
             e.printStackTrace()

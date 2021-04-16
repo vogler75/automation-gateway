@@ -58,7 +58,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
     private val writeSchemaFiles: Boolean = config.getBoolean("WriteSchemaToFile", false)
 
     init {
-        Logger.getLogger(id).level = Level.ALL
+        Logger.getLogger(id).level = Level.parse(config.getString("LogLevel", "INFO"))
     }
 
     override fun start(startPromise: Promise<Void>) {

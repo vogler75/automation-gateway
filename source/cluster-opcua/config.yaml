@@ -20,7 +20,6 @@ OpcUaClient:
       DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
     BrowseOnStartup: false
     WriteSchemaToFile: false
-    WriteSchemaToCache: false
     SubscribeOnStartup:
       - node/ns=2;s=ExampleDP_Float.ExampleDP_Arg1
       - path/$objects/Test/+/+
@@ -47,7 +46,6 @@ OpcUaClient:
       DiscardOldest: false
       DataChangeTrigger: StatusValueTimestamp # Status | StatusValue | StatusValueTimestamp
     BrowseOnStartup: true
-    WriteSchemaToCache: true
     WriteSchemaToFile: false
 
   - Id: "unified"

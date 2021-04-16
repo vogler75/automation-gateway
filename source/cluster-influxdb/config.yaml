@@ -10,9 +10,11 @@ Database:
       WriteParameters:
         QueueSize: 20000
       Logging:
-        - Topic: opc/winccoa/node/ns=2;s=ExampleDP_Float.ExampleDP_Arg1
-        - Topic: opc/winccoa/path/$objects/Test/+/+
-        - Topic: opc/ignition/node/ns=2;s=[default]/Input_Watt
-        - Topic: plc/mod/node/coil:1
-        - Topic: plc/mod/node/holding-register:1:INT
-        - Topic: dds/demo/path/shape/Circle
+        - Topic: opc/test01/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
+        - Topic: opc/test01/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
+        #- Topic: opc/winccoa/node/ns=2;s=ExampleDP_Float.ExampleDP_Arg1
+        #- Topic: opc/winccoa/path/$objects/Test/+/+
+        #- Topic: opc/ignition/node/ns=2;s=[default]/Input_Watt
+        #- Topic: plc/mod/node/coil:1
+        #- Topic: plc/mod/node/holding-register:1:INT
+        #- Topic: dds/demo/path/shape/Circle

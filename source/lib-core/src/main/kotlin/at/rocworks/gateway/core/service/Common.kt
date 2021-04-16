@@ -1,7 +1,5 @@
 package at.rocworks.gateway.core.service
 
-import at.rocworks.gateway.core.cache.OpcNode
-import at.rocworks.gateway.core.cache.OpcValue
 import at.rocworks.gateway.core.data.*
 import io.vertx.config.ConfigRetriever
 import io.vertx.config.ConfigRetrieverOptions
@@ -19,6 +17,7 @@ object Common {
     private val configFileName = System.getenv("GATEWAY_CONFIG") ?: "config.yaml"
 
     const val BUS_ROOT_URI_LOG = "Log"
+    const val BUS_ROOT_URI_CACHE = "Cache"
 
     fun initLogging() {
         val stream = Cluster::class.java.classLoader.getResourceAsStream("logging.properties")
@@ -40,9 +39,6 @@ object Common {
             vertx.eventBus().registerDefaultCodec(TopicValueOpc::class.java, CodecTopicValueOpc())
             vertx.eventBus().registerDefaultCodec(TopicValuePlc::class.java, CodecTopicValuePlc())
             vertx.eventBus().registerDefaultCodec(TopicValueDds::class.java, CodecTopicValueDds())
-
-            vertx.eventBus().registerDefaultCodec(OpcNode::class.java, GenericCodec(OpcNode::class.java))
-            vertx.eventBus().registerDefaultCodec(OpcValue::class.java, GenericCodec(OpcValue::class.java))
 
             // Retrieve Config
             val config = retrieveConfig(vertx, configFilePath)

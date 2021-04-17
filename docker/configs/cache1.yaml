@@ -1,0 +1,13 @@
+Cache:
+  - Id: "global"
+    Enabled: true
+    LogLevel: INFO
+    SqlIndexMaxInlineSize: 1000
+    StoreHistoryValues: true
+    Systems:
+      - SystemType: Opc
+        SystemName: "test1"
+        PurgeEverySeconds: 60
+        KeepLastSeconds: 180
+    Logging:
+      - Topic: opc/test1/path/Objects/Demo/SimulationMass/SimulationMass_Double/+

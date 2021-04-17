@@ -10,7 +10,7 @@ object Cache {
     @Throws(Exception::class)
     @JvmStatic
     fun main(args: Array<String>) {
-        Cluster.init(args, clientMode = false) { vertx, config -> services(vertx, config) }
+        Cluster.init(args) { vertx, config -> services(vertx, config) }
     }
 
     private fun services(vertx: Vertx, config: JsonObject) {

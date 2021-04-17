@@ -1,3 +1,5 @@
+package at.rocworks.gateway.cache
+
 import org.apache.ignite.cache.query.annotations.QuerySqlField
 import java.sql.Timestamp
 

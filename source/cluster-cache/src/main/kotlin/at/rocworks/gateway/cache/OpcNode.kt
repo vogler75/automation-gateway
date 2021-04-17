@@ -1,3 +1,5 @@
+package at.rocworks.gateway.cache
+
 import at.rocworks.gateway.core.data.Topic
 import org.apache.ignite.cache.query.annotations.QuerySqlField
 import org.apache.ignite.cache.query.annotations.QuerySqlField.Group

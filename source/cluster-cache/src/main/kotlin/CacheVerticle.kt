@@ -1,7 +1,3 @@
-import at.rocworks.gateway.core.data.Topic
-import at.rocworks.gateway.core.data.TopicValue
-import at.rocworks.gateway.core.service.Cluster
-import at.rocworks.gateway.core.service.ServiceHandler
 import io.vertx.core.AbstractVerticle
 import io.vertx.core.Promise
 import io.vertx.core.buffer.Buffer
@@ -28,6 +24,15 @@ import java.time.Instant
 import java.util.*
 import java.util.logging.Level
 import java.util.logging.Logger
+
+import at.rocworks.gateway.cache.OpcNode
+import at.rocworks.gateway.cache.OpcValue
+import at.rocworks.gateway.cache.OpcValueHistory
+import at.rocworks.gateway.core.data.Topic
+import at.rocworks.gateway.core.data.TopicValue
+import at.rocworks.gateway.core.service.Cluster
+import at.rocworks.gateway.core.service.ServiceHandler
+import io.vertx.core.eventbus.Message
 
 class CacheVerticle(private val config: JsonObject) : AbstractVerticle() {
     private val id = config.getString("Id", "Cache")
@@ -124,7 +129,7 @@ class CacheVerticle(private val config: JsonObject) : AbstractVerticle() {
                     topics
                         .filter { it.systemType.name == service.type && it.systemName == service.name }
                         .forEach { topic ->
-                            vertx.eventBus().consumer<Any>(topic.topicName) { valueConsumer(it.body()) }
+                            vertx.eventBus().consumer<Any>(topic.topicName, ::valueConsumer)
                             subscribeTopic(ServiceHandler.endpointOf(service), topic)
                         }
                 }
@@ -142,9 +147,9 @@ class CacheVerticle(private val config: JsonObject) : AbstractVerticle() {
         }
     }
 
-    private fun valueConsumer(value: Any) { // TODO: same function in influx
+    private fun valueConsumer(message: Message<Any>) { // TODO: same function in influx
         try {
-            when (value) {
+            when (val value = message.body()) {
                 is Buffer -> valueConsumer(Json.decodeValue(value) as JsonObject)
                 is JsonObject -> valueConsumer(value)
                 else -> logger.warn("Got unhandled class of instance []", value.javaClass.simpleName)
@@ -160,15 +165,14 @@ class CacheVerticle(private val config: JsonObject) : AbstractVerticle() {
             val value = TopicValue.fromJsonObject(data.getJsonObject("Value"))
             if (!value.hasValue()) return
 
-            cache?.let {
-                val current = OpcValue(topic, value)
-                it.put(current.key(), current)
+            val current = OpcValue(topic, value)
+            cache?.put(current.key(), current)
 
-                if (storeHistoryValues) {
-                    val history = OpcValueHistory(current)
-                    it.put(history.key(), history)
-                }
+            if (storeHistoryValues) {
+                val history = OpcValueHistory(current)
+                cache?.put(history.key(), history)
             }
+
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -223,9 +227,7 @@ class CacheVerticle(private val config: JsonObject) : AbstractVerticle() {
                 browseName = browseName,
                 displayName = node.getString("DisplayName", ""),
             )
-            cache?.let {
-                it.put(data.key(), data)
-            }
+            cache?.put(data.key(), data)
 
             node.getJsonArray("Nodes")?.filterIsInstance<JsonObject>()?.forEach { it ->
                 add(nodeId, browsePath, it)

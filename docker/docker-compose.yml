@@ -4,22 +4,26 @@ services:
     image: apacheignite/ignite:2.9.1
     restart: always
     volumes:
-      - ../source/cluster-cache/build/libs:/opt/ignite/apache-ignite/libs/user_libs
+      - ./libs:/opt/ignite/apache-ignite/libs/user_libs
     deploy:
       resources:
         limits:
           memory: 256M
+    networks:
+      - gateway
     ports:
-      - 10800:10800
+      - 10800:10800      
   ignite2:
     image: apacheignite/ignite:2.9.1
     restart: always
     volumes:
-      - ../source/cluster-cache/build/libs:/opt/ignite/apache-ignite/libs/user_libs
+      - ./libs:/opt/ignite/apache-ignite/libs/user_libs
     deploy:
       resources:
         limits:
           memory: 256M
+    networks:
+      - gateway
   gateway:
     image: cluster-gateway
     hostname: gateway
@@ -27,10 +31,15 @@ services:
     environment:
       - GATEWAY_CLUSTER_CLIENT=true
     ports: 
-    - 1883:1883
-    - 4000:4000
+      - 1883:1883
+      - 4000:4000
     volumes:
-    - ./configs/gateway.yaml:/app/config.yaml
+      - ./configs/gateway.yaml:/app/config.yaml
+    networks:
+      - gateway
+    depends_on:
+      - ignite1
+      - ignite2
   cache1:
     image: cluster-cache
     hostname: cache1
@@ -38,7 +47,12 @@ services:
     environment:
       - GATEWAY_CLUSTER_CLIENT=true
     volumes:
-    - ./configs/cache1.yaml:/app/config.yaml
+      - ./configs/cache1.yaml:/app/config.yaml
+    networks:
+      - gateway
+    depends_on:
+      - ignite1
+      - ignite2      
   test1:
     image: cluster-opcua
     hostname: test1
@@ -46,22 +60,37 @@ services:
     environment:
       - GATEWAY_CLUSTER_CLIENT=true
     volumes:
-    - ./configs/test1.yaml:/app/config.yaml
+      - ./configs/test1.yaml:/app/config.yaml
+    networks:
+      - gateway  
+    depends_on:
+      - ignite1
+      - ignite2     
   #winccoa:
   #  image: cluster-opcua
   #  hostname: winccoa
   #  restart: always
   #  volumes:
   #  - ./configs/winccoa.yaml:/app/config.yaml
+  #  networks:
+  #   - gateway  
   #ignition:
   #  image: cluster-opcua
   #  hostname: ignition
   #  restart: always
   #  volumes:
   #  - ./configs/ignition.yaml:/app/config.yaml
+  #  networks:
+  #   - gateway  
   #unified:
   #  image: cluster-opcua
   #  hostname: unified
   #  restart: always
   #  volumes:
   #  - ./configs/unified.yaml:/app/config.yaml
+  #  networks:
+  #   - gateway  
+
+  
+networks:
+  gateway:

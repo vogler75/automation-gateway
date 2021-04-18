@@ -59,9 +59,9 @@ abstract class DriverBase(config: JsonObject) : AbstractVerticle() {
         logger.info("Driver start [{}]", id)
         vertx.executeBlocking<Void> {
             try {
-                connectHandlers()
                 connect().onComplete {
                     logger.info("Connect complete")
+                    connectHandlers()
                     registerService()
                     subscribeOnStartup.forEach {
                         val topic = Topic.parseTopic("$uri/$it")

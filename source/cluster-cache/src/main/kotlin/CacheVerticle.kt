@@ -84,16 +84,8 @@ class CacheVerticle(private val config: JsonObject) : AbstractVerticle() {
             if (this.clusterManager == null) {
                 this.clusterManager = manager
                 cache = getOrCreateCache(manager)
-                subscribeTopics()
-                systems.forEach { system ->
-                    fetchSchema(system.systemType.name, system.systemName)
-                    eventListener(system.systemType.name, system.systemName)
-                    if (system.purgeEverySeconds > 0) {
-                        vertx.setPeriodic(system.purgeEverySeconds) {
-                            purgeHistory(system)
-                        }
-                    }
-                }
+                val handler = ServiceHandler(vertx, logger)
+                schemaHandler(handler)
             } else {
                 logger.warn("Cluster cache was already initialized!")
             }
@@ -111,30 +103,13 @@ class CacheVerticle(private val config: JsonObject) : AbstractVerticle() {
         config.backups = 0
         config.rebalanceMode = CacheRebalanceMode.ASYNC
         //config.writeSynchronizationMode = CacheWriteSynchronizationMode.FULL_ASYNC
+        logger.info("Create cache")
         config.setIndexedTypes(
             String::class.java, OpcNode::class.java,
             String::class.java, OpcValue::class.java,
             String::class.java, OpcValueHistory::class.java
         )
         return manager.igniteInstance.getOrCreateCache(config)
-    }
-
-    private fun subscribeTopics() { // TODO: same function in influx
-        val handler = ServiceHandler(vertx, logger)
-        logger.info("Observe ${services.size} services with ${topics.size} topics")
-        services.forEach { it ->
-            handler.observeService(it.first.name, it.second) { service ->
-                logger.info("Service [{}] changed status [{}]", service.name, service.status)
-                if (service.status == Status.UP) {
-                    topics
-                        .filter { it.systemType.name == service.type && it.systemName == service.name }
-                        .forEach { topic ->
-                            vertx.eventBus().consumer<Any>(topic.topicName, ::valueConsumer)
-                            subscribeTopic(ServiceHandler.endpointOf(service), topic)
-                        }
-                }
-            }
-        }
     }
 
     private fun subscribeTopic(endpoint: String, topic: Topic) { // TODO: same function in influx
@@ -197,6 +172,29 @@ class CacheVerticle(private val config: JsonObject) : AbstractVerticle() {
         }
     }
 
+    private fun schemaHandler(handler: ServiceHandler) {
+        systems.forEach { system ->
+            if (system.purgeEverySeconds > 0) {
+                eventListener(system.systemType.name, system.systemName)
+                vertx.setPeriodic(system.purgeEverySeconds) {
+                    purgeHistory(system)
+                }
+            }
+            handler.observeService(system.systemType.name, system.systemName) { service ->
+                if (service.status == Status.UP) {
+                    fetchSchema(system.systemType.name, system.systemName)
+                    topics
+                        .filter { it.systemType.name == service.type && it.systemName == service.name }
+                        .forEach { topic ->
+                            vertx.eventBus().consumer<Any>(topic.topicName, ::valueConsumer)
+                            subscribeTopic(ServiceHandler.endpointOf(service), topic)
+                        }
+                }
+            }
+        }
+    }
+
+
     private fun fetchSchema(systemType: String, systemName: String) {
         logger.info("Request schema [{}]...", systemName)
         vertx.eventBus().request<JsonObject>(
@@ -205,10 +203,12 @@ class CacheVerticle(private val config: JsonObject) : AbstractVerticle() {
             DeliveryOptions().setSendTimeout(60000*3))
         {
             logger.info("Schema response [{}] [{}] [{}]", systemName, it.succeeded(), it.cause()?.message ?: "")
-            val response = it.result().body() ?: JsonObject()
-            vertx.executeBlocking<Void> {  promise ->
-                writeSchemaToCache(systemName, response.getJsonArray("Objects", JsonArray()) ?: JsonArray())
-                promise.complete()
+            if (it.succeeded()) {
+                val response = it.result()?.body() ?: JsonObject()
+                vertx.executeBlocking<Void> {  promise ->
+                    writeSchemaToCache(systemName, response.getJsonArray("Objects", JsonArray()) ?: JsonArray())
+                    promise.complete()
+                }
             }
         }
     }

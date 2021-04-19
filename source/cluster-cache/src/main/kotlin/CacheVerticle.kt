@@ -175,9 +175,20 @@ class CacheVerticle(private val config: JsonObject) : AbstractVerticle() {
     private fun schemaHandler(handler: ServiceHandler) {
         systems.forEach { system ->
             if (system.purgeEverySeconds > 0) {
+                /* Does not really work well...
                 eventListener(system.systemType.name, system.systemName)
+                 */
+                var running = false
                 vertx.setPeriodic(system.purgeEverySeconds) {
-                    purgeHistory(system)
+                    if (!running) {
+                        running = true
+                        vertx.executeBlocking<Void> {
+                            purgeHistory(system)
+                            it.complete()
+                        }.onComplete {
+                            running = false
+                        }
+                    }
                 }
             }
             handler.observeService(system.systemType.name, system.systemName) { service ->
@@ -246,6 +257,7 @@ class CacheVerticle(private val config: JsonObject) : AbstractVerticle() {
                 val remoteFilter = remoteFilter(systemType, systemName)
 
                 // Subscribe to specified cache events on all nodes that have cache running.
+                // TODO: we only get events from the local cache, but we should get it from any node...
                 manager.igniteInstance.let {
                     val group = it.cluster().forCacheNodes(cache?.name)
                     it.events(group).remoteListen<CacheEvent>(
@@ -261,7 +273,7 @@ class CacheVerticle(private val config: JsonObject) : AbstractVerticle() {
 
     private fun remoteFilter(systemType: String, systemName: String) = IgnitePredicate<CacheEvent> { e ->
         try {
-            println("remoteFilter: "+e.toString())
+            logger.debug("remoteFilter: $e")
             when (val value = e.newValue()) {
                 is BinaryObject -> {
                     when (value.type().typeName()) {
@@ -294,7 +306,7 @@ class CacheVerticle(private val config: JsonObject) : AbstractVerticle() {
     private fun localListener(systemType: String, systemName: String): IgniteBiPredicate<UUID, CacheEvent> =
         IgniteBiPredicate { _, e ->
             try {
-                println("localListener: "+e.toString())
+                logger.debug("localListener: $e")
                 if (e.hasNewValue()) {
                     when (val value = e.newValue()) {
                         is BinaryObject -> {
@@ -334,8 +346,17 @@ class CacheVerticle(private val config: JsonObject) : AbstractVerticle() {
                 val data = JsonObject()
                     .put("ClientId", uuid)
                     .put("Topic", topic.encodeToJson())
-                val action = if (newNode.subscribe) "Subscribe" else "Unsubscribe"
-                vertx?.eventBus()?.publish("${systemType}/$systemName/$action", data)
+                if (newNode.subscribe) {
+                    vertx?.eventBus()?.consumer<Any>(topic.topicName, ::valueConsumer)
+
+                    /*  TODO: if we do this the record is not in the table anymore ...
+                    vertx?.eventBus()?.publish("${systemType}/$systemName/Subscribe", data)
+                     */
+                } else {
+                    // TODO: remove consumer ..
+                    vertx?.eventBus()?.publish("${systemType}/$systemName/Unsubscribe", data)
+                }
+
             } catch (e: Exception) {
                 e.printStackTrace()
             }

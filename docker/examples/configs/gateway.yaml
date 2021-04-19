@@ -12,8 +12,17 @@ GraphQLServer:
       GraphiQL: true
       WriteSchemaToFile: false
       Schemas:
-        - System: test1
-        - FieldName: BrowseName
+        - System: opcua1
+        - System: opcua2
+        - System: opcua3
+        - System: opcua4
+        - System: opcua5
+        - System: opcua6
+        - System: opcua7
+        - System: opcua8
+        - System: opcua9
+        - System: opcua10
+
         #- System: winccoa
         #  FieldName: BrowseName # BrowseName | DisplayName
         #- System: ignition

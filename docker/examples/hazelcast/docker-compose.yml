@@ -1,0 +1,84 @@
+version: '3'
+services:
+  influxdb: 
+    image: influxdb:1.8
+    hostname: influxdb
+    volumes:
+      - influxdata:/var/lib/influxdb
+    ports:
+      - 8086:8086
+    environment: 
+      - INFLUXDB_DB=test
+    networks:
+      - gateway        
+
+  gateway:
+    image: cluster-gateway
+    hostname: gateway
+    environment:
+      - GATEWAY_CLUSTER_CLIENT=true
+    ports: 
+      - 1883:1883
+      - 4000:4000
+    volumes:
+      - ../configs/gateway.yaml:/app/config.yaml
+    networks:
+      - gateway
+
+  opcua1:
+    image: cluster-opcua
+    hostname: opcua1
+    volumes:
+      - ../configs/opcua1.yaml:/app/config.yaml
+    networks:
+      - gateway  
+
+  opcua2:
+    image: cluster-opcua
+    hostname: opcua2
+    volumes:
+      - ../configs/opcua2.yaml:/app/config.yaml
+    networks:
+      - gateway    
+
+  logger:
+    image: cluster-influxdb
+    hostname: logger
+    volumes:
+      - ../configs/influxdb.yaml:/app/config.yaml
+    networks:
+      - gateway
+
+  #winccoa:
+  #  image: cluster-opcua
+  #  hostname: winccoa
+  #  restart: always
+  #  volumes:
+  #  - ../configs/winccoa.yaml:/app/config.yaml
+  #  networks:
+  #   - gateway  
+
+  #ignition:
+  #  image: cluster-opcua
+  #  hostname: ignition
+  #  restart: always
+  #  volumes:
+  #  - ../configs/ignition.yaml:/app/config.yaml
+  #  networks:
+  #   - gateway  
+
+  #unified:
+  #  image: cluster-opcua
+  #  hostname: unified
+  #  restart: always
+  #  volumes:
+  #  - ../configs/unified.yaml:/app/config.yaml
+  #  networks:
+  #   - gateway  
+
+  
+networks:
+  gateway:
+
+volumes:
+  influxdata:

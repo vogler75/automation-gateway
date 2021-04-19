@@ -16,7 +16,7 @@ build() {
 build app
 build cluster-gateway
 build cluster-opcua
-build cluster-cache
-build cluster-influxdb
 build cluster-plc4x
 build cluster-dds
+build cluster-cache
+build cluster-influxdb

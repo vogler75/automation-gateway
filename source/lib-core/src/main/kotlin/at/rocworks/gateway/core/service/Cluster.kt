@@ -23,6 +23,7 @@ import org.apache.ignite.configuration.IgniteConfiguration
 
 import com.hazelcast.config.FileSystemYamlConfig
 import io.vertx.core.eventbus.EventBusOptions
+import org.apache.ignite.configuration.DeploymentMode
 import java.net.InetAddress
 
 object Cluster {
@@ -113,9 +114,14 @@ object Cluster {
     } catch (e: FileNotFoundException) {
         logger.info("Cluster default configuration [{}]", (if (clientMode) "Client" else "Server"))
         val config = IgniteConfiguration()
+
         config.isClientMode = clientMode
+
         config.gridLogger = VertxLogger()
         config.metricsLogFrequency = 0
+
+        config.isPeerClassLoadingEnabled = true;
+        config.deploymentMode = DeploymentMode.CONTINUOUS;
 
         config.setIncludeEventTypes(
             EventType.EVT_CACHE_OBJECT_PUT,

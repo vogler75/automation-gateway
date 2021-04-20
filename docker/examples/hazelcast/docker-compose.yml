@@ -42,9 +42,9 @@ services:
     networks:
       - gateway    
 
-  logger:
+  dblogger:
     image: cluster-influxdb
-    hostname: logger
+    hostname: dblogger
     volumes:
       - ../configs/influxdb.yaml:/app/config.yaml
     networks:

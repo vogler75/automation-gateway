@@ -1,3 +1,7 @@
+copy ..\source\app\build\distributions\app.tar app.tar
+docker build --build-arg APP_NAME=app -t gateway .
+del app.tar
+
 copy ..\source\cluster-gateway\build\distributions\cluster-gateway.tar app.tar
 docker build --build-arg APP_NAME=cluster-gateway -t cluster-gateway .
 del app.tar

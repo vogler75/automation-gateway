@@ -6,12 +6,12 @@ Connect one or more OPC UA servers to the gateway and access the data from the O
 
 # Build and Run
 
-It needs [JDK 11](https://openjdk.java.net/projects/jdk/11/).
+It needs [JDK 8](https://openjdk.java.net/) or higher.
 
 You can open the project in IntelliJ IDEA IDE and build it there or use grade to build it from command line.
 
 ```
-> cd app
+> cd source/app
 > gradle run
 ```
 
@@ -117,6 +117,10 @@ fragment Value on Node {
 You have to build the program before with gradle. Then you can use the shell script `docker/build.sh` to build a docker image.  
 `docker run --rm --name gateway -p 4000:4000 -p 1883:1883 -v $PWD/config.yaml:/app/config.yaml gateway`
 
+> C:\Workspace\automation-gateway\source> gradle build  
+> C:\Workspace\automation-gateway\docker> build.bat  
+> C:\Workspace\automation-gateway\docker\examples\hazelcast> docker compose up -d  
+
 ## Using PLC4X
 
 You have to start the app-gateway plus app-plc4x. See config.yaml in each folder of the app. Because some PLC4X drivers  /  plc's do not support subscriptions we have added a simple polling options. (currently only one polling time per connection). 
@@ -168,6 +172,53 @@ Example MQTT Topic:
 > plc/mod/node/coil:1  
 
 # Version History
+
+## v1.9  
+Added Apache Ignite as an option for clustering and also to use the Apache Ignite Distributed In Memory Cache for storing last and history values coming from OPC UA or other sources. With that enabled it is possible to do SQL queries on the process values. The cache node stores historical value changes for a defined timerange. So older values are purged on a regular basis (configurable in the configuration file). It is configurable which topics should be stored in the Apache Ignite Cache.
+
+```
+Cache:
+  - Id: "global"
+    Enabled: true
+    LogLevel: INFO
+    SqlIndexMaxInlineSize: 1000
+    StoreHistoryValues: true
+    Systems:
+      - SystemType: Opc
+        SystemName: "opcua1"
+        PurgeEverySeconds: 10
+        KeepLastSeconds: 180
+      - SystemType: Opc
+        SystemName: "opcua2"
+        PurgeEverySeconds: 10        
+        KeepLastSeconds: 180                                    
+    Logging:
+      - Topic: opc/opcua1/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
+      - Topic: opc/opcua2/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
+```
+
+Updates on the tables are currently not possible. It is implemented that updates on the updatevalue columns should write the values to the source OPC UA server, but unfortunately it leads to unexpected behaviour of the Ignite Cluster.  
+
+There is a command line query tool available in the Apache Ignite Distribution. But you can also download the JDBC driver or ODBC drive from the Apache Ignite Website and use any other JDBC/ODBC client tool.
+> C:\Tools\apache-ignite-2.9.1-bin\bin\sqlline.bat -u jdbc:ignite:thin://192.168.1.18
+
+Example Queries:
+```
+select * from global.opcnode where nodeid like '%Mass%'  
+
+select systemname, count(*) 
+from global.opcvalue
+ group by systemname;   
+
+select systemname, count(*), min(sourcetime), max(sourcetime) 
+from global.opcvaluehistory 
+group by systemname;  
+```
+
+There are Docker examples available in the docker/examples directory.  
+> C:\Workspace\automation-gateway\source> gradle build  
+> C:\Workspace\automation-gateway\docker> build.bat  
+> C:\Workspace\automation-gateway\docker\examples\ignite> docker compose up -d  
 
 ## v1.8  
 Upgraded to VertX 4.0.3 and splitted the value type to a base class with subclasses for Opc, Plc and DDS. The app names have been changed, the clustered apps are now named with "cluster". DDS values can now be logged to InfluxDB.  

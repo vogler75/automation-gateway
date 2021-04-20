@@ -1,129 +1,179 @@
 version: '3'
 services:
-  ignite1:
-    image: apacheignite/ignite:2.9.1
-    restart: always
+  influxdb: 
+    image: influxdb:1.8
+    hostname: influxdb
     volumes:
-      - ./libs:/opt/ignite/apache-ignite/libs/user_libs
-    networks:
-      - gateway
+      - ../configs/influxdb.conf:/etc/influxdb/influxdb.conf
+      - influxdata:/var/lib/influxdb
     ports:
-      - 10800:10800     
-
-  ignite2:
-    image: apacheignite/ignite:2.9.1
-    restart: always
-    volumes:
-      - ./libs:/opt/ignite/apache-ignite/libs/user_libs
+      - 8086:8086
+    environment: 
+      - INFLUXDB_DB=test
     networks:
-      - gateway
+      - gateway        
 
-  ignite3:
-    image: apacheignite/ignite:2.9.1
-    restart: always
-    volumes:
-      - ./libs:/opt/ignite/apache-ignite/libs/user_libs
-    networks:
-      - gateway     
+  # ignite1:
+  #   image: apacheignite/ignite:2.9.1
+  #   restart: always
+  #   volumes:
+  #     - ./libs:/opt/ignite/apache-ignite/libs/user_libs
+  #   networks:
+  #     - gateway
+  #   ports:
+  #     - 10800:10800     
+
+  # ignite2:
+  #   image: apacheignite/ignite:2.9.1
+  #   restart: always
+  #   volumes:
+  #     - ./libs:/opt/ignite/apache-ignite/libs/user_libs
+  #   networks:
+  #     - gateway
+
+  # ignite3:
+  #   image: apacheignite/ignite:2.9.1
+  #   restart: always
+  #   volumes:
+  #     - ./libs:/opt/ignite/apache-ignite/libs/user_libs
+  #   networks:
+  #     - gateway     
 
   cache1:
     image: cluster-cache
     hostname: cache1
     environment:
-      - GATEWAY_CLUSTER_CLIENT=true
-      - GATEWAY_CLUSTER_TYPE=ignite
-      - GATEWAY_CLUSTER_HOST=*
-      - GATEWAY_CLUSTER_PORT=15701
+      - GATEWAY_CLUSTER_TYPE=ignite    
+      - IGNITE_CLIENT_MODE=false
+      - IGNITE_CLUSTER_HOST=*
+      - IGNITE_CLUSTER_PORT=15701
     volumes:
       - ../configs/cache1.yaml:/app/config.yaml
+    ports:
+      - 10800:10800       
+    networks:
+      - gateway
+
+  # cache2:
+  #   image: cluster-cache
+  #   hostname: cache2
+  #   environment:
+  #     - GATEWAY_CLUSTER_TYPE=ignite    
+  #     - IGNITE_CLIENT_MODE=false
+  #     - IGNITE_CLUSTER_HOST=*
+  #     - IGNITE_CLUSTER_PORT=15701
+  #   volumes:
+  #     - ../configs/cache2.yaml:/app/config.yaml
+  #   ports:
+  #     - 10801:10800       
+  #   networks:
+  #     - gateway      
+
+  gateway:
+    image: cluster-gateway
+    hostname: gateway1
+    environment:
+      - GATEWAY_CLUSTER_TYPE=ignite  
+      - IGNITE_CLIENT_MODE=true
+      - IGNITE_CLUSTER_HOST=*
+      - IGNITE_CLUSTER_PORT=15701
+    ports: 
+      - 1883:1883
+      - 4000:4000
+    volumes:
+      - ../configs/gateway.yaml:/app/config.yaml
     networks:
       - gateway
     depends_on:
-      - ignite1
-      - ignite2    
-      - ignite3  
+      - cache1
 
-  # gateway:
-  #   image: cluster-gateway
-  #   hostname: gateway1
-  #   environment:
-  #     - GATEWAY_CLUSTER_CLIENT=true
-  #     - GATEWAY_CLUSTER_TYPE=ignite
-  #     - GATEWAY_CLUSTER_HOST=*
-  #     - GATEWAY_CLUSTER_PORT=15701
-  #   ports: 
-  #     - 1883:1883
-  #     - 4000:4000
-  #   volumes:
-  #     - ../configs/gateway.yaml:/app/config.yaml
-  #   networks:
-  #     - gateway
-  #   depends_on:
-  #     - ignite1
-  #     - ignite2
-  #     - ignite3
+  dblogger:
+    image: cluster-influxdb
+    hostname: dblogger
+    environment:
+      - GATEWAY_CLUSTER_TYPE=ignite  
+      - IGNITE_CLIENT_MODE=true
+      - IGNITE_CLUSTER_HOST=*
+      - IGNITE_CLUSTER_PORT=15701    
+    volumes:
+      - ../configs/influxdb.yaml:/app/config.yaml
+    networks:
+      - gateway      
 
-  # opcua1:
-  #   image: cluster-opcua
-  #   hostname: opcua1
-  #   environment:
-  #     - GATEWAY_CLUSTER_CLIENT=true
-  #     - GATEWAY_CLUSTER_TYPE=ignite
-  #     - GATEWAY_CLUSTER_HOST=*
-  #     - GATEWAY_CLUSTER_PORT=15701
-  #   volumes:
-  #     - ../configs/opcua1.yaml:/app/config.yaml
-  #   networks:
-  #     - gateway  
-  #   depends_on:
-  #     - ignite1
-  #     - ignite2
-  #     - ignite3
+  opcua1:
+    image: cluster-opcua
+    hostname: opcua1
+    environment:
+      - GATEWAY_CLUSTER_TYPE=ignite  
+      - IGNITE_CLIENT_MODE=true
+      - IGNITE_CLUSTER_HOST=*
+      - IGNITE_CLUSTER_PORT=15701
+    volumes:
+      - ../configs/opcua1.yaml:/app/config.yaml
+    networks:
+      - gateway  
+    depends_on: 
+      - cache1
 
   # opcua2:
   #   image: cluster-opcua
   #   hostname: opcua2
   #   environment:
-  #     - GATEWAY_CLUSTER_CLIENT=true
-  #     - GATEWAY_CLUSTER_TYPE=ignite
-  #     - GATEWAY_CLUSTER_HOST=*
-  #     - GATEWAY_CLUSTER_PORT=15701
+  #     - GATEWAY_CLUSTER_TYPE=ignite  
+  #     - IGNITE_CLIENT_MODE=true
+  #     - IGNITE_CLUSTER_HOST=*
+  #     - IGNITE_CLUSTER_PORT=15701
   #   volumes:
   #     - ../configs/opcua2.yaml:/app/config.yaml
   #   networks:
   #     - gateway  
   #   depends_on:
-  #     - ignite1
-  #     - ignite2
-  #     - ignite3      
+  #     - cache1     
 
-  #winccoa:
-  #  image: cluster-opcua
-  #  hostname: winccoa
-  #  restart: always
-  #  volumes:
-  #  - ../configs/winccoa.yaml:/app/config.yaml
-  #  networks:
+  # winccoa:
+  #   image: cluster-opcua
+  #   hostname: winccoa
+  #   environment:
+  #     - GATEWAY_CLUSTER_TYPE=ignite  
+  #     - IGNITE_CLIENT_MODE=true
+  #     - IGNITE_CLUSTER_HOST=*
+  #     - IGNITE_CLUSTER_PORT=15701  
+  #   restart: always
+  #   volumes:
+  #   - ../configs/winccoa.yaml:/app/config.yaml
+  #   networks:
+  #    - gateway  
+
+  # ignition:
+  #   image: cluster-opcua
+  #   hostname: ignition
+  #   environment:
+  #     - GATEWAY_CLUSTER_TYPE=ignite  
+  #     - IGNITE_CLIENT_MODE=true
+  #     - IGNITE_CLUSTER_HOST=*
+  #     - IGNITE_CLUSTER_PORT=15701      
+  #   restart: always
+  #   volumes:
+  #   - ../configs/ignition.yaml:/app/config.yaml
+  #   networks:
+  #    - gateway  
+
+  # unified:
+  #   image: cluster-opcua
+  #   hostname: unified
+  #   environment:
+  #     - GATEWAY_CLUSTER_TYPE=ignite  
+  #     - IGNITE_CLIENT_MODE=true
+  #     - IGNITE_CLUSTER_HOST=*
+  #     - IGNITE_CLUSTER_PORT=15701      
+  #   restart: always
+  #   volumes:
+  #     - ../configs/unified.yaml:/app/config.yaml
+  #   networks:
   #   - gateway  
-
-  #ignition:
-  #  image: cluster-opcua
-  #  hostname: ignition
-  #  restart: always
-  #  volumes:
-  #  - ../configs/ignition.yaml:/app/config.yaml
-  #  networks:
-  #   - gateway  
-
-  #unified:
-  #  image: cluster-opcua
-  #  hostname: unified
-  #  restart: always
-  #  volumes:
-  #  - ../configs/unified.yaml:/app/config.yaml
-  #  networks:
-  #   - gateway  
-
   
 networks:
   gateway:
+
+volumes:
+  influxdata:    

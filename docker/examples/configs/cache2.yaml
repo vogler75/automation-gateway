@@ -1,0 +1,6 @@
+Cache:
+  - Id: "global"
+    Enabled: true
+    LogLevel: INFO
+    SqlIndexMaxInlineSize: 1000
+    StoreHistoryValues: true

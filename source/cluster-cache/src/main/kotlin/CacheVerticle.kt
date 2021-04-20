@@ -33,6 +33,7 @@ import at.rocworks.gateway.core.data.TopicValue
 import at.rocworks.gateway.core.service.Cluster
 import at.rocworks.gateway.core.service.ServiceHandler
 import io.vertx.core.eventbus.Message
+import io.vertx.servicediscovery.Record
 
 class CacheVerticle(private val config: JsonObject) : AbstractVerticle() {
     private val id = config.getString("Id", "Cache")
@@ -42,6 +43,13 @@ class CacheVerticle(private val config: JsonObject) : AbstractVerticle() {
     private val systemsAsJson = config.getJsonArray("Systems", JsonArray()) ?: JsonArray()
     private val sqlIndexMaxInlineSize = config.getInteger("SqlIndexMaxInlineSize", 1000)
     private val storeHistoryValues = config.getBoolean("StoreHistoryValues", false)
+    private val cacheBackups = config.getInteger("CacheBackups", 0)
+    private val cacheMode = when (config.getString("CacheMode", "PARTITIONED").toUpperCase()) {
+        "PARTITIONED" -> CacheMode.PARTITIONED
+        "REPLICATED" -> CacheMode.REPLICATED
+        "LOCAL" -> CacheMode.LOCAL
+        else -> CacheMode.PARTITIONED
+    }
 
     private val systems = systemsAsJson.filterIsInstance<JsonObject>().map {
         System(
@@ -84,8 +92,11 @@ class CacheVerticle(private val config: JsonObject) : AbstractVerticle() {
             if (this.clusterManager == null) {
                 this.clusterManager = manager
                 cache = getOrCreateCache(manager)
-                val handler = ServiceHandler(vertx, logger)
-                schemaHandler(handler)
+                systems.forEach { system ->
+                    startPurger(system)
+                    startObserver(system)
+                    //startListener(system) TODO: Does not really work well...
+                }
             } else {
                 logger.warn("Cluster cache was already initialized!")
             }
@@ -99,8 +110,8 @@ class CacheVerticle(private val config: JsonObject) : AbstractVerticle() {
         val config = CacheConfiguration<String, Any>()
         config.name = cacheName
         config.sqlIndexMaxInlineSize = sqlIndexMaxInlineSize // TODO: should be configurable
-        config.cacheMode = CacheMode.PARTITIONED
-        config.backups = 0
+        config.cacheMode = cacheMode
+        config.backups = cacheBackups
         config.rebalanceMode = CacheRebalanceMode.ASYNC
         //config.writeSynchronizationMode = CacheWriteSynchronizationMode.FULL_ASYNC
         logger.info("Create cache")
@@ -110,6 +121,84 @@ class CacheVerticle(private val config: JsonObject) : AbstractVerticle() {
             String::class.java, OpcValueHistory::class.java
         )
         return manager.igniteInstance.getOrCreateCache(config)
+    }
+
+    private fun startPurger(system: System) {
+        if (system.purgeEverySeconds > 0) {
+            var running = false
+            vertx.setPeriodic(system.purgeEverySeconds * 1000L) {
+                if (!running) {
+                    running = true
+                    vertx.executeBlocking<Void> {
+                        purgeHistory(system)
+                        it.complete()
+                    }.onComplete {
+                        running = false
+                    }
+                }
+            }
+        }
+    }
+
+    private fun startObserver(system: System) {
+        ServiceHandler(vertx, logger).observeService(system.systemType.name, system.systemName) { service ->
+            if (service.status == Status.UP) {
+                fetchSchema(service)
+                subscribeTopics(service)
+            }
+        }
+    }
+
+    private fun fetchSchema(service: Record) {
+        logger.info("Request schema [{}]...", service.name)
+        val systemType = service.type
+        val systemName = service.name
+        vertx.eventBus().request<JsonObject>(
+            "${systemType}/${systemName}/Schema",
+            JsonObject(),
+            DeliveryOptions().setSendTimeout(60000*3))
+        {
+            logger.info("Schema response [{}] [{}] [{}]", systemName, it.succeeded(), it.cause()?.message ?: "")
+            if (it.succeeded()) {
+                val response = it.result()?.body() ?: JsonObject()
+                vertx.executeBlocking<Void> {  promise ->
+                    updateSchema(systemName, response.getJsonArray("Objects", JsonArray()) ?: JsonArray())
+                    promise.complete()
+                }
+            }
+        }
+    }
+
+    private fun updateSchema(system: String, tree: JsonArray) {
+        fun add(parentNodeId: String, path: String, node: JsonObject) {
+            val browseName = node.getString("BrowseName", "")
+            val browsePath = "$path/$browseName"
+            val nodeId = node.getString("NodeId", "")
+            val data = OpcNode(
+                systemName = system,
+                nodeId = nodeId,
+                nodeClass = node.getString("NodeClass", ""),
+                browsePath = browsePath,
+                parentNodeId = parentNodeId,
+                browseName = browseName,
+                displayName = node.getString("DisplayName", ""),
+            )
+            cache?.put(data.key(), data)
+
+            node.getJsonArray("Nodes")?.filterIsInstance<JsonObject>()?.forEach { it ->
+                add(nodeId, browsePath, it)
+            }
+        }
+        tree.filterIsInstance<JsonObject>().forEach { add("", "Root/Objects", it) }
+    }
+
+    private fun subscribeTopics(service: Record) {
+        topics
+            .filter { it.systemType.name == service.type && it.systemName == service.name }
+            .forEach { topic ->
+                vertx.eventBus().consumer<Any>(topic.topicName, ::valueConsumer)
+                subscribeTopic(ServiceHandler.endpointOf(service), topic)
+            }
     }
 
     private fun subscribeTopic(endpoint: String, topic: Topic) { // TODO: same function in influx
@@ -155,7 +244,6 @@ class CacheVerticle(private val config: JsonObject) : AbstractVerticle() {
 
     private fun purgeHistory(system: System) {
         cache?.let {
-            logger.debug("Purge [{}]", system.systemName)
             try {
                 val sql = "DELETE FROM ${OpcValueHistory::class.java.simpleName} " +
                         "WHERE systemName = ? AND sourceTime < ?"
@@ -172,89 +260,14 @@ class CacheVerticle(private val config: JsonObject) : AbstractVerticle() {
         }
     }
 
-    private fun schemaHandler(handler: ServiceHandler) {
-        systems.forEach { system ->
-            if (system.purgeEverySeconds > 0) {
-                /* Does not really work well...
-                eventListener(system.systemType.name, system.systemName)
-                 */
-                var running = false
-                vertx.setPeriodic(system.purgeEverySeconds) {
-                    if (!running) {
-                        running = true
-                        vertx.executeBlocking<Void> {
-                            purgeHistory(system)
-                            it.complete()
-                        }.onComplete {
-                            running = false
-                        }
-                    }
-                }
-            }
-            handler.observeService(system.systemType.name, system.systemName) { service ->
-                if (service.status == Status.UP) {
-                    fetchSchema(system.systemType.name, system.systemName)
-                    topics
-                        .filter { it.systemType.name == service.type && it.systemName == service.name }
-                        .forEach { topic ->
-                            vertx.eventBus().consumer<Any>(topic.topicName, ::valueConsumer)
-                            subscribeTopic(ServiceHandler.endpointOf(service), topic)
-                        }
-                }
-            }
-        }
-    }
-
-
-    private fun fetchSchema(systemType: String, systemName: String) {
-        logger.info("Request schema [{}]...", systemName)
-        vertx.eventBus().request<JsonObject>(
-            "${systemType}/${systemName}/Schema",
-            JsonObject(),
-            DeliveryOptions().setSendTimeout(60000*3))
-        {
-            logger.info("Schema response [{}] [{}] [{}]", systemName, it.succeeded(), it.cause()?.message ?: "")
-            if (it.succeeded()) {
-                val response = it.result()?.body() ?: JsonObject()
-                vertx.executeBlocking<Void> {  promise ->
-                    writeSchemaToCache(systemName, response.getJsonArray("Objects", JsonArray()) ?: JsonArray())
-                    promise.complete()
-                }
-            }
-        }
-    }
-
-    private fun writeSchemaToCache(system: String, tree: JsonArray) {
-        fun add(parentNodeId: String, path: String, node: JsonObject) {
-            val browseName = node.getString("BrowseName", "")
-            val browsePath = "$path/$browseName"
-            val nodeId = node.getString("NodeId", "")
-            val data = OpcNode(
-                systemName = system,
-                nodeId = nodeId,
-                nodeClass = node.getString("NodeClass", ""),
-                browsePath = browsePath,
-                parentNodeId = parentNodeId,
-                browseName = browseName,
-                displayName = node.getString("DisplayName", ""),
-            )
-            cache?.put(data.key(), data)
-
-            node.getJsonArray("Nodes")?.filterIsInstance<JsonObject>()?.forEach { it ->
-                add(nodeId, browsePath, it)
-            }
-        }
-        tree.filterIsInstance<JsonObject>().forEach { add("", "Root/Objects", it) }
-    }
-
-    private fun eventListener(systemType: String, systemName: String) {
+    private fun startListener(system: System) {
         val manager = clusterManager
         if (manager is IgniteClusterManager) {
             try {
-                logger.info("Listener [{}] [{}] [{}]", systemType, systemName, Thread.currentThread())
+                logger.info("Listener [{}] [{}] [{}]", system.systemType.name, system.systemName, Thread.currentThread())
 
-                val localListener = localListener(systemType, systemName)
-                val remoteFilter = remoteFilter(systemType, systemName)
+                val localListener = localListener(system.systemType.name, system.systemName)
+                val remoteFilter = remoteFilter(system.systemType.name, system.systemName)
 
                 // Subscribe to specified cache events on all nodes that have cache running.
                 // TODO: we only get events from the local cache, but we should get it from any node...

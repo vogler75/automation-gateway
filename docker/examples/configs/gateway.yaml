@@ -17,17 +17,17 @@ GraphQLServer:
         - System: opcua3
         - System: opcua4
         - System: opcua5
-        - System: opcua6
-        - System: opcua7
-        - System: opcua8
-        - System: opcua9
-        - System: opcua10
+        # - System: opcua6
+        # - System: opcua7
+        # - System: opcua8
+        # - System: opcua9
+        # - System: opcua10
 
-        #- System: winccoa
-        #  FieldName: BrowseName # BrowseName | DisplayName
-        #- System: ignition
-        #  FieldName: BrowseName # BrowseName | DisplayName
-        #- System: unified
-        #  FieldName: DisplayName # BrowseName | DisplayName
+        # - System: winccoa
+        #   FieldName: BrowseName # BrowseName | DisplayName
+        # - System: ignition
+        #   FieldName: BrowseName # BrowseName | DisplayName
+        # - System: unified
+        #   FieldName: DisplayName # BrowseName | DisplayName
 
 

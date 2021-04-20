@@ -3,7 +3,7 @@ OpcUaClient:
     Enabled: true
     LogLevel: INFO
     EndpointUrl:  "opc.tcp://desktop-9o6hthf.rocworks.local:4890"
-    UpdateEndpointUrl: desktop-9o6hthf.rocworks.local
+    UpdateEndpointUrl: true
     SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#Basic128Rsa15
     SubscriptionSamplingInterval: 0
     UsernameProvider:

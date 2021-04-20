@@ -29,36 +29,47 @@ import java.net.InetAddress
 object Cluster {
     private val logger: Logger = LoggerFactory.getLogger(javaClass.simpleName)
 
-    private val envClusterHost = System.getenv("GATEWAY_CLUSTER_HOST") ?: ""
-    private val envClusterPort = System.getenv("GATEWAY_CLUSTER_PORT") ?: ""
-    private val envClientMode = System.getenv("GATEWAY_CLUSTER_CLIENT") ?: ""
+    private val cfgClusterType = (System.getenv("GATEWAY_CLUSTER_TYPE") ?: "hazelcast").toLowerCase()
 
-    private val clusterType = (System.getenv("GATEWAY_CLUSTER_TYPE") ?: "hazelcast").toLowerCase()
-    private val clusterHost = if (envClusterHost=="*") InetAddress.getLocalHost().hostAddress else envClusterHost
-    private val clusterPort = envClusterPort
-    private val clientMode = (envClientMode == "true")
+    private val envIgniteClusterHost = System.getenv("IGNITE_CLUSTER_HOST") ?: ""
+    private val envIgniteClusterPort = System.getenv("IGNITE_CLUSTER_PORT") ?: ""
+    private val envIgniteClientMode = System.getenv("IGNITE_CLIENT_MODE") ?: ""
+    private val envIgnitePeerClassLoading = System.getenv("IGNITE_PEER_CLASS_LOADING") ?: "TRUE"
+    private val envIgniteDeploymentMode = System.getenv("IGNITE_DEPLOYMENT_MODE") ?: "SHARED"
+
+    private val cfgIgniteClusterHost = if (envIgniteClusterHost=="*") InetAddress.getLocalHost().hostAddress else envIgniteClusterHost
+    private val cfgIgniteClusterPort = envIgniteClusterPort
+    private val cfgIgniteClientMode = (envIgniteClientMode.toUpperCase() == "TRUE")
+    private val cfgIgnitePeerClassLoading = (envIgnitePeerClassLoading.toUpperCase() == "TRUE")
+    private val cfgIgniteDeploymentMode = when (envIgniteDeploymentMode.toUpperCase()) {
+        "PRIVATE" -> DeploymentMode.PRIVATE
+        "ISOLATED" -> DeploymentMode.ISOLATED
+        "SHARED" -> DeploymentMode.SHARED
+        "CONTINUOUS" -> DeploymentMode.CONTINUOUS
+        else -> DeploymentMode.PRIVATE
+    }
 
     var clusterManager: ClusterManager? = null
 
     fun init(args: Array<String>, clientMode: Boolean? = null, services: (Vertx, JsonObject) -> Unit) {
         Common.initLogging()
 
-        logger.info("Cluster type [{}] host [{}] port [{}]", clusterType, clusterHost, clusterPort)
+        logger.info("Cluster type [{}] host [{}] port [{}]", cfgClusterType, cfgIgniteClusterHost, cfgIgniteClusterPort)
 
         val eventBusOptions = EventBusOptions()
-        if (clusterHost!="") {
-            logger.info("Set cluster host to [{}]", clusterHost)
-            eventBusOptions.host = clusterHost
-            eventBusOptions.clusterPublicHost = clusterHost
+        if (cfgIgniteClusterHost!="") {
+            logger.info("Ignite cluster host [{}]", cfgIgniteClusterHost)
+            eventBusOptions.host = cfgIgniteClusterHost
+            eventBusOptions.clusterPublicHost = cfgIgniteClusterHost
         }
 
-        if (clusterPort!="") {
-            logger.info("Set cluster port to [{}]", clusterPort)
-            eventBusOptions.port = clusterPort.toInt()
-            eventBusOptions.clusterPublicPort = clusterPort.toInt()
+        if (cfgIgniteClusterPort!="") {
+            logger.info("Ignite cluster port to [{}]", cfgIgniteClusterPort)
+            eventBusOptions.port = cfgIgniteClusterPort.toInt()
+            eventBusOptions.clusterPublicPort = cfgIgniteClusterPort.toInt()
         }
 
-        getClusterManager(clientMode ?: this.clientMode).let { clusterManager ->
+        getClusterManager(clientMode ?: this.cfgIgniteClientMode).let { clusterManager ->
             this.clusterManager = clusterManager
             val vertxOptions = VertxOptions()
                 .setEventBusOptions(eventBusOptions)
@@ -99,29 +110,30 @@ object Cluster {
     }
 
     private fun getClusterManager(clientMode: Boolean): ClusterManager {
-        return when (clusterType) {
+        return when (cfgClusterType) {
             "hazelcast" -> getHazelcastClusterManager()
-            "ignite" -> getIgniteClusterManager(clientMode)
-            else -> throw IllegalArgumentException("Unknown cluster type '$clusterType'")
+            "ignite" -> getIgniteClusterManager()
+            else -> throw IllegalArgumentException("Unknown cluster type '$cfgClusterType'")
         }
     }
 
-    private fun getIgniteClusterManager(clientMode: Boolean) = try {
+    private fun getIgniteClusterManager() = try {
         val fileName = File("ignite.xml")
         val clusterConfig = URL(fileName.readText())
         logger.info("Cluster config file [{}]", fileName)
         IgniteClusterManager(clusterConfig)
     } catch (e: FileNotFoundException) {
-        logger.info("Cluster default configuration [{}]", (if (clientMode) "Client" else "Server"))
+        logger.info("Cluster default configuration [{}]", (if (cfgIgniteClientMode) "Client" else "Server"))
         val config = IgniteConfiguration()
 
-        config.isClientMode = clientMode
+        config.isClientMode = cfgIgniteClientMode
 
         config.gridLogger = VertxLogger()
         config.metricsLogFrequency = 0
 
-        config.isPeerClassLoadingEnabled = true;
-        config.deploymentMode = DeploymentMode.CONTINUOUS;
+        logger.info("PeerClassLoading [{}] DeploymentMode [{}]", cfgIgnitePeerClassLoading, cfgIgniteDeploymentMode.toString())
+        config.isPeerClassLoadingEnabled = cfgIgnitePeerClassLoading;
+        config.deploymentMode = cfgIgniteDeploymentMode
 
         config.setIncludeEventTypes(
             EventType.EVT_CACHE_OBJECT_PUT,
@@ -134,8 +146,8 @@ object Cluster {
             EventType.EVT_CLIENT_NODE_RECONNECTED,
         )
 
-        if (clusterHost!="")
-            config.localHost = clusterHost
+        if (cfgIgniteClusterHost!="")
+            config.localHost = cfgIgniteClusterHost
 
         // https://ignite.apache.org/docs/2.9.1/security/authentication
         //val storageConfig = DataStorageConfiguration()

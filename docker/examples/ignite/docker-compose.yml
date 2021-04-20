@@ -5,10 +5,6 @@ services:
     restart: always
     volumes:
       - ./libs:/opt/ignite/apache-ignite/libs/user_libs
-    deploy:
-      resources:
-        limits:
-          memory: 2G
     networks:
       - gateway
     ports:
@@ -19,10 +15,6 @@ services:
     restart: always
     volumes:
       - ./libs:/opt/ignite/apache-ignite/libs/user_libs
-    deploy:
-      resources:
-        limits:
-          memory: 2G
     networks:
       - gateway
 
@@ -31,10 +23,6 @@ services:
     restart: always
     volumes:
       - ./libs:/opt/ignite/apache-ignite/libs/user_libs
-    deploy:
-      resources:
-        limits:
-          memory: 2G
     networks:
       - gateway     
 
@@ -42,62 +30,72 @@ services:
     image: cluster-cache
     hostname: cache1
     environment:
-      - GATEWAY_CLUSTER_CLIENT=false
+      - GATEWAY_CLUSTER_CLIENT=true
+      - GATEWAY_CLUSTER_TYPE=ignite
+      - GATEWAY_CLUSTER_HOST=*
+      - GATEWAY_CLUSTER_PORT=15701
     volumes:
       - ../configs/cache1.yaml:/app/config.yaml
     networks:
       - gateway
-    ports:
-      - 10800:10800          
     depends_on:
       - ignite1
       - ignite2    
       - ignite3  
 
-  gateway:
-    image: cluster-gateway
-    hostname: gateway
-    environment:
-      - GATEWAY_CLUSTER_CLIENT=true
-    ports: 
-      - 1883:1883
-      - 4000:4000
-    volumes:
-      - ../configs/gateway.yaml:/app/config.yaml
-    networks:
-      - gateway
-    depends_on:
-      - ignite1
-      - ignite2
-      - ignite3
+  # gateway:
+  #   image: cluster-gateway
+  #   hostname: gateway1
+  #   environment:
+  #     - GATEWAY_CLUSTER_CLIENT=true
+  #     - GATEWAY_CLUSTER_TYPE=ignite
+  #     - GATEWAY_CLUSTER_HOST=*
+  #     - GATEWAY_CLUSTER_PORT=15701
+  #   ports: 
+  #     - 1883:1883
+  #     - 4000:4000
+  #   volumes:
+  #     - ../configs/gateway.yaml:/app/config.yaml
+  #   networks:
+  #     - gateway
+  #   depends_on:
+  #     - ignite1
+  #     - ignite2
+  #     - ignite3
 
-  opcua1:
-    image: cluster-opcua
-    hostname: opcua1
-    environment:
-      - GATEWAY_CLUSTER_CLIENT=true
-    volumes:
-      - ../configs/opcua1.yaml:/app/config.yaml
-    networks:
-      - gateway  
-    depends_on:
-      - ignite1
-      - ignite2
-      - ignite3
+  # opcua1:
+  #   image: cluster-opcua
+  #   hostname: opcua1
+  #   environment:
+  #     - GATEWAY_CLUSTER_CLIENT=true
+  #     - GATEWAY_CLUSTER_TYPE=ignite
+  #     - GATEWAY_CLUSTER_HOST=*
+  #     - GATEWAY_CLUSTER_PORT=15701
+  #   volumes:
+  #     - ../configs/opcua1.yaml:/app/config.yaml
+  #   networks:
+  #     - gateway  
+  #   depends_on:
+  #     - ignite1
+  #     - ignite2
+  #     - ignite3
 
-  opcua2:
-    image: cluster-opcua
-    hostname: opcua2
-    environment:
-      - GATEWAY_CLUSTER_CLIENT=true
-    volumes:
-      - ../configs/opcua2.yaml:/app/config.yaml
-    networks:
-      - gateway  
-    depends_on:
-      - ignite1
-      - ignite2
-      - ignite3      
+  # opcua2:
+  #   image: cluster-opcua
+  #   hostname: opcua2
+  #   environment:
+  #     - GATEWAY_CLUSTER_CLIENT=true
+  #     - GATEWAY_CLUSTER_TYPE=ignite
+  #     - GATEWAY_CLUSTER_HOST=*
+  #     - GATEWAY_CLUSTER_PORT=15701
+  #   volumes:
+  #     - ../configs/opcua2.yaml:/app/config.yaml
+  #   networks:
+  #     - gateway  
+  #   depends_on:
+  #     - ignite1
+  #     - ignite2
+  #     - ignite3      
 
   #winccoa:
   #  image: cluster-opcua

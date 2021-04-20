@@ -4,6 +4,7 @@ services:
     image: influxdb:1.8
     hostname: influxdb
     volumes:
+      - ../configs/influxdb.conf:/etc/influxdb/influxdb.conf
       - influxdata:/var/lib/influxdb
     ports:
       - 8086:8086

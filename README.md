@@ -6,7 +6,7 @@ Connect one or more OPC UA servers to the gateway and access the data from the O
 
 # Build and Run
 
-It needs [JDK 8](https://openjdk.java.net/) or higher.
+It needs [JDK 11](https://openjdk.java.net/projects/jdk/11/) or higher.
 
 You can open the project in IntelliJ IDEA IDE and build it there or use grade to build it from command line.
 

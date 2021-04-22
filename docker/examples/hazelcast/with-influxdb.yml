@@ -1,5 +1,18 @@
 version: '3'
 services:
+  influxdb: 
+    image: influxdb:1.8
+    hostname: influxdb
+    volumes:
+      - ../configs/influxdb.conf:/etc/influxdb/influxdb.conf
+      - influxdata:/var/lib/influxdb
+    ports:
+      - 8086:8086
+    environment: 
+      - INFLUXDB_DB=test
+    networks:
+      - gateway        
+
   gateway:
     image: cluster-gateway
     hostname: gateway
@@ -28,6 +41,14 @@ services:
       - ../configs/opcua2.yaml:/app/config.yaml
     networks:
       - gateway    
+
+  dblogger:
+    image: cluster-influxdb
+    hostname: dblogger
+    volumes:
+      - ../configs/influxdb.yaml:/app/config.yaml
+    networks:
+      - gateway
 
   #winccoa:
   #  image: cluster-opcua

@@ -237,6 +237,8 @@ class CacheVerticle(private val config: JsonObject) : AbstractVerticle() {
                 cache?.put(history.key(), history)
             }
 
+        } catch (e: IllegalStateException) {
+            logger.error(e.message)
         } catch (e: Exception) {
             e.printStackTrace()
         }

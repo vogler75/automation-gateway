@@ -1,5 +1,18 @@
 version: '3'
 services:
+  influxdb: 
+    image: influxdb:1.8
+    hostname: influxdb
+    volumes:
+      - ../configs/influxdb.conf:/etc/influxdb/influxdb.conf
+      - influxdata:/var/lib/influxdb
+    ports:
+      - 8086:8086
+    environment: 
+      - INFLUXDB_DB=test
+    networks:
+      - gateway        
+
   cache1:
     image: cluster-cache
     hostname: cache1
@@ -47,6 +60,19 @@ services:
       - gateway
     depends_on:
       - cache1
+
+  dblogger:
+    image: cluster-influxdb
+    hostname: dblogger
+    environment:
+      - GATEWAY_CLUSTER_TYPE=ignite  
+      - IGNITE_CLIENT_MODE=true
+      - IGNITE_CLUSTER_HOST=*
+      - IGNITE_CLUSTER_PORT=15701    
+    volumes:
+      - ../configs/influxdb.yaml:/app/config.yaml
+    networks:
+      - gateway      
 
   opcua1:
     image: cluster-opcua
@@ -119,33 +145,6 @@ services:
   #     - ../configs/unified.yaml:/app/config.yaml
   #   networks:
   #   - gateway  
-
-  # ignite1:
-  #   image: apacheignite/ignite:2.9.1
-  #   restart: always
-  #   volumes:
-  #     - ./libs:/opt/ignite/apache-ignite/libs/user_libs
-  #   networks:
-  #     - gateway
-  #   ports:
-  #     - 10800:10800     
-
-  # ignite2:
-  #   image: apacheignite/ignite:2.9.1
-  #   restart: always
-  #   volumes:
-  #     - ./libs:/opt/ignite/apache-ignite/libs/user_libs
-  #   networks:
-  #     - gateway
-
-  # ignite3:
-  #   image: apacheignite/ignite:2.9.1
-  #   restart: always
-  #   volumes:
-  #     - ./libs:/opt/ignite/apache-ignite/libs/user_libs
-  #   networks:
-  #     - gateway     
-
   
 networks:
   gateway:

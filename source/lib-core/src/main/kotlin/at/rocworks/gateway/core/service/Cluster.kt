@@ -51,7 +51,7 @@ object Cluster {
 
     var clusterManager: ClusterManager? = null
 
-    fun init(args: Array<String>, clientMode: Boolean? = null, services: (Vertx, JsonObject) -> Unit) {
+    fun init(args: Array<String>, services: (Vertx, JsonObject) -> Unit) {
         Common.initLogging()
 
         logger.info("Cluster type [{}] host [{}] port [{}]", cfgClusterType, cfgIgniteClusterHost, cfgIgniteClusterPort)
@@ -69,7 +69,7 @@ object Cluster {
             eventBusOptions.clusterPublicPort = cfgIgniteClusterPort.toInt()
         }
 
-        getClusterManager(clientMode ?: this.cfgIgniteClientMode).let { clusterManager ->
+        getMyClusterManager().let { clusterManager ->
             this.clusterManager = clusterManager
             val vertxOptions = VertxOptions()
                 .setEventBusOptions(eventBusOptions)
@@ -109,7 +109,7 @@ object Cluster {
         clusterManager.nodeListener(nodeListener)
     }
 
-    private fun getClusterManager(clientMode: Boolean): ClusterManager {
+    private fun getMyClusterManager(): ClusterManager {
         return when (cfgClusterType) {
             "hazelcast" -> getHazelcastClusterManager()
             "ignite" -> getIgniteClusterManager()

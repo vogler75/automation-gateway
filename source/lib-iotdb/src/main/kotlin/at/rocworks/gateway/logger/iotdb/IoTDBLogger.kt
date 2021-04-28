@@ -42,6 +42,7 @@ class IoTDBLogger(private val config: JsonObject) : AbstractVerticle() {
     private val username = config.getString("Username", "")
     private val password = config.getString("Password", "")
     private val database = config.getString("Database", "root.scada")
+    private val blocksize = config.getInteger("Blocksize", 2000)
 
     companion object {
         const val defaultRetryWaitTime = 5000L
@@ -176,27 +177,35 @@ class IoTDBLogger(private val config: JsonObject) : AbstractVerticle() {
             var point : DataPoint?
 
             while (!writeValueStop.get()) {
+                val deviceIds = mutableListOf<String>()
+                val times = mutableListOf<Long>()
+                val measurementList = mutableListOf<List<String>>()
+                val typesList = mutableListOf<List<TSDataType>>()
+                val valuesList = mutableListOf<List<Any>>()
+
                 point = writeValueQueue.poll(10, TimeUnit.MILLISECONDS)
-                while (point!=null) {
+                while (point != null && deviceIds.size < blocksize) {
                     try {
+                        val path = point.topic.browsePath.replace("/", ".")
                         val time = point.value.sourceTime().toEpochMilli()
                         val value = point.value.valueAsDouble() ?: point.value.valueAsString()
-                        val path = point.topic.browsePath.replace("/", ".")
+                        val status = point.value.statusAsString()
 
-                        session.insertRecord( // TODO: create and insert blocks 
-                            "$database.$path",
-                            time,
-                            listOf("value", "status"),
-                            listOf(TSDataType.DOUBLE, TSDataType.TEXT),
-                            listOf(value, point.value.statusAsString())
-                        )
-
+                        deviceIds.add("${database}.${path}")
+                        times.add(time)
+                        measurementList.add(listOf("value", "status"))
+                        typesList.add(listOf(TSDataType.DOUBLE, TSDataType.TEXT))
+                        valuesList.add(listOf(value, status))
                     } catch (e: Exception) {
                         logger.error(e.message)
                     }
-
-                    valueCounterOutput++
                     point = writeValueQueue.poll()
+                }
+                if (deviceIds.size > 0) {
+                    //logger.info("Write "+deviceIds.size)
+                    session.insertRecords(deviceIds, times, measurementList, typesList, valuesList)
+                    valueCounterOutput+=deviceIds.size
+                    //logger.info("Write Finished")
                 }
             }
             writeValueStopped.complete()

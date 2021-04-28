@@ -45,7 +45,7 @@ Database:
     #    - Topic: opc/ignition/node/ns=2;s=[default]/Input_Watt
     - Id: iotdb
       Type: IoTDB
-      Host: nuc1
+      Host: localhost
       Port: 6667
       Database: root.scada
       Username: "root"

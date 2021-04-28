@@ -1,5 +1,6 @@
 package at.rocworks.gateway.core.data
 
+import com.fasterxml.jackson.databind.JsonSerializer
 import io.vertx.core.json.JsonObject
 
 data class Topic (
@@ -8,7 +9,8 @@ data class Topic (
     val topicType: TopicType,
     val systemName: String,
     val address: String,
-    val format: Format = Format.Json
+    val format: Format = Format.Json,
+    val browsePath: String = ""
 ) {
     enum class SystemType {
         Unknown,
@@ -144,6 +146,7 @@ data class Topic (
         private const val SYSTEM_NAME = "systemName"
         private const val PAYLOAD = "payload"
         private const val FORMAT = "format"
+        private const val BROWSE_PATH = "browsePath"
 
         fun encodeToJson(topic: Topic) : JsonObject {
             return JsonObject()
@@ -153,6 +156,7 @@ data class Topic (
                 .put(SYSTEM_NAME, topic.systemName)
                 .put(PAYLOAD, topic.address)
                 .put(FORMAT, topic.format)
+                .put(BROWSE_PATH, topic.browsePath)
         }
 
         fun decodeFromJson(json: JsonObject): Topic {
@@ -160,9 +164,10 @@ data class Topic (
                 topicName = json.getString(TOPIC_NAME, ""),
                 systemType = SystemType.valueOf(json.getString(SYSTEM_TYPE, "Invalid")),
                 topicType = TopicType.valueOf(json.getString(ITEM_TYPE, "Invalid")),
-                systemName = json.getString(SYSTEM_NAME, null),
-                address = json.getString(PAYLOAD, null),
-                format = Format.valueOf(json.getString(FORMAT, Format.Value.name))
+                systemName = json.getString(SYSTEM_NAME, ""),
+                address = json.getString(PAYLOAD, ""),
+                format = Format.valueOf(json.getString(FORMAT, Format.Value.name)),
+                browsePath = json.getString(BROWSE_PATH, "")
             )
         }
     }

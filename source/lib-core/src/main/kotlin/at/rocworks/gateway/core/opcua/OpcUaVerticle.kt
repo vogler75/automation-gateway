@@ -690,8 +690,8 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
                     if (items.size < 2) {
                         logger.warn("Subscribe path with too less items! [{}]", topic.address)
                     } else {
-                        val resolvedNodeIds = mutableListOf<NodeId>()
-                        fun find(node: String, itemIdx: Int) {
+                        val resolvedNodeIds = mutableListOf<Pair<NodeId, String>>()
+                        fun find(node: String, itemIdx: Int, path: String) {
                             val item = items[itemIdx]
                             val nodeId = NodeId.parseOrNull(node)
                             if (nodeId != null) {
@@ -701,22 +701,24 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
                                 val nextIdx = if (item != "#" && itemIdx + 1 < items.size) itemIdx + 1 else itemIdx
                                 result.forEach {
                                     val childNodeId = NodeId.parseOrNull(it.getString("NodeId"))
+                                    val browsePath = path+"/"+it.getString("BrowseName")
                                     if (childNodeId != null) when (it.getString("NodeClass")) {
-                                        "Variable" -> resolvedNodeIds.add(childNodeId)
-                                        "Object" -> find(it.getString("NodeId", ""), nextIdx)
+                                        "Variable" -> resolvedNodeIds.add(Pair(childNodeId, browsePath))
+                                        "Object" -> find(it.getString("NodeId", ""), nextIdx, browsePath)
                                     }
                                 }
                             }
                         }
-                        find(items.first(), 1)
+                        find(items.first(), 1, topic.pathItems.first())
                         resolvedTopics.addAll(resolvedNodeIds.map {
                             Topic(
                                 topicName = topic.topicName,
                                 systemType = topic.systemType,
                                 topicType = topic.topicType,
                                 systemName = topic.systemName,
-                                address = it.toParseableString(),
-                                format = topic.format
+                                address = it.first.toParseableString(),
+                                format = topic.format,
+                                browsePath = it.second
                             )
                         })
                     }

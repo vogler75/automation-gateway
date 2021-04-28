@@ -1,8 +1,9 @@
 rootProject.name = 'gateway'
 
 include('app', 'test')
-include('cluster-template', 'cluster-gateway', 'cluster-opcua', 'cluster-plc4x', 'cluster-influxdb', 'cluster-cache')
-include('lib-core', 'lib-influxdb')
+include('cluster-template', 'cluster-gateway', 'cluster-opcua', 'cluster-plc4x', 'cluster-cache')
+include('cluster-influxdb')
+include('lib-core', 'lib-influxdb', 'lib-iotdb')
 
 if (System.env.DDS_ROOT) {
     include ('cluster-dds')

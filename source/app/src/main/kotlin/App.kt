@@ -1,9 +1,11 @@
 import at.rocworks.gateway.core.graphql.GraphQLServer
-import at.rocworks.gateway.logger.influx.InfluxDBLogger
 import at.rocworks.gateway.core.mqtt.MqttVerticle
 import at.rocworks.gateway.core.opcua.KeyStoreLoader
 import at.rocworks.gateway.core.opcua.OpcUaVerticle
 import at.rocworks.gateway.core.service.Common
+
+import at.rocworks.gateway.logger.influx.InfluxDBLogger
+import at.rocworks.gateway.logger.iotdb.IoTDBLogger
 
 import kotlin.Throws
 import kotlin.jvm.JvmStatic
@@ -38,6 +40,9 @@ object App {
         when (val type = config.getString("Type")) {
             "InfluxDB" -> {
                 vertx.deployVerticle(InfluxDBLogger(config))
+            }
+            "IoTDB" -> {
+                vertx.deployVerticle(IoTDBLogger(config))
             }
             else -> logger.error("Unknown database type [{}]", type)
         }

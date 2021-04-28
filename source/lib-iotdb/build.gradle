@@ -1,5 +1,5 @@
 plugins {
-    id 'gateway.kotlin-application-conventions'
+    id 'gateway.kotlin-library-conventions'
 }
 
 compileKotlin {
@@ -8,20 +8,22 @@ compileKotlin {
     }
 }
 
+repositories {
+    mavenLocal()
+    maven {
+        url = uri('https://repo.maven.apache.org/maven2/')
+    }
+}
+
 dependencies {
-    implementation project(':lib-core')
-    implementation project(':lib-influxdb')
-    implementation project(':lib-iotdb')
+    api project(':lib-core')
     implementation 'org.slf4j:slf4j-api:1.7.30'
     //implementation 'org.slf4j:slf4j-jdk14:1.7.30'
     implementation 'org.slf4j:slf4j-simple:1.7.30'
     implementation 'io.vertx:vertx-core:4.0.3'
     implementation 'io.vertx:vertx-config-yaml:4.0.3'
     implementation 'io.vertx:vertx-service-discovery:4.0.3'
-    implementation 'com.fasterxml.jackson.core:jackson-databind:2.11.4' // Needed for Vertx Json
-}
-
-application {
-    // Define the main class for the application.
-    mainClass = 'App'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.11.4'
+    implementation 'org.apache.iotdb:iotdb-session:0.12.0'
+    testImplementation 'org.jetbrains.kotlin:kotlin-test:1.4.30'
 }

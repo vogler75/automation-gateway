@@ -52,9 +52,9 @@ Database:
       Database: root.scada1
       Username: "root"
       Password: "root"
-      BlockSize: 10000
       WriteParameters:
         QueueSize: 20000
+        BlockSize: 10000
       Logging:
         - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Byte/+
         - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Byte/+

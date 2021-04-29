@@ -13,7 +13,9 @@ import io.vertx.core.json.Json
 import io.vertx.core.json.JsonObject
 import io.vertx.servicediscovery.Status
 import org.apache.iotdb.session.Session
+import org.apache.iotdb.tsfile.file.metadata.enums.CompressionType
 import org.apache.iotdb.tsfile.file.metadata.enums.TSDataType
+import org.apache.iotdb.tsfile.file.metadata.enums.TSEncoding
 
 import org.slf4j.LoggerFactory
 
@@ -42,7 +44,6 @@ class IoTDBLogger(private val config: JsonObject) : AbstractVerticle() {
     private val username = config.getString("Username", "")
     private val password = config.getString("Password", "")
     private val database = config.getString("Database", "root.scada")
-    private val blocksize = config.getInteger("Blocksize", 2000)
 
     companion object {
         const val defaultRetryWaitTime = 5000L
@@ -51,11 +52,15 @@ class IoTDBLogger(private val config: JsonObject) : AbstractVerticle() {
     private val writeParameterQueueSize : Int
     private val writeParameterQueueSizeDef = 10000
 
+    private val writeParameterBlockSize : Int
+    private val writeParameterBlockSizeDefault = 2000
+
     private val session: Session
 
     init {
         val writeParameters = config.getJsonObject("WriteParameters")
         writeParameterQueueSize = writeParameters?.getInteger("QueueSize", writeParameterQueueSizeDef) ?: writeParameterQueueSizeDef
+        writeParameterBlockSize = writeParameters?.getInteger("Blocksize", writeParameterBlockSizeDefault) ?: writeParameterBlockSizeDefault
 
         Logger.getLogger(id).level = Level.parse(config.getString("LogLevel", "INFO"))
         session = if (username == null || username == "")
@@ -88,7 +93,7 @@ class IoTDBLogger(private val config: JsonObject) : AbstractVerticle() {
                     } catch (e: Exception) {
                         logger.warn(e.message)
                     }
-                    logger.info("InfluxDB connected.")
+                    logger.info("IoTDB connected.")
                     this.subscribeTopics()
                     vertx.setPeriodic(1000, ::metricCalculator)
                     vertx.eventBus().consumer("${Common.BUS_ROOT_URI_LOG}/$id/QueryHistory", ::queryHandler)
@@ -121,17 +126,23 @@ class IoTDBLogger(private val config: JsonObject) : AbstractVerticle() {
                         .forEach { topic ->
                             /*
                             try {
-                                val path = database+"."+topic.topicName.replace("/", ".")
-                                session.createTimeseries( // TODO: not good for wildcard/path topics + configurable?
+                                val path = database+"."+topic.address // TODO: there is no address, we need to browse...
+                                logger.info("Create time series $path")
+                                session.createTimeseries(
                                     path,
                                     TSDataType.DOUBLE,
                                     TSEncoding.RLE,
-                                    CompressionType.SNAPPY
+                                    CompressionType.SNAPPY,
+                                    mutableMapOf(),
+                                    mutableMapOf(),
+                                    mutableMapOf(),
+                                    topic.address
                                 )
                             } catch (e: Exception) {
                                 logger.warn(e.message)
                             }
-                             */
+                            */
+
                             vertx.eventBus().consumer<Any>(topic.topicName) { valueConsumer(it.body()) }
                             subscribeTopic(ServiceHandler.endpointOf(service), topic)
                         }
@@ -184,7 +195,7 @@ class IoTDBLogger(private val config: JsonObject) : AbstractVerticle() {
                 val valuesList = mutableListOf<List<Any>>()
 
                 point = writeValueQueue.poll(10, TimeUnit.MILLISECONDS)
-                while (point != null && deviceIds.size < blocksize) {
+                while (point != null && deviceIds.size < writeParameterBlockSize) {
                     try {
                         val path = point.topic.browsePath.replace("/", ".")
                         val time = point.value.sourceTime().toEpochMilli()
@@ -203,7 +214,7 @@ class IoTDBLogger(private val config: JsonObject) : AbstractVerticle() {
                 }
                 if (deviceIds.size > 0) {
                     //logger.info("Write "+deviceIds.size)
-                    session.insertRecords(deviceIds, times, measurementList, typesList, valuesList)
+                    //session.insertRecords(deviceIds, times, measurementList, typesList, valuesList)
                     valueCounterOutput+=deviceIds.size
                     //logger.info("Write Finished")
                 }
@@ -222,32 +233,6 @@ class IoTDBLogger(private val config: JsonObject) : AbstractVerticle() {
             if (!value.hasValue()) return
 
             val measurement = DataPoint(topic, value)
-            //logger.info(measurement.toString())
-
-            /*
-            val point = Point.measurement(topic.systemName)
-                .time(value.sourceTime().toEpochMilli(), TimeUnit.MILLISECONDS)
-                .tag("tag", topic.address)
-                .tag("system", topic.systemName)
-                .tag("status", value.statusAsString())
-
-            if (value.hasStruct()) {
-                value.asFlatMap().forEach { (k, v) ->
-                    val d = v.toString().toDoubleOrNull()
-                    if (d!=null) point.addField(k, d)
-                    else point.addField(k, v.toString())
-                }
-            } else {
-                val numeric: Double? = value.valueAsDouble()
-                if (numeric != null) {
-                    //logger.debug("topic [$topic] numeric [$numeric]")
-                    point.addField("value", numeric)
-                } else {
-                    //logger.debug("topic [$topic] text [${value.valueAsString()}]")
-                    point.addField("text", value.valueAsString())
-                }
-            }
-             */
 
             try {
                 writeValueQueue.add(measurement)

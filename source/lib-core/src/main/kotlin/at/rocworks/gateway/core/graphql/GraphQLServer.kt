@@ -36,6 +36,7 @@ import java.util.logging.Logger
 import io.vertx.ext.web.handler.graphql.GraphiQLHandler
 import io.vertx.ext.web.handler.graphql.GraphiQLHandlerOptions
 import io.vertx.servicediscovery.Status
+import kotlin.concurrent.thread
 
 class GraphQLServer(private val config: JsonObject, private val defaultSystem: String) : AbstractVerticle() {
     // TODO: Implement scalar "variant"
@@ -109,12 +110,19 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
                 if (writeSchemaFiles)
                     File("graphql.gql").writeText(schema)
 
-                logger.info("Generate GraphQL schema...")
-                val graphql = build(schema, wiring)
-                logger.info("Startup GraphQL server...")
-                startGraphQLServer(graphql)
-                logger.info("GraphQL ready")
-                startPromise.complete()
+                thread {
+                    try {
+                        logger.info("Generate GraphQL schema...")
+                        val graphql = build(schema, wiring)
+                        logger.info("Startup GraphQL server...")
+                        startGraphQLServer(graphql)
+                        logger.info("GraphQL ready")
+                        startPromise.complete()
+                    } catch (e: Exception) {
+                        logger.error(e.message)
+                        startPromise.fail(e)
+                    }
+                }
             }
         }
     }
@@ -172,7 +180,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
                         if (addNodes(nodes, newTypeName))
                            "$graphqlName : $newTypeName"
                         else {
-                            logger.error("cannot add nodes of $newTypeName")
+                            logger.debug("cannot add nodes of $newTypeName")
                             null
                         }
                     }

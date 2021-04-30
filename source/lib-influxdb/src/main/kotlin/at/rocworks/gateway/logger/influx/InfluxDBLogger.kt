@@ -50,7 +50,6 @@ class InfluxDBLogger(config: JsonObject) : LoggerBase(config) {
         val point = Point.measurement(dp.topic.systemName)
             .time(dp.value.sourceTime().toEpochMilli(), TimeUnit.MILLISECONDS)
             .tag("tag", dp.topic.address)
-            .tag("system", dp.topic.systemName)
             .tag("status", dp.value.statusAsString())
 
         if (dp.value.hasStruct()) {

@@ -197,7 +197,7 @@ class IoTDBLogger(private val config: JsonObject) : AbstractVerticle() {
                 point = writeValueQueue.poll(10, TimeUnit.MILLISECONDS)
                 while (point != null && deviceIds.size < writeParameterBlockSize) {
                     try {
-                        val path = point.topic.browsePath.replace("/", ".")
+                        val path = point.topic.systemName+"."+point.topic.browsePath.replace("/", ".")
                         val time = point.value.sourceTime().toEpochMilli()
                         val value = point.value.valueAsDouble() ?: point.value.valueAsString()
                         val status = point.value.statusAsString()
@@ -214,7 +214,7 @@ class IoTDBLogger(private val config: JsonObject) : AbstractVerticle() {
                 }
                 if (deviceIds.size > 0) {
                     //logger.info("Write "+deviceIds.size)
-                    //session.insertRecords(deviceIds, times, measurementList, typesList, valuesList)
+                    session.insertRecords(deviceIds, times, measurementList, typesList, valuesList)
                     valueCounterOutput+=deviceIds.size
                     //logger.info("Write Finished")
                 }

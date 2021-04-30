@@ -752,11 +752,11 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
                         logger.info("Query response [{}] size [{}]", message.succeeded(), list.size())
                         val result = list.filterIsInstance<JsonArray>().map {
                             val item = HashMap<String, Any?>()
+                            item["System"] = system
                             item["NodeId"] = nodeId
                             item["SourceTime"] = it.getValue(0)
                             item["Value"] = it.getValue(1)
                             item["StatusCode"] = it.getValue(2)
-                            item["System"] = it.getValue(3)
                             item
                         }
                         promise.complete(result)

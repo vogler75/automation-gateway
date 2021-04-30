@@ -13,15 +13,7 @@ GraphQLServer:
       WriteSchemaToFile: false
       Schemas:
       - System: opc1
-      - System: opc2
-      - System: opc3
-      - System: opc4
-      - System: opc5
-      - System: opc6
-      - System: opc7
-      - System: opc8
-      - System: opc9
-      - System: opc10
+
 
       #  - System: ignition
       #    FieldName: BrowseName # BrowseName | DisplayName
@@ -32,18 +24,26 @@ GraphQLServer:
 
 Database:
   Logger:
-    #- Id: influx
-    #  Type: InfluxDB
-    #  Url: http://nuc1:8086
-    #  Database: test
-    #  Username: ""
-    #  Password: ""
-    #  WriteParameters:
-    #    QueueSize: 20000
-    #  Logging:
-    #    - Topic: opc/winccoa/node/ns=2;s=ExampleDP_Float.ExampleDP_Arg1
-    #    - Topic: opc/winccoa/path/$objects/Test/+/float
-    #    - Topic: opc/ignition/node/ns=2;s=[default]/Input_Watt
+    - Id: influx1
+      Type: InfluxDB
+      Url: http://server2:8086
+      Database: test
+      Username: ""
+      Password: ""
+      WriteParameters:
+        QueueSize: 20000
+        BlockSize: 10000
+      Logging:
+        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Byte/+
+        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_SByte/+
+        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
+        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
+        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Integer/+
+        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
+        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Int32/+
+        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Int64/+
+        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Unt16/+
+        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_UInt32/+
 
     - Id: iotdb1
       Type: IoTDB
@@ -57,114 +57,15 @@ Database:
         BlockSize: 10000
       Logging:
         - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Byte/+
-        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Byte/+
-        - Topic: opc/opc3/path/Objects/Demo/SimulationMass/SimulationMass_Byte/+
-        - Topic: opc/opc4/path/Objects/Demo/SimulationMass/SimulationMass_Byte/+
-        - Topic: opc/opc5/path/Objects/Demo/SimulationMass/SimulationMass_Byte/+
-        - Topic: opc/opc6/path/Objects/Demo/SimulationMass/SimulationMass_Byte/+
-        - Topic: opc/opc7/path/Objects/Demo/SimulationMass/SimulationMass_Byte/+
-        - Topic: opc/opc8/path/Objects/Demo/SimulationMass/SimulationMass_Byte/+
-        - Topic: opc/opc9/path/Objects/Demo/SimulationMass/SimulationMass_Byte/+
-        - Topic: opc/opc10/path/Objects/Demo/SimulationMass/SimulationMass_Byte/+
-
         - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_SByte/+
-        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_SByte/+
-        - Topic: opc/opc3/path/Objects/Demo/SimulationMass/SimulationMass_SByte/+
-        - Topic: opc/opc4/path/Objects/Demo/SimulationMass/SimulationMass_SByte/+
-        - Topic: opc/opc5/path/Objects/Demo/SimulationMass/SimulationMass_SByte/+
-        - Topic: opc/opc6/path/Objects/Demo/SimulationMass/SimulationMass_SByte/+
-        - Topic: opc/opc7/path/Objects/Demo/SimulationMass/SimulationMass_SByte/+
-        - Topic: opc/opc8/path/Objects/Demo/SimulationMass/SimulationMass_SByte/+
-        - Topic: opc/opc9/path/Objects/Demo/SimulationMass/SimulationMass_SByte/+
-        - Topic: opc/opc10/path/Objects/Demo/SimulationMass/SimulationMass_SByte/+
-
         - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
-        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
-        - Topic: opc/opc3/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
-        - Topic: opc/opc4/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
-        - Topic: opc/opc5/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
-        - Topic: opc/opc6/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
-        - Topic: opc/opc7/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
-        - Topic: opc/opc8/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
-        - Topic: opc/opc9/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
-        - Topic: opc/opc10/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
-
         - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
-        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
-        - Topic: opc/opc3/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
-        - Topic: opc/opc4/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
-        - Topic: opc/opc5/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
-        - Topic: opc/opc6/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
-        - Topic: opc/opc7/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
-        - Topic: opc/opc8/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
-        - Topic: opc/opc9/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
-        - Topic: opc/opc10/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
-
         - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Integer/+
-        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Integer/+
-        - Topic: opc/opc3/path/Objects/Demo/SimulationMass/SimulationMass_Integer/+
-        - Topic: opc/opc4/path/Objects/Demo/SimulationMass/SimulationMass_Integer/+
-        - Topic: opc/opc5/path/Objects/Demo/SimulationMass/SimulationMass_Integer/+
-        - Topic: opc/opc6/path/Objects/Demo/SimulationMass/SimulationMass_Integer/+
-        - Topic: opc/opc7/path/Objects/Demo/SimulationMass/SimulationMass_Integer/+
-        - Topic: opc/opc8/path/Objects/Demo/SimulationMass/SimulationMass_Integer/+
-        - Topic: opc/opc9/path/Objects/Demo/SimulationMass/SimulationMass_Integer/+
-        - Topic: opc/opc10/path/Objects/Demo/SimulationMass/SimulationMass_Integer/+
-
         - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
-        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
-        - Topic: opc/opc3/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
-        - Topic: opc/opc4/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
-        - Topic: opc/opc5/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
-        - Topic: opc/opc6/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
-        - Topic: opc/opc7/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
-        - Topic: opc/opc8/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
-        - Topic: opc/opc9/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
-        - Topic: opc/opc10/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
-
         - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Int32/+
-        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Int32/+
-        - Topic: opc/opc3/path/Objects/Demo/SimulationMass/SimulationMass_Int32/+
-        - Topic: opc/opc4/path/Objects/Demo/SimulationMass/SimulationMass_Int32/+
-        - Topic: opc/opc5/path/Objects/Demo/SimulationMass/SimulationMass_Int32/+
-        - Topic: opc/opc6/path/Objects/Demo/SimulationMass/SimulationMass_Int32/+
-        - Topic: opc/opc7/path/Objects/Demo/SimulationMass/SimulationMass_Int32/+
-        - Topic: opc/opc8/path/Objects/Demo/SimulationMass/SimulationMass_Int32/+
-        - Topic: opc/opc9/path/Objects/Demo/SimulationMass/SimulationMass_Int32/+
-        - Topic: opc/opc10/path/Objects/Demo/SimulationMass/SimulationMass_Int32/+
-
         - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Int64/+
-        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Int64/+
-        - Topic: opc/opc3/path/Objects/Demo/SimulationMass/SimulationMass_Int64/+
-        - Topic: opc/opc4/path/Objects/Demo/SimulationMass/SimulationMass_Int64/+
-        - Topic: opc/opc5/path/Objects/Demo/SimulationMass/SimulationMass_Int64/+
-        - Topic: opc/opc6/path/Objects/Demo/SimulationMass/SimulationMass_Int64/+
-        - Topic: opc/opc7/path/Objects/Demo/SimulationMass/SimulationMass_Int64/+
-        - Topic: opc/opc8/path/Objects/Demo/SimulationMass/SimulationMass_Int64/+
-        - Topic: opc/opc9/path/Objects/Demo/SimulationMass/SimulationMass_Int64/+
-        - Topic: opc/opc10/path/Objects/Demo/SimulationMass/SimulationMass_Int64/+
-
         - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Unt16/+
-        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_UInt16/+
-        - Topic: opc/opc3/path/Objects/Demo/SimulationMass/SimulationMass_UInt16/+
-        - Topic: opc/opc4/path/Objects/Demo/SimulationMass/SimulationMass_UInt16/+
-        - Topic: opc/opc5/path/Objects/Demo/SimulationMass/SimulationMass_UInt16/+
-        - Topic: opc/opc6/path/Objects/Demo/SimulationMass/SimulationMass_UInt16/+
-        - Topic: opc/opc7/path/Objects/Demo/SimulationMass/SimulationMass_UInt16/+
-        - Topic: opc/opc8/path/Objects/Demo/SimulationMass/SimulationMass_UInt16/+
-        - Topic: opc/opc9/path/Objects/Demo/SimulationMass/SimulationMass_UInt16/+
-        - Topic: opc/opc10/path/Objects/Demo/SimulationMass/SimulationMass_UInt16/+
-
         - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_UInt32/+
-        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_UInt32/+
-        - Topic: opc/opc3/path/Objects/Demo/SimulationMass/SimulationMass_UInt32/+
-        - Topic: opc/opc4/path/Objects/Demo/SimulationMass/SimulationMass_UInt32/+
-        - Topic: opc/opc5/path/Objects/Demo/SimulationMass/SimulationMass_UInt32/+
-        - Topic: opc/opc6/path/Objects/Demo/SimulationMass/SimulationMass_UInt32/+
-        - Topic: opc/opc7/path/Objects/Demo/SimulationMass/SimulationMass_UInt32/+
-        - Topic: opc/opc8/path/Objects/Demo/SimulationMass/SimulationMass_UInt32/+
-        - Topic: opc/opc9/path/Objects/Demo/SimulationMass/SimulationMass_UInt32/+
-        - Topic: opc/opc10/path/Objects/Demo/SimulationMass/SimulationMass_UInt32/+
 
 OpcUaClient:
 
@@ -255,202 +156,3 @@ OpcUaClient:
       DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
     BrowseOnStartup: false
     WriteSchemaToFile: false
-
-  - Id: "opc2"
-    Enabled: true
-    LogLevel: INFO
-    EndpointUrl: "opc.tcp://nuc1:20002"
-    UpdateEndpointUrl: true
-    SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#None
-    ConnectTimeout: 5000
-    RequestTimeout: 5000
-    KeepAliveFailuresAllowed: 0
-    SubscriptionSamplingInterval: 0.0
-    WriteParameters:
-      QueueSize: 10000
-      BlockSize: 200
-      WithTime: false
-    MonitoringParameters:
-      BufferSize: 10
-      SamplingInterval: 0
-      DiscardOldest: true
-      DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false
-
-  - Id: "opc3"
-    Enabled: true
-    LogLevel: INFO
-    EndpointUrl: "opc.tcp://nuc1:20003"
-    UpdateEndpointUrl: true
-    SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#None
-    ConnectTimeout: 5000
-    RequestTimeout: 5000
-    KeepAliveFailuresAllowed: 0
-    SubscriptionSamplingInterval: 0.0
-    WriteParameters:
-      QueueSize: 10000
-      BlockSize: 200
-      WithTime: false
-    MonitoringParameters:
-      BufferSize: 10
-      SamplingInterval: 0
-      DiscardOldest: true
-      DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false
-
-  - Id: "opc4"
-    Enabled: true
-    LogLevel: INFO
-    EndpointUrl: "opc.tcp://nuc1:20004"
-    UpdateEndpointUrl: true
-    SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#None
-    ConnectTimeout: 5000
-    RequestTimeout: 5000
-    KeepAliveFailuresAllowed: 0
-    SubscriptionSamplingInterval: 0.0
-    WriteParameters:
-      QueueSize: 10000
-      BlockSize: 200
-      WithTime: false
-    MonitoringParameters:
-      BufferSize: 10
-      SamplingInterval: 0
-      DiscardOldest: true
-      DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false
-
-  - Id: "opc5"
-    Enabled: true
-    LogLevel: INFO
-    EndpointUrl: "opc.tcp://nuc1:20005"
-    UpdateEndpointUrl: true
-    SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#None
-    ConnectTimeout: 5000
-    RequestTimeout: 5000
-    KeepAliveFailuresAllowed: 0
-    SubscriptionSamplingInterval: 0.0
-    WriteParameters:
-      QueueSize: 10000
-      BlockSize: 200
-      WithTime: false
-    MonitoringParameters:
-      BufferSize: 10
-      SamplingInterval: 0
-      DiscardOldest: true
-      DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false
-
-  - Id: "opc6"
-    Enabled: true
-    LogLevel: INFO
-    EndpointUrl: "opc.tcp://nuc1:20006"
-    UpdateEndpointUrl: true
-    SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#None
-    ConnectTimeout: 5000
-    RequestTimeout: 5000
-    KeepAliveFailuresAllowed: 0
-    SubscriptionSamplingInterval: 0.0
-    WriteParameters:
-      QueueSize: 10000
-      BlockSize: 200
-      WithTime: false
-    MonitoringParameters:
-      BufferSize: 10
-      SamplingInterval: 0
-      DiscardOldest: true
-      DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false
-
-  - Id: "opc7"
-    Enabled: true
-    LogLevel: INFO
-    EndpointUrl: "opc.tcp://nuc1:20007"
-    UpdateEndpointUrl: true
-    SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#None
-    ConnectTimeout: 5000
-    RequestTimeout: 5000
-    KeepAliveFailuresAllowed: 0
-    SubscriptionSamplingInterval: 0.0
-    WriteParameters:
-      QueueSize: 10000
-      BlockSize: 200
-      WithTime: false
-    MonitoringParameters:
-      BufferSize: 10
-      SamplingInterval: 0
-      DiscardOldest: true
-      DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false
-
-  - Id: "opc8"
-    Enabled: true
-    LogLevel: INFO
-    EndpointUrl: "opc.tcp://nuc1:20008"
-    UpdateEndpointUrl: true
-    SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#None
-    ConnectTimeout: 5000
-    RequestTimeout: 5000
-    KeepAliveFailuresAllowed: 0
-    SubscriptionSamplingInterval: 0.0
-    WriteParameters:
-      QueueSize: 10000
-      BlockSize: 200
-      WithTime: false
-    MonitoringParameters:
-      BufferSize: 10
-      SamplingInterval: 0
-      DiscardOldest: true
-      DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false
-
-  - Id: "opc9"
-    Enabled: true
-    LogLevel: INFO
-    EndpointUrl: "opc.tcp://nuc1:20009"
-    UpdateEndpointUrl: true
-    SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#None
-    ConnectTimeout: 5000
-    RequestTimeout: 5000
-    KeepAliveFailuresAllowed: 0
-    SubscriptionSamplingInterval: 0.0
-    WriteParameters:
-      QueueSize: 10000
-      BlockSize: 200
-      WithTime: false
-    MonitoringParameters:
-      BufferSize: 10
-      SamplingInterval: 0
-      DiscardOldest: true
-      DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false
-
-  - Id: "opc10"
-    Enabled: true
-    LogLevel: INFO
-    EndpointUrl: "opc.tcp://nuc1:20010"
-    UpdateEndpointUrl: true
-    SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#None
-    ConnectTimeout: 5000
-    RequestTimeout: 5000
-    KeepAliveFailuresAllowed: 0
-    SubscriptionSamplingInterval: 0.0
-    WriteParameters:
-      QueueSize: 10000
-      BlockSize: 200
-      WithTime: false
-    MonitoringParameters:
-      BufferSize: 10
-      SamplingInterval: 0
-      DiscardOldest: true
-      DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false
- 

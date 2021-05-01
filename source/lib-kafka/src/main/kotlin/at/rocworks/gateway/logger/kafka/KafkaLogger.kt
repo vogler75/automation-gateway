@@ -38,19 +38,10 @@ class KafkaLogger(config: JsonObject) : LoggerBase(config) {
         var point: DataPoint? = writeValueQueue.poll(10, TimeUnit.MILLISECONDS)
         while (point != null) {
             try {
-                val time = point.value.sourceTime().toEpochMilli()
-                val value = point.value.valueAsDouble() ?: point.value.valueAsString()
-                val status = point.value.statusAsString()
-
-                val data = JsonObject()
-                    .put("time", time)
-                    .put("value", value)
-                    .put("status", status)
-
                 val record: KafkaProducerRecord<String, String> = KafkaProducerRecord.create(
                     point.topic.systemName,
                     point.topic.browsePath,
-                    data.toString()
+                    point.value.encodeToJson().toString()
                 )
                 if (producer?.writeQueueFull()==true) {
                     logger.warn("Kafka write queue full!")

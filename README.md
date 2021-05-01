@@ -21,7 +21,7 @@ App is a single program with GraphQL, MQTT and the OPC UA connections in one sin
 
 See config.yaml in the app directory for an example how to configure the Gateway. You can pass a configuration file name to the program as the first argument. If no argument is given then config.yaml will be used. If there are any questions about the configuration, please get in touch with me. 
 
-## Example MQTT Topics
+## Example Topics
 Note: remove the blanks between the slashes! (just here for better readabilty)
 
 Using the NodeId 
@@ -172,6 +172,73 @@ Example MQTT Topic:
 > plc/mod/node/coil:1  
 
 # Version History
+
+## v1.11
+Added Apache Kafka as tag logger option, all incoming value changes of the configured topics will be published to an Apache Kafka Broker.
+```
+Database:
+  Logger:
+    - Id: kafka1
+      Type: Kafka
+      Servers: server2:9092
+      WriteParameters:
+        QueueSize: 20000
+        BlockSize: 10000
+      Logging:
+        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_SByte/+
+        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Byte/+
+```
+
+You can also use KSQL to analyze the tag stream.
+Connect to a ksql cli:
+```
+docker exec -ti ksqldb-cli ksql http://ksqldb-server:8088
+```
+
+Create a stream for your logger. Each logger has its own Kafka-Topic. Topic name is equal to the source id of the tag (opc/**opc1**/...)
+```
+CREATE STREAM opc1(
+  browsePath VARCHAR KEY, 
+  sourceTime VARCHAR, 
+  value DOUBLE, 
+  statusCode VARCHAR
+) WITH (
+  KEY_FORMAT='KAFKA',
+  KAFKA_TOPIC='opc1', 
+  VALUE_FORMAT='JSON',
+  TIMESTAMP='sourceTime',TIMESTAMP_FORMAT='yyyy-MM-dd''T''HH:mm:ss.nX'
+);
+```
+
+Example of a simple quey:
+```
+SELECT node, COUNT(*) 
+FROM opc1 
+WINDOW SESSION (10 SECONDS) 
+WHERE node like '%_00' 
+GROUP BY node 
+EMIT CHANGES;
+```
+
+## v1.10
+Added Apache IoTDB as tag logger option.
+```
+Database:
+  Logger:
+   - Id: iotdb1
+      Type: IoTDB
+      Host: server2
+      Port: 6667
+      Database: root.scada1
+      Username: "root"
+      Password: "root"
+      WriteParameters:
+        QueueSize: 20000
+        BlockSize: 10000
+      Logging:
+        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_SByte/+
+        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Byte/+
+```
 
 ## v1.9  
 Added Apache Ignite as an option for clustering and also to use the Apache Ignite Distributed In Memory Cache for storing last and history values coming from OPC UA or other sources. With that enabled it is possible to do SQL queries on the process values. The cache node stores historical value changes for a defined timerange. So older values are purged on a regular basis (configurable in the configuration file). It is configurable which topics should be stored in the Apache Ignite Cache.

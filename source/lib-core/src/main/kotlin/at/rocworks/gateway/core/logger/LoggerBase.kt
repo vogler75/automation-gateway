@@ -169,12 +169,12 @@ abstract class LoggerBase(config: JsonObject) : AbstractVerticle() {
                 writeValueQueue.add(measurement)
                 if (writeValueQueueFull) {
                     writeValueQueueFull = false
-                    logger.warn("Write queue free again! [{}]", writeValueQueue.size)
+                    logger.warn("Logger write queue not full anymore. [{}]", writeValueQueue.size)
                 }
             } catch (e: IllegalStateException) {
                 if (!writeValueQueueFull) {
                     writeValueQueueFull = true
-                    logger.warn("Write queue is full! [{}]", writeParameterQueueSize)
+                    logger.warn("Logger write queue is full! [{}]", writeParameterQueueSize)
                 }
             }
         } catch (e: Exception) {

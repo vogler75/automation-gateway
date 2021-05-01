@@ -10,8 +10,11 @@ compileKotlin {
 
 dependencies {
     implementation project(':lib-core')
+
     implementation project(':lib-influxdb')
     implementation project(':lib-iotdb')
+    implementation project(':lib-kafka')
+
     implementation 'org.slf4j:slf4j-api:1.7.30'
     //implementation 'org.slf4j:slf4j-jdk14:1.7.30'
     implementation 'org.slf4j:slf4j-simple:1.7.30'

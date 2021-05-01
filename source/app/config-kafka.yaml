@@ -24,35 +24,9 @@ GraphQLServer:
 
 Database:
   Logger:
-    - Id: influx1
-      Type: InfluxDB
-      Url: http://server2:8086
-      Database: test
-      Username: ""
-      Password: ""
-      WriteParameters:
-        QueueSize: 20000
-        BlockSize: 10000
-      Logging:
-        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_SByte/+
-        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Byte/+
-        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_SByte/+
-        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
-        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
-        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Integer/+
-        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
-        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Int32/+
-        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Int64/+
-        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Unt16/+
-        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_UInt32/+
-
-    - Id: iotdb1
-      Type: IoTDB
-      Host: server2
-      Port: 6667
-      Database: root.scada1
-      Username: "root"
-      Password: "root"
+    - Id: kafka1
+      Type: Kafka
+      Servers: server2:9092
       WriteParameters:
         QueueSize: 20000
         BlockSize: 10000

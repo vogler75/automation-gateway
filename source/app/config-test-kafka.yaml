@@ -13,8 +13,7 @@ GraphQLServer:
       WriteSchemaToFile: false
       Schemas:
       - System: opc1
-
-
+        
       #  - System: ignition
       #    FieldName: BrowseName # BrowseName | DisplayName
       #  - System: unified
@@ -26,6 +25,7 @@ Database:
   Logger:
     - Id: kafka1
       Type: Kafka
+      Enabled: false
       Servers: server2:9092
       WriteParameters:
         QueueSize: 20000
@@ -44,6 +44,27 @@ Database:
         - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_UInt32/+
 
 OpcUaClient:
+  - Id: "opc1"
+    Enabled: false
+    LogLevel: INFO
+    EndpointUrl: "opc.tcp://nuc1:20001"
+    UpdateEndpointUrl: true
+    SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#None
+    ConnectTimeout: 5000
+    RequestTimeout: 5000
+    KeepAliveFailuresAllowed: 0
+    SubscriptionSamplingInterval: 0.0
+    WriteParameters:
+      QueueSize: 10000
+      BlockSize: 200
+      WithTime: false
+    MonitoringParameters:
+      BufferSize: 10
+      SamplingInterval: 0
+      DiscardOldest: true
+      DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
+    BrowseOnStartup: false
+    WriteSchemaToFile: false    
 
   - Id: "winccoa"
     Enabled: false
@@ -111,24 +132,3 @@ OpcUaClient:
     BrowseOnStartup: false
     WriteSchemaToFile: false
 
-  - Id: "opc1"
-    Enabled: true
-    LogLevel: INFO
-    EndpointUrl: "opc.tcp://nuc1:20001"
-    UpdateEndpointUrl: true
-    SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#None
-    ConnectTimeout: 5000
-    RequestTimeout: 5000
-    KeepAliveFailuresAllowed: 0
-    SubscriptionSamplingInterval: 0.0
-    WriteParameters:
-      QueueSize: 10000
-      BlockSize: 200
-      WithTime: false
-    MonitoringParameters:
-      BufferSize: 10
-      SamplingInterval: 0
-      DiscardOldest: true
-      DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false

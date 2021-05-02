@@ -38,17 +38,19 @@ object App {
 
     private fun createLogger(vertx: Vertx, config: JsonObject) {
         val logger = LoggerFactory.getLogger(javaClass.simpleName)
-        when (val type = config.getString("Type")) {
-            "InfluxDB" -> {
-                vertx.deployVerticle(InfluxDBLogger(config))
+        if (config.getBoolean("Enabled", true)) {
+            when (val type = config.getString("Type")) {
+                "InfluxDB" -> {
+                    vertx.deployVerticle(InfluxDBLogger(config))
+                }
+                "IoTDB" -> {
+                    vertx.deployVerticle(IoTDBLogger(config))
+                }
+                "Kafka" -> {
+                    vertx.deployVerticle(KafkaLogger(config))
+                }
+                else -> logger.error("Unknown database type [{}]", type)
             }
-            "IoTDB" -> {
-                vertx.deployVerticle(IoTDBLogger(config))
-            }
-            "Kafka" -> {
-                vertx.deployVerticle(KafkaLogger(config))
-            }
-            else -> logger.error("Unknown database type [{}]", type)
         }
     }
 

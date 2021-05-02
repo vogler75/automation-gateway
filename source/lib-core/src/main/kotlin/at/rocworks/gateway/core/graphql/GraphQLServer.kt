@@ -81,7 +81,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
             }
         } else {
             logger.info("Build schema...")
-            val (generic, wiring) = getGenericSchema(withSytems = true)
+            val (generic, wiring) = getGenericSchema(withSystems = true)
 
             val systems = schemas.filterIsInstance<JsonObject>().map { it.getString("System") }
 
@@ -139,7 +139,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
                 vertx.eventBus().request<JsonObject>(
                     "${type}/${system}/Schema",
                     JsonObject(),
-                    DeliveryOptions().setSendTimeout(60000*3))
+                    DeliveryOptions().setSendTimeout(60000*10)) // TODO: configurable?
                 {
                     done = true
                     logger.info("Schema response [{}] [{}] [{}]", system, it.succeeded(), it.cause()?.message ?: "")
@@ -228,7 +228,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
         return schema
     }
 
-    private fun getGenericSchema(withSytems: Boolean = false): Pair<String, RuntimeWiring.Builder> {
+    private fun getGenericSchema(withSystems: Boolean = false): Pair<String, RuntimeWiring.Builder> {
         // enum Type must match the Globals.BUS_ROOT_URI_*
         val schema = """
             | enum Type { 
@@ -244,7 +244,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
             |   BrowseNode(Type: Type, System: String, NodeId: ID, Filter: String): [Node]
             |   FindNodes(Type: Type, System: String, NodeId: ID, Filter: String): [Node]
             |   
-            |   ${if (withSytems) "Systems: Systems" else ""}
+            |   ${if (withSystems) "Systems: Systems" else ""}
             | }
             | 
             | type Mutation {

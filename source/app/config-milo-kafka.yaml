@@ -1,0 +1,51 @@
+MqttServer:
+  Listeners:
+    - Id: Mqtt
+      Port: 1883
+      Host: 0.0.0.0
+      LogLevel: INFO # ALL | INFO
+
+GraphQLServer:
+  Listeners:
+    - Port: 4000
+      LogLevel: INFO
+      GraphiQL: true
+      WriteSchemaToFile: false
+      
+Database:
+  Logger:
+    - Id: kafka1
+      Type: Kafka
+      Enabled: true
+      Servers: server2:9092
+      WriteParameters:
+        QueueSize: 20000
+        BlockSize: 10000
+      Logging:
+        - Topic: opc/milo/path/Objects/Dynamic/+
+
+OpcUaClient:
+  - Id: "milo"
+    Enabled: true
+    LogLevel: INFO
+    EndpointUrl: "opc.tcp://milo.digitalpetri.com:62541/milo"
+    UpdateEndpointUrl: false
+    SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#None
+    UsernameProvider:
+      Username: user1
+      Password: password
+    ConnectTimeout: 5000
+    RequestTimeout: 5000
+    KeepAliveFailuresAllowed: 0
+    SubscriptionSamplingInterval: 0.0
+    WriteParameters:
+      QueueSize: 10000
+      BlockSize: 200
+      WithTime: false
+    MonitoringParameters:
+      BufferSize: 10
+      SamplingInterval: 0
+      DiscardOldest: true
+      DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
+    BrowseOnStartup: false
+    WriteSchemaToFile: false

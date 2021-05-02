@@ -2,6 +2,8 @@
 
 Connect one or more OPC UA servers to the gateway and access the data from the OPC UA servers with a GraphQL or a MQTT client.
 
+News and Blog posts can be found [here](https://www.rocworks.at/wordpress/?cat=39)
+
 ![Gateway](doc/Gateway.png)
 
 # Build and Run
@@ -174,7 +176,7 @@ Example MQTT Topic:
 # Version History
 
 ## v1.11
-Added Apache Kafka as tag logger option, all incoming value changes of the configured topics will be published to an Apache Kafka Broker.
+Added Apache Kafka as tag logger option, all incoming value changes of the configured topics will be published to an Apache Kafka Broker. How to can be found [here](https://www.rocworks.at/wordpress/?p=1076)
 ```
 Database:
   Logger:

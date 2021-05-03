@@ -17,7 +17,7 @@ object Dds {
             .filterIsInstance<JsonObject>()
             .filter { it.getBoolean("Enabled") }
             .forEach {
-                vertx.deployVerticle(DdsVerticle(it))
+                vertx.deployVerticle(DdsDriver(it))
             }
     }
 }

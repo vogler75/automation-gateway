@@ -1,5 +1,5 @@
 import at.rocworks.gateway.core.opcua.KeyStoreLoader
-import at.rocworks.gateway.core.opcua.OpcUaVerticle
+import at.rocworks.gateway.core.opcua.OpcUaDriver
 import at.rocworks.gateway.core.service.Cluster
 
 import io.vertx.core.Vertx
@@ -19,7 +19,7 @@ object OpcUa {
             .filterIsInstance<JsonObject>()
             .filter { it.getBoolean("Enabled") }
             .forEach {
-                vertx.deployVerticle(OpcUaVerticle(it))
+                vertx.deployVerticle(OpcUaDriver(it))
             }
     }
 }

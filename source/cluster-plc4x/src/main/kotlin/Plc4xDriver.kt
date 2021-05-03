@@ -16,7 +16,7 @@ import org.apache.plc4x.java.api.exceptions.PlcConnectionException
 import org.apache.plc4x.java.api.messages.*
 import org.apache.plc4x.java.api.value.PlcValue
 
-class Plc4xVerticle(config: JsonObject): DriverBase(config) {
+class Plc4xDriver(config: JsonObject): DriverBase(config) {
     override fun getType() = Topic.SystemType.Plc
 
     private val url: String = config.getString("Url", "")

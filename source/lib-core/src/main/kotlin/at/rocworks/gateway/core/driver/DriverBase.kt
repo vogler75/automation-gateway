@@ -207,7 +207,7 @@ abstract class DriverBase(config: JsonObject) : AbstractVerticle() {
 
         topics.forEach { topic ->
             val (count, removed) = registry.delClient(clientId, topic)
-            logger.debug("Unsubscribe [{}] [{}]", count, topic)
+            logger.info("Unsubscribe [{}] [{}]", count, topic)
             if (!removed) {
                 logger.warn("Client [{}] was not subscribed to [{}]", clientId, topic)
             } else if (count == 0) {

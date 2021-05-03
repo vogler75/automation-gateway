@@ -1,7 +1,7 @@
 import at.rocworks.gateway.core.service.Cluster
 import at.rocworks.gateway.core.graphql.GraphQLServer
-import at.rocworks.gateway.core.mqtt.MqttVerticle
-import at.rocworks.gateway.core.opcua.OpcUaVerticle
+import at.rocworks.gateway.core.mqtt.MqttServer
+import at.rocworks.gateway.core.opcua.OpcUaDriver
 import at.rocworks.gateway.core.opcua.KeyStoreLoader
 
 import io.vertx.core.Vertx
@@ -22,7 +22,7 @@ object Gateway {
             ?.getJsonArray("Listeners")
             ?.filterIsInstance<JsonObject>()
             ?.forEach {
-                MqttVerticle.create(vertx, it)
+                MqttServer.create(vertx, it)
             }
 
         // GraphQL Server
@@ -38,7 +38,7 @@ object Gateway {
             .filterIsInstance<JsonObject>()
             .filter { it.getBoolean("Enabled") }
             .forEach {
-                vertx.deployVerticle(OpcUaVerticle(it))
+                vertx.deployVerticle(OpcUaDriver(it))
             }
     }
 }

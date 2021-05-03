@@ -16,7 +16,7 @@ object Plc4x {
             ?.filterIsInstance<JsonObject>()
             ?.filter { it.getBoolean("Enabled") }
             ?.forEach {
-                vertx.deployVerticle(Plc4xVerticle(it))
+                vertx.deployVerticle(Plc4xDriver(it))
             }
     }
 }

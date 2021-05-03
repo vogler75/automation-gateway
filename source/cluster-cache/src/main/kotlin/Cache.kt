@@ -1,5 +1,3 @@
-import at.rocworks.gateway.core.mqtt.MqttVerticle
-import at.rocworks.gateway.core.opcua.OpcUaVerticle
 import at.rocworks.gateway.core.service.Cluster
 
 import io.vertx.core.Vertx

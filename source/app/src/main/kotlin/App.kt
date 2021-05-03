@@ -1,7 +1,8 @@
 import at.rocworks.gateway.core.graphql.GraphQLServer
-import at.rocworks.gateway.core.mqtt.MqttVerticle
+import at.rocworks.gateway.core.mqtt.MqttDriver
+import at.rocworks.gateway.core.mqtt.MqttServer
 import at.rocworks.gateway.core.opcua.KeyStoreLoader
-import at.rocworks.gateway.core.opcua.OpcUaVerticle
+import at.rocworks.gateway.core.opcua.OpcUaDriver
 import at.rocworks.gateway.core.service.Common
 
 import at.rocworks.gateway.logger.influx.InfluxDBLogger
@@ -61,7 +62,7 @@ object App {
             ?.filter { it.getBoolean("Enabled") }
             ?: listOf()
         enabled.map {
-            vertx.deployVerticle(OpcUaVerticle(it))
+            vertx.deployVerticle(OpcUaDriver(it))
         }
 
         val defaultSystem = if (enabled.isNotEmpty()) enabled.first().getString("Id") else "default"
@@ -71,7 +72,7 @@ object App {
             ?.getJsonArray("Listeners")
             ?.filterIsInstance<JsonObject>()
             ?.forEach {
-                MqttVerticle.create(vertx, it)
+                MqttServer.create(vertx, it)
             }
 
         // Start GraphQL Server
@@ -80,6 +81,13 @@ object App {
             ?.filterIsInstance<JsonObject>()
             ?.forEach {
                 GraphQLServer.create(vertx, it, defaultSystem)
+            }
+
+        // Mqtt Client
+        config.getJsonArray("MqttClient")
+            ?.filterIsInstance<JsonObject>()
+            ?.forEach {
+                vertx.deployVerticle(MqttDriver(it))
             }
 
         // DB Logger

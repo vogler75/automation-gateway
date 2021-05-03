@@ -55,7 +55,7 @@ import java.util.concurrent.TimeUnit
 import java.util.function.BiConsumer
 import kotlin.concurrent.thread
 
-class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
+class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
     override fun getType() = Topic.SystemType.Opc
 
     private val endpointUrl: String = config.getString("EndpointUrl", "")
@@ -367,7 +367,6 @@ class OpcUaVerticle(val config: JsonObject) : DriverBase(config) {
             subscribeNodes(topics.filter { it.topicType === Topic.TopicType.NodeId }),
             subscribePath(topics.filter { it.topicType === Topic.TopicType.Path })
         ).onComplete { promise.complete(it.succeeded()) }
-
         return promise.future()
     }
 

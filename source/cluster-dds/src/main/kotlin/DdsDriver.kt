@@ -19,7 +19,7 @@ import at.rocworks.gateway.core.data.TopicValueDds
 import java.lang.reflect.Method
 
 
-class DdsVerticle(val config: JsonObject) : DriverBase(config) {
+class DdsDriver(val config: JsonObject) : DriverBase(config) {
     override fun getType() = Topic.SystemType.Dds
 
     private val configFile = config.getString("DCPSConfigFile", "dds.ini")

@@ -1,6 +1,5 @@
 package at.rocworks.gateway.core.data
 
-import com.fasterxml.jackson.databind.JsonSerializer
 import io.vertx.core.json.JsonObject
 
 data class Topic (
@@ -18,7 +17,7 @@ data class Topic (
         Opc,
         Plc,
         Dds,
-        Mqtt,
+        Mqtt
     }
 
     enum class TopicType {
@@ -49,6 +48,7 @@ data class Topic (
             val opcUri = SystemType.Opc.name
             val plcUri = SystemType.Plc.name
             val ddsUri = SystemType.Dds.name
+            val mqttUri = SystemType.Mqtt.name
 
             val optFmt = "(|:Json|:Pretty|:Value)"
             fun getFmt(s: String) = when (s.toLowerCase()) {
@@ -86,15 +86,6 @@ data class Topic (
                     format = getFmt(it.destructured.component2()),
                     address = """${it.destructured.component3()}/${it.destructured.component4()}""",
                 )
-            } ?: """${opcUri}/(\w+)/Rpc/(.*)$""".toRegex(RegexOption.IGNORE_CASE).find(topic)?.let {
-                Topic(
-                    topic,
-                    systemType = SystemType.Opc,
-                    topicType = TopicType.Rpc,
-                    systemName = it.destructured.component1(),
-                    format = Format.Json,
-                    address = it.destructured.component2(),
-                )
             }
             // --- PLC ---
             ?: """${plcUri}/(\w+)/Node$optFmt/(.*)$""".toRegex(RegexOption.IGNORE_CASE).find(topic)?.let {
@@ -118,6 +109,17 @@ data class Topic (
                     address = it.destructured.component3()
                 )
             }
+            // --- Mqtt ---
+            ?: """${mqttUri}/(\w+)/Path$optFmt/(.*)$""".toRegex(RegexOption.IGNORE_CASE).find(topic)?.let {
+                Topic(
+                    topic,
+                    systemType = SystemType.Mqtt,
+                    topicType = TopicType.Path,
+                    systemName = it.destructured.component1(),
+                    format = getFmt(it.destructured.component2()),
+                    address = it.destructured.component3()
+                )
+            }
             // --- SYS ---
             ?: """(\${dollar}SYS)/(.*)$""".toRegex(RegexOption.IGNORE_CASE).find(topic)?.let {
                 Topic(
@@ -128,12 +130,12 @@ data class Topic (
                     address = """${it.destructured.component1()}/${it.destructured.component2()}""",
                 )
             }
-            // --- MQTT ---
+            // --- Other ---
             ?: run {
                 Topic(
                     topic,
-                    systemType = SystemType.Mqtt,
-                    topicType = TopicType.Path,
+                    systemType = SystemType.Unknown,
+                    topicType = TopicType.Unknown,
                     systemName = "",
                     address = topic,
                 )

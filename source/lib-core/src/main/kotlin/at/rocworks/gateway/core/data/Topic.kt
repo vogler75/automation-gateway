@@ -9,7 +9,7 @@ data class Topic (
     val systemName: String,
     val address: String,
     val format: Format = Format.Json,
-    val browsePath: String = ""
+    var browsePath: String = ""
 ) {
     enum class SystemType {
         Unknown,

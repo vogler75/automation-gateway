@@ -25,7 +25,7 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
     private val qos: Int = config.getInteger("Qos", 0)
 
     private val subscribedTopics =  HashMap<String, Topic>() // Subscribed (maybe with wildcards) topics to Topic
-    private val receivedTopics = HashMap<String, String>()  // Received (no wildcards) to Subscribed (may have wildcards) Topics
+    private val receivedTopics = HashMap<String, Topic>()  // Received (no wildcards) to Subscribed (may have wildcards) Topics
 
     override fun connect(): Future<Boolean> {
         val promise = Promise.promise<Boolean>()
@@ -83,14 +83,31 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
         logger.info("Got value [{}] [{}]", message.topicName(), message.payload())
         try {
             val topic = message.topicName()
-            val data = message.payload()
+            val payload = message.payload()
+
+            fun encode(buffer: Buffer): Any = buffer.toJson()
+
+            fun json(topic: Topic) = JsonObject()
+                .put("Topic", topic.encodeToJson())
+                .put("Value", encode(payload))
+
+            fun publish(topic: Topic) {
+                val buffer : Buffer? = when (topic.format) {
+                    Topic.Format.Value -> payload
+                    Topic.Format.Json -> Buffer.buffer(json(topic).encode())
+                    Topic.Format.Pretty -> Buffer.buffer(json(topic).encodePrettily())
+                }
+                vertx.eventBus().publish(topic.topicName, buffer)
+            }
+
             receivedTopics[topic]?.let {
-                vertx.eventBus().publish(it, data)
+                publish(it)
             } ?: subscribedTopics.filter { subscribedTopic ->
                 compareTopic(topic, subscribedTopic.key)
             }.forEach {
-                receivedTopics[topic] = it.value.topicName
-                vertx.eventBus().publish(it.value.topicName, data)
+                it.value.browsePath = message.topicName()
+                receivedTopics[topic] = it.value
+                publish(it.value)
             }
         } catch (e: Exception) {
             e.printStackTrace()
@@ -104,7 +121,7 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
             logger.info("Unsubscribe topic [{}]", address)
             client?.unsubscribe(address) // TODO: Error handling?
             subscribedTopics.remove(address)?.let { topic ->
-                receivedTopics.filter { it.value == topic.topicName }.forEach {
+                receivedTopics.filter { it.value.topicName == topic.topicName }.forEach {
                     receivedTopics.remove(it.key)
                 }
             }

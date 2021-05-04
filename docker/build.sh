@@ -2,11 +2,12 @@
 
 build() {
   app="${1:-app}"
-  app_with_path=../source/$app/build/distributions/$app.tar 
+  dir=${2:-.}
+  app_with_path=../source/$dir/$app/build/distributions/$app.tar 
   if [ -f $app_with_path ]; then
     echo $app
     cp $app_with_path ./app.tar
-    docker build --build-arg APP_NAME=$app -t $app .
+    docker build --build-arg APP_NAME=$app -t frankenstein-$app .
     rm ./app.tar
   else
     echo "Please build the app with gradle first!" 
@@ -14,9 +15,9 @@ build() {
 }
 
 build app
-build cluster-gateway
-build cluster-opcua
-build cluster-plc4x
-build cluster-dds
-build cluster-cache
-build cluster-influxdb
+build gateway cluster
+build opcua cluster
+build plc4x cluster
+build dds cluster
+build cache cluster
+build influxdb cluster

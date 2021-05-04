@@ -1,12 +1,18 @@
 rootProject.name = 'gateway'
 
 include('app', 'test')
-include('cluster-template', 'cluster-gateway', 'cluster-opcua', 'cluster-plc4x', 'cluster-cache')
-include('cluster-influxdb')
+
+include(':cluster:template')
+include(':cluster:gateway')
+include(':cluster:opcua')
+include(':cluster:plc4x')
+include(':cluster:cache')
+include(':cluster:influxdb')
+
 include('lib-core', 'lib-influxdb', 'lib-iotdb', 'lib-kafka')
 
 if (System.env.DDS_ROOT) {
-    include ('cluster-dds')
+    include (':cluster:dds')
 } else {
     print "Environment variable DDS_ROOT is not set."
 }

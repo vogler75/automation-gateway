@@ -14,7 +14,7 @@ services:
       - gateway        
 
   gateway:
-    image: cluster-gateway
+    image: frankenstein-gateway
     hostname: gateway
     environment:
       - GATEWAY_CLUSTER_CLIENT=true
@@ -27,7 +27,7 @@ services:
       - gateway
 
   opcua1:
-    image: cluster-opcua
+    image: frankenstein-opcua
     hostname: opcua1
     volumes:
       - ../configs/opcua1.yaml:/app/config.yaml
@@ -35,7 +35,7 @@ services:
       - gateway  
 
   opcua2:
-    image: cluster-opcua
+    image: frankenstein-opcua
     hostname: opcua2
     volumes:
       - ../configs/opcua2.yaml:/app/config.yaml
@@ -43,7 +43,7 @@ services:
       - gateway    
 
   dblogger:
-    image: cluster-influxdb
+    image: frankenstein-influxdb
     hostname: dblogger
     volumes:
       - ../configs/influxdb.yaml:/app/config.yaml
@@ -51,7 +51,7 @@ services:
       - gateway
 
   #winccoa:
-  #  image: cluster-opcua
+  #  image: frankenstein-opcua
   #  hostname: winccoa
   #  restart: always
   #  volumes:
@@ -60,7 +60,7 @@ services:
   #   - gateway  
 
   #ignition:
-  #  image: cluster-opcua
+  #  image: frankenstein-opcua
   #  hostname: ignition
   #  restart: always
   #  volumes:
@@ -69,7 +69,7 @@ services:
   #   - gateway  
 
   #unified:
-  #  image: cluster-opcua
+  #  image: frankenstein-opcua
   #  hostname: unified
   #  restart: always
   #  volumes:

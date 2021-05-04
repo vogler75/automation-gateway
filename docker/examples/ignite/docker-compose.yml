@@ -1,7 +1,7 @@
 version: '3'
 services:
   cache1:
-    image: cluster-cache
+    image: frankenstein-cache
     hostname: cache1
     environment:
       - GATEWAY_CLUSTER_TYPE=ignite    
@@ -16,7 +16,7 @@ services:
       - gateway
 
   # cache2:
-  #   image: cluster-cache
+  #   image: frankenstein-cache
   #   hostname: cache2
   #   environment:
   #     - GATEWAY_CLUSTER_TYPE=ignite    
@@ -31,7 +31,7 @@ services:
   #     - gateway      
 
   gateway:
-    image: cluster-gateway
+    image: frankenstein-gateway
     hostname: gateway1
     environment:
       - GATEWAY_CLUSTER_TYPE=ignite  
@@ -49,7 +49,7 @@ services:
       - cache1
 
   opcua1:
-    image: cluster-opcua
+    image: frankenstein-opcua
     hostname: opcua1
     environment:
       - GATEWAY_CLUSTER_TYPE=ignite  
@@ -64,7 +64,7 @@ services:
       - cache1
 
   # opcua2:
-  #   image: cluster-opcua
+  #   image: frankenstein-opcua
   #   hostname: opcua2
   #   environment:
   #     - GATEWAY_CLUSTER_TYPE=ignite  
@@ -79,7 +79,7 @@ services:
   #     - cache1     
 
   # winccoa:
-  #   image: cluster-opcua
+  #   image: frankenstein-opcua
   #   hostname: winccoa
   #   environment:
   #     - GATEWAY_CLUSTER_TYPE=ignite  
@@ -93,7 +93,7 @@ services:
   #    - gateway  
 
   # ignition:
-  #   image: cluster-opcua
+  #   image: frankenstein-opcua
   #   hostname: ignition
   #   environment:
   #     - GATEWAY_CLUSTER_TYPE=ignite  
@@ -107,7 +107,7 @@ services:
   #    - gateway  
 
   # unified:
-  #   image: cluster-opcua
+  #   image: frankenstein-opcua
   #   hostname: unified
   #   environment:
   #     - GATEWAY_CLUSTER_TYPE=ignite  

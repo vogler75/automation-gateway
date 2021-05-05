@@ -23,7 +23,7 @@ MqttClient:
     Value:
       Type: JSON
       Script: >
-        [ className: "TopicValueOpc",
+        return [ className: "TopicValueOpc",
           sourceTime: Instant.ofEpochMilli(source.TimeMS).toString(),
           serverTime: Instant.now().toString(),
           value: source.Value,
@@ -42,4 +42,4 @@ Database:
         QueueSize: 20000
         BlockSize: 10000
       Logging:
-        #- Topic: mqtt/mqtt1/path/Meter_Input/WattAct
+        - Topic: mqtt/mqtt1/path/Meter_Input/WattAct

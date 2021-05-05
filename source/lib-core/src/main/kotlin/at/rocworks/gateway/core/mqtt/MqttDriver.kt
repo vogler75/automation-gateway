@@ -69,9 +69,11 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
                     import groovy.json.JsonSlurper
                     import groovy.json.JsonOutput
                     import java.time.*
-                    def source = new JsonSlurper().parseText(value)
-                    def output = $valueScript
-                    return JsonOutput.toJson(output)
+                    def output(source) {
+                      $valueScript
+                    }
+                    def source = new JsonSlurper().parseText(value)                    
+                    return JsonOutput.toJson(output(source))
                     """.trimIndent()
                 } else {
                     "return value"

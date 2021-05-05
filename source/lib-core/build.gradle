@@ -39,5 +39,8 @@ dependencies {
     implementation 'io.reactivex.rxjava2:rxjava:2.2.20'
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.11.4'
 
+    implementation group: 'org.codehaus.groovy', name: 'groovy-all', version: '3.0.8'
+
+
     testImplementation 'org.jetbrains.kotlin:kotlin-test:1.4.30'
 }

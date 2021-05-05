@@ -17,6 +17,29 @@ MqttClient:
   - Id: "mqtt1"
     Enabled: true
     LogLevel: INFO
-    Host: raspberry1
+    Host: 192.168.1.6
     Port: 1883
     Ssl: false
+    Value:
+      Type: JSON
+      Script: >
+        [ className: "TopicValueOpc",
+          sourceTime: Instant.ofEpochMilli(source.TimeMS).toString(),
+          serverTime: Instant.now().toString(),
+          value: source.Value,
+          dataTypeId: 0,
+          statusCode: 0 ]
+
+Database:
+  Logger:
+    - Id: influx1
+      Type: InfluxDB
+      Url: http://nuc1.rocworks.local:8086
+      Database: test
+      Username: ""
+      Password: ""
+      WriteParameters:
+        QueueSize: 20000
+        BlockSize: 10000
+      Logging:
+        #- Topic: mqtt/mqtt1/path/Meter_Input/WattAct

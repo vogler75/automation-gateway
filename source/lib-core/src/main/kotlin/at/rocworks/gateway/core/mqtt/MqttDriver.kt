@@ -3,14 +3,18 @@ package at.rocworks.gateway.core.mqtt
 import at.rocworks.gateway.core.data.Topic
 import at.rocworks.gateway.core.driver.DriverBase
 import at.rocworks.gateway.core.driver.MonitoredItem
+import groovy.lang.Binding
+import groovy.lang.GroovyShell
 import io.vertx.core.Future
 import io.vertx.core.Promise
 import io.vertx.core.buffer.Buffer
 import io.vertx.core.eventbus.Message
+import io.vertx.core.json.Json
 import io.vertx.core.json.JsonObject
 import io.vertx.mqtt.MqttClient
 import io.vertx.mqtt.MqttClientOptions
 import io.vertx.mqtt.messages.MqttPublishMessage
+import java.nio.charset.Charset
 
 class MqttDriver(val config: JsonObject) : DriverBase(config) {
     override fun getType() = Topic.SystemType.Mqtt
@@ -24,8 +28,18 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
     private val ssl: Boolean? = config.getBoolean("Ssl")
     private val qos: Int = config.getInteger("Qos", 0)
 
+    private val valueType: String
+    private val valueScript: String
+
     private val subscribedTopics =  HashMap<String, Topic>() // Subscribed (maybe with wildcards) topics to Topic
     private val receivedTopics = HashMap<String, Topic>()  // Received (no wildcards) to Subscribed (may have wildcards) Topics
+
+    init {
+        val value = config.getJsonObject("Value", JsonObject())
+        valueType = value.getString("Type", "")
+        valueScript = value.getString("Script", "")
+        logger.info("Value is of type $valueType with script $valueScript")
+    }
 
     override fun connect(): Future<Boolean> {
         val promise = Promise.promise<Boolean>()
@@ -40,7 +54,37 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
             logger.info("Mqtt client connect [${it.succeeded()}] [${it.result().code()}]")
             promise.complete(it.succeeded())
         } ?: promise.fail("Client is null!")
+
         return promise.future()
+    }
+
+    private val sharedData = Binding()
+    private val groovyShell = GroovyShell(sharedData)
+
+    private fun evaluateValue(value: Buffer): String {
+        val script = when (valueType) {
+            "JSON" -> {
+                if (valueScript.isNotEmpty()) {
+                    """ 
+                    import groovy.json.JsonSlurper
+                    import groovy.json.JsonOutput
+                    import java.time.*
+                    def source = new JsonSlurper().parseText(value)
+                    def output = $valueScript
+                    return JsonOutput.toJson(output)
+                    """.trimIndent()
+                } else {
+                    "return value"
+                }
+            }
+            else -> null
+        }
+        return if (script != null) {
+            sharedData.setProperty("value", value.toString(Charset.defaultCharset()))
+            groovyShell.evaluate(script).toString()
+        } else {
+            value.toString(Charset.defaultCharset())
+        }
     }
 
     override fun disconnect(): Future<Boolean> {
@@ -58,9 +102,7 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
 
     private fun compareTopic(actualTopic: String, subscribedTopic: String): Boolean {
         val regex = subscribedTopic.replace("+", "[^/]+").replace("#", ".+")
-        val match = actualTopic.matches(regex.toRegex())
-        println("ActualTopic $actualTopic SubscribedTopic: $subscribedTopic Regex: $regex Match: $match")
-        return match
+        return actualTopic.matches(regex.toRegex())
     }
 
     override fun subscribeTopics(topics: List<Topic>): Future<Boolean> {
@@ -86,10 +128,11 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
             val payload = message.payload()
 
             fun encode(buffer: Buffer): Any = buffer.toJson()
+            fun encode(string: String): Any = Json.decodeValue(string)
 
             fun json(topic: Topic) = JsonObject()
                 .put("Topic", topic.encodeToJson())
-                .put("Value", encode(payload))
+                .put("Value", encode(evaluateValue(payload)))
 
             fun publish(topic: Topic) {
                 val buffer : Buffer? = when (topic.format) {

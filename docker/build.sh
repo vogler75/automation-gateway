@@ -21,3 +21,5 @@ build plc4x cluster
 build dds cluster
 build cache cluster
 build influxdb cluster
+build iotdb cluster
+build kafka cluster

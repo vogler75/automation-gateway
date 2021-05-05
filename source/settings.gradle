@@ -8,6 +8,8 @@ include(':cluster:opcua')
 include(':cluster:plc4x')
 include(':cluster:cache')
 include(':cluster:influxdb')
+include(':cluster:iotdb')
+include(':cluster:kafka')
 
 include('lib-core', 'lib-influxdb', 'lib-iotdb', 'lib-kafka')
 

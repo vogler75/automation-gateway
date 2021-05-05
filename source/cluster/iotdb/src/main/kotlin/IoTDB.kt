@@ -1,10 +1,10 @@
 import at.rocworks.gateway.core.service.Cluster
-import at.rocworks.gateway.logger.influx.InfluxDBLogger
+import at.rocworks.gateway.logger.iotdb.IoTDBLogger
 
 import io.vertx.core.Vertx
 import io.vertx.core.json.JsonObject
 
-object InfluxDB {
+object IoTDB {
     @Throws(Exception::class)
     @JvmStatic
     fun main(args: Array<String>) {
@@ -15,9 +15,9 @@ object InfluxDB {
         config.getJsonObject("Database")
             ?.getJsonArray("Logger")
             ?.filterIsInstance<JsonObject>()
-            ?.filter { it.getBoolean("Enabled") && it.getString("Type") == "InfluxDB"}
+            ?.filter { it.getBoolean("Enabled") && it.getString("Type") == "IoTDB"}
             ?.forEach {
-                vertx.deployVerticle(InfluxDBLogger(it))
+                vertx.deployVerticle(IoTDBLogger(it))
             }
     }
 }

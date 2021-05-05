@@ -1,10 +1,10 @@
 import at.rocworks.gateway.core.service.Cluster
-import at.rocworks.gateway.logger.influx.InfluxDBLogger
+import at.rocworks.gateway.logger.kafka.KafkaLogger
 
 import io.vertx.core.Vertx
 import io.vertx.core.json.JsonObject
 
-object InfluxDB {
+object Kafka {
     @Throws(Exception::class)
     @JvmStatic
     fun main(args: Array<String>) {
@@ -15,9 +15,9 @@ object InfluxDB {
         config.getJsonObject("Database")
             ?.getJsonArray("Logger")
             ?.filterIsInstance<JsonObject>()
-            ?.filter { it.getBoolean("Enabled") && it.getString("Type") == "InfluxDB"}
+            ?.filter { it.getBoolean("Enabled") && it.getString("Type") == "Kafka"}
             ?.forEach {
-                vertx.deployVerticle(InfluxDBLogger(it))
+                vertx.deployVerticle(KafkaLogger(it))
             }
     }
 }

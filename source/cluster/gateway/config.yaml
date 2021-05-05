@@ -18,7 +18,7 @@ GraphQLServer:
         #  FieldName: BrowseName # BrowseName | DisplayName
         #- System: unified
         #  FieldName: DisplayName # BrowseName | DisplayName
-        - System: dotnet01
+        - System: opcua1
           FieldName: BrowseName # BrowseName | DisplayName
 
 

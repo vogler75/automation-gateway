@@ -1,0 +1,16 @@
+Database:
+  Logger:
+    - Id: iotdb
+      Type: IoTDB
+      Host: server2
+      Port: 6667
+      Database: root.scada1
+      Username: "root"
+      Password: "root"
+      WriteParameters:
+        QueueSize: 20000
+        BlockSize: 10000
+      Logging:
+        - Topic: opc/test01/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
+        - Topic: opc/test01/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
+

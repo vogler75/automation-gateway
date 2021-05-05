@@ -56,21 +56,19 @@ GraphQLServer:
     - Port: 4000
       LogLevel: ALL # ALL | INFO
       Schemas: # This systems will be browsed and converted to GraphQL
-        - System: ignition # Id of OPC UA system
+        - System: unified # Id of OPC UA system
           FieldName: BrowseName # Use BrowseName or DisplayName as GraphQL item 
-        - System: unified
-          FieldName: DisplayName # BrowseName | DisplayName
 ```
 
-You have to enable BrowseOnStartup for the systems which you want to embedd in the GraphQL.
+You have to enable **BrowseOnStartup** for the systems which you want to embedd in the GraphQL.
 
 ```
 OpcUaClient:
-  - Id: "winccoa"`  
-    Enabled: false`  
+  - Id: "unified"`  
+    Enabled: true
     LogLevel: ALL
-    EndpointUrl: "opc.tcp://centos1:4840"
-    UpdateEndpointUrl: centos1
+    EndpointUrl: "opc.tcp://scada-server:4890"
+    UpdateEndpointUrl: scada-server
     SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#None  
     BrowseOnStartup: true
 ```
@@ -80,16 +78,6 @@ Example GraphQL Query with two OPC UA systems:
 ```
 {
   Systems {
-    ignition {
-      Tag_Providers {
-        default {
-          Pump_1 {
-            flow { ...Value }
-            speed { ...Value }
-          }
-        }
-      }
-    }
     unified {
       HmiRuntime {
         HMI_RT_5 {
@@ -98,6 +86,16 @@ Example GraphQL Query with two OPC UA systems:
               Velocity { ...Value }
               RefPoint { ...Value }
             }
+          }
+        }
+      }
+    }    
+    ignition {
+      Tag_Providers {
+        default {
+          Pump_1 {
+            flow { ...Value }
+            speed { ...Value }
           }
         }
       }

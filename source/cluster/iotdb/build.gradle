@@ -1,0 +1,33 @@
+plugins {
+    id 'gateway.kotlin-application-conventions'
+}
+
+compileKotlin {
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+}
+
+repositories {
+    mavenLocal()
+    maven {
+        url = uri('https://repo.maven.apache.org/maven2/')
+    }
+}
+
+dependencies {
+    implementation project(':lib-core')
+    implementation project(':lib-iotdb')
+    implementation 'org.slf4j:slf4j-api:1.7.30'
+    //implementation 'org.slf4j:slf4j-jdk14:1.7.30'
+    implementation 'org.slf4j:slf4j-simple:1.7.30'
+    implementation 'io.vertx:vertx-core:4.0.3'
+    implementation 'io.vertx:vertx-config-yaml:4.0.3'
+    implementation 'io.vertx:vertx-service-discovery:4.0.3'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.11.4' // Needed for Vertx Json
+}
+
+application {
+    // Define the main class for the application.
+    mainClass = 'IoTDB'
+}

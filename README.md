@@ -174,11 +174,9 @@ Example MQTT Topic:
 # Version History
 
 ## v1.12
-Added a inital version of an Mqtt driver to get values from a MQTT Broker into Frankenstein. A Groovy script can be used to transform the values to an OPC UA format, so that Frankenstein can be used to log those value to databases. 
+Added a inital version of a Mqtt driver to get values from a MQTT Broker into Frankenstein. A Groovy script can be used to transform the values to an OPC UA format, so that Frankenstein can be used to log those value to databases. Functionality is currently very limited, only subscribe is implemented.
 
-In this example we transform values of a MQTT Broker from this format: 
-{"TimeMS":1620327963328,"Value":10.277357833719135}
-to our internal TopicValueOpc format by using a Groovy script. 
+In this example we transform values of a MQTT Broker from this format: {"TimeMS":1620327963328,"Value":10.277357833719135} to our internal TopicValueOpc format by using a Groovy script and then log some topic values to an InfluxDB.
 
 ```
 MqttClient:

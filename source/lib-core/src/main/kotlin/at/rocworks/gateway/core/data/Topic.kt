@@ -36,7 +36,7 @@ data class Topic (
 
     fun isValid() = systemType != SystemType.Unknown && topicType != TopicType.Unknown
 
-    val pathItems : List<String>
+    val addressItems : List<String>
         get() = this.address.split(Regex("""(?<!\\)/""")).map { it.replace("\\/", "/") }
 
     fun encodeToJson() = encodeToJson(this)

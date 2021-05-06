@@ -61,7 +61,7 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
     private val sharedData = Binding()
     private val groovyShell = GroovyShell(sharedData)
 
-    private fun evaluateValue(value: Buffer): String {
+    private fun transformValue(value: Buffer): String {
         val script = when (valueType) {
             "JSON" -> {
                 if (valueScript.isNotEmpty()) {
@@ -72,8 +72,8 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
                     def output(source) {
                       $valueScript
                     }
-                    def source = new JsonSlurper().parseText(value)                    
-                    return JsonOutput.toJson(output(source))
+                    def input = new JsonSlurper().parseText(value)
+                    return JsonOutput.toJson(output(input))
                     """.trimIndent()
                 } else {
                     "return value"
@@ -124,19 +124,17 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
     }
 
     private fun valueConsumer(message: MqttPublishMessage) {
-        logger.info("Got value [{}] [{}]", message.topicName(), message.payload())
+        logger.debug("Got value [{}] [{}]", message.topicName(), message.payload())
         try {
-            val topic = message.topicName()
-            val payload = message.payload()
-
-            fun encode(buffer: Buffer): Any = buffer.toJson()
-            fun encode(string: String): Any = Json.decodeValue(string)
+            val receivedTopic = message.topicName()
+            val payload : Buffer = message.payload()
 
             fun json(topic: Topic) = JsonObject()
                 .put("Topic", topic.encodeToJson())
-                .put("Value", encode(evaluateValue(payload)))
+                .put("Value", Json.decodeValue(transformValue(payload)))
 
             fun publish(topic: Topic) {
+                topic.browsePath = message.topicName() // TODO: not good, should be immutable
                 val buffer : Buffer? = when (topic.format) {
                     Topic.Format.Value -> payload
                     Topic.Format.Json -> Buffer.buffer(json(topic).encode())
@@ -145,14 +143,13 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
                 vertx.eventBus().publish(topic.topicName, buffer)
             }
 
-            receivedTopics[topic]?.let {
+            receivedTopics[receivedTopic]?.let {
                 publish(it)
             } ?: subscribedTopics.filter { subscribedTopic ->
-                compareTopic(topic, subscribedTopic.key)
-            }.forEach {
-                it.value.browsePath = message.topicName()
-                receivedTopics[topic] = it.value
-                publish(it.value)
+                compareTopic(receivedTopic, subscribedTopic.key)
+            }.forEach { subscribedTopic ->
+                receivedTopics[receivedTopic] = subscribedTopic.value
+                publish(subscribedTopic.value)
             }
         } catch (e: Exception) {
             e.printStackTrace()
@@ -165,8 +162,10 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
         mqttItems.forEach { address ->
             logger.info("Unsubscribe topic [{}]", address)
             client?.unsubscribe(address) // TODO: Error handling?
-            subscribedTopics.remove(address)?.let { topic ->
-                receivedTopics.filter { it.value.topicName == topic.topicName }.forEach {
+            subscribedTopics.remove(address)?.let { subscribedTopic ->
+                receivedTopics.filter { receivedTopic ->
+                    receivedTopic.value.topicName == subscribedTopic.topicName
+                }.forEach {
                     receivedTopics.remove(it.key)
                 }
             }

@@ -34,6 +34,7 @@ Database:
   Logger:
     - Id: influx1
       Type: InfluxDB
+      Enabled: true
       Url: http://nuc1.rocworks.local:8086
       Database: test
       Username: ""
@@ -43,3 +44,34 @@ Database:
         BlockSize: 10000
       Logging:
         - Topic: mqtt/mqtt1/path/Meter_Input/WattAct
+        - Topic: mqtt/mqtt1/path/Meter_Output/WattAct
+        - Topic: mqtt/mqtt1/path/PV/Spot/+
+
+    - Id: iotdb1
+      Type: IoTDB
+      Enabled: true
+      Host: nuc1.rocworks.local
+      Port: 6667
+      Database: root.test
+      Username: root
+      Password: root
+      WriteDetails: false
+      WriteParameters:
+        QueueSize: 20000
+        BlockSize: 10000
+      Logging:
+        - Topic: mqtt/mqtt1/path/Meter_Input/WattAct
+        - Topic: mqtt/mqtt1/path/Meter_Output/WattAct
+        - Topic: mqtt/mqtt1/path/PV/Spot/+
+
+    - Id: kafka1
+      Type: Kafka
+      Enabled: true
+      Servers: server2.rocworks.local:9092
+      WriteParameters:
+        QueueSize: 20000
+        BlockSize: 10000
+      Logging:
+        - Topic: mqtt/mqtt1/path/Meter_Input/WattAct
+        - Topic: mqtt/mqtt1/path/Meter_Output/WattAct
+        - Topic: mqtt/mqtt1/path/PV/Spot/+

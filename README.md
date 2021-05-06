@@ -206,7 +206,7 @@ CREATE STREAM opc1(
   KEY_FORMAT='KAFKA',
   KAFKA_TOPIC='opc1', 
   VALUE_FORMAT='JSON',
-  TIMESTAMP='sourceTime',TIMESTAMP_FORMAT='yyyy-MM-dd''T''HH:mm:ss.nX'
+  TIMESTAMP='sourceTime',TIMESTAMP_FORMAT='yyyy-MM-dd''T''HH:mm:ss[.n]X'
 );
 ```
 

@@ -14,6 +14,7 @@ class IoTDBLogger(config: JsonObject) : LoggerBase(config) {
     private val username = config.getString("Username", "")
     private val password = config.getString("Password", "")
     private val database = config.getString("Database", "root.scada")
+    private val writeDetails = config.getBoolean("WriteDetails", false)
 
     private val session: Session = if (username == null || username == "")
         Session(host, port)
@@ -42,14 +43,13 @@ class IoTDBLogger(config: JsonObject) : LoggerBase(config) {
         val typesList = mutableListOf<List<TSDataType>>()
         val valuesList = mutableListOf<List<Any>>()
 
-        var point: DataPoint? = writeValueQueue.poll(10, TimeUnit.MILLISECONDS)
-        while (point != null && deviceIds.size <= writeParameterBlockSize) {
+
+        fun addDetails(point: DataPoint) {
             try {
                 val path = point.topic.systemName+"."+point.topic.browsePath.replace("/", ".")
                 val time = point.value.sourceTime().toEpochMilli()
                 val value = point.value.valueAsDouble() ?: point.value.valueAsString()
                 val status = point.value.statusAsString()
-
                 deviceIds.add("${database}.${path}")
                 times.add(time)
                 measurementList.add(listOf("value", "status"))
@@ -58,6 +58,32 @@ class IoTDBLogger(config: JsonObject) : LoggerBase(config) {
             } catch (e: Exception) {
                 logger.error(e.message)
             }
+        }
+
+        fun addValue(point: DataPoint) {
+            try {
+                val path = point.topic.systemName+"."+point.topic.browsePath
+                    .replace("/", ".")
+                    .substringBeforeLast(delimiter = '.')
+                val time = point.value.sourceTime().toEpochMilli()
+                val value = point.value.valueAsDouble() ?: point.value.valueAsString()
+                val valueName = point.topic.browsePath
+                    .replace("/", ".")
+                    .substringAfterLast(delimiter = '.')
+
+                deviceIds.add("${database}.${path}")
+                times.add(time)
+                measurementList.add(listOf(valueName))
+                typesList.add(listOf(TSDataType.DOUBLE))  // TODO: data types ...
+                valuesList.add(listOf(value))
+            } catch (e: Exception) {
+                logger.error(e.message)
+            }
+        }
+
+        var point: DataPoint? = writeValueQueue.poll(10, TimeUnit.MILLISECONDS)
+        while (point != null && deviceIds.size <= writeParameterBlockSize) {
+            if (writeDetails) addDetails(point) else addValue(point)
             point = writeValueQueue.poll()
         }
         if (deviceIds.size > 0) {

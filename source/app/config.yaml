@@ -48,7 +48,7 @@ Database:
 
     - Id: iotdb1
       Type: IoTDB
-      Host: server2
+      Host: nuc1.rocworks.local
       Port: 6667
       Database: root.scada1
       Username: "root"

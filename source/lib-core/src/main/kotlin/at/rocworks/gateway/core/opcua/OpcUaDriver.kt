@@ -677,7 +677,7 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
                 val resolvedTopics = mutableListOf<Topic>()
                 topics.forEach { topic ->
                     logger.debug("Subscribe path [{}]", topic)
-                    val items = topic.pathItems.mapIndexed { i, item ->
+                    val items = topic.addressItems.mapIndexed { i, item ->
                         if (i == 0) when (item) {
                             "Root" -> "i=84"
                             "Objects" -> "i=85"
@@ -708,7 +708,7 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
                                 }
                             }
                         }
-                        find(items.first(), 1, topic.pathItems.first())
+                        find(items.first(), 1, topic.addressItems.first())
                         resolvedTopics.addAll(resolvedNodeIds.map {
                             Topic(
                                 topicName = topic.topicName,

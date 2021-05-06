@@ -49,7 +49,8 @@ class InfluxDBLogger(config: JsonObject) : LoggerBase(config) {
     private fun influxPointOf(dp: DataPoint): Point {
         val point = Point.measurement(dp.topic.systemName)
             .time(dp.value.sourceTime().toEpochMilli(), TimeUnit.MILLISECONDS)
-            .tag("tag", dp.topic.address)
+            .tag("tag", dp.topic.browsePath)
+            .tag("address", dp.topic.address)
             .tag("status", dp.value.statusAsString())
 
         if (dp.value.hasStruct()) {

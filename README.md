@@ -173,6 +173,50 @@ Example MQTT Topic:
 
 # Version History
 
+## v1.12
+Added a inital version of an Mqtt driver to get values from a MQTT Broker into Frankenstein. A Groovy script can be used to transform the values to an OPC UA format, so that Frankenstein can be used to log those value to databases. 
+
+In this example we transform values of a MQTT Broker from this format: 
+{"TimeMS":1620327963328,"Value":10.277357833719135}
+to our internal TopicValueOpc format by using a Groovy script. 
+
+```
+MqttClient:
+  - Id: "mqtt1"
+    Enabled: true
+    LogLevel: INFO
+    Host: 192.168.1.6
+    Port: 1883
+    Ssl: false
+    Value:
+      Type: JSON
+      Script: >
+        return [ 
+          className: "TopicValueOpc",
+          sourceTime: Instant.ofEpochMilli(source.TimeMS).toString(),
+          serverTime: Instant.now().toString(),
+          value: source.Value,
+          dataTypeId: 0,
+          statusCode: 0 ]
+
+Database:
+  Logger:
+    - Id: influx1
+      Type: InfluxDB
+      Enabled: true
+      Url: http://192.168.1.13:8086
+      Database: test
+      Username: ""
+      Password: ""
+      WriteParameters:
+        QueueSize: 20000
+        BlockSize: 10000
+      Logging:
+        - Topic: mqtt/mqtt1/path/Meter_Input/WattAct
+        - Topic: mqtt/mqtt1/path/Meter_Output/WattAct
+        - Topic: mqtt/mqtt1/path/PV/Spot/+          
+```
+
 ## v1.11
 Added Apache Kafka as tag logger option, all incoming value changes of the configured topics will be published to an Apache Kafka Broker. How to can be found [here](https://www.rocworks.at/wordpress/?p=1076)
 ```

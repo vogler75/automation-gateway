@@ -2,7 +2,7 @@
 
 Connect one or more OPC UA servers to the gateway and access the data from the OPC UA servers with a GraphQL or a MQTT client. News and Blog posts can be found [here](https://www.rocworks.at/wordpress/?cat=39)
 
-You can sponsor this project [here](paypal.me/av75) :-)
+You can sponsor this project [here](https://paypal.me/av75) :-)
 
 ![Gateway](doc/Gateway.png)
 

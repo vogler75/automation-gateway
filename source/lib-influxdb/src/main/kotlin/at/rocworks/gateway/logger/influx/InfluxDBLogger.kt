@@ -1,6 +1,8 @@
 package at.rocworks.gateway.logger.influx
 
 import at.rocworks.gateway.core.logger.LoggerBase
+import io.vertx.core.Future
+import io.vertx.core.Promise
 
 import io.vertx.core.json.JsonObject
 import java.util.concurrent.TimeUnit
@@ -9,6 +11,7 @@ import org.influxdb.BatchOptions
 import org.influxdb.InfluxDB
 import org.influxdb.InfluxDBFactory
 import org.influxdb.dto.*
+
 
 class InfluxDBLogger(config: JsonObject) : LoggerBase(config) {
     private val url = config.getString("Url", "")
@@ -21,11 +24,12 @@ class InfluxDBLogger(config: JsonObject) : LoggerBase(config) {
     else
         InfluxDBFactory.connect(url, username, password)
 
-    override fun open(): Boolean {
-        return try {
+    override fun open(): Future<Unit> {
+        val result = Promise.promise<Unit>()
+        try {
             val response: Pong = session.ping()
             if (!response.isGood) {
-                false
+                result.complete()
             } else {
                 session.setLogLevel(InfluxDB.LogLevel.NONE)
                 session.query(Query("CREATE DATABASE $database"))
@@ -34,12 +38,13 @@ class InfluxDBLogger(config: JsonObject) : LoggerBase(config) {
                 options = options.bufferLimit(writeParameterBlockSize)
                 session.enableBatch(options)
                 logger.info("InfluxDB connected.")
-                true
+                result.complete()
             }
         } catch (e: Exception) {
             logger.error("InfluxDB connect failed! [{}]", e.message)
-            false
+            result.fail(e)
         }
+        return result.future()
     }
 
     override fun close() {

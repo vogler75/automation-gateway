@@ -1,6 +1,8 @@
 package at.rocworks.gateway.logger.kafka
 
 import at.rocworks.gateway.core.logger.LoggerBase
+import io.vertx.core.Future
+import io.vertx.core.Promise
 
 import io.vertx.core.json.JsonObject
 import io.vertx.kafka.client.producer.KafkaProducer
@@ -12,8 +14,9 @@ class KafkaLogger(config: JsonObject) : LoggerBase(config) {
 
     private var producer: KafkaProducer<String, String>? = null
 
-    override fun open(): Boolean {
-        return try {
+    override fun open(): Future<Unit> {
+        val result = Promise.promise<Unit>()
+        try {
             val config: MutableMap<String, String> = HashMap()
             config["bootstrap.servers"] = servers
             config["key.serializer"] = "org.apache.kafka.common.serialization.StringSerializer"
@@ -21,12 +24,13 @@ class KafkaLogger(config: JsonObject) : LoggerBase(config) {
             config["acks"] = "1"
             producer = KafkaProducer.create(vertx, config)
             logger.info("Kafka connected.")
-            true
+            result.complete()
         } catch (e: Exception) {
             logger.error("Kafka connect failed! [{}]", e.message)
             e.printStackTrace()
-            false
+            result.fail(e)
         }
+        return result.future()
     }
 
     override fun close() {

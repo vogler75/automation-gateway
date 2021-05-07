@@ -155,7 +155,7 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
     }
 
     private fun valueConsumer(message: MqttPublishMessage) {
-        logger.info("Got value [{}] [{}]", message.topicName(), message.payload())
+        logger.debug("Got value [{}] [{}]", message.topicName(), message.payload())
         try {
             val receivedTopic = message.topicName()
             val payload : Buffer = message.payload()

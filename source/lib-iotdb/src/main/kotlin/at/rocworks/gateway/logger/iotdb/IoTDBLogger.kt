@@ -1,6 +1,8 @@
 package at.rocworks.gateway.logger.iotdb
 
 import at.rocworks.gateway.core.logger.LoggerBase
+import io.vertx.core.Future
+import io.vertx.core.Promise
 
 import io.vertx.core.json.JsonObject
 import java.util.concurrent.TimeUnit
@@ -21,15 +23,17 @@ class IoTDBLogger(config: JsonObject) : LoggerBase(config) {
     else
         Session(host, port, username, password)
 
-    override fun open(): Boolean {
-        return try {
+    override fun open(): Future<Unit> {
+        val promise = Promise.promise<Unit>()
+        try {
             session.open()
             logger.info("IoTDB connected.")
-            true
+            promise.complete()
         } catch (e: Exception) {
             logger.error("IoTDB connect failed! [{}]", e.message)
-            false
+            promise.fail(e)
         }
+        return promise.future()
     }
 
     override fun close() {

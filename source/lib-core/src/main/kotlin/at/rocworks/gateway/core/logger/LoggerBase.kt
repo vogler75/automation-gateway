@@ -5,6 +5,7 @@ import at.rocworks.gateway.core.data.TopicValue
 import at.rocworks.gateway.core.service.Common
 import at.rocworks.gateway.core.service.ServiceHandler
 import io.vertx.core.AbstractVerticle
+import io.vertx.core.Future
 import io.vertx.core.Promise
 import io.vertx.core.buffer.Buffer
 import io.vertx.core.eventbus.Message
@@ -62,20 +63,22 @@ abstract class LoggerBase(config: JsonObject) : AbstractVerticle() {
         logger.info("Valid topics: {}", topics.joinToString(separator = "|") { it.topicName })
     }
 
-    abstract fun open(): Boolean
+    abstract fun open(): Future<Unit>
     abstract fun close()
 
     override fun start(startPromise: Promise<Void>) {
         fun connect() {
             thread {
                 try {
-                    if (open()) {
-                        this.subscribeTopics()
-                        vertx.setPeriodic(1000, ::metricCalculator)
-                        vertx.eventBus().consumer("${Common.BUS_ROOT_URI_LOG}/$id/QueryHistory", ::queryHandler)
-                        startPromise.complete()
-                    } else {
-                        vertx.setTimer(defaultRetryWaitTime) { connect() }
+                    open().onComplete { result ->
+                        if (result.succeeded()) {
+                            this.subscribeTopics()
+                            vertx.setPeriodic(1000, ::metricCalculator)
+                            vertx.eventBus().consumer("${Common.BUS_ROOT_URI_LOG}/$id/QueryHistory", ::queryHandler)
+                            startPromise.complete()
+                        } else {
+                            vertx.setTimer(defaultRetryWaitTime) { connect() }
+                        }
                     }
                 } catch (e: Exception) {
                     e.printStackTrace()

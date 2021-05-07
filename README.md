@@ -1,10 +1,23 @@
 # Frankenstein Automation Gateway
 
-Connect one or more OPC UA servers to the gateway and access the data from the OPC UA servers with a GraphQL or a MQTT client.
-
-News and Blog posts can be found [here](https://www.rocworks.at/wordpress/?cat=39)
+Connect one or more OPC UA servers to the gateway and access the data from the OPC UA servers with a GraphQL or a MQTT client. News and Blog posts can be found [here](https://www.rocworks.at/wordpress/?cat=39)
 
 ![Gateway](doc/Gateway.png)
+
+# Version History
+1.12) MQTT Driver with Groovy script transformer (subscribe only)  
+1.11) Apache Kafka Database Logger  
+1.10) Apache IoTDB Database Logger  
+1.9) Apache Ignite as Cluster option and Ignite as Memory-Store  
+1.8) Upgrade to VertX 4.0.3  
+1.7) DDS Driver (subscribe and publish)  
+1.6) Added GraphiQL (http://localhost:4000/graphiql/)   
+1.5) OPC UA Schemas to GraphQL Schema importer  
+1.4) Build GraphQL Schema from OPC UA Schemas  
+1.3) OPC UA Browsing and fixes  
+1.2) Simple Polling for PLC4X Driver  
+1.1) PLC4X Driver  
+1.0) Initial Version  
 
 # Build and Run
 
@@ -14,6 +27,9 @@ You can open the project in IntelliJ IDEA IDE and build it there or use grade to
 
 ```
 > cd source/app
+> gradle build
+
+> export GATEWAY_CONFIG=config.yaml
 > gradle run
 ```
 
@@ -21,7 +37,7 @@ App is a single program with GraphQL, MQTT and the OPC UA connections in one sin
 
 ## Configuration
 
-See config.yaml in the app directory for an example how to configure the Gateway. You can pass a configuration file name to the program as the first argument. If no argument is given then config.yaml will be used. If there are any questions about the configuration, please get in touch with me. 
+See config.yaml in the app directory for an example how to configure the Gateway. You can pass a configuration file name to the program as the first argument or by setting a environment variable GATEWAY_CONFIG. If no argument is given then config.yaml will be used. If there are any questions about the configuration, please get in touch with me. 
 
 ## Example Topics
 Note: remove the blanks between the slashes! (just here for better readabilty)

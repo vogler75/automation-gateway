@@ -5,6 +5,7 @@ import at.rocworks.gateway.core.driver.DriverBase
 import at.rocworks.gateway.core.driver.MonitoredItem
 import groovy.lang.Binding
 import groovy.lang.GroovyShell
+import groovy.lang.Script
 import io.vertx.core.Future
 import io.vertx.core.Promise
 import io.vertx.core.buffer.Buffer
@@ -31,6 +32,10 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
     private val valueType: String
     private val valueScript: String
 
+    private val sharedData = Binding()
+    private val groovyShell = GroovyShell(sharedData)
+    private val groovyScript: Script?
+
     private val subscribedTopics =  HashMap<String, Topic>() // Subscribed (maybe with wildcards) topics to Topic
     private val receivedTopics = HashMap<String, Topic>()  // Received (no wildcards) to Subscribed (may have wildcards) Topics
 
@@ -38,6 +43,7 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
         val value = config.getJsonObject("Value", JsonObject())
         valueType = value.getString("Type", "")
         valueScript = value.getString("Script", "")
+        groovyScript = parseGroovyScript()
         logger.info("Value is of type $valueType with script $valueScript")
     }
 
@@ -58,10 +64,7 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
         return promise.future()
     }
 
-    private val sharedData = Binding()
-    private val groovyShell = GroovyShell(sharedData)
-
-    private fun transformValue(value: Buffer): String {
+    private fun parseGroovyScript(): Script? {
         val script = when (valueType) {
             "JSON" -> {
                 if (valueScript.isNotEmpty()) {
@@ -82,8 +85,14 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
             else -> null
         }
         return if (script != null) {
+            groovyShell.parse(script)
+        } else null
+    }
+
+    private fun transformValue(value: Buffer): String {
+        return if (groovyScript != null) {
             sharedData.setProperty("value", value.toString(Charset.defaultCharset()))
-            groovyShell.evaluate(script).toString()
+            groovyScript.run().toString()
         } else {
             value.toString(Charset.defaultCharset())
         }

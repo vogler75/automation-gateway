@@ -31,8 +31,8 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
     private val valueType: String
     private val valueScript: String
 
-    private val subscribedTopics =  HashMap<String, Topic>() // Subscribed (maybe with wildcards) topics to Topic
-    private val receivedTopics = HashMap<String, Topic>()  // Received (no wildcards) to Subscribed (may have wildcards) Topics
+    private val subscribedTopics = HashSet<Topic>() // Subscribed topic name can have wildcard
+    private val receivedTopics = HashMap<String, List<Topic>>()
 
     init {
         val value = config.getJsonObject("Value", JsonObject())
@@ -102,8 +102,8 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
         disconnect()
     }
 
-    private fun compareTopic(actualTopic: String, subscribedTopic: String): Boolean {
-        val regex = subscribedTopic.replace("+", "[^/]+").replace("#", ".+")
+    private fun compareTopic(actualTopic: String, subscribedAddress: String): Boolean {
+        val regex = subscribedAddress.replace("+", "[^/]+").replace("#", ".+")
         return actualTopic.matches(regex.toRegex())
     }
 
@@ -116,15 +116,37 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
                 logger.info("Subscribe topic [{}]", topic.topicName)
                 client?.subscribe(topic.address, qos)
                 registry.addMonitoredItem(MqttMonitoredItem(topic.address), topic)
-                subscribedTopics[topic.address] = topic
+                subscribedTopics.add(topic)
+                resetReceivedTopics(topic.address)
             }
             promise.complete(true)
         }
         return promise.future()
     }
 
+    override fun unsubscribeItems(items: List<MonitoredItem>): Future<Boolean> {
+        val promise = Promise.promise<Boolean>()
+        val mqttItems = items.map { (it as MqttMonitoredItem).item }
+        mqttItems.forEach { address ->
+            logger.info("Unsubscribe topic [{}]", address)
+            client?.unsubscribe(address) // TODO: Error handling?
+            subscribedTopics.remove(address)
+            resetReceivedTopics(address)
+        }
+        promise.complete(true)
+        return promise.future()
+    }
+
+    private fun resetReceivedTopics(address: String) {
+        receivedTopics.filter { receivedTopic ->
+            compareTopic(receivedTopic.key, address)
+        }.forEach {
+            receivedTopics.remove(it.key)
+        }
+    }
+
     private fun valueConsumer(message: MqttPublishMessage) {
-        logger.debug("Got value [{}] [{}]", message.topicName(), message.payload())
+        logger.info("Got value [{}] [{}]", message.topicName(), message.payload())
         try {
             val receivedTopic = message.topicName()
             val payload : Buffer = message.payload()
@@ -134,7 +156,7 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
                 .put("Value", Json.decodeValue(transformValue(payload)))
 
             fun publish(topic: Topic) {
-                topic.browsePath = message.topicName() // TODO: not good, should be immutable
+                topic.browsePath = receivedTopic // TODO: not good, should be immutable
                 val buffer : Buffer? = when (topic.format) {
                     Topic.Format.Value -> payload
                     Topic.Format.Json -> Buffer.buffer(json(topic).encode())
@@ -144,34 +166,17 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
             }
 
             receivedTopics[receivedTopic]?.let {
-                publish(it)
-            } ?: subscribedTopics.filter { subscribedTopic ->
-                compareTopic(receivedTopic, subscribedTopic.key)
-            }.forEach { subscribedTopic ->
-                receivedTopics[receivedTopic] = subscribedTopic.value
-                publish(subscribedTopic.value)
+                it.forEach(::publish)
+            } ?: run {
+                val topics = subscribedTopics.filter { subscribedTopic ->
+                    compareTopic(receivedTopic, subscribedTopic.address)
+                }
+                topics.forEach(::publish)
+                receivedTopics[receivedTopic] = topics
             }
         } catch (e: Exception) {
             e.printStackTrace()
         }
-    }
-
-    override fun unsubscribeItems(items: List<MonitoredItem>): Future<Boolean> {
-        val promise = Promise.promise<Boolean>()
-        val mqttItems = items.map { (it as MqttMonitoredItem).item }
-        mqttItems.forEach { address ->
-            logger.info("Unsubscribe topic [{}]", address)
-            client?.unsubscribe(address) // TODO: Error handling?
-            subscribedTopics.remove(address)?.let { subscribedTopic ->
-                receivedTopics.filter { receivedTopic ->
-                    receivedTopic.value.topicName == subscribedTopic.topicName
-                }.forEach {
-                    receivedTopics.remove(it.key)
-                }
-            }
-        }
-        promise.complete(true)
-        return promise.future()
     }
 
     override fun publishTopic(topic: Topic, value: Buffer): Future<Boolean> {

@@ -50,7 +50,7 @@ class IoTDBLogger(config: JsonObject) : LoggerBase(config) {
 
         fun addDetails(point: DataPoint) {
             try {
-                val path = point.topic.systemName+"."+point.topic.browsePath.replace("/", ".")
+                val path = point.topic.systemBrowsePath().replace("/", ".")
                 val time = point.value.sourceTime().toEpochMilli()
                 val value = point.value.valueAsDouble() ?: point.value.valueAsString()
                 val status = point.value.statusAsString()

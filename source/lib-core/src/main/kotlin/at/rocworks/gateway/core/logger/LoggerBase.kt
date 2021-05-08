@@ -11,6 +11,7 @@ import io.vertx.core.buffer.Buffer
 import io.vertx.core.eventbus.Message
 import io.vertx.core.json.Json
 import io.vertx.core.json.JsonObject
+import io.vertx.mqtt.messages.MqttPublishMessage
 import io.vertx.servicediscovery.Status
 import org.slf4j.LoggerFactory
 import java.lang.IllegalStateException

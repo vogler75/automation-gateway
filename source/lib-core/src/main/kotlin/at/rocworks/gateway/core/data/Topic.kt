@@ -39,6 +39,8 @@ data class Topic (
     val addressItems : List<String>
         get() = this.address.split(Regex("""(?<!\\)/""")).map { it.replace("\\/", "/") }
 
+    fun systemBrowsePath(): String = "$systemName/$browsePath"
+
     fun encodeToJson() = encodeToJson(this)
 
     companion object {

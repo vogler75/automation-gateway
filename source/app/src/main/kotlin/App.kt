@@ -1,5 +1,6 @@
 import at.rocworks.gateway.core.graphql.GraphQLServer
 import at.rocworks.gateway.core.mqtt.MqttDriver
+import at.rocworks.gateway.core.mqtt.MqttLogger
 import at.rocworks.gateway.core.mqtt.MqttServer
 import at.rocworks.gateway.core.opcua.KeyStoreLoader
 import at.rocworks.gateway.core.opcua.OpcUaDriver
@@ -50,16 +51,19 @@ object App {
                 "Kafka" -> {
                     vertx.deployVerticle(KafkaLogger(config))
                 }
+                "Mqtt" -> {
+                    vertx.deployVerticle(MqttLogger(config))
+                }
                 else -> logger.error("Unknown database type [{}]", type)
             }
         }
     }
 
     private fun createServices(vertx: Vertx, config: JsonObject) {
-        // OPC UA Server
+        // OPC UA Client
         val enabled = config.getJsonArray("OpcUaClient")
             ?.filterIsInstance<JsonObject>()
-            ?.filter { it.getBoolean("Enabled") }
+            ?.filter { it.getBoolean("Enabled", true) }
             ?: listOf()
         enabled.map {
             vertx.deployVerticle(OpcUaDriver(it))
@@ -71,6 +75,7 @@ object App {
         config.getJsonObject("MqttServer")
             ?.getJsonArray("Listeners")
             ?.filterIsInstance<JsonObject>()
+            ?.filter { it.getBoolean("Enabled", true) }
             ?.forEach {
                 MqttServer.create(vertx, it)
             }
@@ -79,6 +84,7 @@ object App {
         config.getJsonObject("GraphQLServer")
             ?.getJsonArray("Listeners")
             ?.filterIsInstance<JsonObject>()
+            ?.filter { it.getBoolean("Enabled", true) }
             ?.forEach {
                 GraphQLServer.create(vertx, it, defaultSystem)
             }

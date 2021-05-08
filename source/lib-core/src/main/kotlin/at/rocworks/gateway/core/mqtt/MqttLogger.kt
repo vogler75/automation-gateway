@@ -1,11 +1,16 @@
 package at.rocworks.gateway.core.mqtt
 
 import at.rocworks.gateway.core.logger.LoggerBase
+import io.netty.handler.codec.mqtt.MqttQoS
 import io.vertx.core.Future
+import io.vertx.core.Handler
 import io.vertx.core.Promise
+import io.vertx.core.buffer.Buffer
 import io.vertx.core.json.JsonObject
 import io.vertx.mqtt.MqttClient
 import io.vertx.mqtt.MqttClientOptions
+import io.vertx.mqtt.messages.MqttPublishMessage
+import java.util.concurrent.TimeUnit
 
 class MqttLogger (config: JsonObject) : LoggerBase(config) {
     var client: MqttClient? = null
@@ -25,9 +30,14 @@ class MqttLogger (config: JsonObject) : LoggerBase(config) {
         password?.let { options.password = it }
         ssl?.let { options.setSsl(it) }
         client = MqttClient.create(vertx, options)
+
+        client?.publishCompletionHandler(Handler { id: Int -> println("Id of just received PUBACK or PUBCOMP packet is $id") })
+        client?.publishHandler(::valueConsumer)
         client?.connect(port, host) {
             logger.info("Mqtt client connect [${it.succeeded()}] [${it.result().code()}]")
-            if (it.succeeded()) promise.complete()
+            if (it.succeeded()) {
+                promise.complete()
+            }
             else promise.fail("Connect failed!")
         } ?: promise.fail("Client is null!")
         return promise.future()
@@ -39,8 +49,26 @@ class MqttLogger (config: JsonObject) : LoggerBase(config) {
         }
     }
 
+    private fun valueConsumer(message: MqttPublishMessage) {
+
+    }
+
     override fun writeExecutor() {
-        TODO("Not yet implemented")
+        var counter = 0
+        var point: DataPoint? = writeValueQueue.poll(10, TimeUnit.MILLISECONDS)
+        while (point != null) {
+            try {
+                client?.publish(
+                    point.topic.systemBrowsePath(),
+                    point.value.encodeToJson().toBuffer(),
+                    MqttQoS.valueOf(qos), false, false
+                )
+            } catch (e: Exception) {
+                e.printStackTrace()
+                logger.error(e.message)
+            }
+            point = if (++counter < writeParameterBlockSize) writeValueQueue.poll() else null
+        }
     }
 
     override fun queryExecutor(

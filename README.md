@@ -213,7 +213,7 @@ Database:
         - Topic: opc/smarthome/path/PV/Spot/+
 ```
 
-## v1.12
+## 1.12
 Added a inital version of a **MQTT Driver** to get values from a MQTT Broker into Frankenstein. A Groovy script can be used to transform the values to an OPC UA format, so that Frankenstein can be used to log those value to databases. Functionality is currently very limited, only subscribe is implemented.
 
 In this example we transform values of a MQTT Broker from this format: {"TimeMS":1620327963328,"Value":10.277357833719135} to our internal TopicValueOpc format by using a Groovy script and then log some topic values to an InfluxDB.
@@ -255,7 +255,7 @@ Database:
         - Topic: mqtt/mqtt1/path/PV/Spot/+          
 ```
 
-## v1.11
+## 1.11
 Added **Apache Kafka** as tag logger option, all incoming value changes of the configured topics will be published to an Apache Kafka Broker. How to can be found [here](https://www.rocworks.at/wordpress/?p=1076)
 ```
 Database:
@@ -302,7 +302,7 @@ GROUP BY node
 EMIT CHANGES;
 ```
 
-## v1.10
+## 1.10
 Added **Apache IoTDB** as tag logger option.
 ```
 Database:
@@ -322,7 +322,7 @@ Database:
         - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Byte/+
 ```
 
-## v1.9  
+## 1.9  
 Added **Apache Ignite** as an option for clustering and also to use the Apache Ignite Distributed In Memory **Cache** for storing last and history values coming from OPC UA or other sources. With that enabled it is possible to do **SQL** queries on the process values. The cache node stores historical value changes for a defined timerange. So older values are purged on a regular basis (configurable in the configuration file). It is configurable which topics should be stored in the Apache Ignite Cache.
 
 ```
@@ -369,10 +369,10 @@ There are Docker examples available in the docker/examples directory.
 > C:\Workspace\automation-gateway\docker> build.bat  
 > C:\Workspace\automation-gateway\docker\examples\ignite> docker compose up -d  
 
-## v1.8  
+## 1.8  
 Upgraded to VertX 4.0.3 and splitted the value type to a base class with subclasses for Opc, Plc and DDS. The app names have been changed, the clustered apps are now named with "cluster". DDS values can now be logged to InfluxDB.  
 
-## v1.7
+## 1.7
 Added a first version of DDS support. Currently only MQTT subscribe and publish to DDS topics are functional. It is the app-dds application, the app-gateway must also be up and running.
 
 You need to install OpenDDS and build it with Java support. And you also have to compile your DDS IDL files with Java support. See the ReadMe.txt in the idl directory of app-dds.
@@ -398,7 +398,7 @@ DDS:
           TopicTypeName: "org.omg.dds.demo.Message"
 ```
 
-## v1.6
+## 1.6
 Added GraphiQL to the Gateway and optionally write the browsed schemas (OPC UA and generated GraphQL scheam) to files.
 ```
 GraphQLServer:
@@ -416,7 +416,7 @@ OpcUaClient:
     BrowseOnStartup: true           
 ```
 
-## v1.5
+## 1.5
 Support multiple OPC UA schemas in GraphQL. Be sure that you have set `BrowseOnStartup: true` for the OPC UA servers which you want to embed in the GraphQL schema. Additionally it can be defined which OPC UA field should be taken as the GraphQL field name: it can be "BrowseName" or "DisplayName". But be careful, the DisplayName must not be unique below a node, so it can lead to an invalid schema. 
 ```
 GraphQLServer:

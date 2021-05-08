@@ -7,15 +7,15 @@ You can sponsor this project [here](https://paypal.me/av75) :-)
 ![Gateway](doc/Gateway.png)
 
 # Version History
-[1.13](#1.13) MQTT Logger to write field values to a MQTT Broker  
-[1.12](#1.12) MQTT Driver with Groovy script transformer (subscribe only)  
-[1.11](#1.11) Apache Kafka Database Logger 
-[1.10](#1.10) Apache IoTDB Database Logger  
-[1.9](#1.9) Apache Ignite as Cluster option and Ignite as Memory-Store  
-[1.8](#1.8) Upgrade to VertX 4.0.3  
-[1.7](#1.7) DDS Driver (subscribe and publish)  
-[1.6](#1.6) Added GraphiQL (http://localhost:4000/graphiql/)  
-[1.5](#1.5) OPC UA Schemas to GraphQL Schema importer  
+1.13 MQTT Logger to write field values to a MQTT Broker  
+1.12 MQTT Driver with Groovy script transformer (subscribe only)  
+1.11 Apache Kafka Database Logger  
+1.10 Apache IoTDB Database Logger  
+1.9 Apache Ignite as Cluster option and Ignite as Memory-Store  
+1.8 Upgrade to VertX 4.0.3  
+1.7 DDS Driver (subscribe and publish)  
+1.6 Added GraphiQL (http://localhost:4000/graphiql/)  
+1.5 OPC UA Schemas to GraphQL Schema importer  
 1.4 Build GraphQL Schema from OPC UA Schemas   
 1.3 OPC UA Browsing and fixes   
 1.2 Simple Polling for PLC4X Driver    

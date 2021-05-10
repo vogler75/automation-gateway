@@ -97,7 +97,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
                 promise.future()
             }
 
-            val systemTypes = "type Systems {\n" + systems.joinToString(separator = "\n") { "  $it: $it" } + "\n}"
+            val systemTypes = "type Systems {\n" + systems.joinToString(separator = "\n") { "  $it: $it" } + "\n}\n"
 
             val dataFetcher = getSchemaNode("", "", "", "", "")
             wiring.type(
@@ -105,7 +105,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
                     .dataFetcher("Systems", dataFetcher))
 
             CompositeFuture.all(results).onComplete {
-                val schema = generic + systemTypes + (results.map { it.result() }.joinToString(separator = "\n"))
+                val schema = generic + systemTypes + (results.joinToString(separator = "\n") { it.result() })
 
                 if (writeSchemaFiles)
                     File("graphql.gql").writeText(schema)

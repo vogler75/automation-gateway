@@ -79,8 +79,6 @@ GraphQLServer:
           FieldName: BrowseName # Use BrowseName or DisplayName as GraphQL item 
 ```
 
-You have to enable **BrowseOnStartup** for the systems which you want to embedd in the GraphQL.
-
 ```
 OpcUaClient:
   - Id: "unified"`  
@@ -89,7 +87,6 @@ OpcUaClient:
     EndpointUrl: "opc.tcp://scada-server:4890"
     UpdateEndpointUrl: scada-server
     SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#None  
-    BrowseOnStartup: true
 ```
 
 Example GraphQL Query with two OPC UA systems:

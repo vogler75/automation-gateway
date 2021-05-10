@@ -83,20 +83,21 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
             logger.info("Build schema...")
             val (generic, wiring) = getGenericSchema(withSystems = true)
 
-            val systems = schemas.filterIsInstance<JsonObject>().map { it.getString("System") }
-
-            val results = systems.map { system ->
+            val results = schemas.filterIsInstance<JsonObject>().map { systemConfig ->
                 val promise = Promise.promise<String>()
-                val fieldName = config.getString("FieldName", defaultFieldName) // DisplayName or BrowseName
-                fetchSchema(system).onComplete {
+                val system = systemConfig.getString("System")
+                val fieldName = systemConfig.getString("FieldName", defaultFieldName) // DisplayName or BrowseName
+                val nodeId = systemConfig.getString("NodeId", "i=85")
+                fetchSchema(system, nodeId).onComplete {
                     logger.info("Build GraphQL [{}] ...", system)
-                    val result = getSystemSchema(system, fieldName, wiring)
+                    val result = getSystemSchema(system, nodeId, fieldName, wiring)
                     logger.info("Build GraphQL [{}] [{}]...complete", system, result.length)
                     promise.complete(result)
                 }
                 promise.future()
             }
 
+            val systems = schemas.filterIsInstance<JsonObject>().map { it.getString("System") }
             val systemTypes = "type Systems {\n" + systems.joinToString(separator = "\n") { "  $it: $it" } + "\n}\n"
 
             val dataFetcher = getSchemaNode("", "", "", "", "")
@@ -127,7 +128,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
         }
     }
 
-    private fun fetchSchema(system: String): Future<Boolean> {
+    private fun fetchSchema(system: String, nodeId: String): Future<Boolean> {
         val promise = Promise.promise<Boolean>()
         val serviceHandler = ServiceHandler(vertx, logger)
         val type = Topic.SystemType.Opc.name
@@ -135,15 +136,15 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
         var done = false
         serviceHandler.observeService(type, system) { record ->
             if (record.status == Status.UP && !done) {
-                logger.info("Request schema [{}]...", system)
+                logger.info("Request schema [{}] [{}] ...", system, nodeId)
                 vertx.eventBus().request<JsonObject>(
                     "${type}/${system}/Schema",
-                    JsonObject(),
+                    JsonObject().put("NodeId", nodeId),
                     DeliveryOptions().setSendTimeout(60000*10)) // TODO: configurable?
                 {
                     done = true
                     logger.info("Schema response [{}] [{}] [{}]", system, it.succeeded(), it.cause()?.message ?: "")
-                    schemas.put(system, it.result().body() ?: JsonObject())
+                    schemas.put(system, it.result().body() ?: JsonArray())
                     promise.complete(it.succeeded())
                 }
             }
@@ -151,7 +152,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
         return promise.future()
     }
 
-    private fun getSystemSchema(system: String, fieldName: String, wiring: RuntimeWiring.Builder): String {
+    private fun getSystemSchema(system: String, nodeId: String, fieldName: String, wiring: RuntimeWiring.Builder): String {
         val types = mutableListOf<String>()
 
         class Recursion { // needed, otherwise inline functions cannot be called from each other
@@ -215,7 +216,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
                     .dataFetcher(system, dataFetcher))
             schemas
                 .getJsonObject(system, JsonObject())
-                .getJsonArray("Objects", JsonArray())
+                .getJsonArray(nodeId, JsonArray())
                 .let { Recursion().addNodes(it, system) }
         } catch (e: Exception) {
             e.printStackTrace()

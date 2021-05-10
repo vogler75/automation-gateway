@@ -232,9 +232,9 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
         return promise.future()
     }
 
-    private fun browseSchema(): JsonArray {
-        logger.info("Start object browsing...")
-        val tree = browseNode(NodeId.parse("i=85"), -1)
+    private fun browseSchema(nodeId: String): JsonArray {
+        logger.info("Start object browsing [{}]", nodeId)
+        val tree = browseNode(NodeId.parse(nodeId), -1)
         logger.info("Object browsing finished.")
         if (writeSchemaToFile) {
             File("schema-${id}.json".toLowerCase()).writeText(tree.encodePrettily())
@@ -351,11 +351,12 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
     }
 
     override fun schemaHandler(message: Message<JsonObject>) {
-        if (schema.containsKey("Objects"))
+        val nodeId = message.body()?.getString("NodeId", "i=85") ?: "i=85"
+        if (schema.containsKey(nodeId))
             message.reply(schema)
         else {
             thread {
-                schema.put("Objects", browseSchema())
+                schema.put(nodeId, browseSchema(nodeId))
                 message.reply(schema)
             }
         }

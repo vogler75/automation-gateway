@@ -23,7 +23,7 @@ abstract class TopicValue {
     fun serverTimeAsISO(): String = serverTime().toString()
     fun sourceTimeAsISO(): String = sourceTime().toString()
 
-    open fun dataTypeName(): String = ""
+    open fun dataTypeName(): String = valueAsObject()?.javaClass?.simpleName ?: ""
 
     abstract fun hasStruct(): Boolean
     abstract fun asFlatMap(): Map<String, Any>
@@ -33,7 +33,7 @@ abstract class TopicValue {
             return when (val objectClassName = json.getString("className", "")) {
                 TopicValueOpc::class.java.simpleName -> TopicValueOpc.fromJsonObject(json)
                 TopicValuePlc::class.java.simpleName -> TopicValuePlc.fromJsonObject(json)
-                TopicValueDds::class.java.simpleName -> TopicValueDds.fromJsonObject(json)
+                TopicValueJson::class.java.simpleName -> TopicValueJson.fromJsonObject(json)
                 else -> throw Exception("Unhandled class [$objectClassName] in JsonObject!")
             }
         }

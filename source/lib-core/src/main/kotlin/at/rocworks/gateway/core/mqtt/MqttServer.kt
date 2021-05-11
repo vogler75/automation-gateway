@@ -29,6 +29,7 @@ class MqttServer(config: JsonObject, private val endpoint: MqttEndpoint) : Abstr
             val options = MqttServerOptions()
                 .setPort(config.getInteger("Port", 1883))
                 .setHost(config.getString("Host", "0.0.0.0"))
+                .setMaxMessageSize(config.getInteger("MaxMessageSizeKb", 8)*1024)
 
             val server = MqttServer.create(vertx, options)
 
@@ -179,7 +180,7 @@ class MqttServer(config: JsonObject, private val endpoint: MqttEndpoint) : Abstr
                 Topic.SystemType.Dds -> subscribeDriverTopic(t.systemType.name, t, qos, ret)
                 Topic.SystemType.Unknown -> subscribeMqttTopic(t, qos, ret)
                 else -> {
-                    logger.warn("Invalid topic []", t)
+                    logger.warn("Invalid topic [{}]", t)
                     ret.complete(false)
                 }
             }
@@ -300,27 +301,23 @@ class MqttServer(config: JsonObject, private val endpoint: MqttEndpoint) : Abstr
             logger.debug("Publish message [{}]", message.topicName())
             val topic = Topic.parseTopic(message.topicName())
             val value = message.payload()
-            if (topic.isValid()) {
-                when (topic.systemType) {
-                    Topic.SystemType.Mqtt,
-                    Topic.SystemType.Opc,
-                    Topic.SystemType.Plc,
-                    Topic.SystemType.Dds -> {
-                        val request = JsonObject()
-                        val type = topic.systemType.name
-                        request.put("Topic", topic.encodeToJson())
-                        request.put("Data", value)
-                        vertx.eventBus().request<JsonObject>("${type}/${topic.systemName}/Publish", request) {
-                            logger.debug("Publish response [{}] [{}]", it.succeeded(), it.result()?.body())
-                        }
+            when (topic.systemType) {
+                Topic.SystemType.Mqtt,
+                Topic.SystemType.Opc,
+                Topic.SystemType.Plc,
+                Topic.SystemType.Dds -> {
+                    val request = JsonObject()
+                    val type = topic.systemType.name
+                    request.put("Topic", topic.encodeToJson())
+                    request.put("Data", value)
+                    vertx.eventBus().request<JsonObject>("${type}/${topic.systemName}/Publish", request) {
+                        logger.debug("Publish response [{}] [{}]", it.succeeded(), it.result()?.body())
                     }
-                    Topic.SystemType.Unknown -> {
-                        vertx.eventBus().publish(topic.topicName, value)
-                    }
-                    else -> logger.error("Unhandled system type [{}]", topic)
                 }
-            } else {
-                logger.warn("Publish invalid topic []", topic)
+                Topic.SystemType.Unknown -> {
+                    vertx.eventBus().publish(topic.topicName, value)
+                }
+                else -> logger.error("Unhandled system type [{}]", topic)
             }
         } catch (e: java.lang.Exception) {
             e.printStackTrace()

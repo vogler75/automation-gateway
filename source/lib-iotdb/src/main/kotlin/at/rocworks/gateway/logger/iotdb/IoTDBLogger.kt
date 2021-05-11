@@ -1,5 +1,6 @@
 package at.rocworks.gateway.logger.iotdb
 
+import at.rocworks.gateway.core.data.TopicValue
 import at.rocworks.gateway.core.logger.LoggerBase
 import io.vertx.core.Future
 import io.vertx.core.Promise
@@ -47,18 +48,34 @@ class IoTDBLogger(config: JsonObject) : LoggerBase(config) {
         val typesList = mutableListOf<List<TSDataType>>()
         val valuesList = mutableListOf<List<Any>>()
 
+        fun getDataTypeAndValue(topicValue: TopicValue): Pair<TSDataType?, Any?> {
+            return when (val value = topicValue.valueAsObject()) {
+                is String -> Pair(TSDataType.TEXT, value)
+                is Double -> Pair(TSDataType.DOUBLE, value)
+                is Float -> Pair(TSDataType.FLOAT, value)
+                is Int -> Pair(TSDataType.INT32, value)
+                is Long -> Pair(TSDataType.INT64, value)
+                is Boolean -> Pair(TSDataType.BOOLEAN, value)
+                else -> {
+                    logger.warn("Unhandled datatype []!", value?.javaClass?.name)
+                    Pair(null, null)
+                }
+            }
+        }
 
         fun addDetails(point: DataPoint) {
             try {
-                val path = point.topic.systemBrowsePath().replace("/", ".")
                 val time = point.value.sourceTime().toEpochMilli()
-                val value = point.value.valueAsDouble() ?: point.value.valueAsString()
+                val path = point.topic.systemBrowsePath().replace("/", ".")
                 val status = point.value.statusAsString()
-                deviceIds.add("${database}.${path}")
-                times.add(time)
-                measurementList.add(listOf("value", "status"))
-                typesList.add(listOf(TSDataType.DOUBLE, TSDataType.TEXT))
-                valuesList.add(listOf(value, status))
+                val (dataType, value) = getDataTypeAndValue(point.value)
+                if (dataType != null && value != null) {
+                    deviceIds.add("${database}.${path}")
+                    times.add(time)
+                    measurementList.add(listOf("value", "status"))
+                    typesList.add(listOf(dataType, TSDataType.TEXT))
+                    valuesList.add(listOf(value, status))
+                }
             } catch (e: Exception) {
                 logger.error(e.message)
             }
@@ -66,20 +83,23 @@ class IoTDBLogger(config: JsonObject) : LoggerBase(config) {
 
         fun addValue(point: DataPoint) {
             try {
-                val path = point.topic.systemName+"."+point.topic.browsePath
+                val time = point.value.sourceTime().toEpochMilli()
+                val path = "${point.topic.systemName}.${point.topic.browsePath}"
                     .replace("/", ".")
                     .substringBeforeLast(delimiter = '.')
-                val time = point.value.sourceTime().toEpochMilli()
-                val value = point.value.valueAsDouble() ?: point.value.valueAsString()
-                val valueName = point.topic.browsePath
+
+                val name = point.topic.browsePath
                     .replace("/", ".")
                     .substringAfterLast(delimiter = '.')
 
-                deviceIds.add("${database}.${path}")
-                times.add(time)
-                measurementList.add(listOf(valueName))
-                typesList.add(listOf(TSDataType.DOUBLE))  // TODO: data types ...
-                valuesList.add(listOf(value))
+                val (dataType, value) = getDataTypeAndValue(point.value)
+                if (dataType != null && value != null) {
+                    deviceIds.add("${database}.${path}")
+                    times.add(time)
+                    measurementList.add(listOf(name))
+                    typesList.add(listOf(dataType))
+                    valuesList.add(listOf(value))
+                }
             } catch (e: Exception) {
                 logger.error(e.message)
             }
@@ -91,8 +111,12 @@ class IoTDBLogger(config: JsonObject) : LoggerBase(config) {
             point = writeValueQueue.poll()
         }
         if (deviceIds.size > 0) {
-            session.insertRecords(deviceIds, times, measurementList, typesList, valuesList)
-            valueCounterOutput+=deviceIds.size
+            try {
+                session.insertRecords(deviceIds, times, measurementList, typesList, valuesList)
+                valueCounterOutput+=deviceIds.size
+            } catch (e: Exception) {
+                logger.error("Error writing records [{}]", e.message)
+            }
         }
     }
 

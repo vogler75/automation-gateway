@@ -351,14 +351,15 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
     }
 
     override fun schemaHandler(message: Message<JsonObject>) {
-        val nodeId = message.body()?.getString("NodeId", "i=85") ?: "i=85"
-        if (schema.containsKey(nodeId))
-            message.reply(schema)
-        else {
-            thread {
+        val body = message.body()
+        val nodeIds = if (body.containsKey("NodeId")) listOf(body.getString("NodeId") ?: "i=85")
+        else body.getJsonArray("NodeIds") ?: JsonArray(listOf("i=85"))
+        thread {
+            nodeIds.filterIsInstance<String>().forEach { nodeId ->
+                logger.info("Browse from NodeId [{}]", nodeId)
                 schema.put(nodeId, browseSchema(nodeId))
-                message.reply(schema)
             }
+            message.reply(schema)
         }
     }
 

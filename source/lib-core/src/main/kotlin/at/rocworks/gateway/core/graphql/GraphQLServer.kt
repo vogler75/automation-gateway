@@ -87,10 +87,10 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
                 val promise = Promise.promise<String>()
                 val system = systemConfig.getString("System")
                 val fieldName = systemConfig.getString("FieldName", defaultFieldName) // DisplayName or BrowseName
-                val nodeId = systemConfig.getString("NodeId", "i=85")
-                fetchSchema(system, nodeId).onComplete {
+                val nodeIds = systemConfig.getJsonArray("NodeIds", JsonArray(listOf("i=85"))).filterIsInstance<String>()
+                fetchSchema(system, nodeIds).onComplete {
                     logger.info("Build GraphQL [{}] ...", system)
-                    val result = getSystemSchema(system, nodeId, fieldName, wiring)
+                    val result = getSystemSchema(system, nodeIds, fieldName, wiring)
                     logger.info("Build GraphQL [{}] [{}]...complete", system, result.length)
                     promise.complete(result)
                 }
@@ -128,7 +128,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
         }
     }
 
-    private fun fetchSchema(system: String, nodeId: String): Future<Boolean> {
+    private fun fetchSchema(system: String, nodeIds: List<String>): Future<Boolean> {
         val promise = Promise.promise<Boolean>()
         val serviceHandler = ServiceHandler(vertx, logger)
         val type = Topic.SystemType.Opc.name
@@ -136,10 +136,10 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
         var done = false
         serviceHandler.observeService(type, system) { record ->
             if (record.status == Status.UP && !done) {
-                logger.info("Request schema [{}] [{}] ...", system, nodeId)
+                logger.info("Request schema [{}] [{}] ...", system, nodeIds.joinToString(","))
                 vertx.eventBus().request<JsonObject>(
                     "${type}/${system}/Schema",
-                    JsonObject().put("NodeId", nodeId),
+                    JsonObject().put("NodeIds", nodeIds),
                     DeliveryOptions().setSendTimeout(60000*10)) // TODO: configurable?
                 {
                     done = true
@@ -152,8 +152,9 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
         return promise.future()
     }
 
-    private fun getSystemSchema(system: String, nodeId: String, fieldName: String, wiring: RuntimeWiring.Builder): String {
-        val types = mutableListOf<String>()
+    private fun getSystemSchema(system: String, nodeId: List<String>, fieldName: String, wiring: RuntimeWiring.Builder): String {
+        val typePaths = mutableSetOf<String>()
+        val typeDefinitions = mutableListOf<String>()
 
         class Recursion { // needed, otherwise inline functions cannot be called from each other
             fun addNode(node: JsonObject, path: String, wiring: TypeRuntimeWiring.Builder): String? {
@@ -181,31 +182,37 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
                         if (addNodes(nodes, newTypeName))
                            "$graphqlName : $newTypeName"
                         else {
-                            logger.debug("cannot add nodes of $newTypeName")
+                            logger.debug("Cannot add nodes of $newTypeName")
                             null
                         }
                     }
                     else -> {
-                        logger.error("unhandled node class $nodeClass")
+                        logger.error("Unhandled node class $nodeClass")
                         null
                     }
                 }
             }
 
             fun addNodes(nodes: JsonArray, path: String): Boolean {
-                val items = mutableListOf<String>()
+                if (typePaths.contains(path)) {
+                    logger.warn("Type path [{}] already used, dismiss the second node.", path)
+                    return false;
+                } else {
+                    typePaths.add(path)
+                    val items = mutableListOf<String>()
 
-                val validNodes = nodes.filterIsInstance<JsonObject>()
-                if (validNodes.isEmpty()) return false
+                    val validNodes = nodes.filterIsInstance<JsonObject>()
+                    if (validNodes.isEmpty()) return false
 
-                val newTypeWiring = TypeRuntimeWiring.newTypeWiring(path)
-                val addedNodes = validNodes.mapNotNull { node -> addNode(node, path, newTypeWiring) }
-                if (addedNodes.isEmpty()) return false
+                    val newTypeWiring = TypeRuntimeWiring.newTypeWiring(path)
+                    val addedNodes = validNodes.mapNotNull { node -> addNode(node, path, newTypeWiring) }
+                    if (addedNodes.isEmpty()) return false
 
-                addedNodes.forEach { items.add(it) }
-                wiring.type(newTypeWiring)
-                types.add("type $path { \n ${items.joinToString(separator = "\n ")} \n}")
-                return true;
+                    addedNodes.forEach { items.add(it) }
+                    wiring.type(newTypeWiring)
+                    typeDefinitions.add("type $path { \n ${items.joinToString(separator = "\n ")} \n}")
+                    return true;
+                }
             }
         }
 
@@ -214,15 +221,19 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
             wiring.type(
                 TypeRuntimeWiring.newTypeWiring("Systems")
                     .dataFetcher(system, dataFetcher))
+
             schemas
                 .getJsonObject(system, JsonObject())
-                .getJsonArray(nodeId, JsonArray())
-                .let { Recursion().addNodes(it, system) }
+                .mapNotNull { (it.value as? JsonArray)?.toList() }
+                .flatten()
+                .let {
+                    Recursion().addNodes(JsonArray(it), system)
+                }
         } catch (e: Exception) {
             e.printStackTrace()
         }
 
-        val schema = types.joinToString(separator = "\n")
+        val schema = typeDefinitions.joinToString(separator = "\n")
         if (writeSchemaFiles)
             File("graphql-${system}.gql".toLowerCase()).writeText(schema)
 

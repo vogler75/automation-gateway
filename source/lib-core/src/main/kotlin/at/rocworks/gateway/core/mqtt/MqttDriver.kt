@@ -26,8 +26,9 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
     private val host: String = config.getString("Host", "localhost")
     private val username: String? = config.getString("Username")
     private val password: String? = config.getString("Password")
-    private val ssl: Boolean? = config.getBoolean("Ssl")
+    private val ssl: Boolean = config.getBoolean("Ssl", false)
     private val qos: Int = config.getInteger("Qos", 0)
+    private val maxMessageSizeKb = config.getInteger("MaxMessageSizeKb", 8) * 1024
 
     private val valueType: String
     private val valueScript: String
@@ -53,7 +54,9 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
         options.isCleanSession = true
         username?.let { options.username = it }
         password?.let { options.password = it }
-        ssl?.let { options.setSsl(it) }
+        options.isSsl = ssl
+        options.maxMessageSize = maxMessageSizeKb
+
         client = MqttClient.create(vertx, options)
         client?.publishHandler(::valueConsumer)
         client?.connect(port, host) {
@@ -122,7 +125,7 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
         else {
             logger.info("Subscribe to [{}] topics", topics.size)
             topics.forEach { topic ->
-                logger.info("Subscribe topic [{}]", topic.topicName)
+                logger.info("Subscribe topic [{}] address [{}]", topic.topicName, topic.address)
                 client?.subscribe(topic.address, qos)
                 registry.addMonitoredItem(MqttMonitoredItem(topic.address), topic)
                 subscribedTopics.add(topic)
@@ -165,13 +168,17 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
                 .put("Value", Json.decodeValue(transformValue(payload)))
 
             fun publish(topic: Topic) {
-                topic.browsePath = receivedTopic // TODO: not good, should be immutable
-                val buffer : Buffer? = when (topic.format) {
-                    Topic.Format.Value -> payload
-                    Topic.Format.Json -> Buffer.buffer(json(topic).encode())
-                    Topic.Format.Pretty -> Buffer.buffer(json(topic).encodePrettily())
+                try {
+                    topic.browsePath = receivedTopic // TODO: not good, should be immutable
+                    val buffer: Buffer? = when (topic.format) {
+                        Topic.Format.Value -> payload
+                        Topic.Format.Json -> Buffer.buffer(json(topic).encode())
+                        Topic.Format.Pretty -> Buffer.buffer(json(topic).encodePrettily())
+                    }
+                    vertx.eventBus().publish(topic.topicName, buffer)
+                } catch (e: Exception) {
+                    logger.warn("Exception on publish value [{}]", e.message)
                 }
-                vertx.eventBus().publish(topic.topicName, buffer)
             }
 
             receivedTopics[receivedTopic]?.let {

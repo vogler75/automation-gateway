@@ -37,13 +37,16 @@ data class Topic (
     fun isValid() = systemType != SystemType.Unknown && topicType != TopicType.Unknown
 
     val addressItems : List<String>
-        get() = this.address.split(Regex("""(?<!\\)/""")).map { it.replace("\\/", "/") }
+        get() = splitAddress(this.address)
 
     fun systemBrowsePath(): String = "$systemName/$browsePath"
 
     fun encodeToJson() = encodeToJson(this)
 
     companion object {
+        fun splitAddress(address: String)
+            = address.split(Regex("""(?<!\\)/""")).map { it.replace("\\/", "/") }
+
         fun parseTopic(topic: String): Topic {
             val dollar = "\$"
 

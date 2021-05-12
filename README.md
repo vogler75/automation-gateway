@@ -230,7 +230,7 @@ MqttClient:
     Port: 1883
     Ssl: false
     Value:
-      Type: JSON
+      Format: JSON
       Script: >
         return [ 
           className: "TopicValueOpc",

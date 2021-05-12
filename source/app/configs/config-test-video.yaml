@@ -25,7 +25,7 @@ MqttClient:
     Ssl: false
     MaxMessageSizeKb: 512
     Value:
-      Type: JSON
+      Format: JSON
       Script: >
         return [
           className: "TopicValueOpc",
@@ -39,7 +39,7 @@ Database:
   Logger:
     - Id: iotdb1
       Type: IoTDB
-      Enabled: true
+      Enabled: false
       Host: nuc1.rocworks.local
       Port: 6667
       Database: root.video

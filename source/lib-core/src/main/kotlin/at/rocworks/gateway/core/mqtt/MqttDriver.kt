@@ -30,7 +30,7 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
     private val qos: Int = config.getInteger("Qos", 0)
     private val maxMessageSizeKb = config.getInteger("MaxMessageSizeKb", 8) * 1024
 
-    private val valueType: String
+    private val valueFormat: String
     private val valueScript: String
 
     private val sharedData = Binding()
@@ -42,15 +42,15 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
 
     init {
         val value = config.getJsonObject("Value", JsonObject())
-        valueType = value.getString("Type", "")
+        valueFormat = value.getString("Format", "").toUpperCase()
         valueScript = value.getString("Script", "")
         groovyScript = parseGroovyScript()
-        logger.info("Value is of type $valueType with script $valueScript")
+        logger.info("Value is of type $valueFormat with script $valueScript")
     }
 
     override fun connect(): Future<Boolean> {
         val promise = Promise.promise<Boolean>()
-        val options: MqttClientOptions = MqttClientOptions()
+        val options = MqttClientOptions()
         options.isCleanSession = true
         username?.let { options.username = it }
         password?.let { options.password = it }
@@ -68,7 +68,7 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
     }
 
     private fun parseGroovyScript(): Script? {
-        val script = when (valueType) {
+        val script = when (valueFormat) {
             "JSON" -> {
                 if (valueScript.isNotEmpty()) {
                     """ 
@@ -85,7 +85,11 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
                     "return value"
                 }
             }
-            else -> null
+            "" -> null
+            else -> {
+                logger.warn("Unhandled value format [{}]", valueFormat)
+                null
+            }
         }
         return if (script != null) {
             groovyShell.parse(script)
@@ -169,7 +173,7 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
 
             fun publish(topic: Topic) {
                 try {
-                    topic.browsePath = receivedTopic // TODO: not good, should be immutable
+                    topic.browsePath = receivedTopic
                     val buffer: Buffer? = when (topic.format) {
                         Topic.Format.Value -> payload
                         Topic.Format.Json -> Buffer.buffer(json(topic).encode())

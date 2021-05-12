@@ -11,13 +11,30 @@ GraphQLServer:
       LogLevel: INFO
       GraphiQL: true
       WriteSchemaToFile: false
+      Schemas:
+        - System: milo
+          FieldName: DisplayName
+          NodeIds:
+            - ns=2;s=Dynamic
       
 Database:
   Logger:
     - Id: kafka1
       Type: Kafka
       Enabled: true
-      Servers: server2:9092
+      Servers: nuc1:9092
+      WriteParameters:
+        QueueSize: 20000
+        BlockSize: 10000
+      Logging:
+        - Topic: opc/milo/path/Objects/Dynamic/+
+
+    - Id: influx1
+      Type: InfluxDB
+      Url: http://nuc1:8086
+      Database: test
+      Username: ""
+      Password: ""
       WriteParameters:
         QueueSize: 20000
         BlockSize: 10000
@@ -38,6 +55,9 @@ OpcUaClient:
     RequestTimeout: 5000
     KeepAliveFailuresAllowed: 0
     SubscriptionSamplingInterval: 0.0
+    AddressCache:
+      MaximumSize: 10000
+      ExpireAfterSeconds: 3600
     WriteParameters:
       QueueSize: 10000
       BlockSize: 200

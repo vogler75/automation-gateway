@@ -5,24 +5,24 @@ import io.vertx.core.eventbus.MessageCodec;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 
-public class CodecTopicValueDds implements MessageCodec<TopicValueDds, TopicValueDds> {
+public class CodecTopicValueDds implements MessageCodec<TopicValueJson, TopicValueJson> {
 
     @Override
-    public void encodeToWire(Buffer buffer, TopicValueDds value) {
+    public void encodeToWire(Buffer buffer, TopicValueJson value) {
         Buffer data = value.encodeToJson().toBuffer();
         buffer.appendInt(data.length());
         buffer.appendBuffer(data);
     }
 
     @Override
-    public TopicValueDds decodeFromWire(int i, Buffer buffer) {
+    public TopicValueJson decodeFromWire(int i, Buffer buffer) {
         int len = buffer.getInt(i);
         JsonObject json = (JsonObject) Json.decodeValue(buffer.getBuffer(i, i+len));
-        return TopicValueDds.Companion.fromJsonObject(json);
+        return TopicValueJson.Companion.fromJsonObject(json);
     }
 
     @Override
-    public TopicValueDds transform(TopicValueDds value) {
+    public TopicValueJson transform(TopicValueJson value) {
         return value;
     }
 

@@ -38,7 +38,7 @@ object Common {
             vertx.eventBus().registerDefaultCodec(Topic::class.java, CodecTopic())
             vertx.eventBus().registerDefaultCodec(TopicValueOpc::class.java, CodecTopicValueOpc())
             vertx.eventBus().registerDefaultCodec(TopicValuePlc::class.java, CodecTopicValuePlc())
-            vertx.eventBus().registerDefaultCodec(TopicValueDds::class.java, CodecTopicValueDds())
+            vertx.eventBus().registerDefaultCodec(TopicValueJson::class.java, CodecTopicValueDds())
 
             // Retrieve Config
             val config = retrieveConfig(vertx, configFilePath)

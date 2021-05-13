@@ -1,0 +1,54 @@
+MqttServer:
+  Listeners:
+    - Id: Mqtt
+      Enabled: true
+      Port: 1883
+      Host: 0.0.0.0
+      MaxMessageSizeKb: 512
+      LogLevel: INFO # ALL | INFO
+
+GraphQLServer:
+  Listeners:
+    - Port: 4000
+      Enabled: true
+      LogLevel: INFO
+      GraphiQL: true
+      WriteSchemaToFile: false
+      Schemas:
+
+MqttClient:
+  - Id: video
+    Enabled: true
+    LogLevel: INFO
+    Host: localhost
+    Port: 1883
+    Ssl: false
+    MaxMessageSizeKb: 512
+    Value:
+      Format: JSON
+      Script: >
+        return [
+          className: "TopicValueOpc",
+          sourceTime: Instant.ofEpochMilli(source.Timestamp).toString(),
+          serverTime: Instant.now().toString(),
+          value: source.Jpg,
+          statusCode: 0
+        ]
+
+Database:
+  Logger:
+    - Id: iotdb1
+      Type: IoTDB
+      Enabled: false
+      Host: nuc1.rocworks.local
+      Port: 6667
+      Database: root.video
+      Username: root
+      Password: root
+      WriteDetails: false
+      WriteParameters:
+        QueueSize: 20000
+        BlockSize: 10000
+      Logging:
+        - Topic: mqtt/video/path/images1
+        - Topic: mqtt/video/path/images2

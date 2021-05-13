@@ -2,7 +2,6 @@ import DDS.*
 import OpenDDS.DCPS.DEFAULT_STATUS_MASK
 import OpenDDS.DCPS.TheParticipantFactory
 import at.rocworks.gateway.core.data.Topic
-import at.rocworks.gateway.core.data.TopicValueOpc
 import at.rocworks.gateway.core.driver.DriverBase
 import at.rocworks.gateway.core.driver.MonitoredItem
 import io.vertx.core.Future
@@ -15,7 +14,7 @@ import org.omg.CORBA.StringSeqHolder
 import java.time.Instant
 import DDS.PUBLISHER_QOS_DEFAULT
 import DDS.DATAWRITER_QOS_DEFAULT
-import at.rocworks.gateway.core.data.TopicValueDds
+import at.rocworks.gateway.core.data.TopicValueJson
 import java.lang.reflect.Method
 
 
@@ -114,14 +113,14 @@ class DdsDriver(val config: JsonObject) : DriverBase(config) {
 
     override fun subscribeTopics(topics: List<Topic>): Future<Boolean> {
         val promise = Promise.promise<Boolean>()
-        topics.filter { it.pathItems.size > 1 }.forEach(this::subscribeTopic)
+        topics.filter { it.addressItems.size > 1 }.forEach(this::subscribeTopic)
         promise.complete(true)
         return promise.future()
     }
 
     private fun subscribeTopic(topic: Topic) {
-        val topicTypeName = topic.pathItems.component1()
-        val topicName = topic.pathItems.component2()
+        val topicTypeName = topic.addressItems.component1()
+        val topicName = topic.addressItems.component2()
         val topicType = topicTypes[topicTypeName]
         if (topicType != null) {
             val ddsTopic = domainParticipant!!.create_topic(
@@ -136,7 +135,7 @@ class DdsDriver(val config: JsonObject) : DriverBase(config) {
                 val sec = sampleInfo.source_timestamp.sec.toLong()
                 val ms = sampleInfo.source_timestamp.nanosec.toLong() / 1_000_000
                 val ts = Instant.ofEpochMilli(sec * 1_000 + ms)
-                val value = TopicValueDds(json, ts, sampleInfo.sample_state)
+                val value = TopicValueJson(json, ts, sampleInfo.sample_state)
 
                 fun json() = JsonObject()
                     .put("Topic", topic.encodeToJson())
@@ -181,8 +180,8 @@ class DdsDriver(val config: JsonObject) : DriverBase(config) {
         val promise = Promise.promise<Boolean>()
         try {
             logger.info("Publish...$topic")
-            val topicTypeName = topic.pathItems.component1()
-            val topicName = topic.pathItems.component2()
+            val topicTypeName = topic.addressItems.component1()
+            val topicName = topic.addressItems.component2()
             val topicType = topicTypes[topicTypeName]
             if (topicType != null) {
                 logger.debug("Create Topic...")

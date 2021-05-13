@@ -68,28 +68,31 @@ Be careful when using wildcards when there are a lot of nodes, it can lead to a 
 
 ## Enable OPC UA Schema in GraphQL
 
-The GraphQL server can read the OPC UA object schema and convert it to a GraphQL schema. 
+The GraphQL server can read the OPC UA object schema and convert it to a GraphQL schema. The starting NodeIds can be set to reduce the amount of browsed items. Browsing can take some while if the OPC UA server holds a huge structure of tags!
 ```
 GraphQLServer:
   Listeners:
     - Port: 4000
-      LogLevel: ALL # ALL | INFO
-      Schemas: # This systems will be browsed and converted to GraphQL
-        - System: unified # Id of OPC UA system
-          FieldName: BrowseName # Use BrowseName or DisplayName as GraphQL item 
+      Enabled: true
+      LogLevel: INFO                    # ALL | INFO
+      GraphiQL: true
+      WriteSchemaToFile: false
+      Schemas:                          # This systems will be browsed and converted to GraphQL
+        - System: "unified"             # Id of OPC UA system, must correlate with the drivers id
+          FieldName: BrowseName         # Use "BrowseName" or "DisplayName" as item name in GraphQL
+          NodeIds: 
+            - ns=2;s=Simulation         # Node will be browsed and added to GraphQL schema 
+            - ns=2;s=SimulationMass     # Node will be browsed and added to GraphQL schema          
 ```
-
-You have to enable **BrowseOnStartup** for the systems which you want to embedd in the GraphQL.
 
 ```
 OpcUaClient:
-  - Id: "unified"`  
+  - Id: "unified" 
     Enabled: true
-    LogLevel: ALL
+    LogLevel: INFO
     EndpointUrl: "opc.tcp://scada-server:4890"
     UpdateEndpointUrl: scada-server
     SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#None  
-    BrowseOnStartup: true
 ```
 
 Example GraphQL Query with two OPC UA systems:
@@ -227,7 +230,7 @@ MqttClient:
     Port: 1883
     Ssl: false
     Value:
-      Type: JSON
+      Format: JSON
       Script: >
         return [ 
           className: "TopicValueOpc",

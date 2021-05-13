@@ -4,6 +4,9 @@ import at.rocworks.gateway.core.data.Topic
 import at.rocworks.gateway.core.data.TopicValueOpc
 import at.rocworks.gateway.core.driver.DriverBase
 import at.rocworks.gateway.core.driver.MonitoredItem
+import com.google.common.cache.CacheBuilder
+import com.google.common.cache.CacheLoader
+import com.google.common.cache.LoadingCache
 
 import io.vertx.core.AsyncResult
 import io.vertx.core.CompositeFuture
@@ -36,7 +39,6 @@ import org.eclipse.milo.opcua.stack.core.UaException
 import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy
 import org.eclipse.milo.opcua.stack.core.types.builtin.*
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger
-import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.*
 import org.eclipse.milo.opcua.stack.core.types.enumerated.*
 import org.eclipse.milo.opcua.stack.core.types.structured.*
@@ -90,7 +92,6 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
     private val writeParametersWithTime : Boolean
     private val writeParametersWithTimeDef = false
 
-    private val browseOnStartup : Boolean = config.getBoolean("BrowseOnStartup", false)
     private val writeSchemaToFile: Boolean = config.getBoolean("WriteSchemaToFile", false)
 
     private var client: OpcUaClient? = null
@@ -99,6 +100,8 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
     private val defaultRetryWaitTime = 5000
 
     private val schema = JsonObject()
+
+    private var addressNodeIdCache: LoadingCache<String, List<Pair<NodeId, String>>>
 
     companion object {
         init {
@@ -125,7 +128,7 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
         )
 
         val monitoringParameters = config.getJsonObject("MonitoringParameters")
-        monitoringParametersBufferSize = Unsigned.uint(monitoringParameters?.getInteger("BufferSize", monitoringParametersBufferSizeDef) ?: monitoringParametersBufferSizeDef)
+        monitoringParametersBufferSize = uint(monitoringParameters?.getInteger("BufferSize", monitoringParametersBufferSizeDef) ?: monitoringParametersBufferSizeDef)
         monitoringParametersSamplingInterval = monitoringParameters?.getDouble("SamplingInterval", monitoringParametersSamplingIntervalDef) ?: monitoringParametersSamplingIntervalDef
         monitoringParametersDiscardOldest = monitoringParameters?.getBoolean("DiscardOldest", monitoringParametersDiscardOldestDef) ?: monitoringParametersDiscardOldestDef
         val dataChangeFilterStr = monitoringParameters?.getString("DataChangeTrigger")
@@ -146,6 +149,25 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
                 "QueueSize=$writeParameterQueueSize "+
                 "BlockSize=$writeParametersBlockSize "+
                 "WithTime=$writeParametersWithTime ")
+
+        val addressCache = config.getJsonObject("AddressCache") ?: JsonObject()
+        val maximumSize = addressCache.getLong("MaximumSize", 1000)
+        val expireAfterSeconds = addressCache.getLong("ExpireAfterSeconds", 60)
+
+        logger.info("AddressCache: "+
+                "MaximumSize=$maximumSize " +
+                "ExpireAfterSeconds=$expireAfterSeconds")
+
+        addressNodeIdCache = CacheBuilder.newBuilder()
+            .maximumSize(maximumSize)
+            .expireAfterAccess(expireAfterSeconds, TimeUnit.SECONDS)
+            .build(
+                object : CacheLoader<String, List<Pair<NodeId, String>>>() {
+                    override fun load(id: String): List<Pair<NodeId, String>> {
+                        return browseAddress(id)
+                    }
+                }
+            )
 
         logger.info(KeyStoreLoader.APPLICATION_URI)
     }
@@ -200,7 +222,7 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
             createSubscription()
         }
     }
-    
+
     override fun connect(): Future<Boolean> {
         val promise = Promise.promise<Boolean>()
         try {
@@ -216,10 +238,6 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
                             client!!.subscriptionManager.addSubscriptionListener(subscriptionListener)
                             createSubscription()
 
-                            if (browseOnStartup) {
-                                vertx.eventBus().publish("$uri/Schema", JsonObject())
-                            }
-
                             promise.complete(true)
                         }
                     }
@@ -232,9 +250,9 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
         return promise.future()
     }
 
-    private fun browseSchema(): JsonArray {
-        logger.info("Start object browsing...")
-        val tree = browseNode(NodeId.parse("i=85"), -1)
+    private fun browseSchema(nodeId: String): JsonArray {
+        logger.info("Start object browsing [{}]", nodeId)
+        val tree = browseNode(NodeId.parse(nodeId), -1)
         logger.info("Object browsing finished.")
         if (writeSchemaToFile) {
             File("schema-${id}.json".toLowerCase()).writeText(tree.encodePrettily())
@@ -293,9 +311,9 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
                         .setCertificate(KeyStoreLoader.keyStoreLoader.clientCertificate)
                         .setKeyPair(KeyStoreLoader.keyStoreLoader.clientKeyPair)
                         .setIdentityProvider(identityProvider)
-                        .setRequestTimeout(Unsigned.uint((requestTimeout)))
-                        .setConnectTimeout(Unsigned.uint((connectTimeout)))
-                        .setKeepAliveFailuresAllowed(Unsigned.uint((keepAliveFailuresAllowed)))
+                        .setRequestTimeout(uint((requestTimeout)))
+                        .setConnectTimeout(uint((connectTimeout)))
+                        .setKeepAliveFailuresAllowed(uint((keepAliveFailuresAllowed)))
                         .build()
                 }
                 logger.info("OpcUaClient created.")
@@ -351,13 +369,15 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
     }
 
     override fun schemaHandler(message: Message<JsonObject>) {
-        if (schema.containsKey("Objects"))
-            message.reply(schema)
-        else {
-            thread {
-                schema.put("Objects", browseSchema())
-                message.reply(schema)
+        val body = message.body()
+        val nodeIds = if (body.containsKey("NodeId")) listOf(body.getString("NodeId"))
+        else body.getJsonArray("NodeIds") ?: JsonArray(listOf("i=85"))
+        thread {
+            nodeIds.filterIsInstance<String>().forEach { nodeId ->
+                logger.info("Browse from NodeId [{}]", nodeId)
+                schema.put(nodeId, browseSchema(nodeId))
             }
+            message.reply(schema)
         }
     }
 
@@ -379,8 +399,7 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
 
     private fun getVariantOfValue(value: String, nodeId: NodeId): Variant {
         try {
-            val type = client!!.addressSpace.getVariableNode(nodeId).dataType.identifier
-            return when (type) {
+            return when (val type = client!!.addressSpace.getVariableNode(nodeId).dataType.identifier) {
                 Identifiers.String.identifier -> Variant(value)
                 Identifiers.Float.identifier -> Variant(value.toFloat())
                 Identifiers.Double.identifier -> Variant(value.toDouble())
@@ -417,22 +436,52 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
     override fun publishTopic(topic: Topic, value: Buffer): Future<Boolean> {
         val ret = Promise.promise<Boolean>()
         try {
+            fun dataValue(nodeId: NodeId) =
+                when (topic.format) {
+                    Topic.Format.Value ->
+                        DataValue(getVariantOfValue(value, nodeId), null, writeGetTime())
+                    Topic.Format.Json,
+                    Topic.Format.Pretty -> {
+                        logger.warn("Value format not yet implemented!") // TODO
+                        DataValue(Variant.NULL_VALUE, null, null)
+                    }
+                }
+
             when (topic.topicType) {
                 Topic.TopicType.NodeId -> {
                     val nodeId = NodeId.parse(topic.address)
-                    val dataValue = when (topic.format) {
-                        Topic.Format.Value ->
-                            DataValue(getVariantOfValue(value, nodeId), null, writeGetTime())
-                        Topic.Format.Json,
-                        Topic.Format.Pretty -> {
-                            logger.warn("Value format not yet implemented!") // TODO
-                            DataValue(Variant.NULL_VALUE, null, null)
-                        }
+                    writeValueQueued(nodeId, dataValue(nodeId)).onComplete(ret)
+                }
+                Topic.TopicType.Path -> {
+                    addressNodeIdCache.get(topic.address).forEach {
+                        writeValueQueued(it.first, dataValue(it.first)).onComplete(ret)
                     }
-                    writeValueQueued(nodeId, dataValue).onComplete(ret)
+                    /*
+                    val firstName = topic.addressItems.first()
+                    val startingNode = NodeId.parseOrNull(getRootNodeIdOfName(firstName))
+                    if (startingNode != null) {
+                        val relativeNode = topic.addressItems.drop(1)
+                        val tStart = Instant.now()
+                        val nodeId = browsePathToNodeId(startingNode, relativeNode) // TODO: think about a cache (https://github.com/google/guava)
+                        val duration = Duration.between(tStart, Instant.now())
+                        val seconds = duration.seconds + duration.nano/1_000_000_000.0
+                        if (seconds > 0.100)
+                            logger.warn("Browsing path took long time [{}]s", seconds)
+                        if (nodeId != null) {
+                            writeValueQueued(nodeId, dataValue(nodeId)).onComplete(ret)
+                        } else {
+                            logger.warn("Browsing path [{}]/[{}] could not be resolved!", firstName, relativeNode.joinToString(separator = "/"))
+                            ret.complete(false)
+                        }
+                    } else {
+                        logger.warn("Starting node [{}] is not a valid node!", firstName)
+                        ret.complete(false)
+                    }
+                    */
                 }
                 else -> {
                     logger.warn("Item type [{}] not yet implemented!", topic.topicType)
+                    ret.complete(false)
                 }
             }
         } catch (e: NumberFormatException) {
@@ -677,50 +726,18 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
                 val resolvedTopics = mutableListOf<Topic>()
                 topics.forEach { topic ->
                     logger.debug("Subscribe path [{}]", topic)
-                    val items = topic.addressItems.mapIndexed { i, item ->
-                        if (i == 0) when (item) {
-                            "Root" -> "i=84"
-                            "Objects" -> "i=85"
-                            "Types" -> "i=86"
-                            "Views" -> "i=87"
-                            else -> item
-                        } else item
-                    }
-                    if (items.size < 2) {
-                        logger.warn("Subscribe path with too less items! [{}]", topic.address)
-                    } else {
-                        val resolvedNodeIds = mutableListOf<Pair<NodeId, String>>()
-                        fun find(node: String, itemIdx: Int, path: String) {
-                            val item = items[itemIdx]
-                            val nodeId = NodeId.parseOrNull(node)
-                            if (nodeId != null) {
-                                val result = browseNode(nodeId)
-                                    .filterIsInstance<JsonObject>()
-                                    .filter { item == "#" || item == "+" || item == it.getString("BrowseName", "") }
-                                val nextIdx = if (item != "#" && itemIdx + 1 < items.size) itemIdx + 1 else itemIdx
-                                result.forEach {
-                                    val childNodeId = NodeId.parseOrNull(it.getString("NodeId"))
-                                    val browsePath = path+"/"+it.getString("BrowseName")
-                                    if (childNodeId != null) when (it.getString("NodeClass")) {
-                                        "Variable" -> resolvedNodeIds.add(Pair(childNodeId, browsePath))
-                                        "Object" -> find(it.getString("NodeId", ""), nextIdx, browsePath)
-                                    }
-                                }
-                            }
-                        }
-                        find(items.first(), 1, topic.addressItems.first())
-                        resolvedTopics.addAll(resolvedNodeIds.map {
-                            Topic(
-                                topicName = topic.topicName,
-                                systemType = topic.systemType,
-                                topicType = topic.topicType,
-                                systemName = topic.systemName,
-                                address = it.first.toParseableString(),
-                                format = topic.format,
-                                browsePath = it.second
-                            )
-                        })
-                    }
+                    val resolvedNodeIds = addressNodeIdCache.get(topic.address)
+                    resolvedTopics.addAll(resolvedNodeIds.map {
+                        Topic(
+                            topicName = topic.topicName,
+                            systemType = topic.systemType,
+                            topicType = topic.topicType,
+                            systemName = topic.systemName,
+                            address = it.first.toParseableString(),
+                            format = topic.format,
+                            browsePath = it.second
+                        )
+                    })
                 }
                 logger.info("Browse path result size [{}]", resolvedTopics.size)
                 if (topics.isEmpty()) {
@@ -735,6 +752,14 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
                 ret.fail(e)
             }
         }
+    }
+
+    private fun getRootNodeIdOfName(item: String) = when (item) {
+        "Root" -> "i=84"
+        "Objects" -> "i=85"
+        "Types" -> "i=86"
+        "Views" -> "i=87"
+        else -> item
     }
 
     override fun unsubscribeItems(items: List<MonitoredItem>) : Future<Boolean> {
@@ -827,8 +852,8 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
                 BrowseDirection.Forward,
                 Identifiers.References,
                 true,
-                Unsigned.uint(NodeClass.Object.value or NodeClass.Variable.value),
-                Unsigned.uint(BrowseResultMask.All.value)
+                uint(NodeClass.Object.value or NodeClass.Variable.value),
+                uint(BrowseResultMask.All.value)
             )
 
             try {
@@ -845,9 +870,9 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
                     logger.error("Browsing nodeId [{}] failed [{}]", browseRoot, browseResult.statusCode.toString())
                 }
             } catch (e: InterruptedException) {
-                logger.error(String.format("Browsing nodeId=%s failed: %s", browseRoot, e.message))
+                logger.error("Browsing nodeId [{}] exception: [{}]", browseRoot, e.message)
             } catch (e: ExecutionException) {
-                logger.error(String.format("Browsing nodeId=%s failed: %s", browseRoot, e.message))
+                logger.error("Browsing nodeId [{}] exception: [{}]", browseRoot, e.message)
             }
             return result
         }
@@ -865,5 +890,36 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
         }
 
         return result
+    }
+
+    private fun browseAddress(address: String): List<Pair<NodeId, String>> {
+        val resolvedNodeIds = mutableListOf<Pair<NodeId, String>>()
+        val items = Topic.splitAddress(address)
+        fun find(node: String, itemIdx: Int, path: String) {
+            val item = items[itemIdx]
+            val nodeId = NodeId.parseOrNull(node)
+            if (nodeId != null) {
+                val result = browseNode(nodeId)
+                    .filterIsInstance<JsonObject>()
+                    .filter { item == "#" || item == "+" || item == it.getString("BrowseName", "") }
+                val nextIdx = if (item != "#" && itemIdx + 1 < items.size) itemIdx + 1 else itemIdx
+                result.forEach {
+                    val childNodeId = NodeId.parseOrNull(it.getString("NodeId"))
+                    val browsePath = path+"/"+it.getString("BrowseName")
+                    if (childNodeId != null) when (it.getString("NodeClass")) {
+                        "Variable" -> resolvedNodeIds.add(Pair(childNodeId, browsePath))
+                        "Object" -> find(it.getString("NodeId", ""), nextIdx, browsePath)
+                    }
+                }
+            }
+        }
+        val tStart = Instant.now()
+        val start = getRootNodeIdOfName(items.first())
+        find(start, 1, items.first())
+        val duration = Duration.between(tStart, Instant.now())
+        val seconds = duration.seconds + duration.nano/1_000_000_000.0
+        if (seconds > 0.100)
+            logger.warn("Browsing address [{}] took long time [{}]s", address, seconds)
+        return resolvedNodeIds
     }
 }

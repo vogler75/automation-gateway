@@ -4,7 +4,7 @@ import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import java.time.Instant
 
-data class TopicValueDds (
+data class TopicValueJson (
     val value: JsonObject?,
     val time: Instant = Instant.now(),
     val state: Int = 0
@@ -48,8 +48,8 @@ data class TopicValueDds (
     }
 
     companion object {
-        fun fromJsonObject(json: JsonObject): TopicValueDds {
-            return TopicValueDds(
+        fun fromJsonObject(json: JsonObject): TopicValueJson {
+            return TopicValueJson(
                 value = json.getJsonObject("value", null) as JsonObject,
                 time = json.getInstant("time", Instant.MIN),
                 state = json.getInteger("state", 0)

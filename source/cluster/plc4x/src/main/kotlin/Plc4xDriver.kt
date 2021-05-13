@@ -198,7 +198,7 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
         }
     }
 
-    override fun unsubscribeItems(items: List<MonitoredItem>): Future<Boolean> {
+    override fun unsubscribeTopics(topics: List<Topic>, items: List<MonitoredItem>): Future<Boolean> {
         val promise = Promise.promise<Boolean>()
         val builder = plc!!.unsubscriptionRequestBuilder()
         items.filterIsInstance<Plc4xMonitoredItem>().forEach { item ->

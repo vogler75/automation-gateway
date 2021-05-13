@@ -27,7 +27,6 @@ MqttClient:
           sourceTime: Instant.ofEpochMilli(source.TimeMS).toString(),
           serverTime: Instant.now().toString(),
           value: source.Value,
-          dataTypeId: 0,
           statusCode: 0 ]
 
 Database:
@@ -67,7 +66,7 @@ Database:
     - Id: kafka1
       Type: Kafka
       Enabled: true
-      Servers: server2.rocworks.local:9092
+      Servers: nuc1.rocworks.local:9092
       WriteParameters:
         QueueSize: 20000
         BlockSize: 10000

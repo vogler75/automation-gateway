@@ -167,7 +167,7 @@ class DdsDriver(val config: JsonObject) : DriverBase(config) {
         }
     }
 
-    override fun unsubscribeItems(items: List<MonitoredItem>): Future<Boolean> {
+    override fun unsubscribeTopics(topics: List<Topic>, items: List<MonitoredItem>): Future<Boolean> {
         val promise = Promise.promise<Boolean>()
         items.filterIsInstance<DdsMonitoredItem>().forEach { reader ->
             subscriber!!.delete_datareader(reader.item)

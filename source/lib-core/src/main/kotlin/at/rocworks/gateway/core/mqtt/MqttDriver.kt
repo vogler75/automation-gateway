@@ -140,13 +140,13 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
         return promise.future()
     }
 
-    override fun unsubscribeItems(items: List<MonitoredItem>): Future<Boolean> {
+    override fun unsubscribeTopics(topics: List<Topic>, items: List<MonitoredItem>): Future<Boolean> {
         val promise = Promise.promise<Boolean>()
+        subscribedTopics.removeAll(topics)
         val mqttItems = items.map { (it as MqttMonitoredItem).item }
         mqttItems.forEach { address ->
             logger.info("Unsubscribe topic [{}]", address)
             client?.unsubscribe(address) 
-            // TODO: remove subscribedTopics!
             resetReceivedTopics(address)
         }
         promise.complete(true)

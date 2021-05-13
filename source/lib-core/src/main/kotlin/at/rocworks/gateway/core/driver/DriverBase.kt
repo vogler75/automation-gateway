@@ -166,7 +166,7 @@ abstract class DriverBase(config: JsonObject) : AbstractVerticle() {
         }
     }
 
-    protected fun subscribeTopic(clientId: String, topic: Topic): Future<Boolean> {
+    private fun subscribeTopic(clientId: String, topic: Topic): Future<Boolean> {
         val ret = Promise.promise<Boolean>()
         try {
             val (count, added) = registry.addClient(clientId, topic)
@@ -204,7 +204,6 @@ abstract class DriverBase(config: JsonObject) : AbstractVerticle() {
     private fun unsubscribeTopics(clientId: String, topics: List<Topic>): Future<Boolean> {
         val ret = Promise.promise<Boolean>()
         val items = ArrayList<MonitoredItem>()
-
         topics.forEach { topic ->
             val (count, removed) = registry.delClient(clientId, topic)
             logger.info("Unsubscribe [{}] [{}]", count, topic)
@@ -215,7 +214,7 @@ abstract class DriverBase(config: JsonObject) : AbstractVerticle() {
             }
         }
         if (items.size > 0) {
-            unsubscribeItems(items).onComplete(ret)
+            unsubscribeTopics(topics, items).onComplete(ret)
         } else {
             ret.complete(true)
         }
@@ -224,7 +223,7 @@ abstract class DriverBase(config: JsonObject) : AbstractVerticle() {
 
     // MQTT
     protected abstract fun subscribeTopics(topics: List<Topic>): Future<Boolean>
-    protected abstract fun unsubscribeItems(items: List<MonitoredItem>): Future<Boolean>
+    protected abstract fun unsubscribeTopics(topics: List<Topic>, items: List<MonitoredItem>): Future<Boolean>
     protected abstract fun publishTopic(topic: Topic, value: Buffer): Future<Boolean>
 
     // GraphQL

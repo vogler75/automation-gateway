@@ -762,7 +762,7 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
         else -> item
     }
 
-    override fun unsubscribeItems(items: List<MonitoredItem>) : Future<Boolean> {
+    override fun unsubscribeTopics(topics: List<Topic>, items: List<MonitoredItem>) : Future<Boolean> {
         val ret = Promise.promise<Boolean>()
         try {
             val opcUaItems = items.map { (it as OpcUaMonitoredItem).item }

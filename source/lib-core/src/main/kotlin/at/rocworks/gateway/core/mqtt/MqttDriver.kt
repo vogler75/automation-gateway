@@ -145,8 +145,8 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
         val mqttItems = items.map { (it as MqttMonitoredItem).item }
         mqttItems.forEach { address ->
             logger.info("Unsubscribe topic [{}]", address)
-            client?.unsubscribe(address) // TODO: Error handling?
-            subscribedTopics.remove(address)
+            client?.unsubscribe(address) 
+            // TODO: remove subscribedTopics!
             resetReceivedTopics(address)
         }
         promise.complete(true)

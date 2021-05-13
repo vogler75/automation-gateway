@@ -32,7 +32,6 @@ class MqttLogger (config: JsonObject) : LoggerBase(config) {
         client = MqttClient.create(vertx, options)
 
         client?.publishCompletionHandler(Handler { id: Int -> println("Id of just received PUBACK or PUBCOMP packet is $id") })
-        client?.publishHandler(::valueConsumer)
         client?.connect(port, host) {
             logger.info("Mqtt client connect [${it.succeeded()}] [${it.result().code()}]")
             if (it.succeeded()) {
@@ -47,10 +46,6 @@ class MqttLogger (config: JsonObject) : LoggerBase(config) {
         client?.disconnect {
             logger.info("Mqtt client disconnect [${it.succeeded()}]")
         }
-    }
-
-    private fun valueConsumer(message: MqttPublishMessage) {
-
     }
 
     override fun writeExecutor() {

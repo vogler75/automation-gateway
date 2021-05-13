@@ -90,7 +90,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
                 val nodeIds = systemConfig.getJsonArray("NodeIds", JsonArray(listOf("i=85"))).filterIsInstance<String>()
                 fetchSchema(system, nodeIds).onComplete {
                     logger.info("Build GraphQL [{}] ...", system)
-                    val result = getSystemSchema(system, nodeIds, fieldName, wiring)
+                    val result = getSystemSchema(system, fieldName, wiring)
                     logger.info("Build GraphQL [{}] [{}]...complete", system, result.length)
                     promise.complete(result)
                 }
@@ -152,7 +152,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
         return promise.future()
     }
 
-    private fun getSystemSchema(system: String, nodeId: List<String>, fieldName: String, wiring: RuntimeWiring.Builder): String {
+    private fun getSystemSchema(system: String, fieldName: String, wiring: RuntimeWiring.Builder): String {
         val typePaths = mutableSetOf<String>()
         val typeDefinitions = mutableListOf<String>()
 

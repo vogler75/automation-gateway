@@ -80,7 +80,7 @@ GraphQLServer:
       Schemas:                          # This systems will be browsed and converted to GraphQL
         - System: "unified"             # Id of OPC UA system, must correlate with the drivers id
           FieldName: BrowseName         # Use "BrowseName" or "DisplayName" as item name in GraphQL
-          NodeIds: 
+          RootNodes: 
             - ns=2;s=Simulation         # Node will be browsed and added to GraphQL schema 
             - ns=2;s=SimulationMass     # Node will be browsed and added to GraphQL schema          
 ```

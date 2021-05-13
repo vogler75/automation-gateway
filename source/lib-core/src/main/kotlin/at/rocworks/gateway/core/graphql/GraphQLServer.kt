@@ -87,7 +87,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
                 val promise = Promise.promise<String>()
                 val system = systemConfig.getString("System")
                 val fieldName = systemConfig.getString("FieldName", defaultFieldName) // DisplayName or BrowseName
-                val nodeIds = systemConfig.getJsonArray("NodeIds", JsonArray(listOf("i=85"))).filterIsInstance<String>()
+                val nodeIds = systemConfig.getJsonArray("RootNodes", JsonArray(listOf("i=85"))).filterIsInstance<String>()
                 fetchSchema(system, nodeIds).onComplete {
                     logger.info("Build GraphQL [{}] ...", system)
                     val result = getSystemSchema(system, fieldName, wiring)

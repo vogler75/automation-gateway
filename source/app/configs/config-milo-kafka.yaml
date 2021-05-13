@@ -14,7 +14,7 @@ GraphQLServer:
       Schemas:
         - System: milo
           FieldName: DisplayName
-          NodeIds:
+          RootNodes:
             - ns=2;s=Dynamic
       
 Database:

@@ -25,7 +25,7 @@ Database:
   Logger:
     - Id: kafka1
       Type: Kafka
-      Enabled: false
+      Enabled: true
       Servers: server2:9092
       WriteParameters:
         QueueSize: 20000
@@ -45,7 +45,7 @@ Database:
 
 OpcUaClient:
   - Id: "opc1"
-    Enabled: false
+    Enabled: true
     LogLevel: INFO
     EndpointUrl: "opc.tcp://nuc1:20001"
     UpdateEndpointUrl: true

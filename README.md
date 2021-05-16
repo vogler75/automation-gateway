@@ -7,8 +7,8 @@ You can sponsor this project [here](https://paypal.me/av75) :-)
 ![Gateway](doc/Gateway.png)
 
 # Version History
-1.15 Nats.IO Logger
-1.14 Fixes
+1.15 Nats Logger to write field values to a Nats server 
+1.14 Fixes and optimizations  
 1.13 MQTT Logger to write field values to a MQTT Broker  
 1.12 MQTT Driver with Groovy script transformer (subscribe only)  
 1.11 Apache Kafka Database Logger  

@@ -11,8 +11,6 @@ GraphQLServer:
       LogLevel: INFO
       GraphiQL: true
       WriteSchemaToFile: false
-      Schemas:
-      - System: opc1
         
       #  - System: ignition
       #    FieldName: BrowseName # BrowseName | DisplayName
@@ -31,21 +29,49 @@ Database:
         QueueSize: 20000
         BlockSize: 10000
       Logging:
-        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_SByte/+
-        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Byte/+
-        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_SByte/+
-        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
-        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
-        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Integer/+
-        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
-        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Int32/+
-        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Int64/+
-        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Unt16/+
-        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_UInt32/+
+        - Topic: opc/milo/path/Objects/Dynamic/+
+        #- Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_SByte/+
+        #- Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Byte/+
+        #- Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_SByte/+
+        #- Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
+        #- Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
+        #- Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Integer/+
+        #- Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
+        #- Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Int32/+
+        #- Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Int64/+
+        #- Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Unt16/+
+        #- Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_UInt32/+
 
 OpcUaClient:
-  - Id: "opc1"
+  - Id: "milo"
     Enabled: true
+    LogLevel: INFO
+    EndpointUrl: "opc.tcp://milo.digitalpetri.com:62541/milo"
+    UpdateEndpointUrl: false
+    SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#None
+    UsernameProvider:
+      Username: user1
+      Password: password
+    ConnectTimeout: 5000
+    RequestTimeout: 5000
+    KeepAliveFailuresAllowed: 0
+    SubscriptionSamplingInterval: 0.0
+    AddressCache:
+      MaximumSize: 10000
+      ExpireAfterSeconds: 3600
+    WriteParameters:
+      QueueSize: 10000
+      BlockSize: 200
+      WithTime: false
+    MonitoringParameters:
+      BufferSize: 10
+      SamplingInterval: 0
+      DiscardOldest: true
+      DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
+    WriteSchemaToFile: false
+
+  - Id: "opc1"
+    Enabled: false
     LogLevel: INFO
     EndpointUrl: "opc.tcp://nuc1:20001"
     UpdateEndpointUrl: true

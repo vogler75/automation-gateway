@@ -7,6 +7,8 @@ You can sponsor this project [here](https://paypal.me/av75) :-)
 ![Gateway](doc/Gateway.png)
 
 # Version History
+1.15 Nats.IO Logger
+1.14 Fixes
 1.13 MQTT Logger to write field values to a MQTT Broker  
 1.12 MQTT Driver with Groovy script transformer (subscribe only)  
 1.11 Apache Kafka Database Logger  
@@ -195,8 +197,33 @@ Example MQTT Topic:
 
 # Version History
 
+## 1.15 Nats Logger to write field values to a Nats server
+Added a [Nats](https://nats.io) Logger to write field values to a Nats server. It is like a database logger, but it writes the values to a configurable Nats server. Any values which get into Frankenstein (OPC UA, PLC4X, DDS, MQTT) by a Driver can be logged to a Nats server. The values are stored in JSON format.
+```
+Database:
+  Logger:
+    - Id: nats1
+      Type: Nats
+      Enabled: true
+      Url: "nats://nuc1:4222"
+      WriteParameters:
+        QueueSize: 20000
+        BlockSize: 10000
+      Logging:
+        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_SByte/+
+        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Byte/+
+````
+
+## 1.14 Fixes and optimizations
+* MQTT Driver: Caching of NodeIds in MQTT Driver (topic to NodeId cache).  
+* MQTT Server and Driver:  max message size can be set in config file (e.g. for Video streaming).
+* GraphQL Define one or more starting/root NodeIds for GraphQL OPC UA schema import.
+* GraphQL: Renamed "NodeIds" to "RootNodes" in Schema section (for OCP UA )
+* Renamed TopicValueDDS to TopicValueJson. 
+
+
 ## 1.13 MQTT Logger to write field values to a MQTT Broker
-Added a **MQTT Logger** to write field values to a MQTT Broker. It is like a database logger, but it writes the values to a configurable MQTT Broker. Any values which get into Frankenstein (OPC UA, PLC4X, DDS, MQTT) by a Driver can be logged to a MQTT Broker. Currently the values are stored in JSON format.
+Added a **MQTT Logger** to write field values to a MQTT Broker. It is like a database logger, but it writes the values to a configurable MQTT Broker. Any values which get into Frankenstein (OPC UA, PLC4X, DDS, MQTT) by a Driver can be logged to a MQTT Broker. The values are stored in JSON format.
 
 ```
 Database:

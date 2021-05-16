@@ -9,6 +9,7 @@ import at.rocworks.gateway.core.service.Common
 import at.rocworks.gateway.logger.influx.InfluxDBLogger
 import at.rocworks.gateway.logger.iotdb.IoTDBLogger
 import at.rocworks.gateway.logger.kafka.KafkaLogger
+import at.rocworks.gateway.logger.nats.NatsLogger
 
 import kotlin.Throws
 import kotlin.jvm.JvmStatic
@@ -53,6 +54,9 @@ object App {
                 }
                 "Mqtt" -> {
                     vertx.deployVerticle(MqttLogger(config))
+                }
+                "Nats" -> {
+                    vertx.deployVerticle(NatsLogger(config))
                 }
                 else -> logger.error("Unknown database type [{}]", type)
             }

@@ -284,6 +284,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
             |   System: String
             |   NodeId: ID
             |   BrowseName: String
+            |   BrowsePath: String
             |   DisplayName: String
             |   NodeClass: String
             |   Value: Value
@@ -329,6 +330,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
                     .dataFetcher("Nodes", getBrowseNode())
                     .dataFetcher("History", getValueHistory())
                     .dataFetcher("SetValue", setNodeValue())
+                    .dataFetcher("BrowsePath", getBrowsePath())
             )
             .type(
                 TypeRuntimeWiring.newTypeWiring("Value")
@@ -553,7 +555,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
 
             try {
                 vertx.eventBus().request<JsonObject>("$type/$system/Browse", request) { message ->
-                    logger.debug("getNodes browse response [{}] [{}]", message.succeeded(), message.result()?.body())
+                    logger.debug("Browse response [{}] [{}]", message.succeeded(), message.result()?.body())
                     if (message.succeeded()) {
                         try {
                             val list = message.result().body().getJsonArray("Result")
@@ -569,6 +571,48 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
                                 item["NodeClass"] = input.getString("NodeClass")
                                 item
                             }
+                            promise.complete(result)
+                        } catch (e: Exception) {
+                            promise.completeExceptionally(e)
+                        }
+                    } else {
+                        promise.complete(null)
+                    }
+                }
+            } catch (e: Exception){
+                e.printStackTrace()
+            }
+            promise
+        }
+    }
+
+    private fun getBrowsePath(): DataFetcher<CompletableFuture<String>> {
+        return DataFetcher<CompletableFuture<String>> { env ->
+            val promise = CompletableFuture<String>()
+
+            val (type, system) = getEnvTypeAndSystem(env)
+            val nodeId = getEnvArgument(env, "NodeId") ?: "i=85"
+
+            val request = JsonObject()
+            request.put("NodeId", nodeId)
+            request.put("Reverse", true)
+
+            try {
+                vertx.eventBus().request<JsonObject>("$type/$system/Browse", request) { message ->
+                    logger.debug("Browse response [{}] [{}]", message.succeeded(), message.result()?.body())
+                    if (message.succeeded()) {
+                        try {
+                            val list = message.result().body().getJsonArray("Result")
+                            fun flatten(list: JsonArray): String? {
+                                return when (val first = list.firstOrNull()) {
+                                    is JsonObject -> {
+                                        val left = first.getJsonArray("Nodes")?.let { flatten(it) }
+                                        return (if (left != null) "$left/" else "") +  first.getString("BrowseName")
+                                    }
+                                    else -> null
+                                }
+                            }
+                            val result = flatten(list)
                             promise.complete(result)
                         } catch (e: Exception) {
                             promise.completeExceptionally(e)

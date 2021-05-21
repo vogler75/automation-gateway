@@ -725,7 +725,7 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
             try {
                 val resolvedTopics = mutableListOf<Topic>()
                 topics.forEach { topic ->
-                    logger.debug("Subscribe path [{}]", topic)
+                    logger.info("Subscribe path [{}]", topic)
                     val resolvedNodeIds = addressNodeIdCache.get(topic.address)
                     resolvedTopics.addAll(resolvedNodeIds.map {
                         Topic(
@@ -814,7 +814,7 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
         var tLast = tStart
         var counter = 0
 
-        fun browse(startNodeId: NodeId, maxLevel: Int, level: Int, flat: Boolean): JsonArray {
+        fun browse(startNodeId: NodeId, maxLevel: Int, level: Int, flat: Boolean, path: String=""): JsonArray {
             val result = JsonArray()
 
             fun addResult(references: List<ReferenceDescription>) {
@@ -831,6 +831,7 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
                     }
                     val item = JsonObject()
                     item.put("BrowseName", rd.browseName.name)
+                    item.put("BrowsePath", path+rd.browseName.name)
                     item.put("DisplayName", rd.displayName.text)
                     item.put("NodeId", rd.nodeId.toParseableString())
                     item.put("NodeClass", rd.nodeClass.toString())
@@ -841,7 +842,7 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
                     if ((maxLevel == -1 || level < maxLevel) && rd.nodeClass === NodeClass.Object) {
                         val nodeId = rd.nodeId.toNodeId(client!!.namespaceTable)
                         if (nodeId.isPresent) {
-                            val next = browse(nodeId.get(), maxLevel, level + 1, flat)
+                            val next = browse(nodeId.get(), maxLevel, level + 1, flat, path+rd.browseName.name+"/")
                             if (flat) {
                                 result.addAll(next)
                             } else {
@@ -879,6 +880,7 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
             } catch (e: ExecutionException) {
                 logger.error("Browsing nodeId [{}] exception: [{}]", startNodeId, e.message)
             }
+
             return result
         }
 

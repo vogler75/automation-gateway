@@ -100,7 +100,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
             val systems = schemas.filterIsInstance<JsonObject>().map { it.getString("System") }
             val systemTypes = "type Systems {\n" + systems.joinToString(separator = "\n") { "  $it: $it" } + "\n}\n"
 
-            val dataFetcher = getSchemaNode("", "", "", "", "")
+            val dataFetcher = getSchemaNode("", "", "", "", "", "")
             wiring.type(
                 TypeRuntimeWiring.newTypeWiring("Query")
                     .dataFetcher("Systems", dataFetcher))
@@ -159,6 +159,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
         class Recursion { // needed, otherwise inline functions cannot be called from each other
             fun addNode(node: JsonObject, path: String, wiring: TypeRuntimeWiring.Builder): String? {
                 val browseName = node.getString("BrowseName")
+                val browsePath = node.getString("BrowsePath")
                 val displayName = node.getString("DisplayName")
                 val nodeId = node.getString("NodeId")
                 val nodeClass = node.getString("NodeClass")
@@ -170,7 +171,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
                 val graphqlName = "^__".toRegex().replace(graphqlName2, "_") // __ is reserved GraphQL internal
 
                 // TODO: what happens when the names are not unique anymore (because of substitutions...)
-                val dataFetcher = getSchemaNode(system, nodeId, nodeClass, browseName, displayName)
+                val dataFetcher = getSchemaNode(system, nodeId, nodeClass, browseName, browsePath, displayName)
                 wiring.dataFetcher(graphqlName, dataFetcher)
 
                 return when (nodeClass) {
@@ -217,7 +218,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
         }
 
         try {
-            val dataFetcher = getSchemaNode(system, "", "", "", "")
+            val dataFetcher = getSchemaNode(system, "", "", "", "", "")
             wiring.type(
                 TypeRuntimeWiring.newTypeWiring("Systems")
                     .dataFetcher(system, dataFetcher))
@@ -284,7 +285,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
             |   System: String
             |   NodeId: ID
             |   BrowseName: String
-            |   BrowsePath: String
+            |   BrowsePath(Full: Boolean): String
             |   DisplayName: String
             |   NodeClass: String
             |   Value: Value
@@ -561,16 +562,17 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
                             val list = message.result().body().getJsonArray("Result")
                             val result = list
                                 .filterIsInstance<JsonObject>()
-                                .filter { filter == null || filter.toRegex().matches(it.getString("BrowseName"))}
+                                .filter { filter == null || filter.toRegex().matches(it.getString("BrowseName")) }
                                 .map { input ->
-                                val item = HashMap<String, Any>()
-                                item["System"] = system
-                                item["NodeId"] = input.getString("NodeId")
-                                item["BrowseName"] = input.getString("BrowseName")
-                                item["DisplayName"] = input.getString("DisplayName")
-                                item["NodeClass"] = input.getString("NodeClass")
-                                item
-                            }
+                                    val item = HashMap<String, Any>()
+                                    item["System"] = system
+                                    item["NodeId"] = input.getString("NodeId")
+                                    item["BrowseName"] = input.getString("BrowseName")
+                                    item["BrowsePath"] = input.getString("BrowsePath")
+                                    item["DisplayName"] = input.getString("DisplayName")
+                                    item["NodeClass"] = input.getString("NodeClass")
+                                    item
+                                }
                             promise.complete(result)
                         } catch (e: Exception) {
                             promise.completeExceptionally(e)
@@ -589,40 +591,49 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
     private fun getBrowsePath(): DataFetcher<CompletableFuture<String>> {
         return DataFetcher<CompletableFuture<String>> { env ->
             val promise = CompletableFuture<String>()
+            val ctx: Map<String, Any>? = env.getSource()
 
             val (type, system) = getEnvTypeAndSystem(env)
-            val nodeId = getEnvArgument(env, "NodeId") ?: "i=85"
+            val nodeId = getEnvArgument(env, "NodeId")
+            val browseName = getEnvArgument(env, "BrowseName")
+            val browsePath = getEnvArgument(env, "BrowsePath")
+            val optionFull = env.getArgumentOrDefault("Full", false)
 
-            val request = JsonObject()
-            request.put("NodeId", nodeId)
-            request.put("Reverse", true)
-
-            try {
-                vertx.eventBus().request<JsonObject>("$type/$system/Browse", request) { message ->
-                    logger.debug("Browse response [{}] [{}]", message.succeeded(), message.result()?.body())
-                    if (message.succeeded()) {
-                        try {
-                            val list = message.result().body().getJsonArray("Result")
-                            fun flatten(list: JsonArray): String? {
-                                return when (val first = list.firstOrNull()) {
-                                    is JsonObject -> {
-                                        val left = first.getJsonArray("Nodes")?.let { flatten(it) }
-                                        return (if (left != null) "$left/" else "") +  first.getString("BrowseName")
+            if (nodeId==null) {
+                promise.complete("")
+            } else if (!optionFull) {
+                promise.complete(browsePath)
+            } else {
+                val request = JsonObject()
+                request.put("NodeId", nodeId)
+                request.put("Reverse", true)
+                try {
+                    vertx.eventBus().request<JsonObject>("$type/$system/Browse", request) { message ->
+                        logger.debug("Browse response [{}] [{}]", message.succeeded(), message.result()?.body())
+                        if (message.succeeded()) {
+                            try {
+                                val list = message.result().body().getJsonArray("Result")
+                                fun flatten(list: JsonArray): String? {
+                                    return when (val first = list.firstOrNull()) {
+                                        is JsonObject -> {
+                                            val left = first.getJsonArray("Nodes")?.let { flatten(it) }
+                                            return (if (left != null) "$left/" else "") + first.getString("BrowseName")
+                                        }
+                                        else -> null
                                     }
-                                    else -> null
                                 }
+                                val result = flatten(list) + "/" + browseName
+                                promise.complete(result)
+                            } catch (e: Exception) {
+                                promise.completeExceptionally(e)
                             }
-                            val result = flatten(list)
-                            promise.complete(result)
-                        } catch (e: Exception) {
-                            promise.completeExceptionally(e)
+                        } else {
+                            promise.complete(null)
                         }
-                    } else {
-                        promise.complete(null)
                     }
+                } catch (e: Exception) {
+                    e.printStackTrace()
                 }
-            } catch (e: Exception){
-                e.printStackTrace()
             }
             promise
         }
@@ -652,9 +663,10 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
                                     .filter { filter == null || filter.toRegex().matches(it.getString("BrowseName"))}
                                     .map { input ->
                                         val item = HashMap<String, Any>()
-                                        item["System"] = system
+                                        item["System"] = system // TODO: don't repeat yourself, create function!
                                         item["NodeId"] = input.getString("NodeId")
                                         item["BrowseName"] = input.getString("BrowseName")
+                                        item["BrowsePath"] = input.getString("BrowsePath")
                                         item["DisplayName"] = input.getString("DisplayName")
                                         item["NodeClass"] = input.getString("NodeClass")
                                         item
@@ -822,7 +834,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
         }
     }
 
-    private fun getSchemaNode(system: String, nodeId: String, nodeClass: String, browseName: String, displayName: String): DataFetcher<CompletableFuture<Map<String, Any?>>> {
+    private fun getSchemaNode(system: String, nodeId: String, nodeClass: String, browseName: String, browsePath: String, displayName: String): DataFetcher<CompletableFuture<Map<String, Any?>>> {
         return DataFetcher<CompletableFuture<Map<String, Any?>>> {
             val promise = CompletableFuture<Map<String, Any?>>()
             val item = HashMap<String, Any>()
@@ -830,6 +842,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
                 item["System"] = system
                 item["NodeId"] = nodeId
                 item["BrowseName"] = browseName
+                item["BrowsePath"] = browsePath
                 item["DisplayName"] = displayName
                 item["NodeClass"] = nodeClass
             }

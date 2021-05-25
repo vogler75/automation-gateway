@@ -819,7 +819,8 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
 
             fun addResult(references: List<ReferenceDescription>) {
                 references.filter {
-                    it.referenceTypeId == BuiltinReferenceType.Organizes.nodeId
+                    it.referenceTypeId == BuiltinReferenceType.Organizes.nodeId ||
+                    it.referenceTypeId == BuiltinReferenceType.HasComponent.nodeId
                 }.forEach { rd ->
                     counter++
                     if (counter % 1000 == 0) { // It's faster not do get the current time with every item

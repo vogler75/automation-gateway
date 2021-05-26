@@ -33,9 +33,7 @@ import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaMonitoredItem
 import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaSubscription
 import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaSubscriptionManager.SubscriptionListener
 import org.eclipse.milo.opcua.sdk.client.model.nodes.objects.ServerTypeNode
-import org.eclipse.milo.opcua.stack.core.AttributeId
-import org.eclipse.milo.opcua.stack.core.Identifiers
-import org.eclipse.milo.opcua.stack.core.UaException
+import org.eclipse.milo.opcua.stack.core.*
 import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy
 import org.eclipse.milo.opcua.stack.core.types.builtin.*
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger
@@ -252,7 +250,7 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
 
     private fun browseSchema(nodeId: String): JsonArray {
         logger.info("Start object browsing [{}]", nodeId)
-        val tree = browseNode(NodeId.parse(nodeId), -1)
+        val tree = browseNode(NodeId.parse(nodeId), maxLevel=-1)
         logger.info("Object browsing finished.")
         if (writeSchemaToFile) {
             File("schema-${id}.json".toLowerCase()).writeText(tree.encodePrettily())
@@ -355,9 +353,11 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
 
     override fun browseHandler(message: Message<JsonObject>) {
         try {
-            val rootNodeId = NodeId.parseOrNull(message.body().getString("NodeId", ""))
-            if (rootNodeId != null) {
-                val result = browseNode(rootNodeId)
+            val startNodeId = NodeId.parseOrNull(message.body().getString("NodeId", ""))
+            val reverse = message.body().getBoolean("Reverse", false)
+            val maxLevel = if (reverse) -1 else 1
+            if (startNodeId != null) {
+                val result = browseNode(startNodeId, reverse = reverse, maxLevel = maxLevel)
                 message.reply(JsonObject().put("Ok", true).put("Result", result))
             } else {
                 message.reply(JsonObject().put("Ok", false).put("Result", null))
@@ -725,7 +725,7 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
             try {
                 val resolvedTopics = mutableListOf<Topic>()
                 topics.forEach { topic ->
-                    logger.debug("Subscribe path [{}]", topic)
+                    logger.info("Subscribe path [{}]", topic)
                     val resolvedNodeIds = addressNodeIdCache.get(topic.address)
                     resolvedTopics.addAll(resolvedNodeIds.map {
                         Topic(
@@ -804,16 +804,24 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
         }
     }
 
-    private fun browseNode(browseRoot: NodeId, maxLevel: Int=1, flat: Boolean=false): JsonArray {
+    private fun browseNode(
+        nodeId: NodeId,
+        maxLevel: Int=1,
+        flat: Boolean=false,
+        reverse: Boolean=false
+    ): JsonArray {
         val tStart = Instant.now()
         var tLast = tStart
         var counter = 0
 
-        fun browseNode(browseRoot: NodeId, maxLevel: Int, level: Int, flat: Boolean): JsonArray {
+        fun browse(startNodeId: NodeId, maxLevel: Int, level: Int, flat: Boolean, path: String=""): JsonArray {
             val result = JsonArray()
 
             fun addResult(references: List<ReferenceDescription>) {
-                references.forEach { rd ->
+                references.filter {
+                    it.referenceTypeId == BuiltinReferenceType.Organizes.nodeId ||
+                    it.referenceTypeId == BuiltinReferenceType.HasComponent.nodeId
+                }.forEach { rd ->
                     counter++
                     if (counter % 1000 == 0) { // It's faster not do get the current time with every item
                         val tNow = Instant.now()
@@ -824,11 +832,10 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
                     }
                     val item = JsonObject()
                     item.put("BrowseName", rd.browseName.name)
+                    item.put("BrowsePath", path+rd.browseName.name)
                     item.put("DisplayName", rd.displayName.text)
                     item.put("NodeId", rd.nodeId.toParseableString())
                     item.put("NodeClass", rd.nodeClass.toString())
-
-                    //logger.debug("$flat : $level : $item")
 
                     if (rd.nodeClass === NodeClass.Variable || !flat) result.add(item)
 
@@ -836,7 +843,7 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
                     if ((maxLevel == -1 || level < maxLevel) && rd.nodeClass === NodeClass.Object) {
                         val nodeId = rd.nodeId.toNodeId(client!!.namespaceTable)
                         if (nodeId.isPresent) {
-                            val next = browseNode(nodeId.get(), maxLevel, level + 1, flat)
+                            val next = browse(nodeId.get(), maxLevel, level + 1, flat, path+rd.browseName.name+"/")
                             if (flat) {
                                 result.addAll(next)
                             } else {
@@ -848,8 +855,8 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
             }
 
             val browse = BrowseDescription(
-                browseRoot,
-                BrowseDirection.Forward,
+                startNodeId,
+                if (reverse) BrowseDirection.Inverse else BrowseDirection.Forward,
                 Identifiers.References,
                 true,
                 uint(NodeClass.Object.value or NodeClass.Variable.value),
@@ -867,17 +874,18 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
                         continuationPoint = nextResult.continuationPoint
                     }
                 } else {
-                    logger.error("Browsing nodeId [{}] failed [{}]", browseRoot, browseResult.statusCode.toString())
+                    logger.error("Browsing nodeId [{}] failed [{}]", startNodeId, browseResult.statusCode.toString())
                 }
             } catch (e: InterruptedException) {
-                logger.error("Browsing nodeId [{}] exception: [{}]", browseRoot, e.message)
+                logger.error("Browsing nodeId [{}] exception: [{}]", startNodeId, e.message)
             } catch (e: ExecutionException) {
-                logger.error("Browsing nodeId [{}] exception: [{}]", browseRoot, e.message)
+                logger.error("Browsing nodeId [{}] exception: [{}]", startNodeId, e.message)
             }
+
             return result
         }
 
-        val result = browseNode(browseRoot, maxLevel, 1, flat)
+        val result = browse(nodeId, maxLevel, 1, flat)
         val duration = Duration.between(tStart, Instant.now())
         val seconds = duration.seconds + duration.nano/1_000_000_000.0
         if (seconds > 1.0) {

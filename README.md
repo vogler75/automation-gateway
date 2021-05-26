@@ -7,6 +7,7 @@ You can sponsor this project [here](https://paypal.me/av75) :-)
 ![Gateway](doc/Gateway.png)
 
 # Version History
+1.15.1 Added BrowsePath to GraphQL OPC UA node (with Full option)
 1.15 Nats Logger to write field values to a Nats server  
 1.14 Fixes and optimizations  
 1.13 MQTT Logger to write field values to a MQTT Broker  

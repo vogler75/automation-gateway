@@ -11,7 +11,7 @@ include(':cluster:influxdb')
 include(':cluster:iotdb')
 include(':cluster:kafka')
 
-include('lib-core', 'lib-influxdb', 'lib-iotdb', 'lib-kafka', 'lib-nats')
+include('lib-core', 'lib-influxdb', 'lib-iotdb', 'lib-kafka', 'lib-nats', 'lib-jdbc')
 
 if (System.env.DDS_ROOT) {
     include (':cluster:dds')

@@ -8,6 +8,7 @@ import at.rocworks.gateway.core.service.Common
 
 import at.rocworks.gateway.logger.influx.InfluxDBLogger
 import at.rocworks.gateway.logger.iotdb.IoTDBLogger
+import at.rocworks.gateway.logger.jdbc.JdbcLogger
 import at.rocworks.gateway.logger.kafka.KafkaLogger
 import at.rocworks.gateway.logger.nats.NatsLogger
 
@@ -48,6 +49,9 @@ object App {
                 }
                 "IoTDB" -> {
                     vertx.deployVerticle(IoTDBLogger(config))
+                }
+                "Jdbc" -> {
+                    vertx.deployVerticle(JdbcLogger(config))
                 }
                 "Kafka" -> {
                     vertx.deployVerticle(KafkaLogger(config))

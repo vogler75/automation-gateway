@@ -11,7 +11,6 @@ import io.vertx.core.buffer.Buffer
 import io.vertx.core.eventbus.Message
 import io.vertx.core.json.Json
 import io.vertx.core.json.JsonObject
-import io.vertx.mqtt.messages.MqttPublishMessage
 import io.vertx.servicediscovery.Status
 import org.slf4j.LoggerFactory
 import java.lang.IllegalStateException
@@ -67,27 +66,45 @@ abstract class LoggerBase(config: JsonObject) : AbstractVerticle() {
     abstract fun open(): Future<Unit>
     abstract fun close()
 
-    override fun start(startPromise: Promise<Void>) {
-        fun connect() {
-            thread {
-                try {
-                    open().onComplete { result ->
-                        if (result.succeeded()) {
-                            this.subscribeTopics()
-                            vertx.setPeriodic(1000, ::metricCalculator)
-                            vertx.eventBus().consumer("${Common.BUS_ROOT_URI_LOG}/$id/QueryHistory", ::queryHandler)
-                            startPromise.complete()
-                        } else {
-                            vertx.setTimer(defaultRetryWaitTime) { connect() }
-                        }
+    fun connect(connectPromise: Promise<Void>) {
+        thread {
+            try {
+                open().onComplete { result ->
+                    if (result.succeeded()) {
+                        connectPromise.complete()
+                    } else {
+                        logger.warn("Connect failed...")
+                        vertx.setTimer(defaultRetryWaitTime) { connect(connectPromise) }
                     }
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                    startPromise.fail(e)
                 }
+            } catch (e: Exception) {
+                logger.warn("Error in connect [{}]", e.message)
+                connectPromise.fail(e)
             }
         }
-        connect()
+    }
+
+    @Volatile
+    private var reconnectOngoing = false
+    protected fun reconnect() {
+        if (!reconnectOngoing) {
+            reconnectOngoing = true
+            val promise = Promise.promise<Void>()
+            promise.future().onComplete {
+                reconnectOngoing = false
+            }
+            connect(promise)
+        }
+    }
+
+    override fun start(startPromise: Promise<Void>) {
+        startPromise.future().onComplete {
+            vertx.eventBus().consumer("${Common.BUS_ROOT_URI_LOG}/$id/QueryHistory", ::queryHandler)
+            vertx.setPeriodic(1000, ::metricCalculator)
+            writeValueThread.start()
+            subscribeTopics()
+        }
+        connect(startPromise)
     }
 
     override fun stop(stopPromise: Promise<Void>) {
@@ -149,7 +166,7 @@ abstract class LoggerBase(config: JsonObject) : AbstractVerticle() {
     protected val writeValueQueue = ArrayBlockingQueue<DataPoint>(writeParameterQueueSize)
     private var writeValueQueueFull = false
     private val writeValueThread =
-        thread {
+        thread(start = false) {
             logger.info("Writer thread with queue size [{}]", writeValueQueue.remainingCapacity())
             while (!writeValueStop.get()) {
                 writeExecutor()

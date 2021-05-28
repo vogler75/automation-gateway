@@ -13,6 +13,7 @@ dependencies {
 
     implementation project(':lib-influxdb')
     implementation project(':lib-iotdb')
+    implementation project(':lib-jdbc')
     implementation project(':lib-kafka')
     implementation project(':lib-nats')
 

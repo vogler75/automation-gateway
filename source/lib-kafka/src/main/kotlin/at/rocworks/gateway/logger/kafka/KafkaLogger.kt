@@ -12,6 +12,7 @@ import io.vertx.kafka.client.producer.KafkaProducerRecord
 class KafkaLogger(config: JsonObject) : LoggerBase(config) {
     private val servers = config.getString("Servers", "localhost:9092")
 
+    @Volatile
     private var producer: KafkaProducer<String, String>? = null
 
     override fun open(): Future<Unit> {

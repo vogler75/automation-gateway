@@ -197,23 +197,23 @@ Example MQTT Topic:
 
 # Version History
 ## 1.16 JDBC Logger to write field values to relational databases  
-Added the option to log values to a JDBC compliant relational database. You have to add the JDBC driver to you classpath and set the appropriate JDBC URL path in the configuration file. PostgreSQL, MySQL and MSSQL JDBC drivers are already included in the build.gradle file (see lib-jdbc/build.gradle). If you need other JDBC drivers you can add it to this file as runtime only dependency.  
+Added the option to log values to a JDBC compliant relational database. You have to add the JDBC driver to your classpath and set the appropriate JDBC URL path in the configuration file. PostgreSQL, MySQL and Microsoft SQL Server JDBC drivers are already included in the build.gradle file (see lib-jdbc/build.gradle) and also appropriate SQL statements are implemented for those relational databases. If you use other JDBC drivers you can add the driver to the lib-jdbc/build.gradle file as runtime only dependency and you may specify SQL statements for insert and select in the configuration file.
 
-You have to create the table in the database manually. You can specify the table name in the config file with the option "SqlTableName", if you do not specify the table name then "events" will be used as default name. 
+You can specify the table name in the config file with the option "SqlTableName", if you do not specify the table name then "events" will be used as default name.  
 
 
-Specify JDBC drivers in the lib-jdbc/build.gradle file:
+Specify JDBC drivers in the lib-jdbc/build.gradle file:  
 ```
     runtimeOnly group: 'org.postgresql', name: 'postgresql', version: '42.2.20'
     runtimeOnly group: 'mysql', name: 'mysql-connector-java', version: '8.0.25'
     runtimeOnly group: 'com.microsoft.sqlserver', name: 'mssql-jdbc', version: '9.2.1.jre11'
 ```
 
-Create a table with this structure (this is a PostgreSQL example)
+Create a table with this structure. For PostgreSQL, MySQL and Microsoft SQL Server the table will be created on startup automatically.  
 ```
   CREATE TABLE IF NOT EXISTS public.events
   (
-      system character varying(30) NOT NULL,
+      sys character varying(30) NOT NULL,
       nodeid character varying(30) NOT NULL,
       sourcetime timestamp without time zone NOT NULL,
       servertime timestamp without time zone NOT NULL,
@@ -225,7 +225,7 @@ Create a table with this structure (this is a PostgreSQL example)
   TABLESPACE ts_scada;
 ```
 
-Configuration of JDBC database logger:
+Configuration of JDBC database logger:  
 ```
 Database:
   Logger:
@@ -235,13 +235,34 @@ Database:
       Url: jdbc:postgresql://nuc1:5432/scada
       Username: system
       Password: manager
-      SqlTableName: events
+      SqlTableName: events     
       WriteParameters:
         QueueSize: 20000
         BlockSize: 10000
       Logging:
         - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_SByte/+
         - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Byte/+
+```
+
+Because the SQL dialect can be slightly different with other databases, you can specify the insert and select SQL statement in the config file:
+```
+Database:
+  Logger:
+    - Id: other
+      Type: Jdbc
+      Enabled: true
+      Url: jdbc:other://nuc1:1111/scada
+      Username: system
+      Password: manager
+      SqlTableName: events     
+      SqlInsertStatement: > 
+        INSERT INTO events (sys, nodeid, sourcetime, servertime, numericvalue, stringvalue, status)
+         VALUES (?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT ON CONSTRAINT PK_EVENTS DO NOTHING  
+      SqlQueryStatement: >
+        SELECT sourcetime, servertime, numericvalue, stringvalue, status
+         FROM events
+         WHERE sys = ? AND nodeid = ? AND sourcetime >= ? AND sourcetime <= ? 
 ```
 
 ## 1.15 Nats Logger to write field values to a Nats server

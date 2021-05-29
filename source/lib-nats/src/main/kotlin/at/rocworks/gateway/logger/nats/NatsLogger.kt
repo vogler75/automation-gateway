@@ -36,8 +36,8 @@ class NatsLogger(config: JsonObject) : LoggerBase(config) {
     override fun queryExecutor(
         system: String,
         nodeId: String,
-        fromTimeNano: Long,
-        toTimeNano: Long,
+        fromTimeMS: Long,
+        toTimeMS: Long,
         result: (Boolean, List<List<Any>>?) -> Unit
     ) {
         result(false, null)

@@ -823,8 +823,9 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
                             item["System"] = system
                             item["NodeId"] = nodeId
                             item["SourceTime"] = it.getValue(0)
-                            item["Value"] = it.getValue(1)
-                            item["StatusCode"] = it.getValue(2)
+                            item["ServerTime"] = it.getValue(1)
+                            item["Value"] = it.getValue(2)
+                            item["StatusCode"] = it.getValue(3)
                             item
                         }
                         promise.complete(result)

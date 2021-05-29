@@ -4,7 +4,6 @@ import at.rocworks.gateway.core.logger.LoggerBase
 import io.vertx.core.Future
 import io.vertx.core.Promise
 import io.vertx.core.json.JsonObject
-import java.lang.Exception
 import java.sql.*
 import java.util.concurrent.TimeUnit
 
@@ -19,8 +18,15 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
     private val sqlInsertStatement = config.getString("SqlInsertStatement",
         """
         INSERT INTO $sqlTableName (system, nodeid, sourcetime, servertime, numericvalue, stringvalue, status)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT ON CONSTRAINT PK_EVENTS DO NOTHING 
+         VALUES (?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT ON CONSTRAINT PK_EVENTS DO NOTHING 
+        """.trimIndent())
+
+    private val sqlQueryStatement = config.getString("SqlQueryStatement",
+        """
+        SELECT sourcetime, servertime, numericvalue, stringvalue, status
+         FROM $sqlTableName 
+         WHERE system = ? AND nodeid = ? AND sourcetime >= ? AND sourcetime <= ? 
         """.trimIndent())
 
     /*
@@ -90,7 +96,6 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
         }
         if (batchPoints.size > 0) {
             batchPoints.forEach {
-                println(it.value)
                 batch.setString(1, it.topic.systemName)
                 batch.setString(2, it.topic.address)
                 batch.setTimestamp(3, Timestamp.from(it.value.sourceTime()))
@@ -115,10 +120,40 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
     override fun queryExecutor(
         system: String,
         nodeId: String,
-        fromTimeNano: Long,
-        toTimeNano: Long,
+        fromTimeMS: Long,
+        toTimeMS: Long,
         result: (Boolean, List<List<Any>>?) -> Unit
     ) {
-        result(false, null)
+        val connection = this.connection
+        if (connection != null)
+        {
+            try {
+                connection.prepareStatement(sqlQueryStatement) .use { stmt ->
+                    val result = mutableListOf<List<Any>>()
+                    stmt.setString(1, system)
+                    stmt.setString(2, nodeId)
+                    stmt.setTimestamp(3, Timestamp(fromTimeMS))
+                    stmt.setTimestamp(4, Timestamp(toTimeMS))
+                    val rs = stmt.executeQuery()
+                    while (rs.next()) {
+                        // sourcetime, servertime, numericvalue, stringvalue, status
+                        result.add(
+                            listOf(
+                                rs.getString(1), // sourcetime
+                                rs.getString(2), // servertime
+                                rs.getString(3), // value
+                                rs.getString(5)  // status
+                            )
+                        )
+                    }
+                    result(true, result)
+                }
+            } catch (e: SQLException) {
+                logger.error("Error executing query [{}]", e.message)
+                result(false, null)
+            }
+        } else {
+            result(false, null)
+        }
     }
 }

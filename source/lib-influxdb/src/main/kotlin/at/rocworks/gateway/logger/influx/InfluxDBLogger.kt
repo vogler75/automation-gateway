@@ -57,6 +57,7 @@ class InfluxDBLogger(config: JsonObject) : LoggerBase(config) {
             .tag("tag", dp.topic.browsePath)
             .tag("address", dp.topic.address)
             .tag("status", dp.value.statusAsString())
+            .addField("servertime", dp.value.serverTimeAsISO()) // TODO: as string or EpochMilli?
 
         if (dp.value.hasStruct()) {
             dp.value.asFlatMap().forEach { (k, v) ->
@@ -93,13 +94,15 @@ class InfluxDBLogger(config: JsonObject) : LoggerBase(config) {
     override fun queryExecutor(
         system: String,
         nodeId: String,
-        fromTimeNano: Long,
-        toTimeNano: Long,
+        fromTimeMS: Long,
+        toTimeMS: Long,
         result: (Boolean, List<List<Any>>?) -> Unit
     ) {
+        val fromTimeNano = fromTimeMS * 1_000_000
+        val toTimeNano = toTimeMS * 1_000_000
         try {
             val sql = """
-                SELECT value, status 
+                SELECT time, servertime, value, status 
                 FROM "$system" 
                 WHERE "address" = '$nodeId' 
                 AND time >= $fromTimeNano AND time <= $toTimeNano 
@@ -109,8 +112,8 @@ class InfluxDBLogger(config: JsonObject) : LoggerBase(config) {
             }
             result(data != null, data)
         } catch (e: Exception) {
+            logger.error("Error executing query [{}]", e.message)
             result(false, null)
-            e.printStackTrace()
         }
     }
 }

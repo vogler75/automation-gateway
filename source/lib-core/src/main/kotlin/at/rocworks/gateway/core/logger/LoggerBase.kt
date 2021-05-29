@@ -225,18 +225,17 @@ abstract class LoggerBase(config: JsonObject) : AbstractVerticle() {
     abstract fun queryExecutor(
         system: String,
         nodeId: String,
-        fromTimeNano: Long,
-        toTimeNano: Long,
-        result: (Boolean, List<List<Any>>?) -> Unit // [[sourcetime, value, statuscode, system]]
+        fromTimeMS: Long,
+        toTimeMS: Long,
+        result: (Boolean, List<List<Any>>?) -> Unit // [[sourcetime, servertime, value, statuscode, system]]
     )
 
-    // [[sourcetime, value, status], [sourcetime, value, status], ...]
     private fun queryHandler(message: Message<JsonObject>) {
         val request = message.body()
         val system = request.getString("System")
         val nodeId = request.getString("NodeId")
-        val t1 = request.getLong("T1") * 1000000 // ms to nano
-        val t2 = request.getLong("T2") * 1000000 // ms to nano
+        val t1 = request.getLong("T1") // ms
+        val t2 = request.getLong("T2") // ms
         queryExecutor(system, nodeId, t1, t2) { ok, result ->
             val response = JsonObject().put("Ok", ok)
             if (ok) response.put("Result", result)

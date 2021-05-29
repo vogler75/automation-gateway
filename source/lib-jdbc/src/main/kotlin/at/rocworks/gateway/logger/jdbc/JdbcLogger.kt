@@ -11,8 +11,8 @@ import java.util.concurrent.TimeUnit
 
 class JdbcLogger(config: JsonObject) : LoggerBase(config) {
     private val url = config.getString("Url", "jdbc:postgresql://localhost:5432/scada")
-    private val username = config.getString("Username", "system")
-    private val password = config.getString("Password", "manager")
+    private val username = config.getString("Username", "")
+    private val password = config.getString("Password", "")
 
     private val sqlTableName = config.getString("SqlTableName", "events")
 
@@ -53,7 +53,7 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
             nodeid character varying(30) NOT NULL,
             sourcetime datetime2 NOT NULL,
             servertime datetime2 NOT NULL,
-            numericvalue numeric,
+            numericvalue real,
             stringvalue text,
             status character varying(30) ,
             CONSTRAINT pk_events PRIMARY KEY (sys, nodeid, sourcetime) WITH (IGNORE_DUP_KEY = ON)
@@ -97,13 +97,18 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
         val promise = Promise.promise<Unit>()
         try {
             logger.info("Open connection...")
-            DriverManager.getConnection(url, username, password).let {
+
+            (if (username=="" && password=="")
+                DriverManager.getConnection(url)
+            else
+                DriverManager.getConnection(url, username, password)
+            ).let {
                 it.autoCommit = false
 
                 // Insert SQL
                 sqlInsertStatement = when (it.metaData.databaseProductName) {
-                    "PostgreSQL" -> sqlInsertStatementPostgreSQL
                     "MySQL" -> sqlInsertStatementMySQL
+                    "PostgreSQL" -> sqlInsertStatementPostgreSQL
                     "Microsoft SQL Server" -> sqlInsertStatementMsSQL
                     else -> sqlInsertStatement
                 }
@@ -114,8 +119,8 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
 
                 // Create Table
                 when (it.metaData.databaseProductName) {
-                    "PostgreSQL" -> sqlCreateTablePostgreSQL
                     "MySQL" -> sqlCreateTableMySQL
+                    "PostgreSQL" -> sqlCreateTablePostgreSQL
                     "Microsoft SQL Server" -> sqlCreateTableMsSQL
                     else -> null
                 }?.let { sql ->
@@ -177,7 +182,7 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
                 batch.setTimestamp(3, Timestamp.from(it.value.sourceTime()))
                 batch.setTimestamp(4, Timestamp.from(it.value.serverTime()))
                 val doubleValue = it.value.valueAsDouble()
-                if (doubleValue != null) {
+                if (doubleValue != null && !doubleValue.isNaN()) {
                     batch.setDouble(5, doubleValue)
                     batch.setNull(6, Types.VARCHAR)
                 } else {

@@ -10,15 +10,18 @@ import java.util.concurrent.TimeUnit
 
 
 class JdbcLogger(config: JsonObject) : LoggerBase(config) {
-    private val defaultSqlInsert = """
-        INSERT INTO EVENTS(nodeid, sourcetime, servertime, numericvalue, stringvalue, status)
-        VALUES (?, ?, ?, ?, ?, ?)
-        ON CONFLICT ON CONSTRAINT PK_EVENTS DO NOTHING 
-    """.trimIndent()
     private val url = config.getString("Url", "jdbc:postgresql://localhost:5432/scada")
     private val username = config.getString("Username", "system")
     private val password = config.getString("Password", "manager")
-    private val sqlInsert = config.getString("InsertSql", defaultSqlInsert)
+
+    private val sqlTableName = config.getString("SqlTableName", "EVENTS")
+
+    private val sqlInsertStatement = config.getString("SqlInsertStatement",
+        """
+        INSERT INTO $sqlTableName (nodeid, sourcetime, servertime, numericvalue, stringvalue, status)
+        VALUES (?, ?, ?, ?, ?, ?)
+        ON CONFLICT ON CONSTRAINT PK_EVENTS DO NOTHING 
+        """.trimIndent())
 
     /*
     CREATE TABLE IF NOT EXISTS public.events
@@ -65,8 +68,7 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
         if (connection != null) {
             if (!connection.isClosed) {
                 try {
-                    connection.prepareStatement(sqlInsert).use(::writeBatch)
-                    connection.commit()
+                    connection.prepareStatement(sqlInsertStatement).use(::writeBatch)
                 } catch (e: Exception) {
                     logger.error("Error writing batch [{}]", e.message)
                 }
@@ -87,6 +89,7 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
         }
         if (batchPoints.size > 0) {
             batchPoints.forEach {
+                println(it.value)
                 batch.setString(1, it.topic.address)
                 batch.setTimestamp(2, Timestamp.from(it.value.sourceTime()))
                 batch.setTimestamp(3, Timestamp.from(it.value.serverTime()))
@@ -101,7 +104,8 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
                 batch.setString(6, it.value.statusAsString())
                 batch.addBatch()
             }
-            batch.execute()
+            batch.executeBatch()
+            batch.connection.commit()
             batchPoints.clear()
         }
     }

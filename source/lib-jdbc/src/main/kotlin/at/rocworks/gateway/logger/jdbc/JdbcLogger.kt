@@ -1,6 +1,7 @@
 package at.rocworks.gateway.logger.jdbc
 
 import at.rocworks.gateway.core.logger.LoggerBase
+import at.rocworks.gateway.core.service.Common
 import io.vertx.core.Future
 import io.vertx.core.Promise
 import io.vertx.core.json.JsonObject
@@ -13,36 +14,81 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
     private val username = config.getString("Username", "system")
     private val password = config.getString("Password", "manager")
 
-    private val sqlTableName = config.getString("SqlTableName", "EVENTS")
+    private val sqlTableName = config.getString("SqlTableName", "events")
 
-    private val sqlInsertStatement = config.getString("SqlInsertStatement",
-        """
-        INSERT INTO $sqlTableName (system, nodeid, sourcetime, servertime, numericvalue, stringvalue, status)
+    // --------------------------------------------------------------------------------------------------------------
+
+    private val sqlCreateTablePostgreSQL = """
+        CREATE TABLE IF NOT EXISTS $sqlTableName
+        (
+            sys character varying(30) NOT NULL,
+            nodeid character varying(30) NOT NULL,
+            sourcetime timestamp without time zone NOT NULL,
+            servertime timestamp without time zone NOT NULL,
+            numericvalue numeric,
+            stringvalue text,
+            status character varying(30) ,
+            CONSTRAINT pk_events PRIMARY KEY (sys, nodeid, sourcetime)
+        );        
+    """.trimIndent()
+
+    private val sqlCreateTableMySQL = """
+        CREATE TABLE IF NOT EXISTS $sqlTableName
+        (
+            sys varchar(30) NOT NULL,
+            nodeid varchar(30) NOT NULL,
+            sourcetime timestamp(6) NOT NULL,
+            servertime timestamp(6) NOT NULL,
+            numericvalue double,
+            stringvalue text,
+            status varchar(30) ,
+            CONSTRAINT pk_events PRIMARY KEY (sys, nodeid, sourcetime)
+        );        
+    """.trimIndent()
+
+    private val sqlCreateTableMsSQL = """
+        CREATE TABLE $sqlTableName
+        (
+            sys character varying(30) NOT NULL,
+            nodeid character varying(30) NOT NULL,
+            sourcetime datetime2 NOT NULL,
+            servertime datetime2 NOT NULL,
+            numericvalue numeric,
+            stringvalue text,
+            status character varying(30) ,
+            CONSTRAINT pk_events PRIMARY KEY (sys, nodeid, sourcetime) WITH (IGNORE_DUP_KEY = ON)
+        );        
+    """.trimIndent()
+
+    // --------------------------------------------------------------------------------------------------------------
+
+    private var sqlInsertStatement = config.getString("SqlInsertStatement", "")
+
+    private val sqlInsertStatementPostgreSQL =  """
+        INSERT INTO $sqlTableName (sys, nodeid, sourcetime, servertime, numericvalue, stringvalue, status)
          VALUES (?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT ON CONSTRAINT PK_EVENTS DO NOTHING 
-        """.trimIndent())
+        """.trimIndent()
 
-    private val sqlQueryStatement = config.getString("SqlQueryStatement",
-        """
+    private val sqlInsertStatementMySQL = """
+        INSERT IGNORE INTO $sqlTableName (sys, nodeid, sourcetime, servertime, numericvalue, stringvalue, status)
+        VALUES (?, ?, ?, ?, ?, ?, ?)        
+        """.trimIndent()
+
+    private val sqlInsertStatementMsSQL = """
+        INSERT INTO $sqlTableName (sys, nodeid, sourcetime, servertime, numericvalue, stringvalue, status)
+        VALUES (?, ?, ?, ?, ?, ?, ?)        
+        """.trimIndent()
+
+    // --------------------------------------------------------------------------------------------------------------
+
+    private val sqlQueryStatement = config.getString("SqlQueryStatement", """
         SELECT sourcetime, servertime, numericvalue, stringvalue, status
          FROM $sqlTableName 
-         WHERE system = ? AND nodeid = ? AND sourcetime >= ? AND sourcetime <= ? 
+         WHERE sys = ? AND nodeid = ? AND sourcetime >= ? AND sourcetime <= ? 
         """.trimIndent())
 
-    /*
-    CREATE TABLE IF NOT EXISTS public.events
-    (
-        system character varying(30) NOT NULL,
-        nodeid character varying(30) NOT NULL,
-        sourcetime timestamp without time zone NOT NULL,
-        servertime timestamp without time zone NOT NULL,
-        numericvalue numeric,
-        stringvalue text,
-        status character varying(30) ,
-        CONSTRAINT pk_events PRIMARY KEY (system, nodeid, sourcetime)
-    )
-    TABLESPACE ts_scada;
-    */
+    // --------------------------------------------------------------------------------------------------------------
 
     @Volatile
     private var connection: Connection? = null
@@ -53,11 +99,41 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
             logger.info("Open connection...")
             DriverManager.getConnection(url, username, password).let {
                 it.autoCommit = false
+
+                // Insert SQL
+                sqlInsertStatement = when (it.metaData.databaseProductName) {
+                    "PostgreSQL" -> sqlInsertStatementPostgreSQL
+                    "MySQL" -> sqlInsertStatementMySQL
+                    "Microsoft SQL Server" -> sqlInsertStatementMsSQL
+                    else -> sqlInsertStatement
+                }
+
+                if (sqlInsertStatement == "") {
+                    logger.error("Please provide a sqlInsertStatement in config file!")
+                }
+
+                // Create Table
+                when (it.metaData.databaseProductName) {
+                    "PostgreSQL" -> sqlCreateTablePostgreSQL
+                    "MySQL" -> sqlCreateTableMySQL
+                    "Microsoft SQL Server" -> sqlCreateTableMsSQL
+                    else -> null
+                }?.let { sql ->
+                    it.createStatement().use { statement ->
+                        try {
+                            statement.execute(sql)
+                        } catch (e: Exception) {
+                            logger.warn("Create table exception [{}]", e.message)
+                        }
+                    }
+                }
+
                 connection = it
                 promise.complete()
-                logger.info("Open connection done.")
+                logger.info("Open connection done [{}] [{}]", it.metaData.databaseProductName, it.metaData.databaseProductVersion)
             }
         } catch (e: SQLException) {
+            e.printStackTrace()
             promise.fail(e)
         }
         return promise.future()
@@ -144,8 +220,8 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
                         }
                         result.add(
                             listOf(
-                                rs.getString(1), // sourcetime
-                                rs.getString(2), // servertime
+                                rs.getTimestamp(1).toInstant(), // sourcetime
+                                rs.getTimestamp(2).toInstant(), // servertime
                                 value, // value
                                 rs.getString(5)  // status
                             )

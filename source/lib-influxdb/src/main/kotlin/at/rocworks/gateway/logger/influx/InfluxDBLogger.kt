@@ -98,7 +98,12 @@ class InfluxDBLogger(config: JsonObject) : LoggerBase(config) {
         result: (Boolean, List<List<Any>>?) -> Unit
     ) {
         try {
-            val sql = "SELECT value, status FROM \"${system}\" WHERE \"address\" = '$nodeId' AND time >= $fromTimeNano AND time <= $toTimeNano"
+            val sql = """
+                SELECT value, status 
+                FROM "$system" 
+                WHERE "address" = '$nodeId' 
+                AND time >= $fromTimeNano AND time <= $toTimeNano 
+                """.trimIndent()
             val data = session.query(Query(sql)).let {
                 it.results.getOrNull(0)?.series?.getOrNull(0)?.values
             }

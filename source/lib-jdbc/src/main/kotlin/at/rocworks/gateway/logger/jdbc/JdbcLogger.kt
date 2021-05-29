@@ -18,21 +18,22 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
 
     private val sqlInsertStatement = config.getString("SqlInsertStatement",
         """
-        INSERT INTO $sqlTableName (nodeid, sourcetime, servertime, numericvalue, stringvalue, status)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO $sqlTableName (system, nodeid, sourcetime, servertime, numericvalue, stringvalue, status)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT ON CONSTRAINT PK_EVENTS DO NOTHING 
         """.trimIndent())
 
     /*
     CREATE TABLE IF NOT EXISTS public.events
     (
+        system character varying(30) NOT NULL,
         nodeid character varying(30) NOT NULL,
         sourcetime timestamp without time zone NOT NULL,
         servertime timestamp without time zone NOT NULL,
         numericvalue numeric,
         stringvalue text,
         status character varying(30) ,
-        CONSTRAINT pk_events PRIMARY KEY (nodeid, sourcetime)
+        CONSTRAINT pk_events PRIMARY KEY (system, nodeid, sourcetime)
     )
     TABLESPACE ts_scada;
     */
@@ -90,18 +91,19 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
         if (batchPoints.size > 0) {
             batchPoints.forEach {
                 println(it.value)
-                batch.setString(1, it.topic.address)
-                batch.setTimestamp(2, Timestamp.from(it.value.sourceTime()))
-                batch.setTimestamp(3, Timestamp.from(it.value.serverTime()))
+                batch.setString(1, it.topic.systemName)
+                batch.setString(2, it.topic.address)
+                batch.setTimestamp(3, Timestamp.from(it.value.sourceTime()))
+                batch.setTimestamp(4, Timestamp.from(it.value.serverTime()))
                 val doubleValue = it.value.valueAsDouble()
                 if (doubleValue != null) {
-                    batch.setDouble(4, doubleValue)
-                    batch.setNull(5, Types.VARCHAR)
+                    batch.setDouble(5, doubleValue)
+                    batch.setNull(6, Types.VARCHAR)
                 } else {
-                    batch.setNull(4, Types.NUMERIC)
-                    batch.setString(5, it.value.valueAsString())
+                    batch.setNull(5, Types.NUMERIC)
+                    batch.setString(6, it.value.valueAsString())
                 }
-                batch.setString(6, it.value.statusAsString())
+                batch.setString(7, it.value.statusAsString())
                 batch.addBatch()
             }
             batch.executeBatch()

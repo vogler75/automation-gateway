@@ -23,12 +23,12 @@ GraphQLServer:
 
 Database:
   Logger:
-    - Id: postgres
-      Type: Jdbc
-      Enabled: true
-      Url: jdbc:postgresql://nuc1:5432/scada
-      Username: system
-      Password: manager
+    - Id: influx
+      Type: InfluxDB
+      Url: http://nuc1:8086
+      Database: test
+      Username: ""
+      Password: ""
       WriteParameters:
         QueueSize: 20000
         BlockSize: 10000

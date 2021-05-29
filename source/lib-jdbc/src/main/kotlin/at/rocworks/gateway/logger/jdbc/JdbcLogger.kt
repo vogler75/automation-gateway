@@ -137,11 +137,16 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
                     val rs = stmt.executeQuery()
                     while (rs.next()) {
                         // sourcetime, servertime, numericvalue, stringvalue, status
+                        val value = if (rs.getObject(3) != null) {
+                            rs.getDouble(3)
+                        } else {
+                            rs.getString(4)
+                        }
                         result.add(
                             listOf(
                                 rs.getString(1), // sourcetime
                                 rs.getString(2), // servertime
-                                rs.getString(3), // value
+                                value, // value
                                 rs.getString(5)  // status
                             )
                         )

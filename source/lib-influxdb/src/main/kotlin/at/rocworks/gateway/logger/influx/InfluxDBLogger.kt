@@ -102,13 +102,22 @@ class InfluxDBLogger(config: JsonObject) : LoggerBase(config) {
         val toTimeNano = toTimeMS * 1_000_000
         try {
             val sql = """
-                SELECT time, servertime, value, status 
+                SELECT time, servertime, value, text, status 
                 FROM "$system" 
                 WHERE "address" = '$nodeId' 
                 AND time >= $fromTimeNano AND time <= $toTimeNano 
                 """.trimIndent()
-            val data = session.query(Query(sql)).let {
-                it.results.getOrNull(0)?.series?.getOrNull(0)?.values
+            val data = session.query(Query(sql)).let {  result ->
+                result.results.getOrNull(0)
+                    ?.series?.getOrNull(0)
+                    ?.values?.map {
+                        listOf(
+                            it.component1(),
+                            it.component2(),
+                            it.component3() ?: it.component4(),
+                            it.component5()
+                        )
+                    }
             }
             result(data != null, data)
         } catch (e: Exception) {

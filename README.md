@@ -1,12 +1,11 @@
 # Frankenstein Automation Gateway
 
-Connect one or more OPC UA servers to the gateway and access the data from the OPC UA servers with a GraphQL or a MQTT client. News and Blog posts can be found [here](https://www.rocworks.at/wordpress/?cat=39)
-
-You can sponsor this project [here](https://paypal.me/av75) :-)
+Connect one or more OPC UA servers to the gateway and access the data from the OPC UA servers with a GraphQL or a MQTT client. News and Blog posts can be found [here](https://www.rocworks.at/wordpress/?cat=39). You can sponsor this project [here](https://paypal.me/av75).
 
 ![Gateway](doc/Gateway.png)
 
 # Version History
+1.16 JDBC Logger to write field values to relational databases  
 1.15.1 Added BrowsePath to GraphQL OPC UA node (with Full option)  
 1.15 Nats Logger to write field values to a Nats server  
 1.14 Fixes and optimizations  
@@ -197,6 +196,53 @@ Example MQTT Topic:
 > plc/mod/node/coil:1  
 
 # Version History
+## 1.16 JDBC Logger to write field values to relational databases  
+Added the option to log values to a JDBC compliant relational database. You have to add the JDBC driver to you classpath and set the appropriate JDBC URL path in the configuration file. PostgreSQL, MySQL and MSSQL JDBC drivers are already included in the build.gradle file (see lib-jdbc/build.gradle). If you need other JDBC drivers you can add it to this file as runtime only dependency.  
+
+You have to create the table in the database manually. You can specify the table name in the config file with the option "SqlTableName", if you do not specify the table name then "events" will be used as default name. 
+
+
+Specify JDBC drivers in the lib-jdbc/build.gradle file:
+```
+    runtimeOnly group: 'org.postgresql', name: 'postgresql', version: '42.2.20'
+    runtimeOnly group: 'mysql', name: 'mysql-connector-java', version: '8.0.25'
+    runtimeOnly group: 'com.microsoft.sqlserver', name: 'mssql-jdbc', version: '9.2.1.jre11'
+```
+
+Create a table with this structure (this is a PostgreSQL example)
+```
+  CREATE TABLE IF NOT EXISTS public.events
+  (
+      system character varying(30) NOT NULL,
+      nodeid character varying(30) NOT NULL,
+      sourcetime timestamp without time zone NOT NULL,
+      servertime timestamp without time zone NOT NULL,
+      numericvalue numeric,
+      stringvalue text,
+      status character varying(30) ,
+      CONSTRAINT pk_events PRIMARY KEY (system, nodeid, sourcetime)
+  )
+  TABLESPACE ts_scada;
+```
+
+Configuration of JDBC database logger:
+```
+Database:
+  Logger:
+    - Id: postgres
+      Type: Jdbc
+      Enabled: true
+      Url: jdbc:postgresql://nuc1:5432/scada
+      Username: system
+      Password: manager
+      SqlTableName: events
+      WriteParameters:
+        QueueSize: 20000
+        BlockSize: 10000
+      Logging:
+        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_SByte/+
+        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Byte/+
+```
 
 ## 1.15 Nats Logger to write field values to a Nats server
 Added a [Nats](https://nats.io) Logger to write field values to a Nats server. It is like a database logger, but it writes the values to a configurable Nats server. Any values which get into Frankenstein (OPC UA, PLC4X, DDS, MQTT) by a Driver can be logged to a Nats server. The values are stored in JSON format.

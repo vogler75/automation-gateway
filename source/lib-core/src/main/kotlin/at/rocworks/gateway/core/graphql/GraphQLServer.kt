@@ -825,6 +825,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
                             item["SourceTime"] = it.getValue(0)
                             item["ServerTime"] = it.getValue(1)
                             item["Value"] = it.getValue(2)
+                            item["DataType"] = it.getValue(2)?.javaClass?.simpleName ?: ""
                             item["StatusCode"] = it.getValue(3)
                             item
                         }

@@ -25,13 +25,10 @@ Database:
   Logger:
     - Id: postgres
       Type: Jdbc
-      Enabled: true
+      Enabled: false
       Url: jdbc:postgresql://nuc1:5432/scada
       Username: system
       Password: manager
-      WriteParameters:
-        QueueSize: 20000
-        BlockSize: 10000
       Logging:
         - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_SByte/+
         - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Byte/+
@@ -48,13 +45,10 @@ Database:
 
     - Id: mysql
       Type: Jdbc
-      Enabled: true
+      Enabled: false
       Url: jdbc:mysql://nuc1:3306/scada
       Username: root
       Password: manager
-      WriteParameters:
-        QueueSize: 20000
-        BlockSize: 10000
       Logging:
         - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_SByte/+
         - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Byte/+
@@ -71,13 +65,31 @@ Database:
 
     - Id: mssql
       Type: Jdbc
-      Enabled: true
+      Enabled: false
       Url: jdbc:sqlserver://nuc1;databaseName=scada
       Username: sa
       Password: Manager4711#
-      WriteParameters:
-        QueueSize: 20000
-        BlockSize: 10000
+      Logging:
+        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_SByte/+
+        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Byte/+
+        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
+        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
+        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Integer/+
+        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
+        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Int32/+
+        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Int64/+
+        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Unt16/+
+        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_UInt32/+
+        - Topic: opc/opc1/path/Objects/Demo/Scalar/Scalar_Static/Scalar_Static_Int64
+        - Topic: opc/opc1/path/Objects/Demo/Scalar/Scalar_Static/Scalar_Static_String
+
+    - Id: crate
+      Type: Jdbc
+      Enabled: true
+      Url: jdbc:crate://nuc1:5433/
+      Username: crate
+      Password:
+      SqlTableName: events2
       Logging:
         - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_SByte/+
         - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Byte/+

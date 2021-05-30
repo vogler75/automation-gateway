@@ -25,9 +25,5 @@ dependencies {
     implementation 'io.vertx:vertx-service-discovery:4.0.3'
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.11.4'
 
-    runtimeOnly group: 'org.postgresql', name: 'postgresql', version: '42.2.20'
-    runtimeOnly group: 'mysql', name: 'mysql-connector-java', version: '8.0.25'
-    runtimeOnly group: 'com.microsoft.sqlserver', name: 'mssql-jdbc', version: '9.2.1.jre11'
-
     testImplementation 'org.jetbrains.kotlin:kotlin-test:1.4.30'
 }

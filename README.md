@@ -5,6 +5,7 @@ Connect one or more OPC UA servers to the gateway and access the data from the O
 ![Gateway](doc/Gateway.png)
 
 # Version History
+1.17 Added CrateDB as supported JDBC database for logging  
 1.16 JDBC Logger to write field values to relational databases  
 1.15.1 Added BrowsePath to GraphQL OPC UA node (with Full option)  
 1.15 Nats Logger to write field values to a Nats server  
@@ -196,6 +197,23 @@ Example MQTT Topic:
 > plc/mod/node/coil:1  
 
 # Version History
+## 1.17 Added CrateDB as supported JDBC database for logging  
+[CrateDB](https://crate.io) is now also supported as JDBC database for logging. If the table (default name "events") does not exists, it will be created partitioned by the month of the source time with four shareds. But you can create the table manually in advance with the settings of your needs.
+```
+CREATE TABLE IF NOT EXISTS $sqlTableName (
+  "sys" TEXT, 
+  "nodeid" TEXT,          
+  "sourcetime" TIMESTAMP WITH TIME ZONE,
+  "servertime" TIMESTAMP WITH TIME ZONE,
+  "sourcetime_month" TIMESTAMP WITH TIME ZONE GENERATED ALWAYS AS date_trunc('month', "sourcetime"),
+  "numericvalue" DOUBLE,
+  "stringvalue" TEXT,
+  "status" TEXT,
+  PRIMARY KEY (sourcetime_month, sourcetime, sys, nodeid)
+) CLUSTERED INTO 4 SHARDS PARTITIONED BY ("sourcetime_month");   
+```
+
+
 ## 1.16 JDBC Logger to write field values to relational databases  
 Added the option to log values to a JDBC compliant relational database. You have to add the JDBC driver to your classpath and set the appropriate JDBC URL path in the configuration file. PostgreSQL, MySQL and Microsoft SQL Server JDBC drivers are already included in the build.gradle file (see lib-jdbc/build.gradle) and also appropriate SQL statements are implemented for those relational databases. If you use other JDBC drivers you can add the driver to the lib-jdbc/build.gradle file as runtime only dependency and you may specify SQL statements for insert and select in the configuration file.
 

@@ -60,6 +60,20 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
         );        
     """.trimIndent()
 
+    private val sqlCreateTableCrate = """
+        CREATE TABLE IF NOT EXISTS $sqlTableName (
+          "sys" TEXT, 
+          "nodeid" TEXT,          
+          "sourcetime" TIMESTAMP WITH TIME ZONE,
+          "servertime" TIMESTAMP WITH TIME ZONE,
+          "sourcetime_month" TIMESTAMP WITH TIME ZONE GENERATED ALWAYS AS date_trunc('month', "sourcetime"),
+          "numericvalue" DOUBLE,
+          "stringvalue" TEXT,
+          "status" TEXT,
+          PRIMARY KEY (sourcetime_month, sourcetime, sys, nodeid)
+        ) CLUSTERED INTO 4 SHARDS PARTITIONED BY ("sourcetime_month");   
+    """.trimIndent()
+
     // --------------------------------------------------------------------------------------------------------------
 
     private var sqlInsertStatement = config.getString("SqlInsertStatement", "")
@@ -78,6 +92,12 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
     private val sqlInsertStatementMsSQL = """
         INSERT INTO $sqlTableName (sys, nodeid, sourcetime, servertime, numericvalue, stringvalue, status)
         VALUES (?, ?, ?, ?, ?, ?, ?)        
+        """.trimIndent()
+
+    private val sqlInsertStatementCrate =  """
+        INSERT INTO $sqlTableName (sys, nodeid, sourcetime, servertime, numericvalue, stringvalue, status)
+         VALUES (?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT DO NOTHING
         """.trimIndent()
 
     // --------------------------------------------------------------------------------------------------------------
@@ -108,6 +128,7 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
                 // Insert SQL
                 sqlInsertStatement = when (it.metaData.databaseProductName) {
                     "MySQL" -> sqlInsertStatementMySQL
+                    "Crate" -> sqlInsertStatementCrate
                     "PostgreSQL" -> sqlInsertStatementPostgreSQL
                     "Microsoft SQL Server" -> sqlInsertStatementMsSQL
                     else -> sqlInsertStatement
@@ -120,6 +141,7 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
                 // Create Table
                 when (it.metaData.databaseProductName) {
                     "MySQL" -> sqlCreateTableMySQL
+                    "Crate" -> sqlCreateTableCrate
                     "PostgreSQL" -> sqlCreateTablePostgreSQL
                     "Microsoft SQL Server" -> sqlCreateTableMsSQL
                     else -> null
@@ -186,7 +208,7 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
                     batch.setDouble(5, doubleValue)
                     batch.setNull(6, Types.VARCHAR)
                 } else {
-                    batch.setNull(5, Types.NUMERIC)
+                    batch.setNull(5, Types.DOUBLE)
                     batch.setString(6, it.value.valueAsString())
                 }
                 batch.setString(7, it.value.statusAsString())

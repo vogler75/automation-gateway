@@ -216,6 +216,7 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
             }
             batch.executeBatch()
             batch.connection.commit()
+            valueCounterOutput+=batchPoints.size
             batchPoints.clear()
         }
     }

@@ -51,8 +51,8 @@ class IoTDBLogger(config: JsonObject) : LoggerBase(config) {
         fun getDataTypeAndValue(topicValue: TopicValue): Pair<TSDataType?, Any?> {
             return when (val value = topicValue.valueAsObject()) {
                 is String -> Pair(TSDataType.TEXT, value)
-                is Double -> Pair(TSDataType.DOUBLE, value)
-                is Float -> Pair(TSDataType.FLOAT, value)
+                is Double -> if (!value.isNaN()) Pair(TSDataType.DOUBLE, value) else Pair(null, null)
+                is Float -> if (!value.isNaN()) Pair(TSDataType.FLOAT, value) else Pair(null, null)
                 is Int -> Pair(TSDataType.INT32, value)
                 is Long -> Pair(TSDataType.INT64, value)
                 is Boolean -> Pair(TSDataType.BOOLEAN, value)
@@ -93,6 +93,7 @@ class IoTDBLogger(config: JsonObject) : LoggerBase(config) {
                     .substringAfterLast(delimiter = '.')
 
                 val (dataType, value) = getDataTypeAndValue(point.value)
+                println("${point.topic.browsePath} => $dataType => $value")
                 if (dataType != null && value != null) {
                     deviceIds.add("${database}.${path}")
                     times.add(time)

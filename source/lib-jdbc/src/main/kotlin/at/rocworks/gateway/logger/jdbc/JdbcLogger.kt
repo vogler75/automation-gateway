@@ -18,7 +18,7 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
 
     // --------------------------------------------------------------------------------------------------------------
 
-    private val sqlCreateTablePostgreSQL = """
+    private val sqlCreateTablePostgreSQL = listOf("""
         CREATE TABLE IF NOT EXISTS $sqlTableName
         (
             sys character varying(30) NOT NULL,
@@ -28,11 +28,12 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
             numericvalue numeric,
             stringvalue text,
             status character varying(30) ,
-            CONSTRAINT pk_events PRIMARY KEY (sys, nodeid, sourcetime)
-        );        
-    """.trimIndent()
+            CONSTRAINT ${sqlTableName}_pk PRIMARY KEY (sys, nodeid, sourcetime)
+        );
+    """.trimIndent(),
+        "CREATE INDEX ${sqlTableName}_sourcetime_ix ON ${sqlTableName}(sourcetime);")
 
-    private val sqlCreateTableMySQL = """
+    private val sqlCreateTableMySQL = listOf("""
         CREATE TABLE IF NOT EXISTS $sqlTableName
         (
             sys varchar(30) NOT NULL,
@@ -42,11 +43,12 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
             numericvalue double,
             stringvalue text,
             status varchar(30) ,
-            CONSTRAINT pk_events PRIMARY KEY (sys, nodeid, sourcetime)
+            CONSTRAINT ${sqlTableName}_pk PRIMARY KEY (sys, nodeid, sourcetime)
         );        
-    """.trimIndent()
+    """.trimIndent(),
+        "CREATE INDEX ${sqlTableName}_sourcetime_ix ON ${sqlTableName}(sourcetime);")
 
-    private val sqlCreateTableMsSQL = """
+    private val sqlCreateTableMsSQL = listOf("""
         CREATE TABLE $sqlTableName
         (
             sys character varying(30) NOT NULL,
@@ -54,13 +56,14 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
             sourcetime datetime2 NOT NULL,
             servertime datetime2 NOT NULL,
             numericvalue real,
-            stringvalue text,
+            stringvalue varchar(MAX),
             status character varying(30) ,
-            CONSTRAINT pk_events PRIMARY KEY (sys, nodeid, sourcetime) WITH (IGNORE_DUP_KEY = ON)
+            CONSTRAINT ${sqlTableName}_pk PRIMARY KEY (sys, nodeid, sourcetime) WITH (IGNORE_DUP_KEY = ON)
         );        
-    """.trimIndent()
+    """.trimIndent(),
+        "CREATE INDEX ${sqlTableName}_sourcetime_ix ON ${sqlTableName}(sourcetime);")
 
-    private val sqlCreateTableCrate = """
+    private val sqlCreateTableCrate = listOf("""
         CREATE TABLE IF NOT EXISTS $sqlTableName (
           "sys" TEXT, 
           "nodeid" TEXT,          
@@ -72,7 +75,7 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
           "status" TEXT,
           PRIMARY KEY (sourcetime_month, sourcetime, sys, nodeid)
         ) CLUSTERED INTO 4 SHARDS PARTITIONED BY ("sourcetime_month");   
-    """.trimIndent()
+    """.trimIndent())
 
     // --------------------------------------------------------------------------------------------------------------
 
@@ -81,7 +84,7 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
     private val sqlInsertStatementPostgreSQL =  """
         INSERT INTO $sqlTableName (sys, nodeid, sourcetime, servertime, numericvalue, stringvalue, status)
          VALUES (?, ?, ?, ?, ?, ?, ?)
-         ON CONFLICT ON CONSTRAINT PK_EVENTS DO NOTHING 
+         ON CONFLICT DO NOTHING 
         """.trimIndent()
 
     private val sqlInsertStatementMySQL = """
@@ -122,11 +125,11 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
                 DriverManager.getConnection(url)
             else
                 DriverManager.getConnection(url, username, password)
-            ).let {
-                it.autoCommit = false
+            ).let { connection ->
+                connection.autoCommit = false
 
                 // Insert SQL
-                sqlInsertStatement = when (it.metaData.databaseProductName) {
+                sqlInsertStatement = when (connection.metaData.databaseProductName) {
                     "MySQL" -> sqlInsertStatementMySQL
                     "Crate" -> sqlInsertStatementCrate
                     "PostgreSQL" -> sqlInsertStatementPostgreSQL
@@ -139,25 +142,26 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
                 }
 
                 // Create Table
-                when (it.metaData.databaseProductName) {
+                when (connection.metaData.databaseProductName) {
                     "MySQL" -> sqlCreateTableMySQL
                     "Crate" -> sqlCreateTableCrate
                     "PostgreSQL" -> sqlCreateTablePostgreSQL
                     "Microsoft SQL Server" -> sqlCreateTableMsSQL
-                    else -> null
-                }?.let { sql ->
-                    it.createStatement().use { statement ->
+                    else -> listOf<String>()
+                }?.forEach { sql ->
+                    connection.createStatement().use { statement ->
                         try {
                             statement.execute(sql)
                         } catch (e: Exception) {
                             logger.warn("Create table exception [{}]", e.message)
                         }
+                        connection.commit()
                     }
                 }
 
-                connection = it
+                this.connection = connection
                 promise.complete()
-                logger.info("Open connection done [{}] [{}]", it.metaData.databaseProductName, it.metaData.databaseProductVersion)
+                logger.info("Open connection done [{}] [{}]", connection.metaData.databaseProductName, connection.metaData.databaseProductVersion)
             }
         } catch (e: SQLException) {
             e.printStackTrace()

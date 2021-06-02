@@ -93,7 +93,6 @@ class IoTDBLogger(config: JsonObject) : LoggerBase(config) {
                     .substringAfterLast(delimiter = '.')
 
                 val (dataType, value) = getDataTypeAndValue(point.value)
-                println("${point.topic.browsePath} => $dataType => $value")
                 if (dataType != null && value != null) {
                     deviceIds.add("${database}.${path}")
                     times.add(time)
@@ -114,7 +113,7 @@ class IoTDBLogger(config: JsonObject) : LoggerBase(config) {
         if (deviceIds.size > 0) {
             try {
                 session.insertRecords(deviceIds, times, measurementList, typesList, valuesList)
-                valueCounterOutput+=deviceIds.size
+                valueCounterOutput += deviceIds.size
             } catch (e: Exception) {
                 logger.error("Error writing records [{}]", e.message)
             }

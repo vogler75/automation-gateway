@@ -39,7 +39,7 @@ data class Topic (
     val addressItems : List<String>
         get() = splitAddress(this.address)
 
-    fun systemBrowsePath(): String = "$systemName/$browsePath"
+    fun systemBrowsePath(): String = "$systemName/${if (browsePath=="") address else browsePath}"
 
     fun encodeToJson() = encodeToJson(this)
 

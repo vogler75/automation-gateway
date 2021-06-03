@@ -1,0 +1,33 @@
+MqttServer:
+  Listeners:
+    - Id: Mqtt
+      Port: 1883
+      Host: 0.0.0.0
+      Enabled: false
+      LogLevel: INFO # ALL | INFO
+
+Plc4x:
+  Drivers:
+    - Id: "machine1"
+      Enabled: true
+      Url: "modbus://127.0.0.1:502"
+      Polling:
+        Time: 1000
+        OldNew: true
+      LogLevel: ALL
+
+Database:
+  Logger:
+    - Id: mqtt1
+      Type: Mqtt
+      Enabled: true
+      Host: localhost
+      Port: 1883
+      Ssl: false
+      Logging:
+        - Topic: plc/machine1/node/holding-register:1:INT
+        - Topic: plc/machine1/node/holding-register:2:INT
+        - Topic: plc/machine1/node/coil:1
+        - Topic: plc/machine1/node/coil:2
+
+

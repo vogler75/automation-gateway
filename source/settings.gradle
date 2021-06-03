@@ -1,6 +1,6 @@
 rootProject.name = 'gateway'
 
-include('app', 'test')
+include('app', 'app-plc4x', 'test')
 
 include(':cluster:template')
 include(':cluster:gateway')
@@ -11,7 +11,7 @@ include(':cluster:influxdb')
 include(':cluster:iotdb')
 include(':cluster:kafka')
 
-include('lib-core', 'lib-influxdb', 'lib-iotdb', 'lib-kafka', 'lib-nats', 'lib-jdbc')
+include('lib-core', 'lib-plc4x', 'lib-influxdb', 'lib-iotdb', 'lib-kafka', 'lib-nats', 'lib-jdbc')
 
 if (System.env.DDS_ROOT) {
     include (':cluster:dds')

@@ -12,12 +12,12 @@ import org.influxdb.InfluxDB
 import org.influxdb.InfluxDBFactory
 import org.influxdb.dto.*
 
-
 class InfluxDBLogger(config: JsonObject) : LoggerBase(config) {
     private val url = config.getString("Url", "")
     private val username = config.getString("Username", "")
     private val password = config.getString("Password", "")
     private val database = config.getString("Database", "scada")
+    private val removeRootNodeFromTagName = config.getBoolean("RemoveRootNodeFromTagName", false)
 
     private val session: InfluxDB = if (username == null || username == "")
         InfluxDBFactory.connect(url)
@@ -52,9 +52,12 @@ class InfluxDBLogger(config: JsonObject) : LoggerBase(config) {
     }
 
     private fun influxPointOf(dp: DataPoint): Point {
+        val tag = if (!removeRootNodeFromTagName) dp.topic.browsePath
+        else dp.topic.browsePath.substring(dp.topic.browsePath.indexOf("/")+1)
+
         val point = Point.measurement(dp.topic.systemName) // TODO: configurable measurement name
             .time(dp.value.sourceTime().toEpochMilli(), TimeUnit.MILLISECONDS)
-            .tag("tag", dp.topic.browsePath)
+            .tag("tag", tag)
             .tag("address", dp.topic.address)
             .tag("status", dp.value.statusAsString())
             .addField("servertime", dp.value.serverTimeAsISO()) // TODO: as string or EpochMilli?

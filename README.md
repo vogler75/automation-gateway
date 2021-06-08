@@ -27,9 +27,9 @@ Connect one or more OPC UA servers to the gateway and access the data from the O
 
 # Build and Run
 
-It needs [JDK 11](https://openjdk.java.net/projects/jdk/11/) or higher.
+It needs [Java 11](https://openjdk.java.net/projects/jdk/11/) or higher. There is an issue with Java 8 update 292 and bouncycastl encryption. [here](https://github.com/bcgit/bc-java/issues/941) you can find more information about this issue..
 
-You can open the project in IntelliJ IDEA IDE and build it there or use grade to build it from command line.
+You can open the project in IntelliJ IDEA IDE and build it there or use grade to build it from command line. You can download [gradle](https://gradle.org/install/) and build it from command line. Use **version 7** or higher of gradle! Check the version of gradle if you install gradle on Linux with your package management system. On some distributions gradle is too old and will throw errors during build phase. 
 
 ```
 > cd source/app
@@ -44,6 +44,17 @@ App is a single program with GraphQL, MQTT and the OPC UA connections in one sin
 ## Configuration
 
 See config.yaml in the app directory for an example how to configure the Gateway. You can pass a configuration file name to the program as the first argument or by setting a environment variable GATEWAY_CONFIG. If no argument is given then config.yaml will be used. If there are any questions about the configuration, please get in touch with me. 
+
+If you enable [GraphiQL](https://github.com/graphql/graphiql) (a graphical ui to build and execute GraphQL queries) you can access GraphiQL with http://localhost:4000/graphiql/ **! trailing slash is important !**
+
+```
+GraphQLServer:
+  Listeners:
+    - Port: 4000
+      Enabled: true
+      LogLevel: INFO
+      GraphiQL: true
+```
 
 ## Example Topics
 Note: remove the blanks between the slashes! (just here for better readabilty)

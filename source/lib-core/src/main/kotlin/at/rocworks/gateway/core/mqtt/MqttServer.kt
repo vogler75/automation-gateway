@@ -278,7 +278,6 @@ class MqttServer(config: JsonObject, private val endpoint: MqttEndpoint) : Abstr
     }
 
     private fun valueConsumer(topic: Topic, qos: MqttQoS, value: Any) {
-        println("valueConsumer "+topic+" "+qos+" "+value)
         when (value) {
             is Buffer -> valueConsumerBuffer(topic, qos, value)
             is String -> valueConsumerBuffer(topic, qos, Buffer.buffer(value))

@@ -210,6 +210,7 @@ abstract class DriverBase(config: JsonObject) : AbstractVerticle() {
             if (!removed) {
                 logger.warn("Client [{}] was not subscribed to [{}]", clientId, topic)
             } else if (count == 0) {
+                logger.info("Client [{}] was last client of [{}]", clientId, topic)
                 items.addAll(registry.delTopic(topic))
             }
         }

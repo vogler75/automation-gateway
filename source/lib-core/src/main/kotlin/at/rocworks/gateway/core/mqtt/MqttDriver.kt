@@ -161,18 +161,21 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
 
     override fun unsubscribeTopics(topics: List<Topic>, items: List<MonitoredItem>): Future<Boolean> {
         val promise = Promise.promise<Boolean>()
-        println("before: "+subscribedTopics.size)
-        topics.forEach { topic ->
-            subscribedTopics.removeIf { it.topicName == topic.topicName }
+
+        subscribedTopics.removeIf { topic ->
+            topics.filter { it.topicName == topic.topicName }.count() > 0
         }
-        val mqttItems = items.map { (it as MqttMonitoredItem).item }
-        mqttItems.forEach { address ->
-            logger.info("Unsubscribe address [{}]", address)
-            client?.unsubscribe(address)?.onComplete {
-                logger.info("Unsubscribe address [{}] result [{}]", address, it.result())
+
+        items.map { (it as MqttMonitoredItem).item }
+            .filter { address ->
+                subscribedTopics.filter { it.address == address }.count() == 0 }
+            .forEach { address ->
+                logger.info("Unsubscribe address [{}]", address)
+                client?.unsubscribe(address)?.onComplete {
+                    logger.info("Unsubscribe address [{}] result [{}]", address, it.result())
+                }
+                resetReceivedTopics(address)
             }
-            resetReceivedTopics(address)
-        }
         promise.complete(true)
         return promise.future()
     }
@@ -212,11 +215,9 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
             receivedTopics[receivedTopic]?.let {
                 it.forEach(::publish)
             } ?: run {
-                val topics = subscribedTopics.filter { subscribedTopic ->
-                    compareTopic(receivedTopic, subscribedTopic.address)
-                }
-                topics.forEach(::publish)
+                val topics = subscribedTopics.filter { compareTopic(receivedTopic, it.address) }
                 receivedTopics[receivedTopic] = topics
+                topics.forEach(::publish)
             }
         } catch (e: Exception) {
             e.printStackTrace()

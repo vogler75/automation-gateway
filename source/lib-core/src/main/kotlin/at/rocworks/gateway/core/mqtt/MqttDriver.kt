@@ -85,6 +85,21 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
                     "return value"
                 }
             }
+            "TEXT" -> {
+                if (valueScript.isNotEmpty()) {
+                    """ 
+                    import groovy.json.JsonSlurper
+                    import groovy.json.JsonOutput
+                    import java.time.*
+                    def output(source) {
+                      $valueScript
+                    }
+                    return JsonOutput.toJson(output(value))
+                    """.trimIndent()
+                } else {
+                    "return value"
+                }
+            }
             "" -> null
             else -> {
                 logger.warn("Unhandled value format [{}]", valueFormat)
@@ -99,7 +114,11 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
     private fun transformValue(value: Buffer): String {
         return if (groovyScript != null) {
             sharedData.setProperty("value", value.toString(Charset.defaultCharset()))
-            groovyScript.run().toString()
+            try {
+                groovyScript.run().toString()
+            } catch (e: Exception) {
+                e.toString()
+            }
         } else {
             value.toString(Charset.defaultCharset())
         }
@@ -142,11 +161,16 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
 
     override fun unsubscribeTopics(topics: List<Topic>, items: List<MonitoredItem>): Future<Boolean> {
         val promise = Promise.promise<Boolean>()
-        subscribedTopics.removeAll(topics)
+        println("before: "+subscribedTopics.size)
+        topics.forEach { topic ->
+            subscribedTopics.removeIf { it.topicName == topic.topicName }
+        }
         val mqttItems = items.map { (it as MqttMonitoredItem).item }
         mqttItems.forEach { address ->
-            logger.info("Unsubscribe topic [{}]", address)
-            client?.unsubscribe(address) 
+            logger.info("Unsubscribe address [{}]", address)
+            client?.unsubscribe(address)?.onComplete {
+                logger.info("Unsubscribe address [{}] result [{}]", address, it.result())
+            }
             resetReceivedTopics(address)
         }
         promise.complete(true)
@@ -200,7 +224,9 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
     }
 
     override fun publishTopic(topic: Topic, value: Buffer): Future<Boolean> {
-        TODO("Not yet implemented")
+        val promise = Promise.promise<Boolean>()
+        promise.fail("Not yet implemented")
+        return promise.future()
     }
 
     override fun readServerInfo(): JsonObject {

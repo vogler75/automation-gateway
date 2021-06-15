@@ -247,6 +247,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
             | enum Type { 
             |   Opc
             |   Plc
+            |   Mqtt
             | }  
             | 
             | type Query {
@@ -721,7 +722,9 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
         }, BackpressureStrategy.BUFFER)
 
         val request = JsonObject().put("ClientId", uuid).put("Topic", topic.encodeToJson())
-        vertx.eventBus().request<JsonObject>("${topic.systemType}/${topic.systemName}/Subscribe", request) {
+        val address = "${topic.systemType}/${topic.systemName}/Subscribe"
+        logger.info("Subscribe [{}] [{}]...", address, uuid)
+        vertx.eventBus().request<JsonObject>(address, request) {
             if (it.succeeded()) {
                 logger.info("Subscribe response [{}] [{}] [{}]", topic.topicName, it.result().body().getBoolean("Ok"), uuid)
             } else {
@@ -767,7 +770,9 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
         nodeIds.forEach { nodeId ->
             val topic = Topic.parseTopic("$type/$system/node:json/$nodeId")
             val request = JsonObject().put("ClientId", uuid).put("Topic", topic.encodeToJson())
-            vertx.eventBus().request<JsonObject>("${topic.systemType}/${topic.systemName}/Subscribe", request) {
+            val address = "${topic.systemType}/${topic.systemName}/Subscribe"
+            logger.info("Subscribe [{}] [{}]...", address, uuid)
+            vertx.eventBus().request<JsonObject>(address, request) {
                 if (it.succeeded()) {
                     logger.info("Subscribe response [{}] [{}] [{}]", topic.topicName, it.result().body().getBoolean("Ok"), uuid)
                 } else {

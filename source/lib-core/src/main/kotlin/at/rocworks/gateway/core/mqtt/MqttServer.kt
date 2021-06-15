@@ -164,6 +164,7 @@ class MqttServer(config: JsonObject, private val endpoint: MqttEndpoint) : Abstr
     }
 
     private fun unsubscribeHandler(message: MqttUnsubscribeMessage) {
+        logger.info("Unsubscribe Handler [{}]", message.topics().size)
         unsubscribeTopic(message.topics())
     }
 
@@ -233,6 +234,7 @@ class MqttServer(config: JsonObject, private val endpoint: MqttEndpoint) : Abstr
     }
 
     private fun subscribeMqttTopic(t: Topic, qos: MqttQoS, ret: Promise<Boolean>) {
+        logger.debug("Register [{}]", t.topicName)
         val consumer = vertx.eventBus().consumer<Buffer>(t.topicName) {
             valueConsumer(t, qos, it.body())
         }
@@ -241,6 +243,7 @@ class MqttServer(config: JsonObject, private val endpoint: MqttEndpoint) : Abstr
     }
 
     private fun unsubscribeMqttTopic(t: Topic) {
+        logger.debug("Unregister [{}]", t.topicName)
         this.topicConsumer[t.topicName]?.unregister()
         this.topicConsumer.remove(t.topicName)
     }
@@ -275,6 +278,7 @@ class MqttServer(config: JsonObject, private val endpoint: MqttEndpoint) : Abstr
     }
 
     private fun valueConsumer(topic: Topic, qos: MqttQoS, value: Any) {
+        println("valueConsumer "+topic+" "+qos+" "+value)
         when (value) {
             is Buffer -> valueConsumerBuffer(topic, qos, value)
             is String -> valueConsumerBuffer(topic, qos, Buffer.buffer(value))
@@ -286,6 +290,7 @@ class MqttServer(config: JsonObject, private val endpoint: MqttEndpoint) : Abstr
 
     private fun valueConsumerBuffer(topic: Topic, qos: MqttQoS, value: Buffer) {
         try {
+            logger.debug("Publish [{}]", value)
             if (endpoint.isConnected) {
                 endpoint.publish(topic.topicName, value, qos, false /*isDup*/, false /* isRetain */)
             } else {

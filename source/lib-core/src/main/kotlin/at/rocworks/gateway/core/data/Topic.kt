@@ -125,6 +125,17 @@ data class Topic (
                     address = it.destructured.component3()
                 )
             }
+            // --- Mqtt ---
+            ?: """${mqttUri}/(\w+)/Node$optFmt/(.*)$""".toRegex(RegexOption.IGNORE_CASE).find(topic)?.let {
+                Topic(
+                    topic,
+                    systemType = SystemType.Mqtt,
+                    topicType = TopicType.NodeId,
+                    systemName = it.destructured.component1(),
+                    format = getFmt(it.destructured.component2()),
+                    address = it.destructured.component3()
+                )
+            }
             // --- SYS ---
             ?: """(\${dollar}SYS)/(.*)$""".toRegex(RegexOption.IGNORE_CASE).find(topic)?.let {
                 Topic(

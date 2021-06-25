@@ -231,22 +231,27 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
     }
 
     override fun readServerInfo(): JsonObject {
-        TODO("Not yet implemented")
+        logger.error("readServerInfo() Not yet implemented")
+        return JsonObject()
     }
 
     override fun readHandler(message: Message<JsonObject>) {
-        TODO("Not yet implemented")
+        logger.error("readHandler() Not yet implemented")
+        message.fail(-1, "Not yet implemented")
     }
 
     override fun writeHandler(message: Message<JsonObject>) {
-        TODO("Not yet implemented")
+        logger.error("writeHandler() Not yet implemented")
+        message.reply(JsonObject().put("Ok", false))
     }
 
     override fun browseHandler(message: Message<JsonObject>) {
-        TODO("Not yet implemented")
+        logger.error("browseHandler() Not yet implemented")
+        message.reply(JsonObject().put("Ok", false))
     }
 
     override fun schemaHandler(message: Message<JsonObject>) {
-        TODO("Not yet implemented")
+        logger.error("schemaHandler() Not yet implemented")
+        message.reply(JsonObject().put("Ok", false))
     }
 }

@@ -57,6 +57,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
     private val defaultFieldName: String = "DisplayName"
     private val enableGraphiQL: Boolean = config.getBoolean("GraphiQL", false)
     private val writeSchemaFiles: Boolean = config.getBoolean("WriteSchemaToFile", false)
+    private val timeFormatterISO = DateTimeFormatter.ISO_DATE_TIME
 
     init {
         Logger.getLogger(id).level = Level.parse(config.getString("LogLevel", "INFO"))
@@ -418,11 +419,12 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
 
             try {
                 logger.debug("getNodeValue read request...")
-                vertx.eventBus().request<JsonObject>("$type/$system/Read", request) {
-                    logger.debug("getNodeValue read response [{}] [{}]", it.succeeded(), it.result()?.body())
-                    if (it.succeeded()) {
+                val address = "$type/$system/Read"
+                vertx.eventBus().request<JsonObject>(address, request) { response ->
+                    logger.debug("getNodeValue read response [{}] [{}]", response.succeeded(), response.result()?.body())
+                    if (response.succeeded()) {
                         try {
-                            val data = it.result().body().getJsonObject("Result")
+                            val data = response.result().body().getJsonObject("Result")
                             if (data!=null) {
                                 val input = TopicValue.fromJsonObject(data)
                                 val result = valueToGraphQL(type, system, nodeId, input)
@@ -436,6 +438,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
                             promise.complete(null)
                         }
                     } else {
+                        response.cause().printStackTrace()
                         promise.complete(null)
                     }
                 }
@@ -460,7 +463,9 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
             request.put("NodeId", nodes)
 
             try {
-                vertx.eventBus().request<JsonObject>("$type/$system/Read", request) { response ->
+                logger.debug("getNodeValues read request...")
+                val address = "$type/$system/Read"
+                vertx.eventBus().request<JsonObject>(address, request) { response ->
                     logger.debug("getNodeValues read response [{}] [{}]", response.succeeded(), response.result()?.body())
                     if (response.succeeded()) {
                         val list = response.result().body().getJsonArray("Result")
@@ -469,6 +474,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
                         }
                         promise.complete(result)
                     } else {
+                        response.cause().printStackTrace()
                         promise.complete(null)
                     }
                 }
@@ -494,12 +500,14 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
 
             logger.info("setNodeValue $type $system $nodeId $value")
             try {
-                vertx.eventBus().request<JsonObject>("$type/$system/Write", request) {
-                    logger.debug("setNodeValue write response [{}] [{}]", it.succeeded(), it.result()?.body())
+                val address = "$type/$system/Write"
+                vertx.eventBus().request<JsonObject>(address, request) { response ->
+                    logger.debug("setNodeValue write response [{}] [{}]", response.succeeded(), response.result()?.body())
                     promise.complete(
-                        if (it.succeeded()) {
-                            it.result().body().getBoolean("Ok")
+                        if (response.succeeded()) {
+                            response.result().body().getBoolean("Ok")
                         } else {
+                            response.cause().printStackTrace()
                             false
                         })
                 }
@@ -524,15 +532,17 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
             request.put("Value", values)
 
             try {
-                vertx.eventBus().request<JsonObject>("$type/$system/Write", request) {
-                    logger.debug("setNodeValue write response [{}] [{}]", it.succeeded(), it.result()?.body())
+                val address = "$type/$system/Write"
+                vertx.eventBus().request<JsonObject>(address, request) { response ->
+                    logger.debug("setNodeValue write response [{}] [{}]", response.succeeded(), response.result()?.body())
                     promise.complete(
-                        if (it.succeeded()) {
-                            it.result()
+                        if (response.succeeded()) {
+                            response.result()
                                 .body()
                                 .getJsonArray("Ok")
                                 .map { ok -> ok as? Boolean ?: false }
                         } else {
+                            response.cause().printStackTrace()
                             nodeIds.map { false }
                         })
                 }
@@ -556,11 +566,12 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
             request.put("NodeId", nodeId)
 
             try {
-                vertx.eventBus().request<JsonObject>("$type/$system/Browse", request) { message ->
-                    logger.debug("Browse response [{}] [{}]", message.succeeded(), message.result()?.body())
-                    if (message.succeeded()) {
+                val address = "$type/$system/Browse"
+                vertx.eventBus().request<JsonObject>(address, request) { response ->
+                    logger.debug("Browse response [{}] [{}]", response.succeeded(), response.result()?.body())
+                    if (response.succeeded()) {
                         try {
-                            val list = message.result().body().getJsonArray("Result")
+                            val list = response.result().body().getJsonArray("Result")
                             val result = list
                                 .filterIsInstance<JsonObject>()
                                 .filter { filter == null || filter.toRegex().matches(it.getString("BrowseName")) }
@@ -579,6 +590,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
                             promise.completeExceptionally(e)
                         }
                     } else {
+                        response.cause().printStackTrace()
                         promise.complete(null)
                     }
                 }
@@ -609,11 +621,12 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
                 request.put("NodeId", nodeId)
                 request.put("Reverse", true)
                 try {
-                    vertx.eventBus().request<JsonObject>("$type/$system/Browse", request) { message ->
-                        logger.debug("Browse response [{}] [{}]", message.succeeded(), message.result()?.body())
-                        if (message.succeeded()) {
+                    val address = "$type/$system/Browse"
+                    vertx.eventBus().request<JsonObject>(address, request) { response ->
+                        logger.debug("Browse response [{}] [{}]", response.succeeded(), response.result()?.body())
+                        if (response.succeeded()) {
                             try {
-                                val list = message.result().body().getJsonArray("Result")
+                                val list = response.result().body().getJsonArray("Result")
                                 fun flatten(list: JsonArray): String? {
                                     return when (val first = list.firstOrNull()) {
                                         is JsonObject -> {
@@ -629,6 +642,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
                                 promise.completeExceptionally(e)
                             }
                         } else {
+                            response.cause().printStackTrace()
                             promise.complete(null)
                         }
                     }
@@ -653,11 +667,12 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
                 val promise = CompletableFuture<Boolean>()
                 val request = JsonObject()
                 request.put("NodeId", nodeId)
+                val address = "$type/$system/Browse"
                 vertx.eventBus()
-                    .request<JsonObject>("$type/$system/Browse", request) { message ->
-                        logger.debug("getNodes browse response [{}] [{}]", message.succeeded(), message.result()?.body())
-                        if (message.succeeded()) {
-                            val result = message.result().body().getJsonArray("Result")?.filterIsInstance<JsonObject>()
+                    .request<JsonObject>(address, request) { response ->
+                        logger.debug("getNodes browse response [{}] [{}]", response.succeeded(), response.result()?.body())
+                        if (response.succeeded()) {
+                            val result = response.result().body().getJsonArray("Result")?.filterIsInstance<JsonObject>()
                             logger.debug("FindNodes result [{}]", result?.size)
                             if (result!=null) {
                                 overallResult.addAll(result
@@ -782,9 +797,6 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
         }
         return flowable
     }
-
-    private val timeFormatterISO = DateTimeFormatter.ISO_DATE_TIME
-
 
     private fun getValueHistory(): DataFetcher<CompletableFuture<List<Map<String, Any?>>>> {
         return DataFetcher<CompletableFuture<List<Map<String, Any?>>>> { env ->

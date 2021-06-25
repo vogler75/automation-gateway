@@ -1,7 +1,6 @@
 package at.rocworks.gateway.logger.jdbc
 
 import at.rocworks.gateway.core.logger.LoggerBase
-import at.rocworks.gateway.core.service.Common
 import io.vertx.core.Future
 import io.vertx.core.Promise
 import io.vertx.core.json.JsonObject
@@ -148,7 +147,7 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
                     "PostgreSQL" -> sqlCreateTablePostgreSQL
                     "Microsoft SQL Server" -> sqlCreateTableMsSQL
                     else -> listOf<String>()
-                }?.forEach { sql ->
+                }.forEach { sql ->
                     connection.createStatement().use { statement ->
                         try {
                             statement.execute(sql)
@@ -237,7 +236,7 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
         {
             try {
                 connection.prepareStatement(sqlQueryStatement) .use { stmt ->
-                    val result = mutableListOf<List<Any>>()
+                    val data = mutableListOf<List<Any>>()
                     stmt.setString(1, system)
                     stmt.setString(2, nodeId)
                     stmt.setTimestamp(3, Timestamp(fromTimeMS))
@@ -250,7 +249,7 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
                         } else {
                             rs.getString(4)
                         }
-                        result.add(
+                        data.add(
                             listOf(
                                 rs.getTimestamp(1).toInstant(), // sourcetime
                                 rs.getTimestamp(2).toInstant(), // servertime
@@ -259,7 +258,7 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
                             )
                         )
                     }
-                    result(true, result)
+                    result(true, data)
                 }
             } catch (e: SQLException) {
                 logger.error("Error executing query [{}]", e.message)

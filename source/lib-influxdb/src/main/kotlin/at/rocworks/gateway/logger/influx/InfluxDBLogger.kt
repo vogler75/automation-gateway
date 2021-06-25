@@ -108,8 +108,8 @@ class InfluxDBLogger(config: JsonObject) : LoggerBase(config) {
                 WHERE "address" = '$nodeId' 
                 AND time >= $fromTimeNano AND time <= $toTimeNano 
                 """.trimIndent()
-            val data = session.query(Query(sql)).let {  result ->
-                result.results.getOrNull(0)
+            val data = session.query(Query(sql)).let { query ->
+                query.results.getOrNull(0)
                     ?.series?.getOrNull(0)
                     ?.values?.map {
                         listOf(

@@ -25,8 +25,8 @@ MqttClient:
     Ssl: false
     MaxMessageSizeKb: 512
     Value:
-      Format: JSON
-      Script: >
+      Reader: >
+        def source = new JsonSlurper().parseText(value)
         return [
           className: "TopicValueOpc",
           sourceTime: Instant.ofEpochMilli(source.Timestamp).toString(),

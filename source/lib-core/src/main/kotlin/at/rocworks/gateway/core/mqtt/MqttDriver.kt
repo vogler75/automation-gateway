@@ -6,15 +6,20 @@ import at.rocworks.gateway.core.driver.MonitoredItem
 import groovy.lang.Binding
 import groovy.lang.GroovyShell
 import groovy.lang.Script
+import io.netty.handler.codec.mqtt.MqttQoS
+import io.vertx.core.CompositeFuture
 import io.vertx.core.Future
 import io.vertx.core.Promise
 import io.vertx.core.buffer.Buffer
 import io.vertx.core.eventbus.Message
 import io.vertx.core.json.Json
+import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import io.vertx.mqtt.MqttClient
 import io.vertx.mqtt.MqttClientOptions
 import io.vertx.mqtt.messages.MqttPublishMessage
+import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue
+import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId
 import java.nio.charset.Charset
 
 class MqttDriver(val config: JsonObject) : DriverBase(config) {
@@ -30,22 +35,41 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
     private val qos: Int = config.getInteger("Qos", 0)
     private val maxMessageSizeKb = config.getInteger("MaxMessageSizeKb", 8) * 1024
 
-    private val valueFormat: String
-    private val valueScript: String
+    private val readerScript: String
+    private val writerScript: String
 
-    private val sharedData = Binding()
-    private val groovyShell = GroovyShell(sharedData)
-    private val groovyScript: Script?    
+    private val sharedReaderData = Binding()
+    private val sharedWriterData = Binding()
+    private val groovyReaderShell = GroovyShell(sharedReaderData)
+    private val groovyWriterShell = GroovyShell(sharedWriterData)
+    private val groovyReaderScript: Script?
+    private val groovyWriterScript: Script?
 
     private val subscribedTopics = HashSet<Topic>() // Subscribed topic name can have wildcard
     private val receivedTopics = HashMap<String, List<Topic>>()
 
     init {
         val value = config.getJsonObject("Value", JsonObject())
-        valueFormat = value.getString("Format", "").toUpperCase()
-        valueScript = value.getString("Script", "")
-        groovyScript = parseGroovyScript()
-        logger.info("Value is of type $valueFormat with script $valueScript")
+
+        val defaultReaderScript = """
+            return [
+              className: "TopicValueOpc",
+              sourceTime: Instant.now().toString(),
+              serverTime: Instant.now().toString(),
+              value: value,
+              statusCode: 0
+            ]                        
+        """.trimIndent()
+
+        val defaultWriterScript = """
+            return JsonOutput.toJson(value)
+        """.trimIndent()
+
+        readerScript = value.getString("Reader", defaultReaderScript)
+        writerScript = value.getString("Writer", defaultWriterScript)
+
+        groovyReaderScript = parseReaderGroovyScript()
+        groovyWriterScript = parseWriterGroovyScript()
     }
 
     override fun connect(): Future<Boolean> {
@@ -67,60 +91,55 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
         return promise.future()
     }
 
-    private fun parseGroovyScript(): Script? {
-        val script = when (valueFormat) {
-            "JSON" -> {
-                if (valueScript.isNotEmpty()) {
-                    """ 
-                    import groovy.json.JsonSlurper
-                    import groovy.json.JsonOutput
-                    import java.time.*
-                    def output(source) {
-                      $valueScript
-                    }
-                    def input = new JsonSlurper().parseText(value)
-                    return JsonOutput.toJson(output(input))
-                    """.trimIndent()
-                } else {
-                    "return value"
-                }
-            }
-            "TEXT" -> {
-                if (valueScript.isNotEmpty()) {
-                    """ 
-                    import groovy.json.JsonSlurper
-                    import groovy.json.JsonOutput
-                    import java.time.*
-                    def output(source) {
-                      $valueScript
-                    }
-                    return JsonOutput.toJson(output(value))
-                    """.trimIndent()
-                } else {
-                    "return value"
-                }
-            }
-            "" -> null
-            else -> {
-                logger.warn("Unhandled value format [{}]", valueFormat)
-                null
-            }
-        }
-        return if (script != null) {
-            groovyShell.parse(script)
+    private fun parseReaderGroovyScript(): Script? {
+        return if (readerScript.isNotEmpty()) {
+            val script =
+                """
+                import java.time.*                     
+                import groovy.json.*
+                def output(value) { $readerScript }
+                return JsonOutput.toJson(output(value))
+                """.trimIndent()
+            groovyReaderShell.parse(script)
         } else null
     }
 
-    private fun transformValue(value: Buffer): String {
-        return if (groovyScript != null) {
-            sharedData.setProperty("value", value.toString(Charset.defaultCharset()))
+    private fun parseWriterGroovyScript(): Script? {
+        return if (writerScript.isNotEmpty()) {
+            val script =
+                """
+                import java.time.*                     
+                import groovy.json.*
+                def output(value) { $writerScript }
+                return output(new JsonBuilder(value))
+                """.trimIndent()
+            groovyWriterShell.parse(script)
+        } else null
+    }
+
+    private fun transformReaderValue(value: Buffer): String {
+        return if (groovyReaderScript != null) {
+            sharedReaderData.setProperty("value", value.toString(Charset.defaultCharset()))
             try {
-                groovyScript.run().toString()
+                groovyReaderScript.run().toString()
             } catch (e: Exception) {
                 e.toString()
             }
         } else {
             value.toString(Charset.defaultCharset())
+        }
+    }
+
+    private fun transformWriterValue(value: String): Buffer {
+        return if (groovyWriterScript != null) {
+            sharedWriterData.setProperty("value", value)
+            try {
+                Buffer.buffer(groovyWriterScript.run().toString())
+            } catch (e: Exception) {
+                Buffer.buffer(e.toString())
+            }
+        } else {
+            Buffer.buffer(value)
         }
     }
 
@@ -196,7 +215,7 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
 
             fun json(topic: Topic) = JsonObject()
                 .put("Topic", topic.encodeToJson())
-                .put("Value", Json.decodeValue(transformValue(payload)))
+                .put("Value", Json.decodeValue(transformReaderValue(payload)))
 
             fun publish(topic: Topic) {
                 try {
@@ -226,7 +245,7 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
 
     override fun publishTopic(topic: Topic, value: Buffer): Future<Boolean> {
         val promise = Promise.promise<Boolean>()
-        promise.fail("Not yet implemented")
+        promise.fail("publishTopic([$topic], [$value]) Not yet implemented")
         return promise.future()
     }
 
@@ -241,8 +260,42 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
     }
 
     override fun writeHandler(message: Message<JsonObject>) {
-        logger.error("writeHandler() Not yet implemented")
-        message.reply(JsonObject().put("Ok", false))
+        val node = message.body().getValue("NodeId")
+
+        fun publish(client: MqttClient, topic: String, value: String): Future<Int> =
+            client.publish(topic, transformWriterValue(value), MqttQoS.AT_LEAST_ONCE, false, false) // TODO: configurable QoS...
+
+        when {
+            node != null && node is String -> {
+                val value = message.body().getString("Value", "")
+                client?.let { client ->
+                    publish(client, node, value).onComplete {
+                        message.reply(JsonObject().put("Ok", true))
+                    }
+                } ?: run {
+                    message.reply(JsonObject().put("Ok", false))
+                }
+            }
+            node != null && node is JsonArray -> {
+                val values = message.body().getJsonArray("Value", JsonArray())
+                client?.let { client ->
+                    CompositeFuture.all(node.zip(values).mapNotNull {
+                        if (it.first is String && it.second is String) {
+                            publish(client, it.first as String, it.second as String)
+                        } else null
+                    }).onComplete { result ->
+                      message.reply(JsonObject().put("Ok", JsonArray(node.map { result.succeeded() })))
+                    }
+                } ?: run {
+                    message.reply(JsonObject().put("Ok", JsonArray(node.map { false })))
+                }
+            }
+            else -> {
+                val err = String.format("Invalid format in write request!")
+                message.reply(JsonObject().put("Ok", false))
+                logger.error(err)
+            }
+        }
     }
 
     override fun browseHandler(message: Message<JsonObject>) {

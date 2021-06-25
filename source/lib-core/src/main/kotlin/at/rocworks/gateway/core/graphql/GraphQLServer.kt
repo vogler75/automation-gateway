@@ -534,7 +534,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
             try {
                 val address = "$type/$system/Write"
                 vertx.eventBus().request<JsonObject>(address, request) { response ->
-                    logger.debug("setNodeValue write response [{}] [{}]", response.succeeded(), response.result()?.body())
+                    logger.debug("setNodeValues write response [{}] [{}]", response.succeeded(), response.result()?.body())
                     promise.complete(
                         if (response.succeeded()) {
                             response.result()
@@ -604,7 +604,6 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
     private fun getBrowsePath(): DataFetcher<CompletableFuture<String>> {
         return DataFetcher<CompletableFuture<String>> { env ->
             val promise = CompletableFuture<String>()
-            val ctx: Map<String, Any>? = env.getSource()
 
             val (type, system) = getEnvTypeAndSystem(env)
             val nodeId = getEnvArgument(env, "NodeId")

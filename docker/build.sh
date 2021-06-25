@@ -14,12 +14,19 @@ build() {
   fi
 }
 
-build app
-build gateway cluster
-build opcua cluster
-build plc4x cluster
-build dds cluster
-build cache cluster
-build influxdb cluster
-build iotdb cluster
-build kafka cluster
+app="${1:-none}"
+
+if [ $app = "app" ]; then
+  build app
+elif [ $app = "cluster" ]; then
+  build gateway cluster
+  build opcua cluster
+  build plc4x cluster
+  build dds cluster
+  build cache cluster
+  build influxdb cluster
+  build iotdb cluster
+  build kafka cluster
+else
+  echo "Usage $0 [app|cluster]"
+fi

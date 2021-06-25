@@ -456,28 +456,6 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
                     addressNodeIdCache.get(topic.address).forEach {
                         writeValueQueued(it.first, dataValue(it.first)).onComplete(ret)
                     }
-                    /*
-                    val firstName = topic.addressItems.first()
-                    val startingNode = NodeId.parseOrNull(getRootNodeIdOfName(firstName))
-                    if (startingNode != null) {
-                        val relativeNode = topic.addressItems.drop(1)
-                        val tStart = Instant.now()
-                        val nodeId = browsePathToNodeId(startingNode, relativeNode) // TODO: think about a cache (https://github.com/google/guava)
-                        val duration = Duration.between(tStart, Instant.now())
-                        val seconds = duration.seconds + duration.nano/1_000_000_000.0
-                        if (seconds > 0.100)
-                            logger.warn("Browsing path took long time [{}]s", seconds)
-                        if (nodeId != null) {
-                            writeValueQueued(nodeId, dataValue(nodeId)).onComplete(ret)
-                        } else {
-                            logger.warn("Browsing path [{}]/[{}] could not be resolved!", firstName, relativeNode.joinToString(separator = "/"))
-                            ret.complete(false)
-                        }
-                    } else {
-                        logger.warn("Starting node [{}] is not a valid node!", firstName)
-                        ret.complete(false)
-                    }
-                    */
                 }
                 else -> {
                     logger.warn("Item type [{}] not yet implemented!", topic.topicType)

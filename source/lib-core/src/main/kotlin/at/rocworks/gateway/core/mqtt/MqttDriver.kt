@@ -62,7 +62,7 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
         """.trimIndent()
 
         val defaultWriterScript = """
-            return JsonOutput.toJson(value)
+            return value
         """.trimIndent()
 
         readerScript = value.getString("Reader", defaultReaderScript)

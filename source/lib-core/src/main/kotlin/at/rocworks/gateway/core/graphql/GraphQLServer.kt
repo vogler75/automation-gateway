@@ -442,8 +442,9 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
                         promise.complete(null)
                     }
                 }
-            } catch (e: Exception){
-                e.printStackTrace()
+            } catch (e: Exception) {
+                logger.warn(e.message)
+                //e.printStackTrace()
             }
 
             promise
@@ -478,8 +479,9 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
                         promise.complete(null)
                     }
                 }
-            } catch (e: Exception){
-                e.printStackTrace()
+            } catch (e: Exception) {
+                logger.warn(e.message)
+                //e.printStackTrace()
             }
 
             promise
@@ -511,8 +513,9 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
                             false
                         })
                 }
-            } catch (e: Exception){
-                e.printStackTrace()
+            } catch (e: Exception) {
+                logger.warn(e.message)
+                //e.printStackTrace()
             }
 
             promise
@@ -546,8 +549,9 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
                             nodeIds.map { false }
                         })
                 }
-            } catch (e: Exception){
-                e.printStackTrace()
+            } catch (e: Exception) {
+                logger.warn(e.message)
+                //e.printStackTrace()
             }
 
             promise
@@ -594,8 +598,9 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
                         promise.complete(null)
                     }
                 }
-            } catch (e: Exception){
-                e.printStackTrace()
+            } catch (e: Exception) {
+                logger.warn(e.message)
+                //e.printStackTrace()
             }
             promise
         }
@@ -646,7 +651,8 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
                         }
                     }
                 } catch (e: Exception) {
-                    e.printStackTrace()
+                    logger.warn(e.message)
+                    //e.printStackTrace()
                 }
             }
             promise

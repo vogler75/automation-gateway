@@ -819,9 +819,9 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
 
                     // recursively browse to children if it is an object node
                     if ((maxLevel == -1 || level < maxLevel) && rd.nodeClass === NodeClass.Object) {
-                        val nodeId = rd.nodeId.toNodeId(client!!.namespaceTable)
-                        if (nodeId.isPresent) {
-                            val next = browse(nodeId.get(), maxLevel, level + 1, flat, path+rd.browseName.name+"/")
+                        val rdNodeId = rd.nodeId.toNodeId(client!!.namespaceTable)
+                        if (rdNodeId.isPresent) {
+                            val next = browse(rdNodeId.get(), maxLevel, level + 1, flat, path+rd.browseName.name+"/")
                             if (flat) {
                                 result.addAll(next)
                             } else {

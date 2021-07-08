@@ -2,9 +2,10 @@
 
 Connect one or more OPC UA servers to the gateway and access the data from the OPC UA servers with a GraphQL or a MQTT client. News and Blog posts can be found [here](https://www.rocworks.at/wordpress/?cat=39). You can sponsor this project [here](https://paypal.me/av75).
 
-![Gateway](doc/Gateway.png)
+![Gateway](doc/Automation-Gateway.png)
 
 # Version History
+1.18 Removed Apache Ignite  
 1.17 Added CrateDB as supported JDBC database for logging  
 1.16 JDBC Logger to write field values to relational databases  
 1.15.1 Added BrowsePath to GraphQL OPC UA node (with Full option)  
@@ -208,6 +209,9 @@ Example MQTT Topic:
 > plc/mod/node/coil:1  
 
 # Version History
+## 1.18 Removed Apache Ignite
+Apache Ignite was removed due to its size and maintenance requirements. We don't know of anyone using the Ignite option, so we decided to remove it.  
+
 ## 1.17 Added CrateDB as supported JDBC database for logging  
 [CrateDB](https://crate.io) is now also supported as JDBC database for logging. If the table (default name "events") does not exists, it will be created partitioned by the month of the source time with four shareds. But you can create the table manually in advance with the settings of your needs.
 ```

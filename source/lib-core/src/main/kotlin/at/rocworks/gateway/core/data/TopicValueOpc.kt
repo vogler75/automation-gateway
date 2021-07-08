@@ -1,13 +1,8 @@
 package at.rocworks.gateway.core.data
 
-
 import io.vertx.core.json.JsonObject
-import org.apache.ignite.cache.query.annotations.QuerySqlField
-import org.eclipse.milo.opcua.stack.core.Identifiers
 import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue
 import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode
-import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger
-import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint
 import java.time.Instant
 
 data class TopicValueOpc (

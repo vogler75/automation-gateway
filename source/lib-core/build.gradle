@@ -37,9 +37,6 @@ dependencies {
     implementation "io.vertx:vertx-service-discovery:$vertxVersion"
 
     implementation "io.vertx:vertx-hazelcast:$vertxVersion"
-    implementation "io.vertx:vertx-ignite:$vertxVersion"
-
-    implementation group: 'org.apache.ignite', name: 'ignite-indexing', version: '2.9.1'
 
     implementation group: 'io.reactivex.rxjava2', name: 'rxjava', version: '2.2.20'
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: ':2.11.4'

@@ -11,153 +11,31 @@ GraphQLServer:
       LogLevel: INFO
       GraphiQL: true
       WriteSchemaToFile: false
-      Schemas:
-        - System: opc1
-          FieldName: BrowseName
-        - System: opc2
-          FieldName: BrowseName
-        - System: opc3
-          FieldName: BrowseName
-
-Database:
-  Logger:
-    - Id: influx1
-      Enabled: true
-      Type: InfluxDB
-      Url: http://nuc1:8086
-      Database: test
-      Username: ""
-      Password: ""
-      Logging:
-        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
-        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
-        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
-        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
-        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
-        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
-        - Topic: opc/opc3/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
-        - Topic: opc/opc3/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
-        - Topic: opc/opc3/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
-
-    - Id: iotdb1
-      Enabled: false
-      Type: IoTDB
-      Host: nuc1.rocworks.local
-      Port: 6667
-      Database: root.scada
-      Username: "root"
-      Password: "root"
-      Logging:
-        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
-        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
-        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
-        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
-        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
-        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
-        - Topic: opc/opc3/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
-        - Topic: opc/opc3/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
-        - Topic: opc/opc3/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
-
-    - Id: postgres1
-      Type: Jdbc
-      Enabled: true
-      Url: jdbc:postgresql://nuc1:5432/scada
-      Username: system
-      Password: manager
-      Logging:
-        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
-        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
-        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
-        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
-        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
-        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
-        - Topic: opc/opc3/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
-        - Topic: opc/opc3/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
-        - Topic: opc/opc3/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
-
-    - Id: mysql1
-      Type: Jdbc
-      Enabled: true
-      Url: jdbc:mysql://nuc1:3306/scada
-      Username: root
-      Password: manager
-      Logging:
-        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
-        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
-        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
-        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
-        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
-        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
-        - Topic: opc/opc3/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
-        - Topic: opc/opc3/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
-        - Topic: opc/opc3/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
-
-    - Id: mssql1
-      Type: Jdbc
-      Enabled: true
-      Url: jdbc:sqlserver://nuc1;databaseName=scada
-      Username: sa
-      Password: Manager4711#
-      Logging:
-        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
-        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
-        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
-        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
-        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
-        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
-        - Topic: opc/opc3/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
-        - Topic: opc/opc3/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
-        - Topic: opc/opc3/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
-
-    - Id: crate1
-      Type: Jdbc
-      Enabled: true
-      Url: jdbc:crate://nuc1:5433/
-      Username: crate
-      Password:
-      Logging:
-        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
-        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
-        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
-        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
-        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
-        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
-        - Topic: opc/opc3/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
-        - Topic: opc/opc3/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
-        - Topic: opc/opc3/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
-
-    - Id: kafka1
-      Type: Kafka
-      Enabled: true
-      Servers: nuc1:9092
-      Logging:
-        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
-        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
-        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
-        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
-        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
-        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
-        - Topic: opc/opc3/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
-        - Topic: opc/opc3/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
-        - Topic: opc/opc3/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
+      #Schemas:
+      #  - System: opc1
+      #    FieldName: BrowseName
+      #  - System: opc2
+      #    FieldName: BrowseName
+      #  - System: opc3
+      #    FieldName: BrowseName
 
 OpcUaClient:
   - Id: "opc1"
-    Enabled: true
+    Enabled: false
     LogLevel: INFO
     EndpointUrl: "opc.tcp://nuc1:20001"
     UpdateEndpointUrl: true
     SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#None
 
   - Id: "opc2"
-    Enabled: true
+    Enabled: false
     LogLevel: INFO
     EndpointUrl: "opc.tcp://nuc1:20002"
     UpdateEndpointUrl: true
     SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#None
 
   - Id: "opc3"
-    Enabled: true
+    Enabled: false
     LogLevel: INFO
     EndpointUrl: "opc.tcp://nuc1:20003"
     UpdateEndpointUrl: true
@@ -228,3 +106,125 @@ OpcUaClient:
       DiscardOldest: true
     BrowseOnStartup: false
     WriteSchemaToFile: false
+
+Database:
+  Logger:
+    - Id: influx1
+      Enabled: false
+      Type: InfluxDB
+      Url: http://nuc1:8086
+      Database: test
+      Username: ""
+      Password: ""
+      Logging:
+        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
+        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
+        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
+        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
+        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
+        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
+        - Topic: opc/opc3/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
+        - Topic: opc/opc3/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
+        - Topic: opc/opc3/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
+
+    - Id: iotdb1
+      Enabled: false
+      Type: IoTDB
+      Host: nuc1.rocworks.local
+      Port: 6667
+      Database: root.scada
+      Username: "root"
+      Password: "root"
+      Logging:
+        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
+        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
+        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
+        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
+        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
+        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
+        - Topic: opc/opc3/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
+        - Topic: opc/opc3/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
+        - Topic: opc/opc3/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
+
+    - Id: postgres1
+      Type: Jdbc
+      Enabled: false
+      Url: jdbc:postgresql://nuc1:5432/scada
+      Username: system
+      Password: manager
+      Logging:
+        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
+        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
+        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
+        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
+        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
+        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
+        - Topic: opc/opc3/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
+        - Topic: opc/opc3/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
+        - Topic: opc/opc3/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
+
+    - Id: mysql1
+      Type: Jdbc
+      Enabled: false
+      Url: jdbc:mysql://nuc1:3306/scada
+      Username: root
+      Password: manager
+      Logging:
+        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
+        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
+        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
+        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
+        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
+        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
+        - Topic: opc/opc3/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
+        - Topic: opc/opc3/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
+        - Topic: opc/opc3/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
+
+    - Id: mssql1
+      Type: Jdbc
+      Enabled: false
+      Url: jdbc:sqlserver://nuc1;databaseName=scada
+      Username: sa
+      Password: Manager4711#
+      Logging:
+        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
+        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
+        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
+        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
+        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
+        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
+        - Topic: opc/opc3/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
+        - Topic: opc/opc3/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
+        - Topic: opc/opc3/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
+
+    - Id: crate1
+      Type: Jdbc
+      Enabled: false
+      Url: jdbc:crate://nuc1:5433/
+      Username: crate
+      Password:
+      Logging:
+        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
+        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
+        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
+        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
+        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
+        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
+        - Topic: opc/opc3/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
+        - Topic: opc/opc3/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
+        - Topic: opc/opc3/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
+
+    - Id: kafka1
+      Type: Kafka
+      Enabled: false
+      Servers: nuc1:9092
+      Logging:
+        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
+        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
+        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
+        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
+        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
+        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
+        - Topic: opc/opc3/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
+        - Topic: opc/opc3/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
+        - Topic: opc/opc3/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+

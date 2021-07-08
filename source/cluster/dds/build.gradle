@@ -2,6 +2,10 @@ plugins {
     id 'gateway.kotlin-application-conventions'
 }
 
+project.ext {
+    vertxVersion = "4.0.3"
+}
+
 compileKotlin {
     kotlinOptions {
         jvmTarget = "1.8"
@@ -24,10 +28,10 @@ dependencies {
     implementation 'org.slf4j:slf4j-api:1.7.30'
     //implementation 'org.slf4j:slf4j-jdk14:1.7.30'
     implementation 'org.slf4j:slf4j-simple:1.7.30'
-    implementation 'io.vertx:vertx-core:4.0.3'
-    implementation 'io.vertx:vertx-config-yaml:4.0.3'
-    implementation 'io.vertx:vertx-reactive-streams:4.0.3'
-    implementation 'io.vertx:vertx-service-discovery:4.0.3'
+    implementation "io.vertx:vertx-core:$vertxVersion"
+    implementation "io.vertx:vertx-config-yaml:$vertxVersion"
+    implementation "io.vertx:vertx-reactive-streams:$vertxVersion"
+    implementation "io.vertx:vertx-service-discovery:$vertxVersion"
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.11.4' // Needed for Vertx Json
     compile fileTree(dir: 'lib', include: ['*.jar', '*.dylib'])
     compile fileTree(dir: System.env.DDS_ROOT + '/lib', include: ['*.jar', '*.dylib'])

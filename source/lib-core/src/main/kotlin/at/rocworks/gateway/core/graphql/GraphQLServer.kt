@@ -500,7 +500,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
             request.put("NodeId", nodeId)
             request.put("Value", value)
 
-            logger.info("setNodeValue $type $system $nodeId $value")
+            logger.debug("setNodeValue $type $system $nodeId $value")
             try {
                 val address = "$type/$system/Write"
                 vertx.eventBus().request<JsonObject>(address, request) { response ->

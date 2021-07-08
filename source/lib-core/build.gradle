@@ -2,6 +2,10 @@ plugins {
     id 'gateway.kotlin-library-conventions'
 }
 
+project.ext {
+    vertxVersion = "4.0.3"
+}
+
 compileKotlin {
     kotlinOptions {
         jvmTarget = "1.8"
@@ -26,16 +30,17 @@ dependencies {
     implementation 'org.eclipse.milo:sdk-client:0.5.3'
     implementation 'org.eclipse.milo:dictionary-reader:0.5.3'
 
-    implementation 'io.vertx:vertx-core:4.0.3'
-    implementation 'io.vertx:vertx-mqtt:4.0.3'
-    implementation 'io.vertx:vertx-web-graphql:4.0.3'
-    implementation 'io.vertx:vertx-config-yaml:4.0.3'
-    implementation 'io.vertx:vertx-service-discovery:4.0.3'
+    implementation "io.vertx:vertx-core:$vertxVersion"
+    implementation "io.vertx:vertx-mqtt:$vertxVersion"
+    implementation "io.vertx:vertx-web-graphql:$vertxVersion"
+    implementation "io.vertx:vertx-config-yaml:$vertxVersion"
+    implementation "io.vertx:vertx-service-discovery:$vertxVersion"
 
-    implementation 'io.vertx:vertx-hazelcast:4.0.3'
-    implementation 'io.vertx:vertx-ignite:4.0.3'
+    implementation "io.vertx:vertx-hazelcast:$vertxVersion"
+    implementation "io.vertx:vertx-ignite:$vertxVersion"
 
     implementation group: 'org.apache.ignite', name: 'ignite-indexing', version: '2.9.1'
+
     implementation group: 'io.reactivex.rxjava2', name: 'rxjava', version: '2.2.20'
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: ':2.11.4'
     implementation group: 'org.codehaus.groovy', name: 'groovy-all', version: '3.0.8'

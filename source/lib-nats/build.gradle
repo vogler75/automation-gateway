@@ -2,6 +2,10 @@ plugins {
     id 'gateway.kotlin-library-conventions'
 }
 
+project.ext {
+    vertxVersion = "4.0.3"
+}
+
 compileKotlin {
     kotlinOptions {
         jvmTarget = "1.8"
@@ -20,10 +24,11 @@ dependencies {
     implementation 'org.slf4j:slf4j-api:1.7.30'
     //implementation 'org.slf4j:slf4j-jdk14:1.7.30'
     implementation 'org.slf4j:slf4j-simple:1.7.30'
-    implementation 'io.vertx:vertx-core:4.0.3'
-    implementation 'io.vertx:vertx-config-yaml:4.0.3'
-    implementation 'io.vertx:vertx-service-discovery:4.0.3'
-    implementation 'com.fasterxml.jackson.core:jackson-databind:2.11.4'
+
+    implementation "io.vertx:vertx-core:$vertxVersion"
+    implementation "io.vertx:vertx-config-yaml:$vertxVersion"
+    implementation "io.vertx:vertx-service-discovery:$vertxVersion"
+    implementation "com.fasterxml.jackson.core:jackson-databind:2.11.4"
 
     implementation group: 'io.nats', name: 'jnats', version: '2.11.1'
 

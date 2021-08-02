@@ -40,6 +40,8 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
         }
     }
 
+    private var pollingId = 0L
+
     @Suppress("UNUSED_PARAMETER")
     private fun pollingExecutor(id: Long) {
         if (plc!=null && pollingTopics.isNotEmpty()) {
@@ -47,10 +49,13 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
             pollingTopics.forEach {
                 builder.addItem(it.key.topicName, it.key.address)
             }
+            val localPollingId = ++pollingId
+            logger.info("Poll request [{}] for [{}] items...", localPollingId, pollingTopics.size)
             val request = builder.build()
             val response = request.execute()
             response.whenComplete { readResponse, throwable ->
                 if (readResponse != null) {
+                    logger.info("Poll response [{}]", localPollingId)
                     pollingTopics.forEach { topic ->
                         val value = readResponse.getPlcValue(topic.key.topicName)
                         if (!pollingOldNew || value.toString() != topic.value.toString()) { // TODO: String Compare?
@@ -311,18 +316,23 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
 
     private fun writeValueAsync(node: String, value: String): Future<Boolean> {
         val promise = Promise.promise<Boolean>()
-        val builder: PlcWriteRequest.Builder = plc!!.writeRequestBuilder()
-        builder.addItem("value", node, value)
-        val request = builder.build()
-        val response = request.execute()
-        response.whenComplete { writeResponse, throwable ->
-            if (writeResponse != null) {
-                logger.info("Write response [{}]", writeResponse.getResponseCode("value"))
-                promise.complete(true)
-            } else {
-                logger.error("Write error [{}]", throwable.message, throwable)
-                promise.complete(false)
+        try {
+            val builder: PlcWriteRequest.Builder = plc!!.writeRequestBuilder()
+            builder.addItem("value", node, value)
+            val request = builder.build()
+            val response = request.execute()
+            response.whenComplete { writeResponse, throwable ->
+                if (writeResponse != null) {
+                    logger.info("Write response [{}]", writeResponse.getResponseCode("value"))
+                    promise.complete(true)
+                } else {
+                    logger.error("Write error [{}]", throwable.message)
+                    promise.complete(false)
+                }
             }
+        } catch (e: Exception) {
+            logger.error("Write exception [{}]", e.message)
+            promise.complete(false)
         }
         return promise.future()
     }

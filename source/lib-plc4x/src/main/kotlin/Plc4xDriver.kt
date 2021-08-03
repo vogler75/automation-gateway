@@ -115,8 +115,10 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
         when {
             plc?.metadata?.canSubscribe() == false -> {
                 topics.forEach { topic ->
-                    if (!pollingTopics.containsKey(topic))
+                    if (!pollingTopics.containsKey(topic)) {
                         pollingTopics[topic] = null
+                        registry.addMonitoredItem(Plc4xPolledItem(topic), topic)
+                    }
                 }
                 ret.complete(true)
             }
@@ -205,17 +207,28 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
 
     override fun unsubscribeTopics(topics: List<Topic>, items: List<MonitoredItem>): Future<Boolean> {
         val promise = Promise.promise<Boolean>()
-        val builder = plc!!.unsubscriptionRequestBuilder()
-        items.filterIsInstance<Plc4xMonitoredItem>().forEach { item ->
-            builder.addHandles(item.item)
-        }
-        val request = builder.build()
-        request.execute().whenComplete { response, throwable ->
-            if (response!=null) promise.complete(true)
-            else {
-                logger.error("An error occurred: " + throwable.message, throwable)
-                promise.complete(false)
+
+        val xs = items.filterIsInstance<Plc4xMonitoredItem>()
+        if (xs.isNotEmpty()) {
+            val builder = plc!!.unsubscriptionRequestBuilder()
+            items.filterIsInstance<Plc4xMonitoredItem>().forEach { item ->
+                builder.addHandles(item.item)
             }
+            val request = builder.build()
+            request.execute().whenComplete { response, throwable ->
+                if (response!=null) promise.complete(true)
+                else {
+                    logger.error("An error occurred: " + throwable.message, throwable)
+                    promise.complete(false)
+                }
+            }
+        }
+
+        items.filterIsInstance<Plc4xPolledItem>().forEach { item ->
+            pollingTopics.filter { poll -> poll.key.topicName == item.item.topicName }.forEach {
+                pollingTopics.remove(it.key)
+            }
+            promise.complete(true)
         }
         return promise.future()
     }

@@ -39,9 +39,6 @@ import io.vertx.servicediscovery.Status
 import kotlin.concurrent.thread
 
 class GraphQLServer(private val config: JsonObject, private val defaultSystem: String) : AbstractVerticle() {
-    // TODO: Implement scalar "variant"
-    // TODO: Subscribe to multiple nodes
-
     private val defaultType = Topic.SystemType.Opc.name
 
     companion object {

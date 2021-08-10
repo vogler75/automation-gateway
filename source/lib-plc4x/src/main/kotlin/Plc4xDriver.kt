@@ -50,12 +50,12 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
                 builder.addItem(it.key.topicName, it.key.address)
             }
             val localPollingId = ++pollingId
-            logger.info("Poll request [{}] for [{}] items...", localPollingId, pollingTopics.size)
+            //logger.info("Poll request [{}] for [{}] items...", localPollingId, pollingTopics.size)
             val request = builder.build()
             val response = request.execute()
             response.whenComplete { readResponse, throwable ->
                 if (readResponse != null) {
-                    logger.info("Poll response [{}]", localPollingId)
+                    //logger.info("Poll response [{}]", localPollingId)
                     pollingTopics.forEach { topic ->
                         val value = readResponse.getPlcValue(topic.key.topicName)
                         if (!pollingOldNew || value.toString() != topic.value.toString()) { // TODO: String Compare?
@@ -207,28 +207,34 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
 
     override fun unsubscribeTopics(topics: List<Topic>, items: List<MonitoredItem>): Future<Boolean> {
         val promise = Promise.promise<Boolean>()
-
-        val xs = items.filterIsInstance<Plc4xMonitoredItem>()
-        if (xs.isNotEmpty()) {
-            val builder = plc!!.unsubscriptionRequestBuilder()
-            items.filterIsInstance<Plc4xMonitoredItem>().forEach { item ->
-                builder.addHandles(item.item)
-            }
-            val request = builder.build()
-            request.execute().whenComplete { response, throwable ->
-                if (response!=null) promise.complete(true)
-                else {
-                    logger.error("An error occurred: " + throwable.message, throwable)
-                    promise.complete(false)
+        try {
+            val xs = items.filterIsInstance<Plc4xMonitoredItem>()
+            if (xs.isNotEmpty()) {
+                val builder = plc!!.unsubscriptionRequestBuilder()
+                items.filterIsInstance<Plc4xMonitoredItem>().forEach { item ->
+                    builder.addHandles(item.item)
+                }
+                val request = builder.build()
+                request.execute().whenComplete { response, throwable ->
+                    if (response!=null) promise.complete(true)
+                    else {
+                        logger.error("An error occurred: " + throwable.message, throwable)
+                        promise.complete(false)
+                    }
                 }
             }
-        }
 
-        items.filterIsInstance<Plc4xPolledItem>().forEach { item ->
-            pollingTopics.filter { poll -> poll.key.topicName == item.item.topicName }.forEach {
-                pollingTopics.remove(it.key)
+            val polledItems = items.filterIsInstance<Plc4xPolledItem>()
+            polledItems.forEach { item ->
+                pollingTopics.filter { poll -> poll.key.topicName == item.item.topicName }.forEach {
+                    pollingTopics.remove(it.key)
+                }
             }
-            promise.complete(true)
+            if (polledItems.isNotEmpty()) {
+                promise.complete(true)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
         return promise.future()
     }

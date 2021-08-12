@@ -5,6 +5,7 @@ Connect one or more OPC UA servers to the gateway and access the data from the O
 ![Gateway](doc/Automation-Gateway.png)
 
 # Version History
+1.18.1 Features and bug fixes in PLC4X driver  
 1.18 Removed Apache Ignite  
 1.17 Added CrateDB as supported JDBC database for logging  
 1.16 JDBC Logger to write field values to relational databases  
@@ -169,13 +170,16 @@ You have to start the app-gateway plus app-plc4x. See config.yaml in each folder
 > cd app-plc4x
 cat config.yaml
 Plc4x:
-  Drivers:    
-    - Id: "mod"
+  Drivers:
+    - Id: "machine1"
       Enabled: true
-      Url: "modbus://localhost:502"
+      Url: "modbus://127.0.0.1:502"
       Polling:
-        Time: 100  # ms
-        OldNew: true  # old new comparions on or off
+        Time: 1000 # ms
+        Timeout: 900 # ms
+        OldNew: true
+      WriteTimeout: 100 # ms
+      ReadTimeout: 100 # ms
       LogLevel: ALL
 
 > gradle run
@@ -209,6 +213,28 @@ Example MQTT Topic:
 > plc/mod/node/coil:1  
 
 # Version History
+## 1.18.1 Features and fixes in PLC4X driver  
+Auto reconnect to the PLC if the connection is lost.  
+Read/Write/Poll only if the connection to the PLC is up.  
+Fixed issue when writing a value fails (stopped the writing thread).  
+Fixed issue in unsubscribe with polling option (polling item was not removed).  
+Fixed issue when a client disconnects (unsubscribe with a list of topics failed).  
+Added new configuration settings for the driver: timeout in ms for write, read, polling.  
+```
+Plc4x:
+  Drivers:
+    - Id: "machine1"
+      Enabled: true
+      Url: "modbus://127.0.0.1:502"
+      Polling:
+        Time: 1000
+        Timeout: 900 # ms
+        OldNew: true
+      WriteTimeout: 100 # ms
+      ReadTimeout: 100 # ms
+      LogLevel: INFO
+````
+
 ## 1.18 Removed Apache Ignite
 Apache Ignite was removed due to its size and maintenance requirements. We don't know of anyone using the Ignite option, so we decided to remove it.  
 

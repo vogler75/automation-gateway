@@ -384,7 +384,7 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
         }
     }
 
-    private fun isConnected() = plc == null || !plc!!.isConnected
+    private fun isConnected() = plc != null && plc!!.isConnected
 
     private fun writeValueAsync(node: String, value: String): Future<Boolean> {
         val promise = Promise.promise<Boolean>()

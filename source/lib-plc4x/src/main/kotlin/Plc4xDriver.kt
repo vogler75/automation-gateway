@@ -12,9 +12,10 @@ import io.vertx.core.json.JsonObject
 
 import org.apache.plc4x.java.api.PlcConnection
 import org.apache.plc4x.java.PlcDriverManager
-import org.apache.plc4x.java.api.exceptions.PlcConnectionException
 import org.apache.plc4x.java.api.messages.*
 import org.apache.plc4x.java.api.value.PlcValue
+import java.util.concurrent.TimeUnit
+import kotlin.concurrent.thread
 
 class Plc4xDriver(config: JsonObject): DriverBase(config) {
     override fun getType() = Topic.SystemType.Plc
@@ -23,14 +24,21 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
     private var plc: PlcConnection? = null
 
     private val pollingTime: Long
+    private val pollingTimeout: Long
     private val pollingOldNew: Boolean
+    private val writeTimeout: Long
+    private val readTimeout: Long
+    private val defaultRetryWaitTime = 5000
 
     private val pollingTopics = HashMap<Topic, PlcValue?>()
 
     init {
         val polling = config.getJsonObject("Polling", JsonObject())
         pollingTime = polling.getLong("Time", 0)
+        pollingTimeout = polling.getLong("Timeout", pollingTime)
         pollingOldNew = polling.getBoolean("OldNew", false)
+        writeTimeout = config.getLong("WriteTimeout", 100)
+        readTimeout = config.getLong("ReadTimeout", 100)
     }
 
     override fun start(startPromise: Promise<Void>) {
@@ -40,54 +48,92 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
         }
     }
 
-    private var pollingId = 0L
+    private var pollingRequestId = 0
+    private var pollingResponseId = 0
 
     @Suppress("UNUSED_PARAMETER")
     private fun pollingExecutor(id: Long) {
         if (plc!=null && pollingTopics.isNotEmpty()) {
-            val builder: PlcReadRequest.Builder = plc!!.readRequestBuilder()
-            pollingTopics.forEach {
-                builder.addItem(it.key.topicName, it.key.address)
-            }
-            val localPollingId = ++pollingId
-            //logger.info("Poll request [{}] for [{}] items...", localPollingId, pollingTopics.size)
-            val request = builder.build()
-            val response = request.execute()
-            response.whenComplete { readResponse, throwable ->
-                if (readResponse != null) {
-                    //logger.info("Poll response [{}]", localPollingId)
-                    pollingTopics.forEach { topic ->
-                        val value = readResponse.getPlcValue(topic.key.topicName)
-                        if (!pollingOldNew || value.toString() != topic.value.toString()) { // TODO: String Compare?
-                            pollingTopics[topic.key] = value
-                            valueConsumer(topic.key, value)
+            if (pollingRequestId > pollingResponseId) {
+                logger.warn("Polling request id {} is still pending (response id {}).", pollingRequestId, pollingResponseId)
+            } else {
+                val localRequestId = ++pollingRequestId
+                val builder: PlcReadRequest.Builder = plc!!.readRequestBuilder()
+                pollingTopics.forEach {
+                    builder.addItem(it.key.topicName, it.key.address)
+                }
+                logger.debug("Poll request [{}] for [{}] items...", localRequestId, pollingTopics.size)
+                val request = builder.build()
+                val response = request.execute()
+                response.orTimeout(pollingTimeout, TimeUnit.MILLISECONDS)
+                response.whenComplete { readResponse, throwable ->
+                    ++pollingResponseId
+                    if (readResponse != null) {
+                        logger.debug("Poll response [{}]", readResponse.asPlcValue.toString())
+                        pollingTopics.forEach { topic ->
+                            val value = readResponse.getPlcValue(topic.key.topicName)
+                            if (!pollingOldNew || value.toString() != topic.value.toString()) { // TODO: String Compare?
+                                pollingTopics[topic.key] = value
+                                valueConsumer(topic.key, value)
+                            }
                         }
+                    } else {
+                        logger.error("An error occurred: $throwable")
                     }
-                } else {
-                    logger.error("An error occurred: " + throwable.message, throwable)
                 }
             }
         }
     }
 
     override fun connect(): Future<Boolean> {
-        val promise = Promise.promise<Boolean>()
-        try {
-            plc = PlcDriverManager().getConnection(url)
-            plc!!.connect()
-            promise.complete(true)
-        } catch (e: PlcConnectionException) {
-            logger.error(e.message)
-            promise.complete(false)
-        }
+        return connectClientAsync()
+    }
 
-        if (plc != null) {
-            val info = (if (plc?.metadata?.canRead() == true) "Read " else " ") +
-                    (if (plc?.metadata?.canWrite() == true) "Write " else " ") +
-                    if (plc?.metadata?.canSubscribe() == true) "Subscribe " else " "
+    private var reconnectInProgress = false
+    private val connectionStateThread = thread {
+        while (true) {
+            Thread.sleep(1000)
+            plc?.let { plc ->
+                if (!plc.isConnected && !reconnectInProgress) {
+                    reconnectInProgress = true
+                    connectClientAsync().onComplete {
+                        logger.info("Reconnect complete with result [${it.result()}]")
+                        reconnectInProgress = false
+                    }
+                }
+            }
+        }
+    }
+
+    private fun connectPlc4xDriver() {
+        plc = PlcDriverManager().getConnection(url)
+        plc?.let {
+            it.connect()
+            val info = (if (it.metadata?.canRead() == true) "Read " else " ") +
+                    (if (it.metadata?.canWrite() == true) "Write " else " ") +
+                    if (it.metadata?.canSubscribe() == true) "Subscribe " else " "
             logger.error("This connection supports: {}", info)
         }
-        return promise.future()
+    }
+
+    private fun connectClientAsync(): Future<Boolean> {
+        val ret = Promise.promise<Boolean>()
+        connectClientThread(ret)
+        return ret.future()
+    }
+
+    private fun connectClientThread(ret: Promise<Boolean>) {
+        thread {
+            try {
+                connectPlc4xDriver()
+                ret.complete(true)
+            } catch (e: Exception) {
+                logger.info("Plc4x connect failed! Wait and retry... " + e.message)
+                vertx.setTimer(defaultRetryWaitTime.toLong()) { connectClientThread(ret) }
+            } catch (e: Exception) {
+                ret.fail(e)
+            }
+        }
     }
 
     override fun disconnect(): Future<Boolean> {
@@ -279,6 +325,7 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
                     builder.addItem("value", node)
                     val request = builder.build()
                     val response = request.execute()
+                    response.orTimeout(readTimeout, TimeUnit.MILLISECONDS)
                     response.whenComplete { readResponse, throwable ->
                         if (readResponse != null) {
                             try {
@@ -288,8 +335,8 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
                                 e.printStackTrace()
                             }
                         } else {
-                            logger.error("An error occurred: " + throwable.message, throwable)
-                            val result = JsonObject().put("Value", throwable.message)
+                            logger.error("An error occurred: $throwable")
+                            val result = JsonObject().put("Value", throwable.toString())
                             message.reply(JsonObject().put("Ok", false).put("Result", result))
                         }
                     }
@@ -340,12 +387,13 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
             builder.addItem("value", node, value)
             val request = builder.build()
             val response = request.execute()
+            response.orTimeout(writeTimeout, TimeUnit.MILLISECONDS)
             response.whenComplete { writeResponse, throwable ->
                 if (writeResponse != null) {
-                    logger.info("Write response [{}]", writeResponse.getResponseCode("value"))
+                    logger.debug("Write response [{}]", writeResponse.getResponseCode("value"))
                     promise.complete(true)
                 } else {
-                    logger.error("Write error [{}]", throwable.message)
+                    logger.error("Write error [{}]", throwable.toString())
                     promise.complete(false)
                 }
             }

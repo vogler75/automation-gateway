@@ -1,9 +1,15 @@
+GraphQLServer:
+  Listeners:
+    - Port: 4000
+      LogLevel: INFO
+      GraphiQL: true
+
 MqttServer:
   Listeners:
     - Id: Mqtt
       Port: 1883
       Host: 0.0.0.0
-      Enabled: false
+      Enabled: true
       LogLevel: INFO # ALL | INFO
 
 Plc4x:
@@ -13,21 +19,11 @@ Plc4x:
       Url: "modbus://127.0.0.1:502"
       Polling:
         Time: 1000
+        Timeout: 900
         OldNew: true
+      WriteTimeout: 100
+      ReadTimeout: 100
       LogLevel: ALL
 
-Database:
-  Logger:
-    - Id: mqtt1
-      Type: Mqtt
-      Enabled: true
-      Host: localhost
-      Port: 1883
-      Ssl: false
-      Logging:
-        - Topic: plc/machine1/node/holding-register:1:INT
-        - Topic: plc/machine1/node/holding-register:2:INT
-        - Topic: plc/machine1/node/coil:1
-        - Topic: plc/machine1/node/coil:2
 
 

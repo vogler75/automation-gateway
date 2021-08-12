@@ -496,7 +496,7 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
                             if (!it.first.isGood) logger.warn("Writing value was not good [{}]", it.first.toString())
                             it.second.complete(it.first.isGood)
                         }
-                    } catch (e: UaException) {
+                    } catch (e: Exception) {
                         logger.warn("Write value threw exception [{}]", e.message)
                     }
                 }

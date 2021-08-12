@@ -53,7 +53,7 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
 
     @Suppress("UNUSED_PARAMETER")
     private fun pollingExecutor(id: Long) {
-        if (plc!=null && pollingTopics.isNotEmpty()) {
+        if (isConnected() && pollingTopics.isNotEmpty()) {
             if (pollingRequestId > pollingResponseId) {
                 logger.warn("Polling request id {} is still pending (response id {}).", pollingRequestId, pollingResponseId)
             } else {
@@ -321,23 +321,27 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
             }
             node != null && node is String -> {
                 try {
-                    val builder: PlcReadRequest.Builder = plc!!.readRequestBuilder()
-                    builder.addItem("value", node)
-                    val request = builder.build()
-                    val response = request.execute()
-                    response.orTimeout(readTimeout, TimeUnit.MILLISECONDS)
-                    response.whenComplete { readResponse, throwable ->
-                        if (readResponse != null) {
-                            try {
-                                val result = toValue(readResponse.getPlcValue("value")).encodeToJson()
-                                message.reply(JsonObject().put("Ok", true).put("Result", result))
-                            } catch (e: Exception) {
-                                e.printStackTrace()
+                    if (!isConnected()) {
+                        message.reply(JsonObject().put("Ok", false).put("Result", "Not connected!"))
+                    } else {
+                        val builder: PlcReadRequest.Builder = plc!!.readRequestBuilder()
+                        builder.addItem("value", node)
+                        val request = builder.build()
+                        val response = request.execute()
+                        response.orTimeout(readTimeout, TimeUnit.MILLISECONDS)
+                        response.whenComplete { readResponse, throwable ->
+                            if (readResponse != null) {
+                                try {
+                                    val result = toValue(readResponse.getPlcValue("value")).encodeToJson()
+                                    message.reply(JsonObject().put("Ok", true).put("Result", result))
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
+                                }
+                            } else {
+                                logger.error("An error occurred: $throwable")
+                                val result = JsonObject().put("Value", throwable.toString())
+                                message.reply(JsonObject().put("Ok", false).put("Result", result))
                             }
-                        } else {
-                            logger.error("An error occurred: $throwable")
-                            val result = JsonObject().put("Value", throwable.toString())
-                            message.reply(JsonObject().put("Ok", false).put("Result", result))
                         }
                     }
                 } catch (e: Exception)  {
@@ -380,21 +384,27 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
         }
     }
 
+    private fun isConnected() = plc == null || !plc!!.isConnected
+
     private fun writeValueAsync(node: String, value: String): Future<Boolean> {
         val promise = Promise.promise<Boolean>()
         try {
-            val builder: PlcWriteRequest.Builder = plc!!.writeRequestBuilder()
-            builder.addItem("value", node, value)
-            val request = builder.build()
-            val response = request.execute()
-            response.orTimeout(writeTimeout, TimeUnit.MILLISECONDS)
-            response.whenComplete { writeResponse, throwable ->
-                if (writeResponse != null) {
-                    logger.debug("Write response [{}]", writeResponse.getResponseCode("value"))
-                    promise.complete(true)
-                } else {
-                    logger.error("Write error [{}]", throwable.toString())
-                    promise.complete(false)
+            if (!isConnected()) {
+                promise.complete(false)
+            } else {
+                val builder: PlcWriteRequest.Builder = plc!!.writeRequestBuilder()
+                builder.addItem("value", node, value)
+                val request = builder.build()
+                val response = request.execute()
+                response.orTimeout(writeTimeout, TimeUnit.MILLISECONDS)
+                response.whenComplete { writeResponse, throwable ->
+                    if (writeResponse != null) {
+                        logger.debug("Write response [{}]", writeResponse.getResponseCode("value"))
+                        promise.complete(true)
+                    } else {
+                        logger.error("Write error [{}]", throwable.toString())
+                        promise.complete(false)
+                    }
                 }
             }
         } catch (e: Exception) {

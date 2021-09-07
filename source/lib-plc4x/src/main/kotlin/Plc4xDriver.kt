@@ -322,7 +322,7 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
 
             val buffer : Buffer? = when (topic.format) {
                 Topic.Format.Value -> {
-                    data.toString().let {
+                    toValue(topic.address, data).value.toString().let {
                         Buffer.buffer(it)
                     }
                 }

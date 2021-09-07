@@ -4,6 +4,9 @@ import at.rocworks.gateway.core.mqtt.MqttServer
 import at.rocworks.gateway.core.opcua.KeyStoreLoader
 import at.rocworks.gateway.core.opcua.OpcUaDriver
 import at.rocworks.gateway.core.service.Common
+import at.rocworks.gateway.logger.influx.InfluxDBLogger
+import at.rocworks.gateway.logger.iotdb.IoTDBLogger
+import at.rocworks.gateway.logger.kafka.KafkaLogger
 
 import kotlin.Throws
 import kotlin.jvm.JvmStatic
@@ -79,6 +82,15 @@ object App {
             when (val type = config.getString("Type")) {
                 "Mqtt" -> {
                     vertx.deployVerticle(MqttLogger(config))
+                }
+                "InfluxDB" -> {
+                    vertx.deployVerticle(InfluxDBLogger(config))
+                }
+                "IoTDB" -> {
+                    vertx.deployVerticle(IoTDBLogger(config))
+                }
+                "Kafka" -> {
+                    vertx.deployVerticle(KafkaLogger(config))
                 }
                 else -> logger.error("Unknown database type [{}]", type)
             }

@@ -14,16 +14,20 @@ MqttServer:
 
 Plc4x:
   Drivers:
-    - Id: "machine1"
+    - Id: "niryo"
       Enabled: true
-      Url: "modbus://127.0.0.1:502"
+      Url: "modbus://192.168.1.9:5020"
       Polling:
-        Time: 1000
-        Timeout: 900
+        Time: 100
+        Timeout: 90
         OldNew: true
       WriteTimeout: 100
       ReadTimeout: 100
       LogLevel: ALL
-
-
-
+      Value:
+        Reader: >
+          def x = value as int;
+          return x > 32767 ? 32767 - x : x
+        Writer: > 
+          def x = value as int;
+          return x < 0 ? 32767 - x : x

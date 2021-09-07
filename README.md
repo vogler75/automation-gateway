@@ -11,6 +11,7 @@ You can sponsor this project [here](https://paypal.me/av75).
 ![Gateway](doc/Automation-Gateway.png)
 
 # Version History
+1.18.2 Raw value to engineering value conversion for PLC4X driver  
 1.18.1 Features and bug fixes in PLC4X driver  
 1.18 Removed Apache Ignite  
 1.17 Added CrateDB as supported JDBC database for logging  
@@ -219,6 +220,47 @@ Example MQTT Topic:
 > plc/mod/node/coil:1  
 
 # Version History
+## 1.18.2 Raw value to engineering value conversion for PLC4X driver
+It is now possible to define Groovy functions to convert raw values to engineering values. Every incoming or outgoing value will be passed through the defined functions. The functions can currently only be defined at the connection level, so every value coming from this PLC connection goes through the conversion functions.  
+
+```
+Plc4x:
+  Drivers:
+    - Id: "niryo"
+      Enabled: true
+      Url: "modbus://192.168.1.9:5020"
+      Polling:
+        Time: 100
+        Timeout: 90
+        OldNew: true
+      WriteTimeout: 100
+      ReadTimeout: 100
+      LogLevel: ALL
+      Value:
+        Reader: > # Here is the function for incoming values
+          def x = value as int;
+          return x > 32767 ? 32767 - x : x
+        Writer: > # Here is the function for outgoing values
+          def x = value as int;
+          return x < 0 ? 32767 - x : x
+```
+If you need different functions for different addresses then you have to implement a switch/case statement. The functions have two arguments: "address" and "value". 
+
+Here is an example where a value conversion is done only for some addresses:
+```
+      Value:
+        Reader: >
+          def x = value as int;
+          def xs = ["input-register:1:UINT", "input-register:2:UINT", "input-register:2:UINT"];
+          if (xs.contains(address)) {
+            println "convert!"
+            return x > 32767 ? 32767 - x : x;
+          } else {
+            println("default")
+            return x;
+          } 
+````
+
 ## 1.18.1 Features and fixes in PLC4X driver  
 Auto reconnect to the PLC if the connection is lost.  
 Read/Write/Poll only if the connection to the PLC is up.  

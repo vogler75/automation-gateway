@@ -17,6 +17,10 @@ import org.apache.plc4x.java.api.value.PlcValue
 import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
 
+import groovy.lang.Binding
+import groovy.lang.GroovyShell
+import groovy.lang.Script
+
 class Plc4xDriver(config: JsonObject): DriverBase(config) {
     override fun getType() = Topic.SystemType.Plc
 
@@ -30,6 +34,16 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
     private val readTimeout: Long
     private val defaultRetryWaitTime = 5000
 
+    private val readerScript: String
+    private val writerScript: String
+
+    private val sharedReaderData = Binding()
+    private val sharedWriterData = Binding()
+    private val groovyReaderShell = GroovyShell(sharedReaderData)
+    private val groovyWriterShell = GroovyShell(sharedWriterData)
+    private val groovyReaderScript: Script?
+    private val groovyWriterScript: Script?
+
     private val pollingTopics = HashMap<Topic, PlcValue?>()
 
     init {
@@ -39,6 +53,22 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
         pollingOldNew = polling.getBoolean("OldNew", false)
         writeTimeout = config.getLong("WriteTimeout", 100)
         readTimeout = config.getLong("ReadTimeout", 100)
+
+        val defaultReaderScript = """
+            return value             
+        """.trimIndent()
+
+        val defaultWriterScript = """
+            return value
+        """.trimIndent()
+
+        val value = config.getJsonObject("Value", JsonObject())
+
+        readerScript = value.getString("Reader", defaultReaderScript)
+        writerScript = value.getString("Writer", defaultWriterScript)
+
+        groovyReaderScript = parseReaderGroovyScript()
+        groovyWriterScript = parseWriterGroovyScript()
     }
 
     override fun start(startPromise: Promise<Void>) {
@@ -50,6 +80,60 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
 
     private var pollingRequestId = 0
     private var pollingResponseId = 0
+
+    private fun parseReaderGroovyScript(): Script? {
+        return if (readerScript.isNotEmpty()) {
+            val script =
+                """
+                def output(value) { $readerScript }
+                return output(value)
+                """.trimIndent()
+            groovyReaderShell.parse(script)
+        } else null
+    }
+
+    private fun parseWriterGroovyScript(): Script? {
+        return if (writerScript.isNotEmpty()) {
+            val script =
+                """                
+                def output(value) { $writerScript }
+                return output(value)
+                """.trimIndent()
+            groovyWriterShell.parse(script)
+        } else null
+    }
+
+    private fun transformReaderValue(address: String, value: Any): Any {
+        val x =  if (groovyReaderScript != null) {
+            sharedReaderData.setProperty("address", address)
+            sharedReaderData.setProperty("value", value)
+            try {
+                groovyReaderScript.run().toString()
+            } catch (e: Exception) {
+                e.toString()
+            }
+        } else {
+            value
+        }
+        logger.debug("transformReaderValue: $address > $value => $x")
+        return x
+    }
+
+    private fun transformWriterValue(address: String, value: Any): Any {
+        val x = if (groovyWriterScript != null) {
+            sharedWriterData.setProperty("address", address)
+            sharedWriterData.setProperty("value", value)
+            try {
+                groovyWriterScript.run().toString()
+            } catch (e: Exception) {
+                e.toString()
+            }
+        } else {
+            value
+        }
+        logger.debug("transformWriterValue: $address > $value => $x")
+        return x
+    }
 
     @Suppress("UNUSED_PARAMETER")
     private fun pollingExecutor(id: Long) {
@@ -216,7 +300,7 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
         else -> "unhandled"
      */
 
-    private fun toValue(value: PlcValue): TopicValuePlc {
+    private fun toValue(node: String, value: PlcValue): TopicValuePlc {
         val data = when {
             value.isStruct && value.keys.isNotEmpty() -> {
                 value.struct[value.keys.first()]?.`object`
@@ -226,7 +310,7 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
             }
             else -> value.`object`
         }
-        return TopicValuePlc(value = data)
+        return TopicValuePlc(value = transformReaderValue(node, data!!))
     }
 
     private fun valueConsumer(topic: Topic, data: PlcValue) {
@@ -234,7 +318,7 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
         try {
             fun json() = JsonObject()
                 .put("Topic", topic.encodeToJson())
-                .put("Value", toValue(data).encodeToJson())
+                .put("Value", toValue(topic.address, data).encodeToJson())
 
             val buffer : Buffer? = when (topic.format) {
                 Topic.Format.Value -> {
@@ -332,7 +416,7 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
                         response.whenComplete { readResponse, throwable ->
                             if (readResponse != null) {
                                 try {
-                                    val result = toValue(readResponse.getPlcValue("value")).encodeToJson()
+                                    val result = toValue(node, readResponse.getPlcValue("value")).encodeToJson()
                                     message.reply(JsonObject().put("Ok", true).put("Result", result))
                                 } catch (e: Exception) {
                                     e.printStackTrace()
@@ -386,14 +470,14 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
 
     private fun isConnected() = plc != null && plc!!.isConnected
 
-    private fun writeValueAsync(node: String, value: String): Future<Boolean> {
+    private fun writeValueAsync(node: String, value: Any): Future<Boolean> {
         val promise = Promise.promise<Boolean>()
         try {
             if (!isConnected()) {
                 promise.complete(false)
             } else {
                 val builder: PlcWriteRequest.Builder = plc!!.writeRequestBuilder()
-                builder.addItem("value", node, value)
+                builder.addItem("value", node, transformWriterValue(node, value))
                 val request = builder.build()
                 val response = request.execute()
                 response.orTimeout(writeTimeout, TimeUnit.MILLISECONDS)

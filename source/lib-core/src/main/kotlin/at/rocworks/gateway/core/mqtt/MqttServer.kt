@@ -26,16 +26,33 @@ class MqttServer(config: JsonObject, private val endpoint: MqttEndpoint) : Abstr
         fun create(vertx: Vertx, config: JsonObject) {
             val logger = LoggerFactory.getLogger(MqttServer::class.java.simpleName)
 
+            val host = config.getString("Host", "0.0.0.0")
+            val port = config.getInteger("Port", 1883)
+            val ws = config.getBoolean("Websocket", false)
+            val username = config.getString("Username", "")
+            val password = config.getString("Password", "")
+
             val options = MqttServerOptions()
-                .setPort(config.getInteger("Port", 1883))
-                .setHost(config.getString("Host", "0.0.0.0"))
-                .setMaxMessageSize(config.getInteger("MaxMessageSizeKb", 8)*1024)
+                .setPort(port)
+                .setHost(host)
+                .setMaxMessageSize(config.getInteger("MaxMessageSizeKb", 8) * 1024)
+                .setUseWebSocket(ws)
 
             val server = MqttServer.create(vertx, options)
 
             // Start a verticle for every incoming connection
             server.endpointHandler {
-                vertx.deployVerticle(MqttServer(config, it))
+                try {
+                    val authUsername = it.auth()?.username ?: ""
+                    val authPassword = it.auth()?.password ?: ""
+                    if ((username == "" || username == authUsername) &&
+                        (password == "" || password == authPassword))
+                        vertx.deployVerticle(MqttServer(config, it))
+                    else
+                        logger.warn("Unauthorized access! [${authUsername}] [${authPassword}]")
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
             }
 
             server.listen { result ->
@@ -77,10 +94,6 @@ class MqttServer(config: JsonObject, private val endpoint: MqttEndpoint) : Abstr
     private fun startEndpoint() {
         logger.info("Client [{}] request to connect, clean session [{}] ", endpoint.clientIdentifier() , endpoint.isCleanSession)
         try {
-            if (endpoint.auth() != null) {
-                logger.info("  auth: username = " + endpoint.auth().username + ", password = " + endpoint.auth().password)
-            }
-
             if (endpoint.will() != null && endpoint.will().isWillFlag) {
                 logger.info(
                     "  last will: " +

@@ -11,6 +11,7 @@ You can sponsor this project [here](https://paypal.me/av75).
 ![Gateway](doc/Automation-Gateway.png)
 
 # Version History
+1.18.3 Added MQTT Websocket Option and simple Authentication  
 1.18.2 Raw value to engineering value conversion for PLC4X driver  
 1.18.1 Features and bug fixes in PLC4X driver  
 1.18 Removed Apache Ignite  
@@ -220,6 +221,23 @@ Example MQTT Topic:
 > plc/mod/node/coil:1  
 
 # Version History
+## 1.18.3 Added MQTT Websocket Option and simple Authentication  
+Added the option to enable a Websocket listener for the MQTT server.
+The Websocket listener is listening on the endpoint "/mqtt".
+Example MQTT Client Url: "ws://your-host-or-ip/mqtt"
+```
+MqttServer:
+  Listeners:
+    - Id: Mqtt  # Tcp listener without authentication
+      Port: 1883
+
+    - Id: MqttWs  # Websocket listener with authentication
+      Port: 1884
+      Websocket: true  
+      Username: system  # If empty, then any username can be used
+      Password: manager  # If empty, then any or no password can be used
+```
+
 ## 1.18.2 Raw value to engineering value conversion for PLC4X driver
 It is now possible to define Groovy functions to convert raw values to engineering values. Every incoming or outgoing value will be passed through the defined functions. The functions can currently only be defined at the connection level, so every value coming from this PLC connection goes through the conversion functions.  
 
@@ -259,7 +277,7 @@ Here is an example where a value conversion is done only for some addresses:
             println("default")
             return x;
           } 
-````
+```
 
 ## 1.18.1 Features and fixes in PLC4X driver  
 Auto reconnect to the PLC if the connection is lost.  

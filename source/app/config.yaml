@@ -1,8 +1,21 @@
+# Example Configuration File for the Automation Gateway
+#
+# Note: The OpcUaClient connections are all disabled.  
+#
+
 MqttServer:
   Listeners:
     - Id: Mqtt
       Port: 1883
       Host: 0.0.0.0
+      LogLevel: INFO # ALL | INFO
+
+    - Id: MqttWs
+      Port: 1884
+      Websocket: true
+      Host: 0.0.0.0
+      Username: system
+      Password: manager
       LogLevel: INFO # ALL | INFO
 
 GraphQLServer:
@@ -23,7 +36,7 @@ OpcUaClient:
   - Id: "opc1"
     Enabled: false
     LogLevel: INFO
-    EndpointUrl: "opc.tcp://nuc1:20001"
+    EndpointUrl: "opc.tcp://192.168.1.3:62540/server"
     UpdateEndpointUrl: true
     SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#None
 
@@ -103,6 +116,27 @@ OpcUaClient:
     MonitoringParameters:
       BufferSize: 10
       SamplingInterval: 0.0
+      DiscardOldest: true
+    BrowseOnStartup: false
+    WriteSchemaToFile: false
+
+  - Id: "panel"
+    Enabled: false
+    LogLevel: INFO
+    EndpointUrl:  "opc.tcp://192.168.1.136:4890"
+    UpdateEndpointUrl: true
+    SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#Basic128Rsa15
+    SubscriptionSamplingInterval: 100
+    UsernameProvider:
+      Username: username1
+      Password: password1
+    WriteParameters:
+      QueueSize: 1000
+      BlockSize: 100
+      WithTime: true
+    MonitoringParameters:
+      BufferSize: 10
+      SamplingInterval: 1.0
       DiscardOldest: true
     BrowseOnStartup: false
     WriteSchemaToFile: false

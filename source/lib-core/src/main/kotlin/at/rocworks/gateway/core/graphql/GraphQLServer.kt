@@ -138,7 +138,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
                 vertx.eventBus().request<JsonObject>(
                     "${type}/${system}/Schema",
                     JsonObject().put("NodeIds", nodeIds),
-                    DeliveryOptions().setSendTimeout(60000*10)) // TODO: configurable?
+                    DeliveryOptions().setSendTimeout(60000L*10)) // TODO: configurable?
                 {
                     done = true
                     logger.info("Schema response [{}] [{}] [{}]", system, it.succeeded(), it.cause()?.message ?: "")
@@ -195,7 +195,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
             fun addNodes(nodes: JsonArray, path: String): Boolean {
                 if (typePaths.contains(path)) {
                     logger.warn("Type path [{}] already used, dismiss the second node.", path)
-                    return false;
+                    return false
                 } else {
                     typePaths.add(path)
                     val items = mutableListOf<String>()
@@ -210,7 +210,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
                     addedNodes.forEach { items.add(it) }
                     wiring.type(newTypeWiring)
                     typeDefinitions.add("type $path { \n ${items.joinToString(separator = "\n ")} \n}")
-                    return true;
+                    return true
                 }
             }
         }

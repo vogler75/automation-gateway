@@ -1,5 +1,6 @@
 #!/bin/bash
-version="${1:-none}"
+v=`cat version.txt`
+version="${1:-$v}"
 if [ $version = "none" ]; then
   echo "usage $0 <version>"
 else  

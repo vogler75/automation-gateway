@@ -99,6 +99,7 @@ public class KeyStoreLoader {
             clientKeyPair = new KeyPair(serverPublicKey, (PrivateKey) serverPrivateKey);
         }
 
+        logger.info("Loaded certificate.");
         return this;
     }
 

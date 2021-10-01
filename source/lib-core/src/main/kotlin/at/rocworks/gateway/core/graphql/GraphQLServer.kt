@@ -71,45 +71,49 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
                 throw java.lang.Exception(e.message)
             }
         }
-        val schemas = config.getJsonArray("Schemas", JsonArray()) ?: JsonArray()
-        if (schemas.isEmpty) {
-            getGenericSchema().let { (schema, wiring) ->
-                startGraphQLServer(build(schema, wiring))
-                startPromise.complete()
-            }
-        } else {
-            logger.info("Build schema...")
-            val (generic, wiring) = getGenericSchema(withSystems = true)
-
-            val results = schemas.filterIsInstance<JsonObject>().map { systemConfig ->
-                val promise = Promise.promise<String>()
-                val system = systemConfig.getString("System")
-                val fieldName = systemConfig.getString("FieldName", defaultFieldName) // DisplayName or BrowseName
-                val nodeIds = systemConfig.getJsonArray("RootNodes", JsonArray(listOf("i=85"))).filterIsInstance<String>()
-                fetchSchema(system, nodeIds).onComplete {
-                    logger.info("Build GraphQL [{}] ...", system)
-                    val result = getSystemSchema(system, fieldName, wiring)
-                    logger.info("Build GraphQL [{}] [{}]...complete", system, result.length)
-                    promise.complete(result)
+        thread {
+            val schemas = config.getJsonArray("Schemas", JsonArray()) ?: JsonArray()
+            if (schemas.isEmpty) {
+                logger.info("Default schema...")
+                getGenericSchema().let { (schema, wiring) ->
+                    startGraphQLServer(build(schema, wiring))
+                    logger.info("GraphQL ready")
+                    startPromise.complete()
                 }
-                promise.future()
-            }
+            } else {
+                logger.info("Build schema...")
+                val (generic, wiring) = getGenericSchema(withSystems = true)
 
-            val systems = schemas.filterIsInstance<JsonObject>().map { it.getString("System") }
-            val systemTypes = "type Systems {\n" + systems.joinToString(separator = "\n") { "  $it: $it" } + "\n}\n"
+                val results = schemas.filterIsInstance<JsonObject>().map { systemConfig ->
+                    val promise = Promise.promise<String>()
+                    val system = systemConfig.getString("System")
+                    val fieldName = systemConfig.getString("FieldName", defaultFieldName) // DisplayName or BrowseName
+                    val nodeIds =
+                        systemConfig.getJsonArray("RootNodes", JsonArray(listOf("i=85"))).filterIsInstance<String>()
+                    fetchSchema(system, nodeIds).onComplete {
+                        logger.info("Build GraphQL [{}] ...", system)
+                        val result = getSystemSchema(system, fieldName, wiring)
+                        logger.info("Build GraphQL [{}] [{}]...complete", system, result.length)
+                        promise.complete(result)
+                    }
+                    promise.future()
+                }
 
-            val dataFetcher = getSchemaNode("", "", "", "", "", "")
-            wiring.type(
-                TypeRuntimeWiring.newTypeWiring("Query")
-                    .dataFetcher("Systems", dataFetcher))
+                val systems = schemas.filterIsInstance<JsonObject>().map { it.getString("System") }
+                val systemTypes = "type Systems {\n" + systems.joinToString(separator = "\n") { "  $it: $it" } + "\n}\n"
 
-            CompositeFuture.all(results).onComplete {
-                val schema = generic + systemTypes + (results.joinToString(separator = "\n") { it.result() })
+                val dataFetcher = getSchemaNode("", "", "", "", "", "")
+                wiring.type(
+                    TypeRuntimeWiring.newTypeWiring("Query")
+                        .dataFetcher("Systems", dataFetcher)
+                )
 
-                if (writeSchemaFiles)
-                    File("graphql.gql").writeText(schema)
+                CompositeFuture.all(results).onComplete {
+                    val schema = generic + systemTypes + (results.joinToString(separator = "\n") { it.result() })
 
-                thread {
+                    if (writeSchemaFiles)
+                        File("graphql.gql").writeText(schema)
+
                     try {
                         logger.info("Generate GraphQL schema...")
                         val graphql = build(schema, wiring)

@@ -11,6 +11,7 @@ import at.rocworks.gateway.logger.iotdb.IoTDBLogger
 import at.rocworks.gateway.logger.jdbc.JdbcLogger
 import at.rocworks.gateway.logger.kafka.KafkaLogger
 import at.rocworks.gateway.logger.nats.NatsLogger
+import at.rocworks.gateway.logger.neo4j.Neo4jLogger
 
 import kotlin.Throws
 import kotlin.jvm.JvmStatic
@@ -23,14 +24,6 @@ import java.lang.Exception
 import org.slf4j.LoggerFactory
 
 object App {
-
-    // TODO: add TLS and login to MQTT
-    // TODO: add TLS and security to GraphQL
-
-    // TODO: add HTTP as query interface
-    // TODO: add statistics (read/writes per second) and publish it on a topic
-
-    // TODO: add option for sampling interval - as part of the topic?
 
     @Throws(Exception::class)
     @JvmStatic
@@ -61,6 +54,9 @@ object App {
                 }
                 "Nats" -> {
                     vertx.deployVerticle(NatsLogger(config))
+                }
+                "Neo4j" -> {
+                    vertx.deployVerticle(Neo4jLogger(config))
                 }
                 else -> logger.error("Unknown database type [{}]", type)
             }

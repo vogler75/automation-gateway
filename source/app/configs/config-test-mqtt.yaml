@@ -22,16 +22,16 @@ MqttClient:
     Ssl: false
     Value:
       Reader: >
-        def source = new JsonSlurper().parseText(value)
+        def source = new JsonSlurper().parseText(value);
         return [ 
           className: "TopicValueOpc",
           sourceTime: Instant.ofEpochMilli(source.TimeMS).toString(),
           serverTime: Instant.now().toString(),
           value: source.Value,
           statusCode: 0 
-        ]
+        ];
       Writer: > 
-        return value        
+        return value;
 
 Database:
   Logger:
@@ -52,7 +52,7 @@ Database:
 
     - Id: iotdb1
       Type: IoTDB
-      Enabled: true
+      Enabled: false
       Host: nuc1.rocworks.local
       Port: 6667
       Database: root.test

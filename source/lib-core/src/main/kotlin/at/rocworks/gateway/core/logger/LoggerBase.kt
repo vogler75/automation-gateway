@@ -142,7 +142,7 @@ abstract class LoggerBase(config: JsonObject) : AbstractVerticle() {
         }
     }
 
-    private fun valueConsumer(value: Any) { // TODO: Same in Influx
+    private fun valueConsumer(value: Any) {
         try {
             when (value) {
                 is Buffer -> valueConsumer(Json.decodeValue(value) as JsonObject)

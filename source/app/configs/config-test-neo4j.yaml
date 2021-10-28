@@ -161,18 +161,19 @@ Database:
     - Id: neo4j1
       Enabled: true
       Type: Neo4j
-      Url: bolt://nuc1:7687
+      Url: bolt://nuc1.rocworks.local:7687
       Username: "neo4j"
       Password: "manager"
       WriteParameters:
-        BlockSize: 100
+        BlockSize: 1000
       Logging:
         - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
-        #- Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
-        #- Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
-        #- Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
-        #- Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
-        #- Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
-        #- Topic: opc/opc3/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
-        #- Topic: opc/opc3/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
-        #- Topic: opc/opc3/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
+        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
+        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
+        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_String/+
+        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
+        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
+        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
+        - Topic: opc/opc3/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
+        - Topic: opc/opc3/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
+        - Topic: opc/opc3/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+

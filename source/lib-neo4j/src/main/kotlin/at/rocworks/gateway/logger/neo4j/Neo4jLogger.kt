@@ -44,37 +44,42 @@ class Neo4jLogger(config: JsonObject) : LoggerBase(config) {
 
     override fun writeExecutor() {
         var counter = 0
-        val dollar = "$"
+        val query = """
+            UNWIND ${"$"}rows AS row
+            MERGE (n:OpcUaNode {
+              system : row.system,
+              address : row.address
+            }) 
+            SET n += {
+              status : row.status,
+              value : row.value,
+              dataType: row.dataType,
+              serverTime : row.serverTime,
+              sourceTime : row.sourceTime
+            }  
+            """.trimIndent()
 
-        session?.writeTransaction { tx ->
-            val query = """
-                    MERGE (n:OpcUaNode {
-                      system : ${dollar}system,
-                      address : ${dollar}address
-                    }) 
-                    SET n += {
-                      status : ${dollar}status,
-                      doubleValue : ${dollar}doubleValue,                           
-                      serverTime : ${dollar}serverTime,
-                      sourceTime : ${dollar}sourceTime
-                    }  
-                """.trimIndent()
-
-            var point: DataPoint? = writeValueQueue.poll(10, TimeUnit.MILLISECONDS)
-            while (point != null && ++counter <= writeParameterBlockSize) {
-                tx.run(query,
-                    parameters(
-                        "system", point.topic.systemName,
-                        "address", point.topic.address,
-                        "status", point.value.statusAsString(),
-                        "doubleValue", point.value.valueAsDouble(),
-                        "serverTime", point.value.serverTimeAsISO(),
-                        "sourceTime", point.value.sourceTimeAsISO()
-                    )
-                )
-                point = writeValueQueue.poll()
+        val rows = mutableListOf<Map<String, Any?>>()
+        var point: DataPoint? = writeValueQueue.poll(10, TimeUnit.MILLISECONDS)
+        while (point != null && ++counter <= writeParameterBlockSize) {
+            val row = mapOf<String, Any?>(
+                "system" to point.topic.systemName,
+                "address" to point.topic.address,
+                "status" to point.value.statusAsString(),
+                //"doubleValue" to point.value.valueAsDouble(),
+                //"stringValue" to point.value.valueAsString(),
+                "value" to point.value.valueAsObject(),
+                "dataType" to point.value.dataTypeName(),
+                "serverTime" to point.value.serverTimeAsISO(),
+                "sourceTime" to point.value.sourceTimeAsISO())
+            rows.add(row)
+            point = writeValueQueue.poll()
+        }
+        if (counter > 0) {
+            session?.writeTransaction { tx ->
+                tx.run(query, parameters("rows", rows))
+                valueCounterOutput += counter
             }
-            valueCounterOutput += counter
         }
     }
 

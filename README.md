@@ -11,6 +11,7 @@ You can sponsor this project [here](https://paypal.me/av75).
 ![Gateway](doc/Automation-Gateway.png)
 
 # Version History
+1.19 Neo4j Logger to write field values to the graph database  
 1.18.3 Added MQTT Websocket Option and simple Authentication  
 1.18.2 Raw value to engineering value conversion for PLC4X driver  
 1.18.1 Features and bug fixes in PLC4X driver  
@@ -221,6 +222,34 @@ Example MQTT Topic:
 > plc/mod/node/coil:1  
 
 # Version History
+## 1.19 Neo4j Logger to write field values to the graph database  
+Added Neo4j as an option to log values from OPC UA to the graph database. Additionally the OPC UA node structure can also be replicated to the graph database. This will be done only once at the startup of the Automation Gateway.  
+```
+Database:
+  Logger:
+    - Id: neo4j
+      Enabled: true
+      Type: Neo4j
+      Url: bolt://nuc1.rocworks.local:7687
+      Username: "neo4j"
+      Password: "manager"
+      Schemas:
+        - System: opc1  # Replicate node structure to the graph database
+          RootNodes:
+            - "ns=2;s=Demo"  # This node and everything below this node
+        - System: winccoa1  # Replicate the nodes starting from "i=85" (Objects) node
+      WriteParameters:
+        BlockSize: 1000
+      Logging:
+        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
+        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
+        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
+        - Topic: opc/winccoa1/path/Objects/PUMP1/#
+        - Topic: opc/winccoa1/path/Objects/ExampleDP_Int/#
+
+
+```
+
 ## 1.18.3 Added MQTT Websocket Option and simple Authentication  
 Added the option to enable a Websocket listener for the MQTT server.
 The Websocket listener is listening on the endpoint "/mqtt".

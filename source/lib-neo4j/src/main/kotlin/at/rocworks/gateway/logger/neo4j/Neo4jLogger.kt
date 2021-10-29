@@ -22,6 +22,8 @@ import kotlin.Unit
 import org.neo4j.driver.*
 import org.neo4j.driver.Values.parameters
 import java.io.File
+import java.time.Duration
+import java.time.Instant
 import kotlin.concurrent.thread
 
 class Neo4jLogger(private val config: JsonObject) : LoggerBase(config) {
@@ -74,9 +76,10 @@ class Neo4jLogger(private val config: JsonObject) : LoggerBase(config) {
 
     private fun writeSchemaToDb(system: String, schema: JsonObject) {
         try {
+            val tStart = Instant.now()
+            logger.info("Write schema to graph database...")
             schema.forEach { rootNode ->
                 session?.writeTransaction { tx ->
-                    println("RootNode ${rootNode.key}")
                     val res = tx.run(
                         "MERGE (n:OpcUaNode {DisplayName: \$DisplayName, System: \$System, NodeId: \$NodeId}) RETURN id(n)",
                         parameters("DisplayName", rootNode.key, "System", system, "NodeId", rootNode.key)
@@ -84,38 +87,49 @@ class Neo4jLogger(private val config: JsonObject) : LoggerBase(config) {
                     val parent = res.single()[0]
 
                     fun addNodes(parent: Value, nodes: JsonArray) {
-                        nodes.filterIsInstance<JsonObject>()?.forEach {
+                        val rows = mutableListOf<Map<String, Any?>>()
+                        val items = nodes.filterIsInstance<JsonObject>()
+                        items.forEach {
                             val node = HashMap<String, Any>()
                             node["NodeId"] = it.getString("NodeId")
                             node["NodeClass"] = it.getString("NodeClass")
                             node["BrowseName"] = it.getString("BrowseName")
                             node["BrowsePath"] = it.getString("BrowsePath")
                             node["DisplayName"] = it.getString("DisplayName")
-                            val res = tx.run(
-                                """
-                                MATCH (n1:OpcUaNode) WHERE id(n1) = ${"$"}Parent
-                                MERGE (n2:OpcUaNode {System: ${"$"}System, NodeId: ${"$"}NodeId})
-                                SET n2 += ${"$"}Node
-                                MERGE (n1)-[:has]->(n2)
-                                RETURN id(n2)
-                                """.trimIndent(),
-                                parameters(
-                                    "Parent", parent,
-                                    "System", system,
-                                    "NodeId", node["NodeId"],
-                                    "Node", node
-                                )
+                            rows.add(node)
+                        }
+                        logger.info("Writing ${rows.size} nodes...")
+                        val res = tx.run(
+                            """
+                            UNWIND ${"$"}rows AS node
+                            MATCH (n1:OpcUaNode) WHERE id(n1) = ${"$"}Parent
+                            MERGE (n2:OpcUaNode {System: ${"$"}System, NodeId: node.NodeId})
+                            SET n2 += node
+                            MERGE (n1)-[:has]->(n2)
+                            RETURN id(n2)
+                            """.trimIndent(),
+                            parameters(
+                                "Parent", parent,
+                                "System", system,
+                                "rows", rows
                             )
-                            val child = res.single()[0]
-                            print(".")
-                            addNodes(child, it.getJsonArray("Nodes", JsonArray()))
+                        )
+                        logger.info("Writing ${rows.size} nodes...done")
+                        items.zip(res.list()).forEach {
+                            val nodes = it.first.getJsonArray("Nodes")
+                            if (nodes != null && !nodes.isEmpty) {
+                                addNodes(it.second[0], nodes)
+                            }
                         }
                     }
 
                     addNodes(parent, rootNode.value as? JsonArray ?: JsonArray())
-                    println(".done")
                 }
             }
+            val duration = Duration.between(tStart, Instant.now())
+            val seconds = duration.seconds + duration.nano/1_000_000_000.0
+            logger.warn("Writing schema to GraphDB took [{}]s", seconds)
+
         } catch (e: Exception) {
             e.printStackTrace()
         }

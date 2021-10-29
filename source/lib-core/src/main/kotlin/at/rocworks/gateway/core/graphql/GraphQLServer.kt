@@ -146,7 +146,8 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
                 {
                     done = true
                     logger.info("Schema response [{}] [{}] [{}]", system, it.succeeded(), it.cause()?.message ?: "")
-                    schemas.put(system, it.result().body() ?: JsonArray())
+                    val result = it.result().body() ?: JsonObject()
+                    schemas.put(system, result)
                     promise.complete(it.succeeded())
                 }
             }

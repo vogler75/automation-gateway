@@ -21,9 +21,10 @@ import kotlin.Unit
 
 import org.neo4j.driver.*
 import org.neo4j.driver.Values.parameters
-import java.io.File
+
 import java.time.Duration
 import java.time.Instant
+
 import kotlin.concurrent.thread
 
 class Neo4jLogger(private val config: JsonObject) : LoggerBase(config) {
@@ -44,7 +45,7 @@ class Neo4jLogger(private val config: JsonObject) : LoggerBase(config) {
                 systemConfig.getJsonArray("RootNodes", JsonArray(listOf("i=85"))).filterIsInstance<String>()
             fetchSchema(system, nodeIds).onComplete {
                 logger.info("Write Graph [{}] [{}]", system, it.result().first)
-                File("${system}.json").writeText(it.result().second.encodePrettily())
+                //File("${system}.json").writeText(it.result().second.encodePrettily())
                 if (it.result().first) {
                     thread { writeSchemaToDb(system, it.result().second) }
                 }

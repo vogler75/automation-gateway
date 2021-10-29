@@ -23,7 +23,7 @@ GraphQLServer:
     - Port: 4000
       LogLevel: INFO
       GraphiQL: true
-      WriteSchemaToFile: true
+      WriteSchemaToFile: false
       Schemas:
       #  - System: opc1
       #    FieldName: BrowseName

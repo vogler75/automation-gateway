@@ -7,7 +7,6 @@ import at.rocworks.gateway.core.driver.MonitoredItem
 import com.google.common.cache.CacheBuilder
 import com.google.common.cache.CacheLoader
 import com.google.common.cache.LoadingCache
-
 import io.vertx.core.AsyncResult
 import io.vertx.core.CompositeFuture
 import io.vertx.core.Future
@@ -16,13 +15,7 @@ import io.vertx.core.buffer.Buffer
 import io.vertx.core.eventbus.Message
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
-
-import java.lang.Exception
-import java.security.Security
-import java.util.function.Predicate
-
 import org.bouncycastle.jce.provider.BouncyCastleProvider
-
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient
 import org.eclipse.milo.opcua.sdk.client.api.UaClient
 import org.eclipse.milo.opcua.sdk.client.api.config.OpcUaClientConfigBuilder
@@ -33,6 +26,7 @@ import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaMonitoredItem
 import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaSubscription
 import org.eclipse.milo.opcua.sdk.client.api.subscriptions.UaSubscriptionManager.SubscriptionListener
 import org.eclipse.milo.opcua.sdk.client.model.nodes.objects.ServerTypeNode
+import org.eclipse.milo.opcua.sdk.client.nodes.UaNode
 import org.eclipse.milo.opcua.stack.core.*
 import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy
 import org.eclipse.milo.opcua.stack.core.types.builtin.*
@@ -41,11 +35,9 @@ import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.*
 import org.eclipse.milo.opcua.stack.core.types.enumerated.*
 import org.eclipse.milo.opcua.stack.core.types.structured.*
 import org.eclipse.milo.opcua.stack.core.util.EndpointUtil
-
 import java.io.File
-import java.lang.IllegalStateException
-import java.lang.NumberFormatException
 import java.nio.charset.StandardCharsets
+import java.security.Security
 import java.time.Duration
 import java.time.Instant
 import java.util.*
@@ -53,7 +45,9 @@ import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.TimeUnit
 import java.util.function.BiConsumer
+import java.util.function.Predicate
 import kotlin.concurrent.thread
+
 
 class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
     override fun getType() = Topic.SystemType.Opc
@@ -97,7 +91,7 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
 
     private val defaultRetryWaitTime = 5000
 
-    private val schema = JsonObject()
+    //private val schema = JsonObject()
 
     private var addressNodeIdCache: LoadingCache<String, List<Pair<NodeId, String>>>
 
@@ -368,14 +362,27 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
         }
     }
 
+    private fun getNodeData(nodeId: NodeId): JsonObject {
+        val node: UaNode = client!!.addressSpace.getNode(nodeId)
+        val item = JsonObject()
+        item.put("NodeId", nodeId.toParseableString())
+        item.put("NodeClass", node.readNodeClass().toString())
+        item.put("BrowseName", node.readBrowseName().name)
+        item.put("DisplayName", node.readDisplayName().text)
+        return item
+    }
+
     override fun schemaHandler(message: Message<JsonObject>) {
         val body = message.body()
         val nodeIds = if (body.containsKey("NodeId")) listOf(body.getString("NodeId"))
         else body.getJsonArray("NodeIds") ?: JsonArray(listOf("i=85"))
         thread {
+            val schema = JsonArray()
             nodeIds.filterIsInstance<String>().forEach { nodeId ->
                 logger.info("Browse from NodeId [{}]", nodeId)
-                schema.put(nodeId, browseSchema(nodeId))
+                val item = getNodeData(NodeId.parse(nodeId))
+                item.put("Nodes", browseSchema(nodeId))
+                schema.add(item)
             }
             message.reply(schema)
         }

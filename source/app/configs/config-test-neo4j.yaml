@@ -23,8 +23,8 @@ GraphQLServer:
     - Port: 4000
       LogLevel: INFO
       GraphiQL: true
-      WriteSchemaToFile: false
-      #Schemas:
+      WriteSchemaToFile: true
+      Schemas:
       #  - System: opc1
       #    FieldName: BrowseName
       #  - System: opc2
@@ -69,10 +69,10 @@ OpcUaClient:
       DiscardOldest: true
       DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
 
-  - Id: "winccoa"
-    Enabled: false
+  - Id: "winccoa1"
+    Enabled: true
     LogLevel: INFO
-    EndpointUrl: "opc.tcp://centos1:4840"
+    EndpointUrl: "opc.tcp://centos1.rocworks.local:4840"
     UpdateEndpointUrl: true
     SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#None
     ConnectTimeout: 5000
@@ -91,7 +91,7 @@ OpcUaClient:
     BrowseOnStartup: false
     WriteSchemaToFile: false
 
-  - Id: "ignition"
+  - Id: "ignition1"
     Enabled: false
     LogLevel: INFO
     EndpointUrl: "opc.tcp://ubuntu1:62541/discovery"
@@ -115,7 +115,7 @@ OpcUaClient:
     BrowseOnStartup: false
     WriteSchemaToFile: false
 
-  - Id: "unified"
+  - Id: "unified1"
     Enabled: false
     LogLevel: INFO
     EndpointUrl:  "opc.tcp://desktop-9o6hthf:4890"
@@ -135,7 +135,7 @@ OpcUaClient:
     BrowseOnStartup: false
     WriteSchemaToFile: false
 
-  - Id: "panel"
+  - Id: "panel1"
     Enabled: false
     LogLevel: INFO
     EndpointUrl:  "opc.tcp://192.168.1.136:4890"
@@ -164,6 +164,17 @@ Database:
       Url: bolt://nuc1.rocworks.local:7687
       Username: "neo4j"
       Password: "manager"
+      Schemas:
+        - System: opc1
+          RootNodes:
+            - "ns=2;s=Demo"
+        - System: opc2
+          RootNodes:
+            - "ns=2;s=Demo"
+        - System: opc3
+          RootNodes:
+            - "ns=2;s=Demo"
+        - System: winccoa1
       WriteParameters:
         BlockSize: 1000
       Logging:
@@ -177,3 +188,6 @@ Database:
         - Topic: opc/opc3/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
         - Topic: opc/opc3/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
         - Topic: opc/opc3/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
+        - Topic: opc/winccoa1/path/Objects/PUMP1/#
+        - Topic: opc/winccoa1/path/Objects/ExampleDP_Int/#
+

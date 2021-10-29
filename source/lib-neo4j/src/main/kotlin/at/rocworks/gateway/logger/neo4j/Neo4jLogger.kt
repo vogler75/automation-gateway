@@ -52,21 +52,21 @@ class Neo4jLogger(private val config: JsonObject) : LoggerBase(config) {
         }
     }
 
-    private fun fetchSchema(system: String, nodeIds: List<String>): Future<Pair<Boolean, JsonObject>> { // TODO: copied from GraphQLServer
-        val promise = Promise.promise<Pair<Boolean, JsonObject>>()
+    private fun fetchSchema(system: String, nodeIds: List<String>): Future<Pair<Boolean, JsonArray>> { // TODO: copied from GraphQLServer
+        val promise = Promise.promise<Pair<Boolean, JsonArray>>()
         val serviceHandler = ServiceHandler(vertx, logger)
         val type = Topic.SystemType.Opc.name
         logger.info("Wait for service [{}]...", system)
         serviceHandler.observeService(type, system) { record ->
             if (record.status == Status.UP) {
                 logger.info("Request schema [{}] [{}] ...", system, nodeIds.joinToString(","))
-                vertx.eventBus().request<JsonObject>(
+                vertx.eventBus().request<JsonArray>(
                     "${type}/${system}/Schema",
                     JsonObject().put("NodeIds", nodeIds),
                     DeliveryOptions().setSendTimeout(60000L*10)) // TODO: configurable?
                 {
                     logger.info("Schema response [{}] [{}] [{}]", system, it.succeeded(), it.cause()?.message ?: "")
-                    val result = (it.result().body()?: JsonObject())
+                    val result = (it.result().body()?: JsonArray())
                     promise.complete(Pair(it.succeeded(), result))
                 }
             }
@@ -74,7 +74,7 @@ class Neo4jLogger(private val config: JsonObject) : LoggerBase(config) {
         return promise.future()
     }
 
-    private fun writeSchemaToDb(system: String, schema: JsonObject) {
+    private fun writeSchemaToDb(system: String, schema: JsonArray) {
         try {
             logger.info("Write schema to graph database...")
             val tStart = Instant.now()
@@ -90,18 +90,31 @@ class Neo4jLogger(private val config: JsonObject) : LoggerBase(config) {
             val systemId = session.run("MERGE (s:System { DisplayName: \$DisplayName }) RETURN ID(s)",
                 parameters("DisplayName", system)).single()[0]
 
-            schema.forEach { rootNode ->
+            schema.filterIsInstance<JsonObject>().forEach { rootNode ->
                 session?.writeTransaction { tx ->
                     // Create root node
                     val rootId = tx.run(
-                        "MERGE (n:OpcUaNode {System: \$System, NodeId: \$NodeId}) RETURN ID(n)",
-                        parameters("System", system, "NodeId", rootNode.key)
+                        """
+                        MERGE (n:OpcUaRoot {System: ${"$"}System, NodeId: ${"$"}NodeId}) 
+                        SET n += {
+                          NodeClass: ${"$"}NodeClass,
+                          BrowseName: ${"$"}BrowseName,
+                          DisplayName: ${"$"}DisplayName
+                        }
+                        RETURN ID(n)
+                        """.trimIndent(),
+                        parameters(
+                            "System", system,
+                            "NodeId", rootNode.getValue("NodeId"),
+                            "NodeClass", rootNode.getValue("NodeClass"),
+                            "BrowseName", rootNode.getValue("BrowseName"),
+                            "DisplayName", rootNode.getValue("DisplayName"))
                     ).single()[0]
 
                     // System to root node relation
                     tx.run("""
                         MATCH (n1:System) WHERE ID(n1) = ${"$"}SystemId
-                        MATCH (n2:OpcUaNode) WHERE ID(n2) = ${"$"}RootId
+                        MATCH (n2:OpcUaRoot) WHERE ID(n2) = ${"$"}RootId
                         MERGE (n1)-[:HAS]->(n2)
                         """.trimIndent(),
                         parameters("SystemId", systemId, "RootId", rootId))
@@ -125,6 +138,7 @@ class Neo4jLogger(private val config: JsonObject) : LoggerBase(config) {
                             MATCH (n1) WHERE ID(n1) = ${"$"}Parent
                             MERGE (n2:OpcUaNode {System: ${"$"}System, NodeId: node.NodeId})
                             SET n2 += {
+                              NodeClass : node.NodeClass,
                               BrowseName : node.BrowseName,
                               BrowsePath : node.BrowsePath,
                               DisplayName : node.DisplayName
@@ -147,7 +161,7 @@ class Neo4jLogger(private val config: JsonObject) : LoggerBase(config) {
                         }
                     }
 
-                    addNodes(rootId, rootNode.value as? JsonArray ?: JsonArray())
+                    addNodes(rootId, rootNode.getJsonArray("Nodes", JsonArray()))
                 }
             }
             val duration = Duration.between(tStart, Instant.now())

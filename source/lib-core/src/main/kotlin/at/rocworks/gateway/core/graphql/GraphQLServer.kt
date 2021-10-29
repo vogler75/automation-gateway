@@ -139,14 +139,14 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
         serviceHandler.observeService(type, system) { record ->
             if (record.status == Status.UP && !done) {
                 logger.info("Request schema [{}] [{}] ...", system, nodeIds.joinToString(","))
-                vertx.eventBus().request<JsonObject>(
+                vertx.eventBus().request<JsonArray>(
                     "${type}/${system}/Schema",
                     JsonObject().put("NodeIds", nodeIds),
                     DeliveryOptions().setSendTimeout(60000L*10)) // TODO: configurable?
                 {
                     done = true
                     logger.info("Schema response [{}] [{}] [{}]", system, it.succeeded(), it.cause()?.message ?: "")
-                    val result = it.result().body() ?: JsonObject()
+                    val result = it.result().body() ?: JsonArray()
                     schemas.put(system, result)
                     promise.complete(it.succeeded())
                 }
@@ -227,8 +227,9 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
                     .dataFetcher(system, dataFetcher))
 
             schemas
-                .getJsonObject(system, JsonObject())
-                .mapNotNull { (it.value as? JsonArray)?.toList() }
+                .getJsonArray(system, JsonArray())
+                .filterIsInstance<JsonObject>()
+                .mapNotNull { it.getJsonArray("Nodes", JsonArray()).toList() }
                 .flatten()
                 .let {
                     Recursion().addNodes(JsonArray(it), system)

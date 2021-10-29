@@ -76,15 +76,35 @@ class Neo4jLogger(private val config: JsonObject) : LoggerBase(config) {
 
     private fun writeSchemaToDb(system: String, schema: JsonObject) {
         try {
-            val tStart = Instant.now()
             logger.info("Write schema to graph database...")
+            val tStart = Instant.now()
+            val session = driver.session()
+
+            session.run("""
+                CREATE INDEX IF NOT EXISTS
+                FOR (n:OpcUaNode)
+                ON (n.System, n.NodeId)
+                """.trimIndent())
+
+            // Create and get system
+            val systemId = session.run("MERGE (s:System { DisplayName: \$DisplayName }) RETURN ID(s)",
+                parameters("DisplayName", system)).single()[0]
+
             schema.forEach { rootNode ->
                 session?.writeTransaction { tx ->
-                    val res = tx.run(
-                        "MERGE (n:OpcUaNode {DisplayName: \$DisplayName, System: \$System, NodeId: \$NodeId}) RETURN id(n)",
-                        parameters("DisplayName", rootNode.key, "System", system, "NodeId", rootNode.key)
-                    )
-                    val parent = res.single()[0]
+                    // Create root node
+                    val rootId = tx.run(
+                        "MERGE (n:OpcUaNode {System: \$System, NodeId: \$NodeId}) RETURN ID(n)",
+                        parameters("System", system, "NodeId", rootNode.key)
+                    ).single()[0]
+
+                    // System to root node relation
+                    tx.run("""
+                        MATCH (n1:System) WHERE ID(n1) = ${"$"}SystemId
+                        MATCH (n2:OpcUaNode) WHERE ID(n2) = ${"$"}RootId
+                        MERGE (n1)-[:HAS]->(n2)
+                        """.trimIndent(),
+                        parameters("SystemId", systemId, "RootId", rootId))
 
                     fun addNodes(parent: Value, nodes: JsonArray) {
                         val rows = mutableListOf<Map<String, Any?>>()
@@ -96,17 +116,21 @@ class Neo4jLogger(private val config: JsonObject) : LoggerBase(config) {
                             node["BrowseName"] = it.getString("BrowseName")
                             node["BrowsePath"] = it.getString("BrowsePath")
                             node["DisplayName"] = it.getString("DisplayName")
+                            node["ReferenceType"] = it.getString("ReferenceType")
                             rows.add(node)
                         }
-                        logger.info("Writing ${rows.size} nodes...")
                         val res = tx.run(
                             """
                             UNWIND ${"$"}rows AS node
-                            MATCH (n1:OpcUaNode) WHERE id(n1) = ${"$"}Parent
+                            MATCH (n1) WHERE ID(n1) = ${"$"}Parent
                             MERGE (n2:OpcUaNode {System: ${"$"}System, NodeId: node.NodeId})
-                            SET n2 += node
-                            MERGE (n1)-[:has]->(n2)
-                            RETURN id(n2)
+                            SET n2 += {
+                              BrowseName : node.BrowseName,
+                              BrowsePath : node.BrowsePath,
+                              DisplayName : node.DisplayName
+                            }
+                            MERGE (n1)-[:HAS {ReferenceType: node.ReferenceType}]->(n2)
+                            RETURN ID(n2)
                             """.trimIndent(),
                             parameters(
                                 "Parent", parent,
@@ -114,7 +138,7 @@ class Neo4jLogger(private val config: JsonObject) : LoggerBase(config) {
                                 "rows", rows
                             )
                         )
-                        logger.info("Writing ${rows.size} nodes...done")
+                        //logger.info("Wrote ${rows.size} nodes.")
                         items.zip(res.list()).forEach {
                             val nodes = it.first.getJsonArray("Nodes")
                             if (nodes != null && !nodes.isEmpty) {
@@ -123,12 +147,12 @@ class Neo4jLogger(private val config: JsonObject) : LoggerBase(config) {
                         }
                     }
 
-                    addNodes(parent, rootNode.value as? JsonArray ?: JsonArray())
+                    addNodes(rootId, rootNode.value as? JsonArray ?: JsonArray())
                 }
             }
             val duration = Duration.between(tStart, Instant.now())
             val seconds = duration.seconds + duration.nano/1_000_000_000.0
-            logger.warn("Writing schema to GraphDB took [{}]s", seconds)
+            logger.warn("Writing schema to graph database took [{}]s", seconds)
 
         } catch (e: Exception) {
             e.printStackTrace()

@@ -815,6 +815,7 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
                     item.put("DisplayName", rd.displayName.text)
                     item.put("NodeId", rd.nodeId.toParseableString())
                     item.put("NodeClass", rd.nodeClass.toString())
+                    item.put("ReferenceType", BuiltinReferenceType.getReferenceMap()[rd.referenceTypeId]?.browseName?.name ?: "")
 
                     if (rd.nodeClass === NodeClass.Variable || !flat) result.add(item)
 

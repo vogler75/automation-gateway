@@ -137,7 +137,7 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
                 }
 
                 if (sqlInsertStatement == "") {
-                    logger.error("Please provide a sqlInsertStatement in config file!")
+                    logger.severe("Please provide a sqlInsertStatement in config file!")
                 }
 
                 // Create Table
@@ -152,7 +152,7 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
                         try {
                             statement.execute(sql)
                         } catch (e: Exception) {
-                            logger.warn("Create table exception [{}]", e.message)
+                            logger.warning("Create table exception [${e.message}]", )
                         }
                         connection.commit()
                     }
@@ -160,7 +160,7 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
 
                 this.connection = connection
                 promise.complete()
-                logger.info("Open connection done [{}] [{}]", connection.metaData.databaseProductName, connection.metaData.databaseProductVersion)
+                logger.info("Open connection done [${connection.metaData.databaseProductName}] [${connection.metaData.databaseProductVersion}]")
             }
         } catch (e: SQLException) {
             e.printStackTrace()
@@ -183,7 +183,7 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
                 try {
                     connection.prepareStatement(sqlInsertStatement).use(::writeBatch)
                 } catch (e: Exception) {
-                    logger.error("Error writing batch [{}]", e.message)
+                    logger.severe("Error writing batch [${e.message}]")
                 }
             } else {
                 reconnect()
@@ -203,7 +203,7 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
         if (batchPoints.size > 0) {
             batchPoints.forEach {
                 batch.setString(1, it.topic.systemName)
-                batch.setString(2, it.topic.address)
+                batch.setString(2, it.topic.node)
                 batch.setTimestamp(3, Timestamp.from(it.value.sourceTime()))
                 batch.setTimestamp(4, Timestamp.from(it.value.serverTime()))
                 val doubleValue = it.value.valueAsDouble()
@@ -261,7 +261,7 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
                     result(true, data)
                 }
             } catch (e: SQLException) {
-                logger.error("Error executing query [{}]", e.message)
+                logger.severe("Error executing query [${e.message}]")
                 result(false, null)
             }
         } else {

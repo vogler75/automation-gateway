@@ -7,7 +7,8 @@ data class Topic (
     val systemType: SystemType,
     val topicType: TopicType,
     val systemName: String,
-    val address: String,
+    val path: String,
+    val node: String,
     val format: Format = Format.Json,
     var browsePath: String = ""
 ) {
@@ -22,10 +23,8 @@ data class Topic (
 
     enum class TopicType {
         Unknown,
-        NodeId,
-        Symbol,
-        Path,
-        Rpc
+        Node,
+        Path
     }
 
     enum class Format {
@@ -37,9 +36,9 @@ data class Topic (
     fun isValid() = systemType != SystemType.Unknown && topicType != TopicType.Unknown
 
     val addressItems : List<String>
-        get() = splitAddress(this.address)
+        get() = splitAddress(this.node)
 
-    fun systemBrowsePath(): String = "$systemName/${if (browsePath=="") address else browsePath}"
+    fun systemBrowsePath(): String = "$systemName/${if (browsePath=="") node else browsePath}"
 
     fun encodeToJson() = encodeToJson(this)
 
@@ -68,19 +67,21 @@ data class Topic (
                 Topic(
                     topic,
                     systemType = SystemType.Opc,
-                    topicType = TopicType.NodeId,
+                    topicType = TopicType.Node,
                     systemName = it.destructured.component1(),
                     format = getFmt(it.destructured.component2()),
-                    address = "ns=${it.destructured.component3()};s=${it.destructured.component4()}",
+                    path = "",
+                    node = "ns=${it.destructured.component3()};s=${it.destructured.component4()}",
                 )
             } ?: """${opcUri}/(\w+)/Node$optFmt/(.*)$""".toRegex(RegexOption.IGNORE_CASE).find(topic)?.let {
                 Topic(
                     topic,
                     systemType = SystemType.Opc,
-                    topicType = TopicType.NodeId,
+                    topicType = TopicType.Node,
                     systemName = it.destructured.component1(),
                     format = getFmt(it.destructured.component2()),
-                    address = it.destructured.component3()
+                    path = "",
+                    node = it.destructured.component3()
                 )
             } ?: """${opcUri}/(\w+)/Path$optFmt/(.*)/(.*)$""".toRegex(RegexOption.IGNORE_CASE).find(topic)?.let {
                 Topic(
@@ -89,7 +90,8 @@ data class Topic (
                     topicType = TopicType.Path,
                     systemName = it.destructured.component1(),
                     format = getFmt(it.destructured.component2()),
-                    address = """${it.destructured.component3()}/${it.destructured.component4()}""",
+                    path = """${it.destructured.component3()}/${it.destructured.component4()}""",
+                    node = ""
                 )
             }
             // --- PLC ---
@@ -97,10 +99,11 @@ data class Topic (
                 Topic(
                     topic,
                     systemType = SystemType.Plc,
-                    topicType = TopicType.NodeId,
+                    topicType = TopicType.Node,
                     systemName = it.destructured.component1(),
                     format = getFmt(it.destructured.component2()),
-                    address = it.destructured.component3()
+                    path = "",
+                    node = it.destructured.component3()
                 )
             }
             // --- DDS ---
@@ -111,7 +114,8 @@ data class Topic (
                     topicType = TopicType.Path,
                     systemName = it.destructured.component1(),
                     format = getFmt(it.destructured.component2()),
-                    address = it.destructured.component3()
+                    path = "",
+                    node = it.destructured.component3()
                 )
             }
             // --- Mqtt ---
@@ -122,7 +126,8 @@ data class Topic (
                     topicType = TopicType.Path,
                     systemName = it.destructured.component1(),
                     format = getFmt(it.destructured.component2()),
-                    address = it.destructured.component3()
+                    path = it.destructured.component3(),
+                    node = it.destructured.component3()
                 )
             }
             // --- Mqtt ---
@@ -130,10 +135,11 @@ data class Topic (
                 Topic(
                     topic,
                     systemType = SystemType.Mqtt,
-                    topicType = TopicType.NodeId,
+                    topicType = TopicType.Node,
                     systemName = it.destructured.component1(),
                     format = getFmt(it.destructured.component2()),
-                    address = it.destructured.component3()
+                    path = "",
+                    node = it.destructured.component3()
                 )
             }
             // --- SYS ---
@@ -143,7 +149,8 @@ data class Topic (
                     systemType = SystemType.Sys,
                     topicType = TopicType.Path,
                     systemName = "",
-                    address = """${it.destructured.component1()}/${it.destructured.component2()}""",
+                    path = """${it.destructured.component1()}/${it.destructured.component2()}""",
+                    node = """${it.destructured.component1()}/${it.destructured.component2()}""",
                 )
             }
             // --- Other ---
@@ -153,7 +160,8 @@ data class Topic (
                     systemType = SystemType.Unknown,
                     topicType = TopicType.Unknown,
                     systemName = "",
-                    address = topic,
+                    path = topic,
+                    node = topic,
                 )
             }
         }
@@ -162,7 +170,8 @@ data class Topic (
         private const val SYSTEM_TYPE = "systemType"
         private const val ITEM_TYPE = "itemType"
         private const val SYSTEM_NAME = "systemName"
-        private const val PAYLOAD = "payload"
+        private const val NODE = "node"
+        private const val PATH = "path"
         private const val FORMAT = "format"
         private const val BROWSE_PATH = "browsePath"
 
@@ -172,7 +181,8 @@ data class Topic (
                 .put(SYSTEM_TYPE, topic.systemType.name)
                 .put(ITEM_TYPE, topic.topicType.name)
                 .put(SYSTEM_NAME, topic.systemName)
-                .put(PAYLOAD, topic.address)
+                .put(PATH, topic.path)
+                .put(NODE, topic.node)
                 .put(FORMAT, topic.format)
                 .put(BROWSE_PATH, topic.browsePath)
         }
@@ -183,7 +193,8 @@ data class Topic (
                 systemType = SystemType.valueOf(json.getString(SYSTEM_TYPE, "Invalid")),
                 topicType = TopicType.valueOf(json.getString(ITEM_TYPE, "Invalid")),
                 systemName = json.getString(SYSTEM_NAME, ""),
-                address = json.getString(PAYLOAD, ""),
+                path = json.getString(PATH, ""),
+                node = json.getString(NODE, ""),
                 format = Format.valueOf(json.getString(FORMAT, Format.Value.name)),
                 browsePath = json.getString(BROWSE_PATH, "")
             )

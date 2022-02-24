@@ -1,8 +1,5 @@
 package at.rocworks.gateway.core.service
 
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
-
 import io.vertx.core.Vertx
 import io.vertx.core.VertxOptions
 import io.vertx.core.json.JsonObject
@@ -10,19 +7,15 @@ import io.vertx.core.eventbus.EventBusOptions
 
 import io.vertx.core.spi.cluster.ClusterManager
 import io.vertx.core.spi.cluster.NodeListener
-
 import io.vertx.spi.cluster.hazelcast.HazelcastClusterManager
-
-import java.io.File
-import java.io.FileNotFoundException
-
-import java.net.InetAddress
-import java.net.URL
 
 import com.hazelcast.config.FileSystemYamlConfig
 
+import java.io.FileNotFoundException
+import java.util.logging.Logger
+
 object Cluster {
-    private val logger: Logger = LoggerFactory.getLogger(javaClass.simpleName)
+    private val logger = Logger.getLogger(javaClass.simpleName)
 
     private val cfgClusterType = (System.getenv("GATEWAY_CLUSTER_TYPE") ?: "hazelcast").toLowerCase()
 
@@ -31,7 +24,7 @@ object Cluster {
     fun init(args: Array<String>, services: (Vertx, JsonObject) -> Unit) {
         Common.initLogging()
 
-        logger.info("Cluster type [{}]", cfgClusterType)
+        logger.info("Cluster type [${cfgClusterType}]")
 
         val eventBusOptions = EventBusOptions()
 
@@ -47,7 +40,7 @@ object Cluster {
                     initCluster(clusterManager, vertx)
                     Common.initVertx(args, vertx, services)
                 } else {
-                    logger.error("Error initializing cluster!")
+                    logger.severe("Error initializing cluster!")
                 }
             }
         }
@@ -85,7 +78,7 @@ object Cluster {
     private fun getHazelcastClusterManager() = try {
         val fileName = "hazelcast.yaml"
         val clusterConfig = FileSystemYamlConfig(fileName)
-        logger.info("Cluster config file [{}]", fileName)
+        logger.info("Cluster config file [${fileName}]", )
         HazelcastClusterManager(clusterConfig)
     } catch (e: FileNotFoundException) {
         logger.info("Cluster default configuration.")

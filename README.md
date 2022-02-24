@@ -11,6 +11,7 @@ You can sponsor this project [here](https://paypal.me/av75).
 ![Gateway](doc/Automation-Gateway.png)
 
 # Version History
+1.20 Cleanup and GraalVM Native Build  
 1.19 Neo4j Logger to write field values to the graph database  
 1.18.3 Added MQTT Websocket Option and simple Authentication  
 1.18.2 Raw value to engineering value conversion for PLC4X driver  
@@ -222,6 +223,11 @@ Example MQTT Topic:
 > plc/mod/node/coil:1  
 
 # Version History
+## 1.20 Cleanup and GraalVM Native Build
+GraalVM Native Image build is now possible, see directory "native".  
+Removed various unused features (Clustering, NATS, DDS) and upgraded libraries to the latest versions. For the native build it was needed to replace SLF4J logging with the standard Java logging.  
+Topic data class now contains two separate fields "path" and "node". Before there was only one field "address". This also fixed a Bug when connecting/disconnecting of topics with wildcards.
+
 ## 1.19 Neo4j Logger to write field values to the graph database  
 Added Neo4j as an option to log values from OPC UA to the graph database. Additionally the OPC UA node structure can also be replicated to the graph database. This will be done only once at the startup of the Automation Gateway.  
 ```

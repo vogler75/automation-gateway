@@ -3,12 +3,12 @@ plugins {
 }
 
 project.ext {
-    vertxVersion = "4.0.3"
+    vertxVersion = "4.2.4"
 }
 
 compileKotlin {
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = "11"
     }
 }
 
@@ -21,18 +21,10 @@ repositories {
 
 dependencies {
     api project(':lib-core')
-    implementation 'org.slf4j:slf4j-api:1.7.30'
-    //implementation 'org.slf4j:slf4j-jdk14:1.7.30'
-    implementation 'org.slf4j:slf4j-simple:1.7.30'
 
     implementation "io.vertx:vertx-core:$vertxVersion"
     implementation "io.vertx:vertx-config-yaml:$vertxVersion"
     implementation "io.vertx:vertx-service-discovery:$vertxVersion"
-    implementation 'com.fasterxml.jackson.core:jackson-databind:2.11.4'
-
-    //implementation 'io.reactivex.rxjava2:rxjava:2.2.20'
 
     implementation 'org.influxdb:influxdb-java:2.21'
-
-    testImplementation 'org.jetbrains.kotlin:kotlin-test:1.4.30'
 }

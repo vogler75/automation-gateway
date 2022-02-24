@@ -18,8 +18,7 @@ import io.vertx.core.json.JsonObject
 import io.vertx.mqtt.MqttClient
 import io.vertx.mqtt.MqttClientOptions
 import io.vertx.mqtt.messages.MqttPublishMessage
-import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue
-import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId
+
 import java.nio.charset.Charset
 
 class MqttDriver(val config: JsonObject) : DriverBase(config) {
@@ -156,8 +155,8 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
         disconnect()
     }
 
-    private fun compareTopic(actualTopic: String, subscribedAddress: String): Boolean {
-        val regex = subscribedAddress.replace("+", "[^/]+").replace("#", ".+")
+    private fun compareTopic(actualTopic: String, subscribedNode: String): Boolean {
+        val regex = subscribedNode.replace("+", "[^/]+").replace("#", ".+")
         return actualTopic.matches(regex.toRegex())
     }
 
@@ -165,13 +164,13 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
         val promise = Promise.promise<Boolean>()
         if (topics.isEmpty()) promise.complete(true)
         else {
-            logger.info("Subscribe to [{}] topics", topics.size)
+            logger.info("Subscribe to [${topics.size}] topics")
             topics.forEach { topic ->
-                logger.info("Subscribe topic [{}] address [{}]", topic.topicName, topic.address)
-                client?.subscribe(topic.address, qos)
-                registry.addMonitoredItem(MqttMonitoredItem(topic.address), topic)
+                logger.info("Subscribe topic [${topic.topicName}] node [${topic.node}]")
+                client?.subscribe(topic.node, qos)
+                registry.addMonitoredItem(MqttMonitoredItem(topic.node), topic)
                 subscribedTopics.add(topic)
-                resetReceivedTopics(topic.address)
+                resetReceivedTopics(topic.node)
             }
             promise.complete(true)
         }
@@ -186,29 +185,29 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
         }
 
         items.map { (it as MqttMonitoredItem).item }
-            .filter { address ->
-                subscribedTopics.filter { it.address == address }.count() == 0 }
-            .forEach { address ->
-                logger.info("Unsubscribe address [{}]", address)
-                client?.unsubscribe(address)?.onComplete {
-                    logger.info("Unsubscribe address [{}] result [{}]", address, it.result())
+            .filter { node ->
+                subscribedTopics.filter { it.node == node }.count() == 0 }
+            .forEach { node ->
+                logger.info("Unsubscribe node [${node}]", )
+                client?.unsubscribe(node)?.onComplete {
+                    logger.info("Unsubscribe node [${node}] result [${it.result()}]")
                 }
-                resetReceivedTopics(address)
+                resetReceivedTopics(node)
             }
         promise.complete(true)
         return promise.future()
     }
 
-    private fun resetReceivedTopics(address: String) {
+    private fun resetReceivedTopics(node: String) {
         receivedTopics.filter { receivedTopic ->
-            compareTopic(receivedTopic.key, address)
+            compareTopic(receivedTopic.key, node)
         }.forEach {
             receivedTopics.remove(it.key)
         }
     }
 
     private fun valueConsumer(message: MqttPublishMessage) {
-        logger.debug("Got value [{}] [{}]", message.topicName(), message.payload())
+        logger.finest { "Got value [${message.topicName()}] [${ message.payload()}]" }
         try {
             val receivedTopic = message.topicName()
             val payload : Buffer = message.payload()
@@ -227,14 +226,14 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
                     }
                     vertx.eventBus().publish(topic.topicName, buffer)
                 } catch (e: Exception) {
-                    logger.warn("Exception on publish value [{}]", e.message)
+                    logger.warning("Exception on publish value [${e.message}]", )
                 }
             }
 
             receivedTopics[receivedTopic]?.let {
                 it.forEach(::publish)
             } ?: run {
-                val topics = subscribedTopics.filter { compareTopic(receivedTopic, it.address) }
+                val topics = subscribedTopics.filter { compareTopic(receivedTopic, it.node) }
                 receivedTopics[receivedTopic] = topics
                 topics.forEach(::publish)
             }
@@ -250,12 +249,12 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
     }
 
     override fun readServerInfo(): JsonObject {
-        logger.error("readServerInfo() Not yet implemented")
+        logger.severe("readServerInfo() Not yet implemented")
         return JsonObject()
     }
 
     override fun readHandler(message: Message<JsonObject>) {
-        logger.error("readHandler() Not yet implemented")
+        logger.severe("readHandler() Not yet implemented")
         message.fail(-1, "Not yet implemented")
     }
 
@@ -293,18 +292,18 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
             else -> {
                 val err = String.format("Invalid format in write request!")
                 message.reply(JsonObject().put("Ok", false))
-                logger.error(err)
+                logger.severe(err)
             }
         }
     }
 
     override fun browseHandler(message: Message<JsonObject>) {
-        logger.error("browseHandler() Not yet implemented")
+        logger.severe("browseHandler() Not yet implemented")
         message.reply(JsonObject().put("Ok", false))
     }
 
     override fun schemaHandler(message: Message<JsonObject>) {
-        logger.error("schemaHandler() Not yet implemented")
+        logger.severe("schemaHandler() Not yet implemented")
         message.reply(JsonObject().put("Ok", false))
     }
 }

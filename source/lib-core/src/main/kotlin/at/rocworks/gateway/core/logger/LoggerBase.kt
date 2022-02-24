@@ -4,6 +4,7 @@ import at.rocworks.gateway.core.data.Topic
 import at.rocworks.gateway.core.data.TopicValue
 import at.rocworks.gateway.core.service.Common
 import at.rocworks.gateway.core.service.ServiceHandler
+
 import io.vertx.core.AbstractVerticle
 import io.vertx.core.Future
 import io.vertx.core.Promise
@@ -12,7 +13,7 @@ import io.vertx.core.eventbus.Message
 import io.vertx.core.json.Json
 import io.vertx.core.json.JsonObject
 import io.vertx.servicediscovery.Status
-import org.slf4j.LoggerFactory
+
 import java.lang.IllegalStateException
 import java.time.Duration
 import java.time.Instant
@@ -20,12 +21,13 @@ import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.logging.Level
 import java.util.logging.Logger
+
 import kotlin.concurrent.thread
 import kotlin.math.roundToInt
 
 abstract class LoggerBase(config: JsonObject) : AbstractVerticle() {
     protected val id: String = config.getString("Id", "Logger")
-    protected val logger: org.slf4j.Logger = LoggerFactory.getLogger(id)
+    protected val logger = Logger.getLogger(id)
 
     private val topics : List<Topic>
 
@@ -46,7 +48,7 @@ abstract class LoggerBase(config: JsonObject) : AbstractVerticle() {
         writeParameterQueueSize = writeParameters?.getInteger("QueueSize", writeParameterQueueSizeDef) ?: writeParameterQueueSizeDef
         writeParameterBlockSize = writeParameters?.getInteger("BlockSize", writeParameterBlockSizeDefault) ?: writeParameterBlockSizeDefault
 
-        Logger.getLogger(id).level = Level.parse(config.getString("LogLevel", "INFO"))
+        logger.level = Level.parse(config.getString("LogLevel", "INFO"))
 
         topics = config
             .getJsonArray("Logging")
@@ -60,7 +62,7 @@ abstract class LoggerBase(config: JsonObject) : AbstractVerticle() {
 
         services = topics.map { Pair(it.systemType, it.systemName) }.distinct()
 
-        logger.info("Valid topics: {}", topics.joinToString(separator = "|") { it.topicName })
+        logger.info("Valid topics: ${topics.joinToString(separator = "|") { it.topicName }}")
     }
 
     abstract fun open(): Future<Unit>
@@ -73,12 +75,12 @@ abstract class LoggerBase(config: JsonObject) : AbstractVerticle() {
                     if (result.succeeded()) {
                         connectPromise.complete()
                     } else {
-                        logger.warn("Connect failed...")
+                        logger.warning("Connect failed...")
                         vertx.setTimer(defaultRetryWaitTime) { connect(connectPromise) }
                     }
                 }
             } catch (e: Exception) {
-                logger.warn("Error in connect [{}]", e.message)
+                logger.warning("Error in connect [${e.message}]")
                 connectPromise.fail(e)
             }
         }
@@ -119,7 +121,7 @@ abstract class LoggerBase(config: JsonObject) : AbstractVerticle() {
         val handler = ServiceHandler(vertx, logger)
         services.forEach { it ->
             handler.observeService(it.first.name, it.second) { service ->
-                logger.info("Service [{}] changed status [{}]", service.name, service.status)
+                logger.info("Service [${service.name}] changed status [${service.status}]")
                 if (service.status == Status.UP) {
                     topics
                         .filter { it.systemType.name == service.type && it.systemName == service.name }
@@ -135,9 +137,9 @@ abstract class LoggerBase(config: JsonObject) : AbstractVerticle() {
     private fun subscribeTopic(endpoint: String, topic: Topic) { // TODO: Same in Influx
         val request = JsonObject().put("ClientId", this.id).put("Topic", topic.encodeToJson())
         if (endpoint!="") {
-            logger.info("Subscribe to [{}]", endpoint)
+            logger.info("Subscribe to [${endpoint}]")
             vertx.eventBus().request<JsonObject>("${endpoint}/Subscribe", request) {
-                logger.debug("Subscribe response [{}] [{}]", it.succeeded(), it.result()?.body())
+                logger.finest { "Subscribe response [${it.succeeded()}] [${it.result()?.body()}]" }
             }
         }
     }
@@ -147,10 +149,10 @@ abstract class LoggerBase(config: JsonObject) : AbstractVerticle() {
             when (value) {
                 is Buffer -> valueConsumer(Json.decodeValue(value) as JsonObject)
                 is JsonObject -> valueConsumer(value)
-                else -> logger.warn("Got unhandled class of instance []", value.javaClass.simpleName)
+                else -> logger.warning("Got unhandled class of instance [${value.javaClass.simpleName}]")
             }
         } catch (e: Exception) {
-            logger.error(e.message)
+            logger.severe(e.message)
         }
     }
 
@@ -167,7 +169,7 @@ abstract class LoggerBase(config: JsonObject) : AbstractVerticle() {
     private var writeValueQueueFull = false
     private val writeValueThread =
         thread(start = false) {
-            logger.info("Writer thread with queue size [{}]", writeValueQueue.remainingCapacity())
+            logger.info("Writer thread with queue size [${writeValueQueue.remainingCapacity()}]")
             while (!writeValueStop.get()) {
                 writeExecutor()
             }
@@ -184,18 +186,19 @@ abstract class LoggerBase(config: JsonObject) : AbstractVerticle() {
             val value = TopicValue.fromJsonObject(data.getJsonObject("Value"))
             if (!value.hasValue()) return
 
-            val measurement = DataPoint(topic, value)
+            logger.finest { "Got value $topic $value" }
 
+            val measurement = DataPoint(topic, value)
             try {
                 writeValueQueue.add(measurement)
                 if (writeValueQueueFull) {
                     writeValueQueueFull = false
-                    logger.warn("Logger write queue not full anymore. [{}]", writeValueQueue.size)
+                    logger.warning("Logger write queue not full anymore. [${writeValueQueue.size}]")
                 }
             } catch (e: IllegalStateException) {
                 if (!writeValueQueueFull) {
                     writeValueQueueFull = true
-                    logger.warn("Logger write queue is full! [{}]", writeParameterQueueSize)
+                    logger.warning("Logger write queue is full! [${writeParameterQueueSize}]")
                 }
             }
         } catch (e: Exception) {

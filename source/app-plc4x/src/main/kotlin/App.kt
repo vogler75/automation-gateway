@@ -4,9 +4,12 @@ import at.rocworks.gateway.core.mqtt.MqttServer
 import at.rocworks.gateway.core.opcua.KeyStoreLoader
 import at.rocworks.gateway.core.opcua.OpcUaDriver
 import at.rocworks.gateway.core.service.Common
+
 import at.rocworks.gateway.logger.influx.InfluxDBLogger
 import at.rocworks.gateway.logger.iotdb.IoTDBLogger
+import at.rocworks.gateway.logger.jdbc.JdbcLogger
 import at.rocworks.gateway.logger.kafka.KafkaLogger
+import at.rocworks.gateway.logger.neo4j.Neo4jLogger
 
 import kotlin.Throws
 import kotlin.jvm.JvmStatic
@@ -15,8 +18,7 @@ import io.vertx.core.Vertx
 import io.vertx.core.json.JsonObject
 
 import java.lang.Exception
-
-import org.slf4j.LoggerFactory
+import java.util.logging.Logger
 
 object App {
 
@@ -77,7 +79,7 @@ object App {
     }
 
     private fun createLogger(vertx: Vertx, config: JsonObject) {
-        val logger = LoggerFactory.getLogger(javaClass.simpleName)
+        val logger = Logger.getLogger(javaClass.simpleName)
         if (config.getBoolean("Enabled", true)) {
             when (val type = config.getString("Type")) {
                 "Mqtt" -> {
@@ -92,7 +94,7 @@ object App {
                 "Kafka" -> {
                     vertx.deployVerticle(KafkaLogger(config))
                 }
-                else -> logger.error("Unknown database type [{}]", type)
+                else -> logger.severe("Unknown database type [${type}]")
             }
         }
     }

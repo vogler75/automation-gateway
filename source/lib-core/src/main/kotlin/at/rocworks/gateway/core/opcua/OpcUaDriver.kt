@@ -44,12 +44,11 @@ import java.util.*
 import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.TimeUnit
-import java.util.function.BiConsumer
 import java.util.function.Predicate
 import kotlin.concurrent.thread
 
 
-class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
+class OpcUaDriver(private val config: JsonObject) : DriverBase(config) {
     override fun getType() = Topic.SystemType.Opc
 
     private val endpointUrl: String = config.getString("EndpointUrl", "")
@@ -93,7 +92,7 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
 
     //private val schema = JsonObject()
 
-    private var addressNodeIdCache: LoadingCache<String, List<Pair<NodeId, String>>>
+    private var pathNodeIdCache: LoadingCache<String, List<Pair<NodeId, String>>>
 
     companion object {
         init {
@@ -109,15 +108,10 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
             val value = config.getJsonObject("UsernameProvider") as JsonObject
             UsernameProvider(value.getString("Username"), value.getString("Password"))
         } else AnonymousProvider()
-        logger.info("RequestTimeout: [{}] " +
-            "ConnectTimeout: [{}] " +
-            "KeepAliveFailuresAllowed: [{}] " +
-            "SubscriptionSamplingInterval [{}]",
-            requestTimeout,
-            connectTimeout,
-            keepAliveFailuresAllowed,
-            subscriptionSamplingInterval
-        )
+        logger.info("RequestTimeout: [${requestTimeout}] " +
+            "ConnectTimeout: [${connectTimeout}] " +
+            "KeepAliveFailuresAllowed: [${keepAliveFailuresAllowed}] " +
+            "SubscriptionSamplingInterval [${subscriptionSamplingInterval}]")
 
         val monitoringParameters = config.getJsonObject("MonitoringParameters")
         monitoringParametersBufferSize = uint(monitoringParameters?.getInteger("BufferSize", monitoringParametersBufferSizeDef) ?: monitoringParametersBufferSizeDef)
@@ -150,13 +144,13 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
                 "MaximumSize=$maximumSize " +
                 "ExpireAfterSeconds=$expireAfterSeconds")
 
-        addressNodeIdCache = CacheBuilder.newBuilder()
+        pathNodeIdCache = CacheBuilder.newBuilder()
             .maximumSize(maximumSize)
             .expireAfterAccess(expireAfterSeconds, TimeUnit.SECONDS)
             .build(
                 object : CacheLoader<String, List<Pair<NodeId, String>>>() {
                     override fun load(id: String): List<Pair<NodeId, String>> {
-                        return browseAddress(id)
+                        return browsePath(id)
                     }
                 }
             )
@@ -178,15 +172,15 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
             val parts = endpointUrl.split("://", ":", "/")
             when {
                 parts.size == 1 -> {
-                    logger.info("Update endpoint to host [{}]!", parts[1])
+                    logger.info("Update endpoint to host [${parts[1]}]!")
                     EndpointUtil.updateUrl(endpoint, parts[1])
                 }
                 parts.size > 1 -> {
-                    logger.info("Update endpoint to host [{}] and port [{}]!", parts[1], parts[2])
+                    logger.info("Update endpoint to host [${parts[1]}] and port [${parts[2]}]!")
                     EndpointUtil.updateUrl(endpoint, parts[1], parts[2].toInt())
                 }
                 else -> {
-                    logger.warn("Cannot split endpoint url [{}]", endpoint.endpointUrl)
+                    logger.warning("Cannot split endpoint url [${endpoint.endpointUrl}]")
                     endpoint
                 }
             }
@@ -202,15 +196,15 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
         }
 
         override fun onPublishFailure(exception: UaException) {
-            logger.warn("onPublishFailure: " + exception.message)
+            logger.warning("onPublishFailure: " + exception.message)
         }
 
         override fun onNotificationDataLost(subscription: UaSubscription) {
-            logger.warn("onNotificationDataLost")
+            logger.warning("onNotificationDataLost")
         }
 
         override fun onSubscriptionTransferFailed(subscription: UaSubscription, statusCode: StatusCode) {
-            logger.warn("onSubscriptionTransferFailed: $statusCode")
+            logger.warning("onSubscriptionTransferFailed: $statusCode")
             createSubscription()
         }
     }
@@ -224,7 +218,7 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
                         if (connectResult.succeeded()) {
                             logger.info("Connect succeeded")
                             client!!.addFaultListener { serviceFault ->
-                                logger.warn("Service Fault: $serviceFault")
+                                logger.warning("Service Fault: $serviceFault")
                             }
 
                             client!!.subscriptionManager.addSubscriptionListener(subscriptionListener)
@@ -236,14 +230,14 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
                 }
             }
         } catch (e: Exception) {
-            logger.error(e.toString())
+            logger.severe(e.toString())
             promise.fail(e)
         }
         return promise.future()
     }
 
     private fun browseSchema(nodeId: String): JsonArray {
-        logger.info("Start object browsing [{}]", nodeId)
+        logger.info("Start object browsing [${nodeId}]")
         val tree = browseNode(NodeId.parse(nodeId), maxLevel=-1)
         logger.info("Object browsing finished.")
         if (writeSchemaToFile) {
@@ -275,7 +269,7 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
             subscription = s
             resubscribe()
         } else {
-            logger.error("Unable to create subscription, reason: " + e.message)
+            logger.severe("Unable to create subscription, reason: " + e.message)
         }
     }
 
@@ -331,7 +325,7 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
         } else {
             client!!.connect().whenCompleteAsync { _: UaClient?, e: Throwable? ->
                 if (e == null) {
-                    logger.info("OpcUaClient connected [{}] [{}]", id, endpointUrl)
+                    logger.info("OpcUaClient connected [${id}] [${endpointUrl}]")
                     promise.complete(true)
                 } else {
                     logger.info("OpcUaClient connect failed! Wait and retry... " + e.message)
@@ -379,7 +373,7 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
         thread {
             val schema = JsonArray()
             nodeIds.filterIsInstance<String>().forEach { nodeId ->
-                logger.info("Browse from NodeId [{}]", nodeId)
+                logger.info("Browse from NodeId [${nodeId}]")
                 val item = getNodeData(NodeId.parse(nodeId))
                 item.put("Nodes", browseSchema(nodeId))
                 schema.add(item)
@@ -391,8 +385,8 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
     override fun subscribeTopics(topics: List<Topic>): Future<Boolean> {
         val promise = Promise.promise<Boolean>()
         CompositeFuture.all(
-            subscribeNodes(topics.filter { it.topicType === Topic.TopicType.NodeId }),
-            subscribePath(topics.filter { it.topicType === Topic.TopicType.Path })
+                subscribeNodes(topics.filter { it.topicType === Topic.TopicType.Node }),
+                subscribePaths(topics.filter { it.topicType === Topic.TopicType.Path })
         ).onComplete { promise.complete(it.succeeded()) }
         return promise.future()
     }
@@ -430,12 +424,12 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
                     !(value == "0" || value.equals("false", ignoreCase = true))
                 )
                 else -> {
-                    logger.warn("Unhandled data type $type")
+                    logger.warning("Unhandled data type $type")
                     Variant.NULL_VALUE
                 }
             }
         } catch (e: Exception) {
-            logger.warn("Converting value to variant exception [{}] [{}] [{}]", nodeId, value, e.message)
+            logger.warning("Converting value to variant exception [${nodeId}] [${value}] [${e.message}]")
             return Variant.NULL_VALUE
         }
     }
@@ -449,28 +443,28 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
                         DataValue(getVariantOfValue(value, nodeId), null, writeGetTime())
                     Topic.Format.Json,
                     Topic.Format.Pretty -> {
-                        logger.warn("Value format not yet implemented!") // TODO
+                        logger.warning("Value format not yet implemented!") // TODO
                         DataValue(Variant.NULL_VALUE, null, null)
                     }
                 }
 
             when (topic.topicType) {
-                Topic.TopicType.NodeId -> {
-                    val nodeId = NodeId.parse(topic.address)
+                Topic.TopicType.Node -> {
+                    val nodeId = NodeId.parse(topic.node)
                     writeValueQueued(nodeId, dataValue(nodeId)).onComplete(ret)
                 }
                 Topic.TopicType.Path -> {
-                    addressNodeIdCache.get(topic.address).forEach {
+                    pathNodeIdCache.get(topic.path).forEach {
                         writeValueQueued(it.first, dataValue(it.first)).onComplete(ret)
                     }
                 }
                 else -> {
-                    logger.warn("Item type [{}] not yet implemented!", topic.topicType)
+                    logger.warning("Item type [${topic.topicType}] not yet implemented!")
                     ret.complete(false)
                 }
             }
         } catch (e: NumberFormatException) {
-            logger.warn("Not a valid number [{}] for numeric tag [{}] value!", value.toString(), topic)
+            logger.warning("Not a valid number [${value}] for numeric tag [${topic}] value!")
             ret.complete(false)
         } catch (e: Exception) {
             ret.fail(e)
@@ -500,11 +494,11 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
                     try {
                         val results = client!!.writeValues(nodeIds, dataValues).get()
                         results.zip(promises).forEach {
-                            if (!it.first.isGood) logger.warn("Writing value was not good [{}]", it.first.toString())
+                            if (!it.first.isGood) logger.warning("Writing value was not good [${it.first.toString()}]")
                             it.second.complete(it.first.isGood)
                         }
                     } catch (e: Exception) {
-                        logger.warn("Write value threw exception [{}]", e.message)
+                        logger.warning("Write value threw exception [${e.message}]")
                     }
                 }
             }
@@ -514,15 +508,10 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
         val promise = Promise.promise<Boolean>()
         client!!.writeValue(nodeId, dataValue).thenAccept { status: StatusCode ->
             if (status.isGood) {
-                logger.debug("Wrote [{}] to nodeId=[{}]", dataValue.value.toString(), nodeId)
+                logger.finest { "Wrote [${dataValue.value.toString()}] to nodeId=[${nodeId}]" }
                 promise.complete(true)
             } else {
-                logger.warn(
-                    "Wrote [{}] to nodeId=[{}] with status {}",
-                    dataValue.value.toString(),
-                    nodeId,
-                    status
-                )
+                logger.warning("Wrote [${dataValue.value.toString()}] to nodeId=[${nodeId}] with status $status")
                 promise.complete(false)
             }
         }
@@ -535,12 +524,12 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
         try {
             writeValueQueue.add(Triple(nodeId, dataValue, promise))
             if (lastWriteFailures > 0) {
-                logger.error("Add to write queue: Ok [{} missed writes]", lastWriteFailures)
+                logger.severe("Add to write queue: Ok [${lastWriteFailures} missed writes]")
                 lastWriteFailures = 0
             }
         } catch (e: IllegalStateException) {
             if (lastWriteFailures == 0) {
-                logger.error("Add to write queue: ${e.message}")
+                logger.severe("Add to write queue: ${e.message}")
             }
             lastWriteFailures++
             promise.complete(false)
@@ -593,7 +582,7 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
             else -> {
                 val err = String.format("Invalid format in read request!")
                 message.reply(JsonObject().put("Ok", false))
-                logger.error(err)
+                logger.severe(err)
             }
         }
     }
@@ -628,7 +617,7 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
             else -> {
                 val err = String.format("Invalid format in write request!")
                 message.reply(JsonObject().put("Ok", false))
-                logger.error(err)
+                logger.severe(err)
             }
         }
     }
@@ -637,11 +626,11 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
         val ret = Promise.promise<Boolean>()
         if (topics.isEmpty()) ret.complete(true)
         else {
-            logger.info("Subscribe nodes [{}] sampling interval [{}]", topics.size, monitoringParametersSamplingInterval)
-            val nodeIds = topics.map { NodeId.parseOrNull(it.address) }.toList()
+            logger.info("Subscribe nodes [${ topics.size}] sampling interval [${monitoringParametersSamplingInterval}]")
+            val nodeIds = topics.map { NodeId.parseOrNull(it.node) }.toList()
             val requests = ArrayList<MonitoredItemCreateRequest>()
 
-            val dataChangeFilter = ExtensionObject.encode(client!!.serializationContext, DataChangeFilter(
+            val dataChangeFilter = ExtensionObject.encode(client!!.staticSerializationContext, DataChangeFilter(
                 dataChangeTrigger,
                 uint(DeadbandType.None.value),
                 0.0
@@ -668,7 +657,7 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
             // value/event consumer hooked up. The alternative is to create the item in sampling mode, hook up the
             // consumer after the creation call completes, and then change the mode for all items to reporting.
             val onItemCreated =
-                BiConsumer { item: UaMonitoredItem, nr: Int ->
+                UaSubscription.ItemCreationCallback { item: UaMonitoredItem, nr: Int ->
                     val topic = topics[nr]
                     if (item.statusCode.isGood)
                         registry.addMonitoredItem(OpcUaMonitoredItem(item), topic)
@@ -684,13 +673,9 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
                     try {
                         for (item in monitoredItems) {
                             if (item.statusCode.isGood) {
-                                logger.debug("Monitored item created for nodeId {}", item.readValueId.nodeId)
+                                logger.finest { "Monitored item created for nodeId ${item.readValueId.nodeId}" }
                             } else {
-                                logger.warn(
-                                    "Failed to create item for nodeId {} (status={})",
-                                    item.readValueId.nodeId,
-                                    item.statusCode
-                                )
+                                logger.warning("Failed to create item for nodeId ${item.readValueId.nodeId} (status=${item.statusCode})")
                             }
                         }
                         ret.complete(true)
@@ -703,28 +688,29 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
         return ret.future()
     }
 
-    private fun subscribePath(topics: List<Topic>) : Future<Boolean> {
+    private fun subscribePaths(topics: List<Topic>) : Future<Boolean> {
         return vertx.executeBlocking { ret ->
             if (topics.isEmpty()) ret.complete(true)
             else
             try {
                 val resolvedTopics = mutableListOf<Topic>()
                 topics.forEach { topic ->
-                    logger.info("Subscribe path [{}]", topic)
-                    val resolvedNodeIds = addressNodeIdCache.get(topic.address)
+                    logger.info("Subscribe path [${topic.path}]")
+                    val resolvedNodeIds = pathNodeIdCache.get(topic.path)
                     resolvedTopics.addAll(resolvedNodeIds.map {
                         Topic(
                             topicName = topic.topicName,
                             systemType = topic.systemType,
-                            topicType = topic.topicType,
+                            topicType = Topic.TopicType.Node,
                             systemName = topic.systemName,
-                            address = it.first.toParseableString(),
+                            path = topic.path,
+                            node = it.first.toParseableString(),
                             format = topic.format,
                             browsePath = it.second
                         )
                     })
                 }
-                logger.info("Browse path result size [{}]", resolvedTopics.size)
+                logger.info("Browse path result size [${resolvedTopics.size}]", )
                 if (topics.isEmpty()) {
                     ret.complete(true)
                 } else if (resolvedTopics.size>0) {
@@ -751,7 +737,7 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
         val ret = Promise.promise<Boolean>()
         try {
             val opcUaItems = items.map { (it as OpcUaMonitoredItem).item }
-            logger.debug("Unsubscribe items [{}]", opcUaItems.joinToString(",") { it.readValueId.nodeId.toString() })
+            logger.finest { "Unsubscribe items [${opcUaItems.joinToString(",") { it.readValueId.nodeId.toString() }}]" }
             if (items.isNotEmpty()) {
                 subscription!!.deleteMonitoredItems(opcUaItems)
             }
@@ -765,8 +751,9 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
 
 
     private fun valueConsumer(topic: Topic, data: DataValue) {
-        logger.debug("Got value [{}] [{}]", topic.topicName, data.value.toString())
         try {
+            logger.finest {"Got value $topic $data" }
+
             val value = TopicValueOpc.fromDataValue(data)
             fun json() = JsonObject()
                 .put("Topic", topic.encodeToJson())
@@ -813,7 +800,7 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
                         val tNow = Instant.now()
                         if (Duration.between(tLast, tNow).seconds > 1 ) {
                             tLast = tNow
-                            logger.info("Browsed [{}] items...", counter)
+                            logger.info("Browsed [${counter}] items...")
                         }
                     }
                     val item = JsonObject()
@@ -861,12 +848,12 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
                         continuationPoint = nextResult.continuationPoint
                     }
                 } else {
-                    logger.error("Browsing nodeId [{}] failed [{}]", startNodeId, browseResult.statusCode.toString())
+                    logger.severe("Browsing nodeId [${startNodeId}] failed [${browseResult.statusCode.toString()}]")
                 }
             } catch (e: InterruptedException) {
-                logger.error("Browsing nodeId [{}] exception: [{}]", startNodeId, e.message)
+                logger.severe("Browsing nodeId [${startNodeId}] exception: [${e.message}]")
             } catch (e: ExecutionException) {
-                logger.error("Browsing nodeId [{}] exception: [{}]", startNodeId, e.message)
+                logger.severe("Browsing nodeId [${startNodeId}] exception: [${e.message}]")
             }
 
             return result
@@ -876,20 +863,16 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
         val duration = Duration.between(tStart, Instant.now())
         val seconds = duration.seconds + duration.nano/1_000_000_000.0
         if (seconds > 1.0) {
-            logger.info(
-                "Browsed [{}] items in [{}] seconds [{}] items/s.",
-                counter,
-                seconds,
-                if (seconds>0) counter / seconds else 0
-            )
+            logger.info("Browsed [${counter}] items in [${seconds}] seconds [${if (seconds>0) counter / seconds else 0}] items/s.")
         }
 
         return result
     }
 
-    private fun browseAddress(address: String): List<Pair<NodeId, String>> {
+    private fun browsePath(path: String): List<Pair<NodeId, String>> {
         val resolvedNodeIds = mutableListOf<Pair<NodeId, String>>()
-        val items = Topic.splitAddress(address)
+        val items = Topic.splitAddress(path)
+        logger.finest("Browse address [$path]")
         fun find(node: String, itemIdx: Int, path: String) {
             val item = items[itemIdx]
             val nodeId = NodeId.parseOrNull(node)
@@ -914,7 +897,7 @@ class OpcUaDriver(val config: JsonObject) : DriverBase(config) {
         val duration = Duration.between(tStart, Instant.now())
         val seconds = duration.seconds + duration.nano/1_000_000_000.0
         if (seconds > 0.100)
-            logger.warn("Browsing address [{}] took long time [{}]s", address, seconds)
+            logger.warning("Browsing address [${path}] took long time [${seconds}]s")
         return resolvedNodeIds
     }
 }

@@ -60,7 +60,7 @@ class MqttLogger (config: JsonObject) : LoggerBase(config) {
                 )
             } catch (e: Exception) {
                 e.printStackTrace()
-                logger.error(e.message)
+                logger.severe(e.message)
             }
             point = if (++counter < writeParameterBlockSize) writeValueQueue.poll() else null
         }

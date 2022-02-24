@@ -1,5 +1,0 @@
-App:
-  Module:
-    - Id: "test"
-      Enabled: true
-      LogLevel: ALL

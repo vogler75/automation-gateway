@@ -6,7 +6,8 @@ import io.vertx.core.Vertx
 import io.vertx.core.json.JsonObject
 import io.vertx.servicediscovery.Record
 import io.vertx.servicediscovery.ServiceDiscovery
-import org.slf4j.Logger
+
+import java.util.logging.Logger
 
 class ServiceHandler(val vertx: Vertx, val logger: Logger) {
     private val discovery = ServiceDiscovery.create(vertx)!!

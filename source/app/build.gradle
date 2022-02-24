@@ -3,12 +3,12 @@ plugins {
 }
 
 project.ext {
-    vertxVersion = "4.0.3"
+    vertxVersion = "4.2.4"
 }
 
 compileKotlin {
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = "11"
     }
 }
 
@@ -19,17 +19,12 @@ dependencies {
     implementation project(':lib-iotdb')
     implementation project(':lib-jdbc')
     implementation project(':lib-kafka')
-    implementation project(':lib-nats')
     implementation project(':lib-neo4j')
-
-    implementation 'org.slf4j:slf4j-api:1.7.30'
-    implementation 'org.slf4j:slf4j-jdk14:1.7.30'
-    //implementation 'org.slf4j:slf4j-simple:1.7.30'
 
     implementation "io.vertx:vertx-core:$vertxVersion"
     implementation "io.vertx:vertx-config-yaml:$vertxVersion"
     implementation "io.vertx:vertx-service-discovery:$vertxVersion"
-    implementation "com.fasterxml.jackson.core:jackson-databind:2.11.4" // Needed for Vertx Json
+    //implementation "com.fasterxml.jackson.core:jackson-databind:2.11.4" // Needed for Vertx Json in a Cluster
 
     runtimeOnly group: 'org.postgresql', name: 'postgresql', version: '42.2.20'
     runtimeOnly group: 'mysql', name: 'mysql-connector-java', version: '8.0.25'

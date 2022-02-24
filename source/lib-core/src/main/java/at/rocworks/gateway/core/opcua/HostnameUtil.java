@@ -8,8 +8,7 @@ import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Set;
-
-import org.slf4j.LoggerFactory;
+import java.util.logging.Logger;
 
 import static com.google.common.collect.Sets.newHashSet;
 
@@ -65,8 +64,8 @@ public class HostnameUtil {
                         });
                     }
                 } catch (SocketException e) {
-                    LoggerFactory.getLogger(HostnameUtil.class)
-                        .warn("Failed to NetworkInterfaces for bind address: {}", address, e);
+                    Logger.getLogger(HostnameUtil.class.getSimpleName())
+                        .warning(String.format("Failed to NetworkInterfaces for bind address: %s %s", address, e.getMessage()));
                 }
             } else {
                 if (includeLoopback || !inetAddress.isLoopbackAddress()) {
@@ -76,8 +75,8 @@ public class HostnameUtil {
                 }
             }
         } catch (UnknownHostException e) {
-            LoggerFactory.getLogger(HostnameUtil.class)
-                .warn("Failed to get InetAddress for bind address: {}", address, e);
+            Logger.getLogger(HostnameUtil.class.getSimpleName())
+                .warning(String.format("Failed to get InetAddress for bind address: %s %s", address, e.getMessage()));
         }
 
         return hostnames;

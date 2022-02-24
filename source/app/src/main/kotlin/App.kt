@@ -10,7 +10,6 @@ import at.rocworks.gateway.logger.influx.InfluxDBLogger
 import at.rocworks.gateway.logger.iotdb.IoTDBLogger
 import at.rocworks.gateway.logger.jdbc.JdbcLogger
 import at.rocworks.gateway.logger.kafka.KafkaLogger
-import at.rocworks.gateway.logger.nats.NatsLogger
 import at.rocworks.gateway.logger.neo4j.Neo4jLogger
 
 import kotlin.Throws
@@ -20,8 +19,7 @@ import io.vertx.core.Vertx
 import io.vertx.core.json.JsonObject
 
 import java.lang.Exception
-
-import org.slf4j.LoggerFactory
+import java.util.logging.Logger
 
 object App {
 
@@ -34,7 +32,7 @@ object App {
     }
 
     private fun createLogger(vertx: Vertx, config: JsonObject) {
-        val logger = LoggerFactory.getLogger(javaClass.simpleName)
+        val logger = Logger.getLogger(javaClass.simpleName)
         if (config.getBoolean("Enabled", true)) {
             when (val type = config.getString("Type")) {
                 "InfluxDB" -> {
@@ -52,13 +50,10 @@ object App {
                 "Mqtt" -> {
                     vertx.deployVerticle(MqttLogger(config))
                 }
-                "Nats" -> {
-                    vertx.deployVerticle(NatsLogger(config))
-                }
                 "Neo4j" -> {
                     vertx.deployVerticle(Neo4jLogger(config))
                 }
-                else -> logger.error("Unknown database type [{}]", type)
+                else -> logger.severe("Unknown database type [${type}]")
             }
         }
     }

@@ -1,0 +1,5 @@
+[
+  {
+    "interfaces":["org.influxdb.impl.InfluxDBService"]}
+  
+]

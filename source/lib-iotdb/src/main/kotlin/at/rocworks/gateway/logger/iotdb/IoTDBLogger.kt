@@ -31,7 +31,7 @@ class IoTDBLogger(config: JsonObject) : LoggerBase(config) {
             logger.info("IoTDB connected.")
             promise.complete()
         } catch (e: Exception) {
-            logger.error("IoTDB connect failed! [{}]", e.message)
+            logger.severe("IoTDB connect failed! [${e.message}]")
             promise.fail(e)
         }
         return promise.future()
@@ -57,7 +57,7 @@ class IoTDBLogger(config: JsonObject) : LoggerBase(config) {
                 is Long -> Pair(TSDataType.INT64, value)
                 is Boolean -> Pair(TSDataType.BOOLEAN, value)
                 else -> {
-                    logger.warn("Unhandled datatype []!", value?.javaClass?.name)
+                    logger.warning("Unhandled datatype [${value?.javaClass?.name}]!")
                     Pair(null, null)
                 }
             }
@@ -77,7 +77,7 @@ class IoTDBLogger(config: JsonObject) : LoggerBase(config) {
                     valuesList.add(listOf(value, status))
                 }
             } catch (e: Exception) {
-                logger.error(e.message)
+                logger.severe(e.message)
             }
         }
 
@@ -101,7 +101,7 @@ class IoTDBLogger(config: JsonObject) : LoggerBase(config) {
                     valuesList.add(listOf(value))
                 }
             } catch (e: Exception) {
-                logger.error(e.message)
+                logger.severe(e.message)
             }
         }
 
@@ -115,7 +115,7 @@ class IoTDBLogger(config: JsonObject) : LoggerBase(config) {
                 session.insertRecords(deviceIds, times, measurementList, typesList, valuesList)
                 valueCounterOutput += deviceIds.size
             } catch (e: Exception) {
-                logger.error("Error writing records [{}]", e.message)
+                logger.severe("Error writing records [${e.message}]", )
             }
         }
     }

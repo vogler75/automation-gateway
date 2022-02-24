@@ -17,14 +17,14 @@ import io.vertx.mqtt.MqttTopicSubscription
 import io.vertx.mqtt.messages.MqttPublishMessage
 import io.vertx.mqtt.messages.MqttSubscribeMessage
 import io.vertx.mqtt.messages.MqttUnsubscribeMessage
-import org.slf4j.LoggerFactory
+
 import java.util.logging.Level
 import java.util.logging.Logger
 
 class MqttServer(config: JsonObject, private val endpoint: MqttEndpoint) : AbstractVerticle() {
     companion object {
         fun create(vertx: Vertx, config: JsonObject) {
-            val logger = LoggerFactory.getLogger(MqttServer::class.java.simpleName)
+            val logger = Logger.getLogger(MqttServer::class.java.simpleName)
 
             val host = config.getString("Host", "0.0.0.0")
             val port = config.getInteger("Port", 1883)
@@ -49,7 +49,7 @@ class MqttServer(config: JsonObject, private val endpoint: MqttEndpoint) : Abstr
                         (password == "" || password == authPassword))
                         vertx.deployVerticle(MqttServer(config, it))
                     else
-                        logger.warn("Unauthorized access! [${authUsername}] [${authPassword}]")
+                        logger.warning("Unauthorized access! [${authUsername}] [${authPassword}]")
                 } catch (e: Exception) {
                     e.printStackTrace()
                 }
@@ -59,21 +59,21 @@ class MqttServer(config: JsonObject, private val endpoint: MqttEndpoint) : Abstr
                 if (result.succeeded()) {
                     logger.info("MQTT server started and listening on port " + server.actualPort())
                 } else {
-                    logger.error("MQTT server error on start" + result.cause().message)
+                    logger.severe("MQTT server error on start" + result.cause().message)
                 }
             }
         }
     }
 
     private val id = config.getString("Id", "Mqtt")
-    private val logger = LoggerFactory.getLogger(id)
+    private val logger = Logger.getLogger(id)
 
     private val topicConsumer = mutableMapOf<String, MessageConsumer<*>>()
 
     private var unsubscribeAllDone = false
 
     init {
-        Logger.getLogger(id).level = Level.parse(config.getString("LogLevel", "INFO"))
+        logger.level = Level.parse(config.getString("LogLevel", "INFO"))
     }
 
     override fun start(startPromise: Promise<Void>) {
@@ -86,13 +86,13 @@ class MqttServer(config: JsonObject, private val endpoint: MqttEndpoint) : Abstr
     }
 
     override fun stop(stopPromise: Promise<Void>) {
-        logger.info("Client stop [{}]", endpoint.clientIdentifier())
+        logger.info("Client stop [${endpoint.clientIdentifier()}]")
         endpoint.close()
         stopPromise.complete()
     }
 
     private fun startEndpoint() {
-        logger.info("Client [{}] request to connect, clean session [{}] ", endpoint.clientIdentifier() , endpoint.isCleanSession)
+        logger.info("Client [${endpoint.clientIdentifier()}] request to connect, clean session [${endpoint.isCleanSession}]")
         try {
             if (endpoint.will() != null && endpoint.will().isWillFlag) {
                 logger.info(
@@ -113,13 +113,13 @@ class MqttServer(config: JsonObject, private val endpoint: MqttEndpoint) : Abstr
 
             // handling disconnects from clients
             endpoint.disconnectHandler {
-                logger.info("Client disconnect [{}]", endpoint.clientIdentifier())
+                logger.info("Client disconnect [${endpoint.clientIdentifier()}]")
                 unsubscribeAll()
                 vertx.undeploy(this.deploymentID())
             }
 
             endpoint.closeHandler {
-                logger.info("Client close [{}]", endpoint.clientIdentifier())
+                logger.info("Client close [${endpoint.clientIdentifier()}]")
                 unsubscribeAll()
                 vertx.undeploy(this.deploymentID())
             }
@@ -136,7 +136,7 @@ class MqttServer(config: JsonObject, private val endpoint: MqttEndpoint) : Abstr
 
     @Synchronized private fun unsubscribeAll() {
         if (!unsubscribeAllDone) {
-            logger.info("Unsubscribe all [{}]", this.topicConsumer.keys.size)
+            logger.info("Unsubscribe all [${this.topicConsumer.keys.size}]")
             unsubscribeAllDone = true
             unsubscribeTopic(this.topicConsumer.keys.toList())
         }
@@ -172,12 +172,12 @@ class MqttServer(config: JsonObject, private val endpoint: MqttEndpoint) : Abstr
                 */
             }
         } catch (e: Exception) {
-            logger.error(e.stackTraceToString())
+            logger.severe(e.stackTraceToString())
         }
     }
 
     private fun unsubscribeHandler(message: MqttUnsubscribeMessage) {
-        logger.info("Unsubscribe Handler [{}]", message.topics().size)
+        logger.info("Unsubscribe Handler [${message.topics().size}]")
         unsubscribeTopic(message.topics())
     }
 
@@ -186,7 +186,7 @@ class MqttServer(config: JsonObject, private val endpoint: MqttEndpoint) : Abstr
         if (!topicConsumer.contains(mqttTopicSubscription.topicName())) {
             val t = Topic.parseTopic(mqttTopicSubscription.topicName())
             val qos = mqttTopicSubscription.qualityOfService()
-            logger.debug("Subscribe request [{}] with QoS [{}]", t, qos)
+            logger.finest { "Subscribe request [${t}] with QoS [${qos}]" }
             when (t.systemType) {
                 Topic.SystemType.Mqtt,
                 Topic.SystemType.Opc,
@@ -194,16 +194,12 @@ class MqttServer(config: JsonObject, private val endpoint: MqttEndpoint) : Abstr
                 Topic.SystemType.Dds -> subscribeDriverTopic(t.systemType.name, t, qos, ret)
                 Topic.SystemType.Unknown -> subscribeMqttTopic(t, qos, ret)
                 else -> {
-                    logger.warn("Invalid topic [{}]", t)
+                    logger.warning("Invalid topic [${t}]")
                     ret.complete(false)
                 }
             }
         } else {
-            logger.warn(
-                "Client [{}] is already subscribed to topic [{}]!",
-                endpoint.clientIdentifier(),
-                mqttTopicSubscription.topicName()
-            )
+            logger.warning("Client [${endpoint.clientIdentifier()}] is already subscribed to topic [${mqttTopicSubscription.topicName()}]!")
             ret.complete(true)
         }
         return ret
@@ -224,7 +220,7 @@ class MqttServer(config: JsonObject, private val endpoint: MqttEndpoint) : Abstr
         topics.forEach { topic ->
             if (topics.contains(topic)) {
                 val t = Topic.parseTopic(topic)
-                logger.debug("Unsubscribe request [{}]", t)
+                logger.finest { "Unsubscribe request [${t}]" }
                 when (t.systemType) {
                     Topic.SystemType.Mqtt -> add(mqtt, t)
                     Topic.SystemType.Opc -> add(opc, t)
@@ -232,11 +228,11 @@ class MqttServer(config: JsonObject, private val endpoint: MqttEndpoint) : Abstr
                     Topic.SystemType.Dds -> add(dds, t)
                     Topic.SystemType.Unknown -> unsubscribeMqttTopic(t)
                     else -> {
-                        logger.error("Invalid topic [{}]", t)
+                        logger.severe("Invalid topic [${t}]")
                     }
                 }
             } else {
-                logger.warn("Client [{}] not subscribed to [{}]", endpoint.clientIdentifier(), topic)
+                logger.warning("Client [${endpoint.clientIdentifier()}] not subscribed to [${topic}]")
             }
         }
 
@@ -247,7 +243,7 @@ class MqttServer(config: JsonObject, private val endpoint: MqttEndpoint) : Abstr
     }
 
     private fun subscribeMqttTopic(t: Topic, qos: MqttQoS, ret: Promise<Boolean>) {
-        logger.debug("Register [{}]", t.topicName)
+        logger.finest { "Register [${t.topicName}]" }
         val consumer = vertx.eventBus().consumer<Buffer>(t.topicName) {
             valueConsumer(t, qos, it.body())
         }
@@ -256,7 +252,7 @@ class MqttServer(config: JsonObject, private val endpoint: MqttEndpoint) : Abstr
     }
 
     private fun unsubscribeMqttTopic(t: Topic) {
-        logger.debug("Unregister [{}]", t.topicName)
+        logger.finest { "Unregister [${t.topicName}]" }
         this.topicConsumer[t.topicName]?.unregister()
         this.topicConsumer.remove(t.topicName)
     }
@@ -265,7 +261,7 @@ class MqttServer(config: JsonObject, private val endpoint: MqttEndpoint) : Abstr
         val consumer = vertx.eventBus().consumer<Any>(t.topicName) { valueConsumer(t, qos, it.body()) }
         val r = JsonObject().put("ClientId", endpoint.clientIdentifier()).put("Topic", t.encodeToJson())
         vertx.eventBus().request<JsonObject>("${type}/${t.systemName}/Subscribe", r) {
-            logger.debug("Subscribe response [{}] [{}]", it.succeeded(), it.result()?.body())
+            logger.finest { "Subscribe response [${it.succeeded()}] [${it.result()?.body()}]" }
             if (it.succeeded() && it.result().body().getBoolean("Ok")) {
                 this.topicConsumer[t.topicName] = consumer as MessageConsumer<Any>
                 ret.complete(true)
@@ -280,7 +276,7 @@ class MqttServer(config: JsonObject, private val endpoint: MqttEndpoint) : Abstr
         val r = JsonObject().put("ClientId", endpoint.clientIdentifier())
         r.put("Topics", JsonArray(list.map { it.encodeToJson() }))
         vertx.eventBus().request<JsonObject>("${type}/${systemName}/Unsubscribe", r) {
-            logger.debug("Unsubscribe response [{}] [{}]", it.succeeded(), it.result()?.body())
+            logger.finest { "Unsubscribe response [${it.succeeded()}] [${it.result()?.body()}]" }
             if (it.succeeded() && it.result().body().getBoolean("Ok")) {
                 list.forEach { topic ->
                     this.topicConsumer[topic.topicName]?.unregister()
@@ -296,17 +292,17 @@ class MqttServer(config: JsonObject, private val endpoint: MqttEndpoint) : Abstr
             is String -> valueConsumerBuffer(topic, qos, Buffer.buffer(value))
             is JsonObject -> valueConsumerBuffer(topic, qos, value.toBuffer())
             is JsonArray -> valueConsumerBuffer(topic, qos, value.toBuffer())
-            else -> logger.warn("Got unhandled class of instance []", value.javaClass.simpleName)
+            else -> logger.warning("Got unhandled class of instance [${value.javaClass.simpleName}]")
         }
     }
 
     private fun valueConsumerBuffer(topic: Topic, qos: MqttQoS, value: Buffer) {
         try {
-            logger.debug("Publish [{}]", value)
+            logger.finest { "Publish [${value}]" }
             if (endpoint.isConnected) {
                 endpoint.publish(topic.topicName, value, qos, false /*isDup*/, false /* isRetain */)
             } else {
-                logger.warn("Publish topic [{}] to client [{}] which is not connected anymore!", topic, endpoint.clientIdentifier())
+                logger.warning("Publish topic [${topic}] to client [${endpoint.clientIdentifier()}] which is not connected anymore!")
             }
         } catch (e: Exception) {
             e.printStackTrace()
@@ -315,7 +311,7 @@ class MqttServer(config: JsonObject, private val endpoint: MqttEndpoint) : Abstr
 
     private fun publishHandler(message: MqttPublishMessage) {
         try {
-            logger.debug("Publish message [{}]", message.topicName())
+            logger.finest { "Publish message [${message.topicName()}]" }
             val topic = Topic.parseTopic(message.topicName())
             val value = message.payload()
             when (topic.systemType) {
@@ -328,13 +324,13 @@ class MqttServer(config: JsonObject, private val endpoint: MqttEndpoint) : Abstr
                     request.put("Topic", topic.encodeToJson())
                     request.put("Data", value)
                     vertx.eventBus().request<JsonObject>("${type}/${topic.systemName}/Publish", request) {
-                        logger.debug("Publish response [{}] [{}]", it.succeeded(), it.result()?.body())
+                        logger.finest { "Publish response [${it.succeeded()}] [${it.result()?.body()}]" }
                     }
                 }
                 Topic.SystemType.Unknown -> {
                     vertx.eventBus().publish(topic.topicName, value)
                 }
-                else -> logger.error("Unhandled system type [{}]", topic)
+                else -> logger.severe("Unhandled system type [${topic}]")
             }
         } catch (e: java.lang.Exception) {
             e.printStackTrace()

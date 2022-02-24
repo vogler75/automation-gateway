@@ -115,7 +115,7 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
         } else {
             value
         }
-        logger.debug("transformReaderValue: $address > $value => $x")
+        logger.finest("transformReaderValue: $address > $value => $x")
         return x
     }
 
@@ -131,7 +131,7 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
         } else {
             value
         }
-        logger.debug("transformWriterValue: $address > $value => $x")
+        logger.finest("transformWriterValue: $address > $value => $x")
         return x
     }
 
@@ -139,21 +139,21 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
     private fun pollingExecutor(id: Long) {
         if (isConnected() && pollingTopics.isNotEmpty()) {
             if (pollingRequestId > pollingResponseId) {
-                logger.warn("Polling request id {} is still pending (response id {}).", pollingRequestId, pollingResponseId)
+                logger.warning("Polling request id [${pollingRequestId}] is still pending (response id [${pollingResponseId})].")
             } else {
                 val localRequestId = ++pollingRequestId
                 val builder: PlcReadRequest.Builder = plc!!.readRequestBuilder()
                 pollingTopics.forEach {
-                    builder.addItem(it.key.topicName, it.key.address)
+                    builder.addItem(it.key.topicName, it.key.node)
                 }
-                logger.debug("Poll request [{}] for [{}] items...", localRequestId, pollingTopics.size)
+                logger.finest("Poll request [${localRequestId}] for [${pollingTopics.size}] items...")
                 val request = builder.build()
                 val response = request.execute()
                 response.orTimeout(pollingTimeout, TimeUnit.MILLISECONDS)
                 response.whenComplete { readResponse, throwable ->
                     ++pollingResponseId
                     if (readResponse != null) {
-                        logger.debug("Poll response [{}]", readResponse.asPlcValue.toString())
+                        logger.finest("Poll response [${readResponse.asPlcValue.toString()}]", )
                         pollingTopics.forEach { topic ->
                             val value = readResponse.getPlcValue(topic.key.topicName)
                             if (!pollingOldNew || value.toString() != topic.value.toString()) { // TODO: String Compare?
@@ -162,7 +162,7 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
                             }
                         }
                     } else {
-                        logger.error("An error occurred: $throwable")
+                        logger.severe("An error occurred: $throwable")
                     }
                 }
             }
@@ -196,7 +196,7 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
             val info = (if (it.metadata?.canRead() == true) "Read " else " ") +
                     (if (it.metadata?.canWrite() == true) "Write " else " ") +
                     if (it.metadata?.canSubscribe() == true) "Subscribe " else " "
-            logger.error("This connection supports: {}", info)
+            logger.severe("This connection supports: ${info}")
         }
     }
 
@@ -236,11 +236,11 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
     }
 
     override fun subscribeTopics(topics: List<Topic>): Future<Boolean> {
-        return subscribeTopic(topics.filter { it.topicType === Topic.TopicType.NodeId })
+        return subscribeTopic(topics.filter { it.topicType === Topic.TopicType.Node })
     }
 
     private fun subscribeTopic(topics: List<Topic>) : Future<Boolean> {
-        logger.info("Subscribe topic [{}]", topics.size)
+        logger.info("Subscribe topic [${topics.size}]", )
         val ret = Promise.promise<Boolean>()
         when {
             plc?.metadata?.canSubscribe() == false -> {
@@ -256,7 +256,7 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
             else -> {
                 val builder: PlcSubscriptionRequest.Builder = plc!!.subscriptionRequestBuilder()
                 topics.forEach {
-                    builder.addEventField("value", it.address)
+                    builder.addEventField("value", it.node)
                 }
                 val request = builder.build()
 
@@ -270,7 +270,7 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
                             }
                         }
                     } else {
-                        logger.error("An error occurred: " + throwable.message, throwable)
+                        logger.severe("An error occurred: ${throwable.message}")
                         ret.complete(false)
                     }
                 }
@@ -314,15 +314,15 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
     }
 
     private fun valueConsumer(topic: Topic, data: PlcValue) {
-        logger.debug("Got value [{}] [{}]", topic.topicName, data.toString())
+        logger.finest("Got value [${topic.topicName}] [${data.toString()}]")
         try {
             fun json() = JsonObject()
                 .put("Topic", topic.encodeToJson())
-                .put("Value", toValue(topic.address, data).encodeToJson())
+                .put("Value", toValue(topic.node, data).encodeToJson())
 
             val buffer : Buffer? = when (topic.format) {
                 Topic.Format.Value -> {
-                    toValue(topic.address, data).value.toString().let {
+                    toValue(topic.node, data).value.toString().let {
                         Buffer.buffer(it)
                     }
                 }
@@ -348,7 +348,7 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
                 request.execute().whenComplete { response, throwable ->
                     if (response!=null) promise.complete(true)
                     else {
-                        logger.error("An error occurred: " + throwable.message, throwable)
+                        logger.severe("An error occurred: ${throwable.message}")
                         promise.complete(false)
                     }
                 }
@@ -373,19 +373,19 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
         val ret = Promise.promise<Boolean>()
         try {
             when (topic.topicType) {
-                Topic.TopicType.NodeId -> {
+                Topic.TopicType.Node -> {
                     when (topic.format) {
                         Topic.Format.Value -> {
-                            writeValueAsync(topic.address, value.toString()).onComplete(ret)
+                            writeValueAsync(topic.node, value.toString()).onComplete(ret)
                         }
                         Topic.Format.Json,
                         Topic.Format.Pretty -> {
-                            logger.warn("Value format not yet implemented!") // TODO
+                            logger.warning("Value format not yet implemented!") // TODO
                         }
                     }
                 }
                 else -> {
-                    logger.warn("Item type [{}] not yet implemented!", topic.topicType)
+                    logger.warning("Item type [${topic.topicType}] not yet implemented!")
                 }
             }
         } catch (e: Exception) {
@@ -422,7 +422,7 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
                                     e.printStackTrace()
                                 }
                             } else {
-                                logger.error("An error occurred: $throwable")
+                                logger.severe("An error occurred: $throwable")
                                 val result = JsonObject().put("Value", throwable.toString())
                                 message.reply(JsonObject().put("Ok", false).put("Result", result))
                             }
@@ -439,14 +439,14 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
             else -> {
                 val err = String.format("Invalid format in read request!")
                 message.reply(JsonObject().put("Ok", false))
-                logger.error(err)
+                logger.severe(err)
             }
         }
     }
 
     override fun writeHandler(message: Message<JsonObject>) {
         val node = message.body().getValue("NodeId")
-        logger.info("writeHandler [{}]", node)
+        logger.info("writeHandler [${node}]")
         when {
             plc?.metadata?.canWrite() == false -> {
                 message.reply(JsonObject().put("Ok", false).put("Error", "Write not supported!"))
@@ -458,12 +458,12 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
                 }
             }
             node != null && node is JsonArray -> {
-                logger.warn("Write of array not yet implemented!")
+                logger.warning("Write of array not yet implemented!")
             }
             else -> {
                 val err = String.format("Invalid format in write request!")
                 message.reply(JsonObject().put("Ok", false))
-                logger.error(err)
+                logger.severe(err)
             }
         }
     }
@@ -483,16 +483,16 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
                 response.orTimeout(writeTimeout, TimeUnit.MILLISECONDS)
                 response.whenComplete { writeResponse, throwable ->
                     if (writeResponse != null) {
-                        logger.debug("Write response [{}]", writeResponse.getResponseCode("value"))
+                        logger.finest("Write response [${writeResponse.getResponseCode("value")}]")
                         promise.complete(true)
                     } else {
-                        logger.error("Write error [{}]", throwable.toString())
+                        logger.severe("Write error [$throwable]")
                         promise.complete(false)
                     }
                 }
             }
         } catch (e: Exception) {
-            logger.error("Write exception [{}]", e.message)
+            logger.severe("Write exception [${e.message}]")
             promise.complete(false)
         }
         return promise.future()

@@ -27,7 +27,7 @@ class KafkaLogger(config: JsonObject) : LoggerBase(config) {
             logger.info("Kafka connected.")
             result.complete()
         } catch (e: Exception) {
-            logger.error("Kafka connect failed! [{}]", e.message)
+            logger.severe("Kafka connect failed! [${e.message}]", )
             e.printStackTrace()
             result.fail(e)
         }
@@ -49,18 +49,18 @@ class KafkaLogger(config: JsonObject) : LoggerBase(config) {
                     point.value.encodeToJson().toString()
                 )
                 if (producer?.writeQueueFull()==true) {
-                    logger.warn("Kafka write queue full!")
+                    logger.warning("Kafka write queue full!")
                     while (producer?.writeQueueFull()==true) {
                         Thread.sleep(100)
                     }
-                    logger.warn("Kafka write queue not full anymore.")
+                    logger.warning("Kafka write queue not full anymore.")
                 }
                 producer?.write(record)?.onComplete {
                     valueCounterOutput++
                 }
 
             } catch (e: Exception) {
-                logger.error(e.message)
+                logger.severe(e.message)
             }
             point = if (++counter < writeParameterBlockSize) writeValueQueue.poll() else null
         }

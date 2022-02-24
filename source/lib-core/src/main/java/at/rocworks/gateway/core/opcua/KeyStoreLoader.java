@@ -9,13 +9,12 @@ import java.nio.file.Paths;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import org.eclipse.milo.opcua.stack.core.util.SelfSignedCertificateBuilder;
 import org.eclipse.milo.opcua.stack.core.util.SelfSignedCertificateGenerator;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class KeyStoreLoader {
     public static KeyStoreLoader keyStoreLoader;
@@ -29,7 +28,7 @@ public class KeyStoreLoader {
     private static final String CLIENT_ALIAS = "client-ai";
     private static final char[] PASSWORD = "password".toCharArray();
 
-    private final Logger logger = LoggerFactory.getLogger(getClass().getSimpleName());
+    private final Logger logger = Logger.getLogger(getClass().getSimpleName());
 
     private X509Certificate clientCertificate;
     private KeyPair clientKeyPair;

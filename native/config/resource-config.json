@@ -1,0 +1,18 @@
+{
+  "resources":{
+  "includes":[
+    {
+      "pattern":"\\QMETA-INF/MANIFEST.MF\\E"
+    }, 
+    {
+      "pattern":"\\QMETA-INF/services/io.vertx.config.spi.ConfigProcessor\\E"
+    }, 
+    {
+      "pattern":"\\QMETA-INF/services/io.vertx.config.spi.ConfigStoreFactory\\E"
+    }, 
+    {
+      "pattern":"\\Qorg/slf4j/impl/StaticLoggerBinder.class\\E"
+    }
+  ]},
+  "bundles":[]
+}

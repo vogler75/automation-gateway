@@ -10,15 +10,13 @@ import io.vertx.core.eventbus.Message
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
-
 import java.lang.Exception
 
 import java.util.ArrayList
 import java.util.concurrent.ExecutionException
 import java.util.function.Consumer
 import java.util.logging.Level
+import java.util.logging.Logger
 
 abstract class DriverBase(config: JsonObject) : AbstractVerticle() {
     protected abstract fun getType(): Topic.SystemType
@@ -27,8 +25,7 @@ abstract class DriverBase(config: JsonObject) : AbstractVerticle() {
 
     protected val uri = "${getType().name}/$id"
 
-    protected val logger: Logger
-    private val logLevel: String = config.getString("LogLevel", "INFO")
+    protected val logger: Logger =  Logger.getLogger(id)
 
     private val subscribeOnStartup: List<String> =
         config.getJsonArray("SubscribeOnStartup", JsonArray()).filterIsInstance<String>().toList()
@@ -42,13 +39,12 @@ abstract class DriverBase(config: JsonObject) : AbstractVerticle() {
     protected abstract fun shutdown()
 
     init {
-        java.util.logging.Logger.getLogger(id).level = Level.parse(logLevel)
-        logger = LoggerFactory.getLogger(id)
+        logger.level = Level.parse(config.getString("LogLevel", "INFO"))
         Runtime.getRuntime().addShutdownHook(Thread {
-            logger.warn("Shutdown [{}]", id)
+            logger.warning("Shutdown [$id]")
             try {
                 shutdown()
-                logger.warn("Shutdown finished [{}]", id)
+                logger.warning("Shutdown finished [$id]")
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -56,7 +52,7 @@ abstract class DriverBase(config: JsonObject) : AbstractVerticle() {
     }
 
     override fun start(startPromise: Promise<Void>) {
-        logger.info("Driver start [{}]", id)
+        logger.info("Driver start [$id]")
         vertx.executeBlocking<Void> {
             try {
                 connect().onComplete {
@@ -79,7 +75,7 @@ abstract class DriverBase(config: JsonObject) : AbstractVerticle() {
     }
 
     override fun stop(stopPromise: Promise<Void>) {
-        logger.info("Driver stop [{}]", id)
+        logger.info("Driver stop [$id]")
         vertx.executeBlocking<Void> {
             try {
                 disconnectHandlers()
@@ -98,13 +94,13 @@ abstract class DriverBase(config: JsonObject) : AbstractVerticle() {
             if (it.succeeded()) {
                 logger.info("Service registered.")
             } else {
-                logger.warn("Service registration failed!")
+                logger.warning("Service registration failed!")
             }
         }
     }
 
     private fun connectHandlers() {
-        logger.info("Connect handlers to [{}]", uri)
+        logger.info("Connect handlers to [$uri]")
         messageHandlers = listOf<MessageConsumer<JsonObject>>(
             vertx.eventBus().consumer("$uri/ServerInfo") { serverInfoHandler(it) },
             vertx.eventBus().consumer("$uri/Subscribe") { subscribeHandler(it) },
@@ -151,7 +147,7 @@ abstract class DriverBase(config: JsonObject) : AbstractVerticle() {
     private fun publishHandler(message: Message<JsonObject>) {
         val topic = Topic.decodeFromJson(message.body().getJsonObject("Topic"))
         val data = message.body().getBuffer("Data")
-        logger.debug("Publish [{}] [{}]", topic.toString(), data.toString())
+        logger.finest { "Publish [${topic.toString()}] [${data.toString()}]" }
         try {
             publishTopic(topic, data).onComplete { result: AsyncResult<Boolean> ->
                 if (result.cause() != null) result.cause().printStackTrace()
@@ -170,9 +166,9 @@ abstract class DriverBase(config: JsonObject) : AbstractVerticle() {
         val ret = Promise.promise<Boolean>()
         try {
             val (count, added) = registry.addClient(clientId, topic)
-            logger.debug("Subscribe [{}] [{}]", count, topic)
+            logger.finest { "Subscribe [${count}] [${topic}]" }
             if (!added) {
-                logger.warn("Client [{}] already subscribed to [{}]", clientId, topic)
+                logger.warning("Client [${clientId}] already subscribed to [${topic}]")
                 ret.complete(true)
             } else if (count == 1) {
                 subscribeTopics(listOf(topic)).onComplete {
@@ -195,7 +191,7 @@ abstract class DriverBase(config: JsonObject) : AbstractVerticle() {
     fun resubscribe() {
         val topics = registry.getTopics()
         if (topics.isNotEmpty()) {
-            logger.info("Resubscribe [{}] topics", topics.size)
+            logger.info("Resubscribe [${topics.size}] topics")
             topics.forEach(registry::delTopic)
             subscribeTopics(topics)
         }
@@ -206,11 +202,11 @@ abstract class DriverBase(config: JsonObject) : AbstractVerticle() {
         val items = ArrayList<MonitoredItem>()
         topics.forEach { topic ->
             val (count, removed) = registry.delClient(clientId, topic)
-            logger.info("Unsubscribe [{}] [{}]", count, topic)
+            logger.info("Unsubscribe [${count}] [${topic}]")
             if (!removed) {
-                logger.warn("Client [{}] was not subscribed to [{}]", clientId, topic)
+                logger.warning("Client [${clientId}] was not subscribed to [${topic}]")
             } else if (count == 0) {
-                logger.info("Client [{}] was last client of [{}]", clientId, topic)
+                logger.info("Client [${clientId}] was last client of [${topic}]")
                 items.addAll(registry.delTopic(topic))
             }
         }

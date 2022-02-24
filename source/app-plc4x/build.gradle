@@ -3,12 +3,12 @@ plugins {
 }
 
 project.ext {
-    vertxVersion = "4.0.3"
+    vertxVersion = "4.2.4"
 }
 
 compileKotlin {
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = "11"
     }
 }
 
@@ -18,22 +18,25 @@ dependencies {
 
     implementation project(':lib-influxdb')
     implementation project(':lib-iotdb')
+    implementation project(':lib-jdbc')
     implementation project(':lib-kafka')
-
-    implementation 'org.slf4j:slf4j-api:1.7.30'
-    implementation 'org.slf4j:slf4j-jdk14:1.7.30'
-    //implementation 'org.slf4j:slf4j-simple:1.7.30'
+    implementation project(':lib-neo4j')
 
     implementation "io.vertx:vertx-core:$vertxVersion"
     implementation "io.vertx:vertx-config-yaml:$vertxVersion"
     implementation "io.vertx:vertx-service-discovery:$vertxVersion"
-    implementation 'com.fasterxml.jackson.core:jackson-databind:2.11.4' // Needed for Vertx Json
+    //implementation "com.fasterxml.jackson.core:jackson-databind:2.11.4" // Needed for Vertx Json in a Cluster
 
     implementation group: 'org.apache.plc4x', name: 'plc4j-api', version: '0.8.0'
 
     runtimeOnly group: 'org.apache.plc4x', name: 'plc4j-driver-s7', version: '0.8.0'
     runtimeOnly group: 'org.apache.plc4x', name: 'plc4j-driver-modbus', version: '0.8.0'
     runtimeOnly group: 'org.apache.plc4x', name: 'plc4j-driver-simulated', version: '0.8.0'
+    
+    runtimeOnly group: 'org.postgresql', name: 'postgresql', version: '42.2.20'
+    runtimeOnly group: 'mysql', name: 'mysql-connector-java', version: '8.0.25'
+    runtimeOnly group: 'com.microsoft.sqlserver', name: 'mssql-jdbc', version: '9.2.1.jre11'
+    runtimeOnly group: 'io.crate', name: 'crate-jdbc', version: '2.6.0'    
 }
 
 application {

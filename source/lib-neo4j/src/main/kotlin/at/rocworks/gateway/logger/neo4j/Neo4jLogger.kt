@@ -32,7 +32,7 @@ class Neo4jLogger(private val config: JsonObject) : LoggerBase(config) {
     private val username = config.getString("Username", "neo4j")
     private val password = config.getString("Password", "password")
 
-    private val driver : Driver = GraphDatabase.driver( url, AuthTokens.basic( username, password ) );
+    private val driver : Driver = GraphDatabase.driver( url, AuthTokens.basic( username, password ) )
 
     private var session : Session? = null
 
@@ -44,7 +44,7 @@ class Neo4jLogger(private val config: JsonObject) : LoggerBase(config) {
             val nodeIds =
                 systemConfig.getJsonArray("RootNodes", JsonArray(listOf("i=85"))).filterIsInstance<String>()
             fetchSchema(system, nodeIds).onComplete {
-                logger.info("Write Graph [{}] [{}]", system, it.result().first)
+                logger.info("Write Graph [${system}] [${it.result().first}]")
                 //File("${system}.json").writeText(it.result().second.encodePrettily())
                 if (it.result().first) {
                     thread { writeSchemaToDb(system, it.result().second) }
@@ -57,16 +57,16 @@ class Neo4jLogger(private val config: JsonObject) : LoggerBase(config) {
         val promise = Promise.promise<Pair<Boolean, JsonArray>>()
         val serviceHandler = ServiceHandler(vertx, logger)
         val type = Topic.SystemType.Opc.name
-        logger.info("Wait for service [{}]...", system)
+        logger.info("Wait for service [${system}]...")
         serviceHandler.observeService(type, system) { record ->
             if (record.status == Status.UP) {
-                logger.info("Request schema [{}] [{}] ...", system, nodeIds.joinToString(","))
+                logger.info("Request schema [${system}] [${nodeIds.joinToString(",")}] ...")
                 vertx.eventBus().request<JsonArray>(
                     "${type}/${system}/Schema",
                     JsonObject().put("NodeIds", nodeIds),
                     DeliveryOptions().setSendTimeout(60000L*10)) // TODO: configurable?
                 {
-                    logger.info("Schema response [{}] [{}] [{}]", system, it.succeeded(), it.cause()?.message ?: "")
+                    logger.info("Schema response [${system}] [${it.succeeded()}] [${it.cause()?.message ?: ""}]")
                     val result = (it.result().body()?: JsonArray())
                     promise.complete(Pair(it.succeeded(), result))
                 }
@@ -155,9 +155,9 @@ class Neo4jLogger(private val config: JsonObject) : LoggerBase(config) {
                         )
                         //logger.info("Wrote ${rows.size} nodes.")
                         items.zip(res.list()).forEach {
-                            val nodes = it.first.getJsonArray("Nodes")
-                            if (nodes != null && !nodes.isEmpty) {
-                                addNodes(it.second[0], nodes)
+                            val nextNodes = it.first.getJsonArray("Nodes")
+                            if (nextNodes != null && !nextNodes.isEmpty) {
+                                addNodes(it.second[0], nextNodes)
                             }
                         }
                     }
@@ -167,7 +167,7 @@ class Neo4jLogger(private val config: JsonObject) : LoggerBase(config) {
             }
             val duration = Duration.between(tStart, Instant.now())
             val seconds = duration.seconds + duration.nano/1_000_000_000.0
-            logger.warn("Writing schema to graph database took [{}]s", seconds)
+            logger.warning("Writing schema to graph database took [${seconds}]s")
 
         } catch (e: Exception) {
             e.printStackTrace()
@@ -210,9 +210,9 @@ class Neo4jLogger(private val config: JsonObject) : LoggerBase(config) {
         val rows = mutableListOf<Map<String, Any?>>()
         var point: DataPoint? = writeValueQueue.poll(10, TimeUnit.MILLISECONDS)
         while (point != null && ++counter <= writeParameterBlockSize) {
-            val row = mapOf<String, Any?>(
+            val row = mapOf(
                 "System" to point.topic.systemName,
-                "NodeId" to point.topic.address,
+                "NodeId" to point.topic.node,
                 "Status" to point.value.statusAsString(),
                 "Value" to point.value.valueAsObject(),
                 "DataType" to point.value.dataTypeName(),

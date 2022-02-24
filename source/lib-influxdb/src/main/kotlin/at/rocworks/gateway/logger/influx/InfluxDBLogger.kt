@@ -41,7 +41,7 @@ class InfluxDBLogger(config: JsonObject) : LoggerBase(config) {
                 result.complete()
             }
         } catch (e: Exception) {
-            logger.error("InfluxDB connect failed! [{}]", e.message)
+            logger.severe("InfluxDB connect failed! [${e.message}]")
             result.fail(e)
         }
         return result.future()
@@ -55,7 +55,7 @@ class InfluxDBLogger(config: JsonObject) : LoggerBase(config) {
         val point = Point.measurement(dp.topic.systemName) // TODO: configurable measurement name
             .time(dp.value.sourceTime().toEpochMilli(), TimeUnit.MILLISECONDS)
             .tag("tag", dp.topic.browsePath)
-            .tag("address", dp.topic.address)
+            .tag("address", dp.topic.node)
             .tag("status", dp.value.statusAsString())
             .addField("servertime", dp.value.serverTimeAsISO()) // TODO: as string or EpochMilli?
 
@@ -122,7 +122,7 @@ class InfluxDBLogger(config: JsonObject) : LoggerBase(config) {
             }
             result(data != null, data)
         } catch (e: Exception) {
-            logger.error("Error executing query [{}]", e.message)
+            logger.severe("Error executing query [${e.message}]")
             result(false, null)
         }
     }

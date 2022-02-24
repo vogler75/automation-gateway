@@ -6,23 +6,29 @@ import io.vertx.config.ConfigRetrieverOptions
 import io.vertx.config.ConfigStoreOptions
 import io.vertx.core.Vertx
 import io.vertx.core.json.JsonObject
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
+
+import java.io.File
+import java.io.FileInputStream
+import java.io.InputStream
 import java.util.logging.LogManager
+import java.util.logging.Logger
+
 import kotlin.concurrent.thread
 import kotlin.system.exitProcess
 
 object Common {
-    private val logger: Logger = LoggerFactory.getLogger(javaClass.simpleName)
+    private val logger = Logger.getLogger(javaClass.simpleName)
     private val configFileName = System.getenv("GATEWAY_CONFIG") ?: "config.yaml"
 
     const val BUS_ROOT_URI_LOG = "Log"
-    const val BUS_ROOT_URI_CACHE = "Cache"
 
     fun initLogging() {
-        val stream = Cluster::class.java.classLoader.getResourceAsStream("logging.properties")
+        //val stream = Cluster::class.java.classLoader.getResourceAsStream("logging.properties")
         try {
-            LogManager.getLogManager().readConfiguration(stream)
+            println("Loading logging.properties...")
+            val initialFile = File("logging.properties")
+            val targetStream: InputStream = FileInputStream(initialFile)
+            LogManager.getLogManager().readConfiguration(targetStream)
         } catch (e: Exception) {
             println("Error loading logging.properties!")
             exitProcess(-1)

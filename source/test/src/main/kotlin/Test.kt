@@ -12,8 +12,6 @@ import java.lang.Exception
 import java.util.logging.LogManager
 import kotlin.system.exitProcess
 
-import org.slf4j.LoggerFactory
-
 object Test {
 
     @Throws(Exception::class)
@@ -26,8 +24,6 @@ object Test {
             println("Error loading logging.properties!")
             exitProcess(-1)
         }
-
-        //val logger = LoggerFactory.getLogger(javaClass.simpleName)
 
         val vertx = Vertx.vertx()
 

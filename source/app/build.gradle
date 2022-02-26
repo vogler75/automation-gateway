@@ -16,7 +16,7 @@ dependencies {
     implementation project(':lib-core')
 
     implementation project(':lib-influxdb')
-    implementation project(':lib-iotdb')
+    //implementation project(':lib-iotdb')
     implementation project(':lib-jdbc')
     implementation project(':lib-kafka')
     implementation project(':lib-neo4j')
@@ -28,8 +28,8 @@ dependencies {
 
     runtimeOnly group: 'org.postgresql', name: 'postgresql', version: '42.2.20'
     runtimeOnly group: 'mysql', name: 'mysql-connector-java', version: '8.0.25'
-    runtimeOnly group: 'com.microsoft.sqlserver', name: 'mssql-jdbc', version: '9.2.1.jre11'
     runtimeOnly group: 'io.crate', name: 'crate-jdbc', version: '2.6.0'
+    //runtimeOnly group: 'com.microsoft.sqlserver', name: 'mssql-jdbc', version: '10.2.0.jre11'
 }
 
 application {

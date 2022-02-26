@@ -1,5 +1,5 @@
 package at.rocworks.gateway.core.mqtt
-
+/*
 import at.rocworks.gateway.core.data.Topic
 import at.rocworks.gateway.core.driver.DriverBase
 import at.rocworks.gateway.core.driver.MonitoredItem
@@ -307,3 +307,4 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
         message.reply(JsonObject().put("Ok", false))
     }
 }
+ */

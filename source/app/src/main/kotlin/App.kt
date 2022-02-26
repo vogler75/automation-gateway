@@ -1,5 +1,5 @@
 import at.rocworks.gateway.core.graphql.GraphQLServer
-import at.rocworks.gateway.core.mqtt.MqttDriver
+//import at.rocworks.gateway.core.mqtt.MqttDriver
 import at.rocworks.gateway.core.mqtt.MqttLogger
 import at.rocworks.gateway.core.mqtt.MqttServer
 import at.rocworks.gateway.core.opcua.KeyStoreLoader
@@ -7,7 +7,7 @@ import at.rocworks.gateway.core.opcua.OpcUaDriver
 import at.rocworks.gateway.core.service.Common
 
 import at.rocworks.gateway.logger.influx.InfluxDBLogger
-import at.rocworks.gateway.logger.iotdb.IoTDBLogger
+//import at.rocworks.gateway.logger.iotdb.IoTDBLogger
 import at.rocworks.gateway.logger.jdbc.JdbcLogger
 import at.rocworks.gateway.logger.kafka.KafkaLogger
 import at.rocworks.gateway.logger.neo4j.Neo4jLogger
@@ -38,9 +38,9 @@ object App {
                 "InfluxDB" -> {
                     vertx.deployVerticle(InfluxDBLogger(config))
                 }
-                "IoTDB" -> {
-                    vertx.deployVerticle(IoTDBLogger(config))
-                }
+                //"IoTDB" -> {
+                //    vertx.deployVerticle(IoTDBLogger(config))
+                //}
                 "Jdbc" -> {
                     vertx.deployVerticle(JdbcLogger(config))
                 }
@@ -89,11 +89,13 @@ object App {
             }
 
         // Mqtt Client
+        /*
         config.getJsonArray("MqttClient")
             ?.filterIsInstance<JsonObject>()
             ?.forEach {
                 vertx.deployVerticle(MqttDriver(it))
             }
+         */
 
         // DB Logger
         config.getJsonObject("Database")

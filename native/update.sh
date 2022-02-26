@@ -5,7 +5,7 @@ gradle build
 echo "Unpack..."
 cd ../native
 rm -r source/app
-tar xf ../source/app/build/distributions/app.tar -C source
-echo `cat source/app/bin/app | grep "^CLASSPATH" | sed "s/^CLASSPATH=//"` > classpath.txt
+tar xf ../source/app$1/build/distributions/app$1.tar -C source
+echo `cat source/app$1/bin/app | grep "^CLASSPATH" | sed "s/^CLASSPATH=//"` > classpath.txt
 
 echo "Ready."

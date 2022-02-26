@@ -11,6 +11,9 @@
       "pattern":"\\QMETA-INF/services/io.vertx.config.spi.ConfigStoreFactory\\E"
     }, 
     {
+      "pattern":"\\QMETA-INF/services/io.vertx.core.spi.VertxServiceProvider\\E"
+    }, 
+    {
       "pattern":"\\Qorg/slf4j/impl/StaticLoggerBinder.class\\E"
     }
   ]},

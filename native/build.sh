@@ -1,11 +1,11 @@
-export APP_HOME=source/app
+export APP_HOME=source/app$1
 
 CLASSPATH=`cat classpath.txt | envsubst`
 echo $CLASSPATH
 
 native-image --no-fallback \
--H:ReflectionConfigurationFiles=config/reflect-config.json \
--H:DynamicProxyConfigurationFiles=config/proxy-config.json \
+-H:ReflectionConfigurationFiles=config$1/reflect-config.json \
+-H:DynamicProxyConfigurationFiles=config$1/proxy-config.json \
 --allow-incomplete-classpath \
 --initialize-at-build-time=org.slf4j \
 --initialize-at-run-time=io.netty.util.internal.logging.Log4JLogger \

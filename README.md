@@ -224,9 +224,16 @@ Example MQTT Topic:
 
 # Version History
 ## 1.20 Cleanup and GraalVM Native Build
-GraalVM Native Image build is now possible, see directory "native".  
-Removed various unused features (Clustering, NATS, DDS) and upgraded libraries to the latest versions. For the native build it was needed to replace SLF4J logging with the standard Java logging.  
-Topic data class now contains two separate fields "path" and "node". Before there was only one field "address". This also fixed a Bug when connecting/disconnecting of topics with wildcards.
+GraalVM Native Image build is now possible, see directory "native". Removed various unused features and upgraded libraries to the latest versions. For the native build it was needed to replace SLF4J logging with the standard Java logging.  
+
+Removed Features:  
+* Clustering  
+* NATS  
+* DDS
+* IoTDB: it leads to debug(!) log messages of other components, did not invest time to find out how to get rid of this behaviour.  
+* MQTTDriver: it uses Groovy and I could get it running natively compiled, so I had to remove it to get rid of Groovy  
+
+Fixed bug: Topic data class now contains two separate fields "path" and "node". Before there was only one field "address". This also fixed a Bug when connecting/disconnecting of topics with wildcards.
 
 ## 1.19 Neo4j Logger to write field values to the graph database  
 Added Neo4j as an option to log values from OPC UA to the graph database. Additionally the OPC UA node structure can also be replicated to the graph database. This will be done only once at the startup of the Automation Gateway.  

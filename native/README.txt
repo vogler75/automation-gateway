@@ -24,7 +24,14 @@ On Windows, the native-image builder will only work when it’s executed from th
 > "C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\VC\Auxiliary\Build\vcvars64.bat"
 
 ######################
-# Prepare 
+# Build
+######################
+> update.sh  # build and copy java distribution of app to source and gets classpath
+> run.sh     # start the java distribution with agento to collect GraalVM configs
+> build.sh   # build native image with GraalVM
+
+######################
+# Notes
 ######################
 
 Lin: tar xf ../source/app/build/distributions/app.tar -C source
@@ -35,11 +42,3 @@ Set JAVA_OPTS="-agentlib:native-image-agent=config-merge-dir=config" to enable t
 > export JAVA_OPTS=-agentlib:native-image-agent=config-merge-dir=config
 
 Copy the CLASSPATH from app\bin\app to the build.sh script!
-
-######################
-# Build
-######################
-> build.sh
-> build.bat
-
-

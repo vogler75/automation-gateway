@@ -248,8 +248,11 @@ class OpcUaDriver(private val config: JsonObject) : DriverBase(config) {
 
     override fun disconnect(): Future<Boolean> {
         val promise = Promise.promise<Boolean>()
-        client!!.disconnect().thenAccept {
-            promise.complete(true)
+        if (client==null) promise.complete()
+        else {
+            client!!.disconnect().thenAccept {
+                promise.complete(true)
+            }
         }
         return promise.future()
     }

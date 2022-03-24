@@ -1,13 +1,11 @@
 package at.rocworks.gateway.core.opcua;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.*;
-import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -19,8 +17,8 @@ import org.eclipse.milo.opcua.stack.core.util.SelfSignedCertificateGenerator;
 public class KeyStoreLoader {
     public static KeyStoreLoader keyStoreLoader;
 
-    public static final String APPLICATION_NAME = "Reactive Gateway@" + HostnameUtil.getHostname();
-    public static final String APPLICATION_URI = String.format("urn:%s:ROCWORKS.Gateway", HostnameUtil.getHostname());
+    public static final String APPLICATION_NAME = "Automation Gateway@" + HostnameUtil.getHostname();
+    public static final String APPLICATION_URI = String.format("urn:ROCWORKS.Gateway");
 
     private static final Pattern IP_ADDR_PATTERN = Pattern.compile(
             "^(([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\.){3}([01]?\\d\\d?|2[0-4]\\d|25[0-5])$");

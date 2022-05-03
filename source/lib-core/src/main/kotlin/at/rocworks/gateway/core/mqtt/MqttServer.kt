@@ -31,11 +31,12 @@ class MqttServer(config: JsonObject, private val endpoint: MqttEndpoint) : Abstr
             val ws = config.getBoolean("Websocket", false)
             val username = config.getString("Username", "")
             val password = config.getString("Password", "")
+            val maxMessageSize = config.getInteger("MaxMessageSizeKb", 8) * 1024
 
             val options = MqttServerOptions()
                 .setPort(port)
                 .setHost(host)
-                .setMaxMessageSize(config.getInteger("MaxMessageSizeKb", 8) * 1024)
+                .setMaxMessageSize(maxMessageSize)
                 .setUseWebSocket(ws)
 
             val server = MqttServer.create(vertx, options)
@@ -57,7 +58,7 @@ class MqttServer(config: JsonObject, private val endpoint: MqttEndpoint) : Abstr
 
             server.listen { result ->
                 if (result.succeeded()) {
-                    logger.info("MQTT server started and listening on port " + server.actualPort())
+                    logger.info("MQTT server started and listening on port " + server.actualPort() + " "+(if (ws) "Websocket" else "")+" MaxMessageSize: "+maxMessageSize)
                 } else {
                     logger.severe("MQTT server error on start" + result.cause().message)
                 }

@@ -22,6 +22,8 @@ After the installation completes, reboot your system.
 
 On Windows, the native-image builder will only work when it’s executed from the x64 Native Tools Command Prompt
 > "C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\VC\Auxiliary\Build\vcvars64.bat"
+or
+> "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat"
 
 ######################
 # Build

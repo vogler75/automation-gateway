@@ -11,6 +11,7 @@ You can sponsor this project [here](https://paypal.me/av75).
 ![Gateway](doc/Automation-Gateway.png)
 
 # Version History
+1.20.1 Kafka properties can now be specified in the config file  
 1.20 Cleanup and GraalVM Native Build  
 1.19 Neo4j Logger to write field values to the graph database  
 1.18.3 Added MQTT Websocket Option and simple Authentication  
@@ -47,11 +48,12 @@ You can open the project in IntelliJ IDEA IDE and build it there or use grade to
 > cd source/app
 > gradle build
 
-> export GATEWAY_CONFIG=config.yaml
+> export GATEWAY_CONFIG=config.yaml  # Set configuration file (default is config.yaml)
 > gradle run
 ```
+You can also pass the configuration filename as an argument.
 
-App is a single program with GraphQL, MQTT and the OPC UA connections in one single program. There is also an option to let it run in clustered mode. Then the modules (app-gateway, app-influxdb, app-plc4x, ...) run in separate processes and form a cluster with a distributed communication bus based on [Vert.x](https://vertx.io). With that option the modules can run on different nodes or they can be deployed in a Kubernetes Cluster. Also some options are only available in clustered mode (like plc4x), but if you want a single app with for example plc4x, then you can also include the plc4x parts in the single app, but you have to code it by your own. 
+App is a single program with GraphQL, MQTT and the OPC UA connections in one single program. There is also "App-plc4x" which includes the [plc4x](https://plc4x.apache.org/) connectivity.  
 
 ## Configuration
 
@@ -91,6 +93,11 @@ Wildcard "+" can also be used as a browsename
 
 Be careful when using wildcards when there are a lot of nodes, it can lead to a lot of browsing round trips  
 > opc / test / path / Objects / Test / + / float
+
+## Internal Logger Metric Topic
+Every logger has an internal topic where the throughput is updated every second.
+Topic: logger/**logger-id**/metrics
+Value: {"Input v/s":20932,"Output v/s":20932}  # just an example
 
 ## Enable OPC UA Schema in GraphQL
 
@@ -223,6 +230,28 @@ Example MQTT Topic:
 > plc/mod/node/coil:1  
 
 # Version History
+## 1.20.1 Kafka properties can now be specified in the config file
+It can be configured with a bunch of properties as described in the official [Apache Kafka documentation](https://kafka.apache.org/documentation/#producerconfigs).  
+
+Put the properites and values below "Configs" - see example below where the "batch.size" is set to 10000.  
+
+But be careful, you will not get an error message if you set an unknow property, so be sure to use right name of the property.
+```
+Database:
+  Logger:
+    - Id: kafka1
+      Type: Kafka
+      Enabled: true
+      Servers: nuc1.rocworks.local:9092
+      Configs:  # you can set any valid Kafka producer property here
+        batch.size: 10000
+      WriteParameters:
+        QueueSize: 20000
+        BlockSize: 10000
+      Logging:
+        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_SByte/+
+        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Byte/+
+```
 ## 1.20 Cleanup and GraalVM Native Build
 GraalVM Native Image build is now possible, see directory "native". Removed various unused features and upgraded libraries to the latest versions. For the native build it was needed to replace SLF4J logging with the standard Java logging.  
 

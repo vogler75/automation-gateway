@@ -26,14 +26,15 @@ Database:
     - Id: kafka1
       Type: Kafka
       Enabled: true
-      Servers: server2:9092
+      Servers: 192.168.1.131:9092
+      Configs:  # you can set any valid kafka config here
+        batch.size: 10000
       WriteParameters:
         QueueSize: 20000
         BlockSize: 10000
       Logging:
         - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_SByte/+
         - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Byte/+
-        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_SByte/+
         - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
         - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
         - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Integer/+
@@ -43,11 +44,22 @@ Database:
         - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Unt16/+
         - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_UInt32/+
 
+        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_SByte/+
+        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Byte/+
+        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Float/+
+        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Double/+
+        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Integer/+
+        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Int16/+
+        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Int32/+
+        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Int64/+
+        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Unt16/+
+        - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_UInt32/+
+
 OpcUaClient:
   - Id: "opc1"
     Enabled: true
     LogLevel: INFO
-    EndpointUrl: "opc.tcp://nuc1:20001"
+    EndpointUrl: "opc.tcp://192.168.1.131:20011"
     UpdateEndpointUrl: true
     SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#None
     ConnectTimeout: 5000
@@ -64,7 +76,29 @@ OpcUaClient:
       DiscardOldest: true
       DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
     BrowseOnStartup: false
-    WriteSchemaToFile: false    
+    WriteSchemaToFile: false
+
+  - Id: "opc2"
+    Enabled: true
+    LogLevel: INFO
+    EndpointUrl: "opc.tcp://192.168.1.131:20011"
+    UpdateEndpointUrl: true
+    SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#None
+    ConnectTimeout: 5000
+    RequestTimeout: 5000
+    KeepAliveFailuresAllowed: 0
+    SubscriptionSamplingInterval: 0.0
+    WriteParameters:
+      QueueSize: 10000
+      BlockSize: 200
+      WithTime: false
+    MonitoringParameters:
+      BufferSize: 10
+      SamplingInterval: 0
+      DiscardOldest: true
+      DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
+    BrowseOnStartup: false
+    WriteSchemaToFile: false
 
   - Id: "winccoa"
     Enabled: false

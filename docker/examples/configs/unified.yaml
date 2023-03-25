@@ -17,6 +17,3 @@ OpcUaClient:
       BufferSize: 10
       SamplingInterval: 0.0
       DiscardOldest: true
-    BrowseOnStartup: true
-    WriteSchemaToFile: false
-    WriteSchemaToCache: true

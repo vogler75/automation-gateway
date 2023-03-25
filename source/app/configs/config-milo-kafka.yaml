@@ -67,5 +67,3 @@ OpcUaClient:
       SamplingInterval: 0
       DiscardOldest: true
       DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false

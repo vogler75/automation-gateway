@@ -1,12 +1,14 @@
 # Frankenstein Automation Gateway
 
-Connect one or more OPC UA servers to the gateway and access the data from the OPC UA servers with a GraphQL or a MQTT client.  
+Connect one or more OPC UA servers to the gateway and access the data from the OPC UA servers with a GraphQL or a MQTT client and store it in a range of databases and platforms like InfluxDB, IoTDB, Kafka and more.
+
+The Gateway passes values through, it does not store data internally. The MQTT Broker is not a fully MQTT Broker! It does not keep values in memory. If you subscribe to a virtual MQTT-Topic, which must follow certain rules, then it will connect to the tags in OPC UA or PLC4X and will pass the values to the client. If multiple clients subscribe to the same virtual topic, then only one subscription to the device is made and the Gateway will distribute the values to all the clients.  
+
+The Gateway offers functionality to log value changes from OPC UA and PLC4X in a range of databases and platforms, including InfluxDB, IoTDB, Kafka, among others. This adaptability allows for seamless integration with diverse data storage and processing systems. The benefits of this feature are numerous. By logging value changes in different databases, the Gateway provides a solution for data management and analysis. This capability enables organizations to better monitor and track their assets, making well-informed decisions and optimizing operational efficiency. Furthermore, using platforms like Kafka allows for real-time data streaming, which enhances the responsiveness of the system to rapidly evolving situations.
 
 Docker images can be found on [Docker Hub](https://hub.docker.com/r/rocworks/automation-gateway).
 
 News and Blog posts can be found [here](https://www.rocworks.at/wordpress/?cat=39).  
-
-You can sponsor this project [here](https://paypal.me/av75).
 
 ![Gateway](doc/Automation-Gateway.png)
 
@@ -70,7 +72,28 @@ GraphQLServer:
       GraphiQL: true
 ```
 
-## Example Topics
+## Example OPC UA Configuration
+See config directory for more example configurations.
+```
+  - Id: "unified"
+    Enabled: false
+    LogLevel: INFO
+    EndpointUrl:  "opc.tcp://desktop-9o6hthf:4890"
+    SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#Basic128Rsa15
+    SubscriptionSamplingInterval: 0
+    UsernameProvider:
+      Username: opcuauser
+      Password: password1
+    WriteParameters:
+      QueueSize: 1000
+      BlockSize: 100
+      WithTime: true
+    MonitoringParameters:
+      BufferSize: 10
+      SamplingInterval: 0.0
+      DiscardOldest: true
+```
+## Example MQTT Topics
 Note: remove the blanks between the slashes! (just here for better readabilty)
 
 Using the NodeId 
@@ -178,12 +201,9 @@ You have to build the program before with gradle. Then you can use the shell scr
 
 ## Using PLC4X
 
-You have to start the app-gateway plus app-plc4x. See config.yaml in each folder of the app. Because some PLC4X drivers  /  plc's do not support subscriptions we have added a simple polling options. (currently only one polling time per connection). 
+You the application app-plc4x to get values from various source supported by PLC4X. See config.yaml in each folder of the app. Because some PLC4X drivers/plc's do not support subscriptions we have added a simple polling options (currently only one polling time per connection). 
 
 ```
-> cd app-gateway
-> gradle run  
-
 > cd app-plc4x
 cat config.yaml
 Plc4x:
@@ -707,7 +727,6 @@ GraphQLServer:
 OpcUaClient:
   - Id: "ignition"
     Enabled: true
-    BrowseOnStartup: true           
 ```
 
 ## 1.5 OPC UA Schemas to GraphQL Schema Importer
@@ -723,5 +742,4 @@ GraphQLServer:
 OpcUaClient:
   - Id: "ignition"
     Enabled: true
-    BrowseOnStartup: false 
 ```

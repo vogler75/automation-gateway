@@ -4,7 +4,7 @@ Connect one or more OPC UA servers to the gateway and access the data from the O
 
 The Gateway passes values through, it does not store data internally. The MQTT Broker is not a fully MQTT Broker! It does not keep values in memory. If you subscribe to a virtual MQTT-Topic, which must follow certain rules, then it will connect to the tags in OPC UA or PLC4X and will pass the values to the client. If multiple clients subscribe to the same virtual topic, then only one subscription to the device is made and the Gateway will distribute the values to all the clients.  
 
-The Gateway offers functionality to log value changes from OPC UA and PLC4X in a range of databases and platforms, including InfluxDB, IoTDB, Kafka, among others. Tested with up to 250000 value changes per second on comodity hardware! This adaptability allows for seamless integration with diverse data storage and processing systems. The benefits of this feature are numerous. By logging value changes in different databases, the Gateway provides a solution for data management and analysis. This capability enables organizations to better monitor and track their assets, making well-informed decisions and optimizing operational efficiency. Furthermore, using platforms like Kafka allows for real-time data streaming, which enhances the responsiveness of the system to rapidly evolving situations.
+The Gateway offers functionality to log value changes from OPC UA and PLC4X in a range of databases and platforms, including InfluxDB, IoTDB, Kafka, among others. Tested with up to 250000 value changes per second on comodity hardware!  
 
 Docker images can be found on [Docker Hub](https://hub.docker.com/r/rocworks/automation-gateway).
 

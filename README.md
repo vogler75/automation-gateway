@@ -12,33 +12,17 @@ News and Blog posts can be found [here](https://www.rocworks.at/wordpress/?cat=3
 
 ![Gateway](doc/Automation-Gateway.png)
 
-# Version History
-1.20.1 Kafka properties can now be specified in the config file  
-1.20 Cleanup and GraalVM Native Build  
-1.19 Neo4j Logger to write field values to the graph database  
-1.18.3 Added MQTT Websocket Option and simple Authentication  
-1.18.2 Raw value to engineering value conversion for PLC4X driver  
-1.18.1 Features and bug fixes in PLC4X driver  
-1.18 Removed Apache Ignite  
-1.17 Added CrateDB as supported JDBC database for logging  
-1.16 JDBC Logger to write field values to relational databases  
-1.15.1 Added BrowsePath to GraphQL OPC UA node (with Full option)  
-1.15 Nats Logger to write field values to a Nats server  
-1.14 Fixes and optimizations  
-1.13 MQTT Logger to write field values to a MQTT Broker  
-1.12 MQTT Driver with Groovy script transformer (subscribe only)  
-1.11 Apache Kafka Database Logger  
-1.10 Apache IoTDB Database Logger  
-1.9 Apache Ignite as Cluster option and Ignite as Memory-Store  
-1.8 Upgrade to VertX 4.0.3  
-1.7 DDS Driver (subscribe and publish)  
-1.6 Added GraphiQL (http://localhost:4000/graphiql/)  
-1.5 OPC UA Schemas to GraphQL Schema Importer  
-1.4 Build GraphQL Schema from OPC UA Schemas   
-1.3 OPC UA Browsing and fixes   
-1.2 Simple Polling for PLC4X Driver    
-1.1 PLC4X Driver    
-1.0 Initial Version  
+# Content
+
+- [Build and Run](#build-and-run)
+- [Configuration](#configuration)
+- [OPC UA Client Configuration](#opc-ua-client-configuration)
+- [OPC UA Schema in GraphQL](#enable-opc-ua-schema-in-graphql)
+- [Topic Mapping](#topic-mapping)
+- [Logger Configuration](#logger-configuration)
+- [Build Docker Image](#build-docker-image)
+- [Using PLC4X](#using-plc4x)
+- [Version History](#version-history)
 
 # Build and Run
 
@@ -55,15 +39,24 @@ You can open the project in IntelliJ IDEA IDE and build it there or use grade to
 ```
 You can also pass the configuration filename as an argument.
 
-App is a single program with GraphQL, MQTT and the OPC UA connections in one single program. There is also "App-plc4x" which includes the [plc4x](https://plc4x.apache.org/) connectivity.  
+App is with GraphQL, MQTT and the OPC UA connections.    
+There is also "App-plc4x" which includes the [plc4x](https://plc4x.apache.org/) connectivity.  
 
 ## Configuration
 
 See config.yaml in the app directory for an example how to configure the Gateway. You can pass a configuration file name to the program as the first argument or by setting a environment variable GATEWAY_CONFIG. If no argument is given then config.yaml will be used. If there are any questions about the configuration, please get in touch with me. 
 
-If you enable [GraphiQL](https://github.com/graphql/graphiql) (a graphical ui to build and execute GraphQL queries) you can access GraphiQL with http://localhost:4000/graphiql/ **! trailing slash is important !**
+If you enable [GraphiQL](https://github.com/graphql/graphiql), a graphical ui to build and execute GraphQL queries, then you can access GraphiQL with  
+> http://localhost:4000/graphiql/ **! trailing slash is important !**
 
 ```
+MqttServer:
+  Listeners:
+    - Id: Mqtt
+      Port: 1883
+      Host: 0.0.0.0
+      LogLevel: INFO # ALL | INFO
+      
 GraphQLServer:
   Listeners:
     - Port: 4000
@@ -72,7 +65,7 @@ GraphQLServer:
       GraphiQL: true
 ```
 
-## Example OPC UA Configuration
+## OPC UA Client Configuration
 See config directory for more example configurations.
 ```
   - Id: "unified"
@@ -93,36 +86,8 @@ See config directory for more example configurations.
       SamplingInterval: 0.0
       DiscardOldest: true
 ```
-## Example MQTT Topics
-Note: remove the blanks between the slashes! (just here for better readabilty)
 
-Using the NodeId 
-> opc / test / node / ns=2;s=ExampleDP_Float.ExampleDP_Arg1   
-> opc / test / node / 2 / ExampleDP_Float.ExampleDP_Arg1   
-
-Value as JSON with timestamp, quality, ...  
-> opc / test / node:**json** / ns=2;s=ExampleDP_Float.ExampleDP_Arg1  
-> opc / test / node:**json** / 2 / ExampleDP_Float.ExampleDP_Arg1  
-
-Using the browse path instead of the NodeId  
-> opc / test / **path** / *root-node-id* / *browse-name* / *browse-name* /...   
-
-Wildcard "+" can also be used as a browsename
-> opc / ua / **path**:json / *ns=1;s=16|Tags* / **+**  
-
-"Objects" can be used as root node and will be replace with "i=85"
-> opc / test / path / **Objects** / Test / Test00003 / float  
-> opc / test / path / **Objects** / Test / Test00003 / +
-
-Be careful when using wildcards when there are a lot of nodes, it can lead to a lot of browsing round trips  
-> opc / test / path / Objects / Test / + / float
-
-## Internal Logger Metric Topic
-Every logger has an internal topic where the throughput is updated every second.
-Topic: logger/**logger-id**/metrics
-Value: {"Input v/s":20932,"Output v/s":20932}  # just an example
-
-## Enable OPC UA Schema in GraphQL
+## OPC UA Schema in GraphQL
 
 The GraphQL server can read the OPC UA object schema and convert it to a GraphQL schema. The starting NodeIds can be set to reduce the amount of browsed items. Browsing can take some while if the OPC UA server holds a huge structure of tags!
 ```
@@ -190,6 +155,63 @@ fragment Value on Node {
 
 ```
 
+## Topic Mapping
+With the built in MQTT Interface you can get access to the connected OPC UA servers by subscribing to MQTT Topics.  
+
+The Topic name follows a certain rule. When a MQTT client subscribes to such MQTT topics, then the Gateway will create a subscription to the Node in the OPC UA Server. If multiple clients subscribe to the same Topic/Node, then the Gateway will act as a distributor and only one connection to the node is made.  
+
+Note: In the following examples "test" is the Id of the OPC UA Client in the configuration file.
+
+Note: Remove the blanks between the slashe! Just here for better readabilty. 
+
+Using the NodeId 
+> opc / test / node / ns=2;s=ExampleDP_Float.ExampleDP_Arg1   
+> opc / test / node / 2 / ExampleDP_Float.ExampleDP_Arg1   
+
+Value as JSON with timestamp, quality, ...  
+> opc / test / node:**json** / ns=2;s=ExampleDP_Float.ExampleDP_Arg1  
+> opc / test / node:**json** / 2 / ExampleDP_Float.ExampleDP_Arg1  
+
+Using the browse path instead of the NodeId  
+> opc / test / **path** / *root-node-id* / *browse-name* / *browse-name* /...   
+
+Wildcard "+" can also be used as a browsename
+> opc / ua / **path**:json / *ns=1;s=16|Tags* / **+**  
+
+"Objects" can be used as root node and will be replace with "i=85"
+> opc / test / path / **Objects** / Test / Test00003 / float  
+> opc / test / path / **Objects** / Test / Test00003 / +
+
+Be careful when using wildcards when there are a lot of nodes, it can lead to a lot of browsing round trips  
+> opc / test / path / Objects / Test / + / float
+
+## Logger Configuration
+Loggers for different type of sinks can be defined in the configuration file. All of them share a common configuration and can have additonal sink specific configuration. Sink specific configuration can be found in the example configuration files or in the version history.
+
+In the "Logging" section we can specify the Topics which should be logged to the sink. The Topics follow the same rule as MQTT Topics and will map to sources like OPC UA or PLC4X. See [Topic Mapping](#topic-mapping).
+```
+Database:
+  Logger:
+    - Id: influx1
+      Type: InfluxDB
+      Enabled: true
+      Url: http://192.168.1.13:8086
+      Database: test
+      Username: ""
+      Password: ""
+      WriteParameters:
+        QueueSize: 20000
+        BlockSize: 10000
+      Logging:
+        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_SByte/+
+        - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Byte/+
+  
+```
+
+Every logger has an internal topic where the throughput is updated every second.
+Topic: logger/**logger-id**/metrics
+Value: {"Input v/s":20932,"Output v/s":20932}  # just an example
+
 ## Build Docker Image
 
 You have to build the program before with gradle. Then you can use the shell script `docker/build.sh` to build a docker image.  
@@ -250,7 +272,33 @@ Example MQTT Topic:
 > plc/mod/node/coil:1  
 
 # Version History
-## 1.20.1 Kafka properties can now be specified in the config file
+- [1.20.1 Kafka properties in the config file](#1201-kafka-properties-in-the-config-file)  
+- [1.20 Cleanup and GraalVM Native Build](#120-cleanup-and-graalvm-native-build)  
+- [1.19 Neo4j Logger](#119-neo4j-logger)  
+- [1.18.3 Added MQTT Websocket Option and simple Authentication](#1183-added-mqtt-websocket-option-and-simple-authentication)  
+- [1.18.2 Raw value to engineering value conversion for PLC4X driver](#1182-raw-value-to-engineering-value-conversion-for-plc4x-driver)  
+- [1.18.1 Features and bug fixes in PLC4X driver](#1181-features-and-fixes-in-plc4x-driver)  
+- [1.18 Removed Apache Ignite](#118-removed-apache-ignite)  
+- [1.17 Added CrateDB as supported JDBC database for logging](#117-added-cratedb-as-supported-jdbc-database-for-logging)  
+- [1.16 JDBC Logger to write field values to relational databases](#116-jdbc-logger-to-write-field-values-to-relational-databases)  
+- [1.15 Nats Logger to write field values to a Nats server](#115-nats-logger-to-write-field-values-to-a-nats-server)  
+- [1.14 Fixes and optimizations](#114-fixes-and-optimizations)  
+- [1.13 MQTT Logger to write field values to a MQTT Broker](#113-mqtt-logger-to-write-field-values-to-a-mqtt-broker)  
+- [1.12 MQTT Driver with Groovy script transformer](#112-mqtt-driver-with-groovy-script-transformer)
+- [1.11 Apache Kafka Database Logger](#111-apache-kafka-database-logger)  
+- [1.10 Apache IoTDB Database Logger](#110-apache-iotdb-database-logger)  
+- [1.9 Apache Ignite as Cluster option and Ignite as Memory-Store](#19-apache-ignite-as-cluster-option-and-ignite-as-memory-store)  
+- [1.8 Upgrade to VertX 4.0.3](#18-upgrade-to-vertx-403)  
+- [1.7 DDS Driver (subscribe and publish)](#17-dds-driver-subscribe-and-publish)  
+- [1.6 Added GraphiQL](#16-added-graphiql-httplocalhost4000graphiql)  
+- [1.5 OPC UA Schemas to GraphQL Schema Importer](#15-opc-ua-schemas-to-graphql-schema-importer)  
+- 1.4 Build GraphQL Schema from OPC UA Schemas   
+- 1.3 OPC UA Browsing and fixes   
+- 1.2 Simple Polling for PLC4X Driver    
+- 1.1 PLC4X Driver    
+- 1.0 Initial Version  
+
+## 1.20.1 Kafka properties in the config file
 It can be configured with a bunch of properties as described in the official [Apache Kafka documentation](https://kafka.apache.org/documentation/#producerconfigs).  
 
 Put the properites and values below "Configs" - see example below where the "batch.size" is set to 10000.  
@@ -284,7 +332,7 @@ Removed Features:
 
 Fixed bug: Topic data class now contains two separate fields "path" and "node". Before there was only one field "address". This also fixed a Bug when connecting/disconnecting of topics with wildcards.
 
-## 1.19 Neo4j Logger to write field values to the graph database  
+## 1.19 Neo4j Logger  
 Added Neo4j as an option to log values from OPC UA to the graph database. Additionally the OPC UA node structure can also be replicated to the graph database. This will be done only once at the startup of the Automation Gateway.  
 ```
 Database:
@@ -527,7 +575,7 @@ Database:
         - Topic: opc/smarthome/path/PV/Spot/+
 ```
 
-## 1.12 MQTT Driver with Groovy script transformer (subscribe only)
+## 1.12 MQTT Driver with Groovy script transformer
 Added a inital version of a **MQTT Driver** to get values from a MQTT Broker into Frankenstein. A Groovy script can be used to transform the values to an OPC UA format, so that Frankenstein can be used to log those value to databases. Functionality is currently very limited, only subscribe is implemented.
 
 In this example we transform values of a MQTT Broker from this format: {"TimeMS":1620327963328,"Value":10.277357833719135} to our internal TopicValueOpc format by using a Groovy script and then log some topic values to an InfluxDB.

@@ -27,7 +27,7 @@ import kotlin.math.roundToInt
 
 abstract class LoggerBase(config: JsonObject) : AbstractVerticle() {
     protected val id: String = config.getString("Id", "Logger")
-    protected val logger = Logger.getLogger(id)
+    protected val logger: Logger = Logger.getLogger(id)
 
     private val topics : List<Topic>
 
@@ -37,7 +37,7 @@ abstract class LoggerBase(config: JsonObject) : AbstractVerticle() {
         const val defaultRetryWaitTime = 5000L
     }
 
-    private val writeParameterQueueSizeDef = 10000
+    private val writeParameterQueueSizeDefault = 10000
     private val writeParameterQueueSize : Int
 
     private val writeParameterBlockSizeDefault = 2000
@@ -45,7 +45,7 @@ abstract class LoggerBase(config: JsonObject) : AbstractVerticle() {
 
     init {
         val writeParameters = config.getJsonObject("WriteParameters")
-        writeParameterQueueSize = writeParameters?.getInteger("QueueSize", writeParameterQueueSizeDef) ?: writeParameterQueueSizeDef
+        writeParameterQueueSize = writeParameters?.getInteger("QueueSize", writeParameterQueueSizeDefault) ?: writeParameterQueueSizeDefault
         writeParameterBlockSize = writeParameters?.getInteger("BlockSize", writeParameterBlockSizeDefault) ?: writeParameterBlockSizeDefault
 
         logger.level = Level.parse(config.getString("LogLevel", "INFO"))
@@ -208,7 +208,7 @@ abstract class LoggerBase(config: JsonObject) : AbstractVerticle() {
 
     private var t1: Instant = Instant.now()
     @Suppress("UNUSED_PARAMETER")
-    private fun metricCalculator(jobId: Long) { // TODO: Same in Influx
+    private fun metricCalculator(jobId: Long) {
         val t2 = Instant.now()
         val d = Duration.between(t1, t2).toMillis() / 1000.0
         if (d>0) {
@@ -218,6 +218,7 @@ abstract class LoggerBase(config: JsonObject) : AbstractVerticle() {
             val result = JsonObject()
             result.put("Input v/s", vsInput)
             result.put("Output v/s", vsOutput)
+            result.put("Queue Size", writeValueQueue.size)
             vertx.eventBus().publish(topic, result)
         }
         t1 = t2

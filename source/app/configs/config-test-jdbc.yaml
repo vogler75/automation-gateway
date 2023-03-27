@@ -124,8 +124,6 @@ OpcUaClient:
       SamplingInterval: 0
       DiscardOldest: true
       DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false    
 
   - Id: "winccoa"
     Enabled: false
@@ -146,9 +144,7 @@ OpcUaClient:
       SamplingInterval: 0
       DiscardOldest: true
       DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false
-
+      
   - Id: "ignition"
     Enabled: false
     LogLevel: INFO
@@ -170,8 +166,6 @@ OpcUaClient:
       SamplingInterval: 0.0
       DiscardOldest: false
       DataChangeTrigger: StatusValueTimestamp # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false
 
   - Id: "unified"
     Enabled: false
@@ -190,6 +184,3 @@ OpcUaClient:
       BufferSize: 10
       SamplingInterval: 0.0
       DiscardOldest: true
-    BrowseOnStartup: false
-    WriteSchemaToFile: false
-

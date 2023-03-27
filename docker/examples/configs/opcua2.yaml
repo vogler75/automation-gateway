@@ -14,7 +14,6 @@ OpcUaClient:
       BufferSize: 10
       SamplingInterval: 0.0
       DiscardOldest: true
-    BrowseOnStartup: true
     WriteSchemaToFile: false
   - Id: "opcua6"
     Enabled: true
@@ -31,7 +30,6 @@ OpcUaClient:
       BufferSize: 10
       SamplingInterval: 0.0
       DiscardOldest: true
-    BrowseOnStartup: true
     WriteSchemaToFile: false
   - Id: "opcua7"
     Enabled: true
@@ -48,7 +46,6 @@ OpcUaClient:
       BufferSize: 10
       SamplingInterval: 0.0
       DiscardOldest: true
-    BrowseOnStartup: true
     WriteSchemaToFile: false    
   - Id: "opcua8"
     Enabled: true
@@ -65,7 +62,6 @@ OpcUaClient:
       BufferSize: 10
       SamplingInterval: 0.0
       DiscardOldest: true
-    BrowseOnStartup: true
     WriteSchemaToFile: false    
   - Id: "opcua9"
     Enabled: true
@@ -82,7 +78,6 @@ OpcUaClient:
       BufferSize: 10
       SamplingInterval: 0.0
       DiscardOldest: true
-    BrowseOnStartup: true
     WriteSchemaToFile: false    
   - Id: "opcua10"
     Enabled: true
@@ -99,5 +94,4 @@ OpcUaClient:
       BufferSize: 10
       SamplingInterval: 0.0
       DiscardOldest: true
-    BrowseOnStartup: true
     WriteSchemaToFile: false    

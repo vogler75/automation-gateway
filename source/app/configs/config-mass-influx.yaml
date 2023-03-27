@@ -693,8 +693,6 @@ OpcUaClient:
       SamplingInterval: 0
       DiscardOldest: true
       DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false
 
   - Id: "ignition"
     Enabled: false
@@ -717,8 +715,6 @@ OpcUaClient:
       SamplingInterval: 0.0
       DiscardOldest: false
       DataChangeTrigger: StatusValueTimestamp # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false
 
   - Id: "unified"
     Enabled: false
@@ -737,8 +733,6 @@ OpcUaClient:
       BufferSize: 10
       SamplingInterval: 0.0
       DiscardOldest: true
-    BrowseOnStartup: false
-    WriteSchemaToFile: false
 
   - Id: "opc1"
     Enabled: true
@@ -759,8 +753,6 @@ OpcUaClient:
       SamplingInterval: 0
       DiscardOldest: true
       DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false
 
   - Id: "opc2"
     Enabled: true
@@ -781,8 +773,6 @@ OpcUaClient:
       SamplingInterval: 0
       DiscardOldest: true
       DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false
 
   - Id: "opc3"
     Enabled: true
@@ -803,8 +793,6 @@ OpcUaClient:
       SamplingInterval: 0
       DiscardOldest: true
       DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false
 
   - Id: "opc4"
     Enabled: true
@@ -825,8 +813,6 @@ OpcUaClient:
       SamplingInterval: 0
       DiscardOldest: true
       DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false
 
   - Id: "opc5"
     Enabled: true
@@ -847,8 +833,6 @@ OpcUaClient:
       SamplingInterval: 0
       DiscardOldest: true
       DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false
 
   - Id: "opc6"
     Enabled: true
@@ -869,8 +853,6 @@ OpcUaClient:
       SamplingInterval: 0
       DiscardOldest: true
       DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false
 
   - Id: "opc7"
     Enabled: true
@@ -891,8 +873,6 @@ OpcUaClient:
       SamplingInterval: 0
       DiscardOldest: true
       DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false
 
   - Id: "opc8"
     Enabled: true
@@ -913,8 +893,6 @@ OpcUaClient:
       SamplingInterval: 0
       DiscardOldest: true
       DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false
 
   - Id: "opc9"
     Enabled: true
@@ -935,8 +913,6 @@ OpcUaClient:
       SamplingInterval: 0
       DiscardOldest: true
       DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false
 
   - Id: "opc10"
     Enabled: true
@@ -957,8 +933,6 @@ OpcUaClient:
       SamplingInterval: 0
       DiscardOldest: true
       DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false
  
   - Id: "opc11"
     Enabled: true
@@ -979,8 +953,6 @@ OpcUaClient:
       SamplingInterval: 0
       DiscardOldest: true
       DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false 
 
   - Id: "opc12"
     Enabled: true
@@ -1001,8 +973,6 @@ OpcUaClient:
       SamplingInterval: 0
       DiscardOldest: true
       DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false 
 
   - Id: "opc13"
     Enabled: true
@@ -1023,8 +993,6 @@ OpcUaClient:
       SamplingInterval: 0
       DiscardOldest: true
       DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false 
 
   - Id: "opc14"
     Enabled: true
@@ -1045,8 +1013,6 @@ OpcUaClient:
       SamplingInterval: 0
       DiscardOldest: true
       DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false 
 
   - Id: "opc15"
     Enabled: true
@@ -1067,8 +1033,6 @@ OpcUaClient:
       SamplingInterval: 0
       DiscardOldest: true
       DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false 
 
   - Id: "opc16"
     Enabled: true
@@ -1089,8 +1053,6 @@ OpcUaClient:
       SamplingInterval: 0
       DiscardOldest: true
       DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false 
 
   - Id: "opc17"
     Enabled: true
@@ -1111,8 +1073,6 @@ OpcUaClient:
       SamplingInterval: 0
       DiscardOldest: true
       DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false 
 
   - Id: "opc18"
     Enabled: true
@@ -1133,8 +1093,6 @@ OpcUaClient:
       SamplingInterval: 0
       DiscardOldest: true
       DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false 
 
   - Id: "opc19"
     Enabled: true
@@ -1155,8 +1113,6 @@ OpcUaClient:
       SamplingInterval: 0
       DiscardOldest: true
       DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false 
 
   - Id: "opc20"
     Enabled: true
@@ -1176,9 +1132,7 @@ OpcUaClient:
       BufferSize: 10
       SamplingInterval: 0
       DiscardOldest: true
-      DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false                                     
+      DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp                                 
 
   - Id: "opc21"
     Enabled: true
@@ -1199,8 +1153,6 @@ OpcUaClient:
       SamplingInterval: 0
       DiscardOldest: true
       DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false 
 
   - Id: "opc22"
     Enabled: true
@@ -1221,8 +1173,6 @@ OpcUaClient:
       SamplingInterval: 0
       DiscardOldest: true
       DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false 
 
   - Id: "opc23"
     Enabled: true
@@ -1243,8 +1193,6 @@ OpcUaClient:
       SamplingInterval: 0
       DiscardOldest: true
       DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false 
  
   - Id: "opc24"
     Enabled: true
@@ -1265,10 +1213,7 @@ OpcUaClient:
       SamplingInterval: 0
       DiscardOldest: true
       DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false 
 
- 
   - Id: "opc25"
     Enabled: true
     LogLevel: INFO
@@ -1288,10 +1233,7 @@ OpcUaClient:
       SamplingInterval: 0
       DiscardOldest: true
       DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false 
 
- 
   - Id: "opc26"
     Enabled: true
     LogLevel: INFO
@@ -1311,10 +1253,7 @@ OpcUaClient:
       SamplingInterval: 0
       DiscardOldest: true
       DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false 
 
- 
   - Id: "opc27"
     Enabled: true
     LogLevel: INFO
@@ -1334,10 +1273,7 @@ OpcUaClient:
       SamplingInterval: 0
       DiscardOldest: true
       DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false 
 
- 
   - Id: "opc28"
     Enabled: true
     LogLevel: INFO
@@ -1357,8 +1293,6 @@ OpcUaClient:
       SamplingInterval: 0
       DiscardOldest: true
       DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false 
 
   - Id: "opc29"
     Enabled: true
@@ -1379,9 +1313,7 @@ OpcUaClient:
       SamplingInterval: 0
       DiscardOldest: true
       DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false 
- 
+
   - Id: "opc30"
     Enabled: true
     LogLevel: INFO
@@ -1401,9 +1333,7 @@ OpcUaClient:
       SamplingInterval: 0
       DiscardOldest: true
       DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false            
-
+ 
   - Id: "opc31"
     Enabled: true
     LogLevel: INFO
@@ -1423,9 +1353,7 @@ OpcUaClient:
       SamplingInterval: 0
       DiscardOldest: true
       DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false 
- 
+
   - Id: "opc32"
     Enabled: true
     LogLevel: INFO
@@ -1445,9 +1373,7 @@ OpcUaClient:
       SamplingInterval: 0
       DiscardOldest: true
       DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false 
-
+ 
   - Id: "opc33"
     Enabled: true
     LogLevel: INFO
@@ -1467,8 +1393,6 @@ OpcUaClient:
       SamplingInterval: 0
       DiscardOldest: true
       DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false 
 
   - Id: "opc34"
     Enabled: true
@@ -1489,8 +1413,6 @@ OpcUaClient:
       SamplingInterval: 0
       DiscardOldest: true
       DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false 
 
   - Id: "opc35"
     Enabled: true
@@ -1511,8 +1433,6 @@ OpcUaClient:
       SamplingInterval: 0
       DiscardOldest: true
       DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false 
 
   - Id: "opc36"
     Enabled: true
@@ -1533,9 +1453,7 @@ OpcUaClient:
       SamplingInterval: 0
       DiscardOldest: true
       DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false 
-
+ 
   - Id: "opc37"
     Enabled: true
     LogLevel: INFO
@@ -1555,9 +1473,7 @@ OpcUaClient:
       SamplingInterval: 0
       DiscardOldest: true
       DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false 
-
+  
   - Id: "opc38"
     Enabled: true
     LogLevel: INFO
@@ -1577,8 +1493,6 @@ OpcUaClient:
       SamplingInterval: 0
       DiscardOldest: true
       DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false 
 
   - Id: "opc39"
     Enabled: true
@@ -1599,9 +1513,7 @@ OpcUaClient:
       SamplingInterval: 0
       DiscardOldest: true
       DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false 
- 
+
   - Id: "opc40"
     Enabled: true
     LogLevel: INFO
@@ -1621,8 +1533,6 @@ OpcUaClient:
       SamplingInterval: 0
       DiscardOldest: true
       DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false                  
 
   - Id: "opc41"
     Enabled: true
@@ -1643,9 +1553,7 @@ OpcUaClient:
       SamplingInterval: 0
       DiscardOldest: true
       DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false 
- 
+  
   - Id: "opc42"
     Enabled: true
     LogLevel: INFO
@@ -1665,8 +1573,6 @@ OpcUaClient:
       SamplingInterval: 0
       DiscardOldest: true
       DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false 
 
   - Id: "opc43"
     Enabled: true
@@ -1687,8 +1593,6 @@ OpcUaClient:
       SamplingInterval: 0
       DiscardOldest: true
       DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false 
 
   - Id: "opc44"
     Enabled: true
@@ -1709,8 +1613,6 @@ OpcUaClient:
       SamplingInterval: 0
       DiscardOldest: true
       DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false 
 
   - Id: "opc45"
     Enabled: true
@@ -1731,8 +1633,6 @@ OpcUaClient:
       SamplingInterval: 0
       DiscardOldest: true
       DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false 
 
   - Id: "opc46"
     Enabled: true
@@ -1753,9 +1653,7 @@ OpcUaClient:
       SamplingInterval: 0
       DiscardOldest: true
       DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false 
-
+ 
   - Id: "opc47"
     Enabled: true
     LogLevel: INFO
@@ -1775,8 +1673,6 @@ OpcUaClient:
       SamplingInterval: 0
       DiscardOldest: true
       DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false 
 
   - Id: "opc48"
     Enabled: true
@@ -1797,8 +1693,6 @@ OpcUaClient:
       SamplingInterval: 0
       DiscardOldest: true
       DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false 
 
   - Id: "opc49"
     Enabled: true
@@ -1819,9 +1713,7 @@ OpcUaClient:
       SamplingInterval: 0
       DiscardOldest: true
       DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false 
- 
+
   - Id: "opc50"    
     Enabled: true
     LogLevel: INFO
@@ -1841,5 +1733,4 @@ OpcUaClient:
       SamplingInterval: 0
       DiscardOldest: true
       DataChangeTrigger: StatusValue # Status | StatusValue | StatusValueTimestamp
-    BrowseOnStartup: false
-    WriteSchemaToFile: false   
+  

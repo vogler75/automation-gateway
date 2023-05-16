@@ -28,7 +28,7 @@ News and Blog posts can be found [here](https://www.rocworks.at/wordpress/?cat=3
 
 It needs [Java 11](https://openjdk.java.net/projects/jdk/11/) or higher. There is an issue with Java 8 update 292 and bouncycastl encryption. [here](https://github.com/bcgit/bc-java/issues/941) you can find more information about this issue..
 
-You can open the project in IntelliJ IDEA IDE and build it there or use grade to build it from command line. You can download [gradle](https://gradle.org/install/) and build it from command line. Use **version 7** or higher of gradle! Check the version of gradle if you install gradle on Linux with your package management system. On some distributions gradle is too old and will throw errors during build phase. 
+You can open the project in IntelliJ IDEA IDE and build it there or use grade to build it from command line. You can download [gradle 7](https://gradle.org/releases/) and build it from command line. Use **version 7** of gradle! Check the version of gradle if you install gradle on Linux with your package management system. On some distributions gradle is too old and will throw errors during build phase. 
 
 ```
 > cd source/app

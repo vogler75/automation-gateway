@@ -20,6 +20,9 @@ abstract class TopicValue {
     abstract fun sourceTime(): Instant
     abstract fun serverTime(): Instant
 
+    fun sourceTimeMs(): Long = sourceTime().toEpochMilli()
+    fun serverTimeMs(): Long = serverTime().toEpochMilli()
+
     fun serverTimeAsISO(): String = serverTime().toString()
     fun sourceTimeAsISO(): String = sourceTime().toString()
 

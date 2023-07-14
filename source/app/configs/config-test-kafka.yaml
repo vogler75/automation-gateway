@@ -32,6 +32,8 @@ Database:
       WriteParameters:
         QueueSize: 20000
         BlockSize: 10000
+      TopicName: test # default is the system id of the topic      
+      #KeyName: test # default is the node path name
       Logging:
         - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_SByte/+
         - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Byte/+

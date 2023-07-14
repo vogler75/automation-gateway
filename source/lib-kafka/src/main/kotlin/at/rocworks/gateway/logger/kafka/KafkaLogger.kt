@@ -13,6 +13,8 @@ import java.util.concurrent.TimeUnit
 class KafkaLogger(config: JsonObject) : LoggerBase(config) {
     private val servers = config.getString("Servers", "localhost:9092")
     private val configs = config.getJsonObject("Configs")
+    private val topicName = config.getString("TopicName", null)
+    private val keyName = config.getString("KeyName", null)
 
     @Volatile
     private var producer: KafkaProducer<String, String>? = null
@@ -51,10 +53,23 @@ class KafkaLogger(config: JsonObject) : LoggerBase(config) {
         var point: DataPoint? = writeValueQueue.poll(10, TimeUnit.MILLISECONDS)
         while (point != null) {
             try {
+                val payload = JsonObject()
+                payload.put("nodeId", point.topic.node)
+                payload.put("systemName", point.topic.systemName)
+                payload.put("topicName", point.topic.topicName)
+                payload.put("browsePath", point.topic.browsePath)
+                payload.put("sourceTime", point.value.sourceTimeAsISO())
+                payload.put("serverTime", point.value.serverTimeAsISO())
+                payload.put("sourceTimeMs", point.value.sourceTimeMs())
+                payload.put("serverTimeMs", point.value.serverTimeMs())
+                payload.put("value", point.value.valueAsObject())
+                payload.put("valueAsString", point.value.valueAsString())
+                payload.put("valueAsDouble", point.value.valueAsDouble())
+                payload.put("statusCode", point.value.statusAsString())
                 val record: KafkaProducerRecord<String, String> = KafkaProducerRecord.create(
-                    point.topic.systemName,
-                    point.topic.browsePath,
-                    point.value.encodeToJson().toString()
+                    topicName?:point.topic.systemName,
+                    keyName?:point.topic.browsePath,
+                    payload.encodePrettily()
                 )
                 if (producer?.writeQueueFull()==true) {
                     logger.warning("Kafka write queue full!")

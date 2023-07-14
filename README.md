@@ -297,7 +297,24 @@ Example MQTT Topic:
 - 1.2 Simple Polling for PLC4X Driver    
 - 1.1 PLC4X Driver    
 - 1.0 Initial Version  
-
+## 1.20.2 Modifed JSON Format of Kafka Logger
+Added times in ms epoch and also added the value as double and as string. 
+```
+{
+	"nodeId": "ns=2;i=3",
+	"systemName": "scadaopcua",
+	"topicName": "opc/scadaopcua/path/Objects/Home/#",
+	"browsePath": "Objects/Home/Gas/Daily",
+	"sourceTime": "2023-07-14T09:53:43.945894Z",
+	"serverTime": "1601-01-01T00:00:00Z",
+	"sourceTimeMs": 1689328423945,
+	"serverTimeMs": -11644473600000,
+	"value": 2,
+	"valueAsString": "2",
+	"valueAsDouble": 2,
+	"statusCode": "0"
+}
+```
 ## 1.20.1 Kafka properties in the config file
 It can be configured with a bunch of properties as described in the official [Apache Kafka documentation](https://kafka.apache.org/documentation/#producerconfigs).  
 

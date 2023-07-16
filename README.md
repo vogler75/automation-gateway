@@ -272,6 +272,7 @@ Example MQTT Topic:
 > plc/mod/node/coil:1  
 
 # Version History
+- [1.20.2 Modifed JSON Format of Kafka Logger](#1202-modifed-json-format-of-kafka-logger)
 - [1.20.1 Kafka properties in the config file](#1201-kafka-properties-in-the-config-file)  
 - [1.20 Cleanup and GraalVM Native Build](#120-cleanup-and-graalvm-native-build)  
 - [1.19 Neo4j Logger](#119-neo4j-logger)  

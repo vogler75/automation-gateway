@@ -34,7 +34,7 @@ GraphQLServer:
 #            - "ns=1;s=2|Tags"
 
 OpcUaClient:
-  - Id: "scadaopcua"
+  - Id: "scada"
     Enabled: true
     LogLevel: INFO
     EndpointUrl: "opc.tcp://192.168.1.3:4840/server"
@@ -107,14 +107,20 @@ Database:
       Type: Kafka
       Enabled: true
       LogLevel: INFO
-      Servers: nuc1.rocworks.local:9092
+      Servers: linux0.rocworks.local:9092
+      Configs:
+        batch.size: 25000
+        group.id: frankenstein-producer
+        enable.auto.commit: true
+        auto.commit.interval.ms: 1000
       WriteParameters:
-        QueueSize: 1000
-        BlockSize: 100
-      #TopicName: test
-      #KeyName: TEST  
+        QueueSize: 10000
+        BlockSize: 1000
+      TopicName: opcua
       Logging:
-        - Topic: opc/scadaopcua/path/Objects/Home/#
+        - Topic: opc/scada/path/Objects/Home/#
+        - Topic: opc/demo1/path/Objects/Variables/#
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/#
 
     - Id: influx1
       Type: InfluxDB

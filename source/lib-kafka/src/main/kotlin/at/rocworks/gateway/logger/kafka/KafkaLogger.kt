@@ -26,7 +26,6 @@ class KafkaLogger(config: JsonObject) : LoggerBase(config) {
             config["bootstrap.servers"] = servers
             config["key.serializer"] = "org.apache.kafka.common.serialization.StringSerializer"
             config["value.serializer"] = "org.apache.kafka.common.serialization.StringSerializer"
-            config["acks"] = "1"
 
             configs?.forEach {
                 logger.info("Kafka config: ${it.key}=${it.value}")
@@ -71,13 +70,6 @@ class KafkaLogger(config: JsonObject) : LoggerBase(config) {
                     keyName?:point.topic.browsePath,
                     payload.encodePrettily()
                 )
-                if (producer?.writeQueueFull()==true) {
-                    logger.warning("Kafka write queue full!")
-                    while (producer?.writeQueueFull()==true) {
-                        Thread.sleep(100)
-                    }
-                    logger.warning("Kafka write queue not full anymore.")
-                }
                 producer?.write(record)?.onComplete {
                     valueCounterOutput++
                 }

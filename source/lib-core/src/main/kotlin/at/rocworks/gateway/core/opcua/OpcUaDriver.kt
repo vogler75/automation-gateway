@@ -758,21 +758,30 @@ class OpcUaDriver(private val config: JsonObject) : DriverBase(config) {
             logger.finest {"Got value $topic $data" }
 
             val value = TopicValueOpc.fromDataValue(data)
-            fun json() = JsonObject()
-                .put("Topic", topic.encodeToJson())
-                .put("Value", value.encodeToJson())
 
-            val buffer : Buffer? = when (topic.format) {
-                Topic.Format.Value -> {
-                    data.value?.value?.let {
-                        Buffer.buffer(it.toString())
+            if (value.value is org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.ULong)
+                return
+
+            try {
+                fun json() = JsonObject()
+                    .put("Topic", topic.encodeToJson())
+                    .put("Value", value.encodeToJson())
+
+                val buffer : Buffer? = when (topic.format) {
+                    Topic.Format.Value -> {
+                        data.value?.value?.let {
+                            Buffer.buffer(it.toString())
+                        }
                     }
+                    Topic.Format.Json -> Buffer.buffer(json().encode())
+                    Topic.Format.Pretty -> Buffer.buffer(json().encodePrettily())
                 }
-                Topic.Format.Json -> Buffer.buffer(json().encode())
-                Topic.Format.Pretty -> Buffer.buffer(json().encodePrettily())
-            }
-            if (buffer!=null) {
-                vertx.eventBus().publish(topic.topicName, buffer)
+                if (buffer!=null) {
+                    vertx.eventBus().publish(topic.topicName, buffer)
+                }
+            } catch (e: Exception) {
+                val type = if (value.value != null) value.value::class.qualifiedName else "?"
+                logger.severe("Exception at topic: ${topic.path}, datatype: $type, value ${value.value}, exception: ${e.message} ")
             }
         } catch (e: Exception) {
             e.printStackTrace()

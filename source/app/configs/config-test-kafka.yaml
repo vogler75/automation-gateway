@@ -27,11 +27,14 @@ Database:
       Type: Kafka
       Enabled: true
       Servers: 192.168.1.131:9092
-      Configs:  # you can set any valid kafka config here
-        batch.size: 10000
+      Configs:
+        batch.size: 25000
+        group.id: frankenstein-producer
+        enable.auto.commit: true
+        auto.commit.interval.ms: 1000
       WriteParameters:
-        QueueSize: 20000
-        BlockSize: 10000
+        QueueSize: 10000
+        BlockSize: 1000
       TopicName: test # default is the system id of the topic      
       #KeyName: test # default is the node path name
       Logging:

@@ -26,6 +26,5 @@ dependencies {
     implementation "io.vertx:vertx-config-yaml:$vertxVersion"
     implementation "io.vertx:vertx-service-discovery:$vertxVersion"
 
-    //implementation group: 'org.codehaus.groovy', name: 'groovy-all', version: '3.0.8'
     implementation group: 'org.apache.plc4x', name: 'plc4j-api', version: '0.8.0'
 }

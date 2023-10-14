@@ -17,10 +17,6 @@ import org.apache.plc4x.java.api.value.PlcValue
 import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
 
-//import groovy.lang.Binding
-//import groovy.lang.GroovyShell
-//import groovy.lang.Script
-
 class Plc4xDriver(config: JsonObject): DriverBase(config) {
     override fun getType() = Topic.SystemType.Plc
 
@@ -34,17 +30,6 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
     private val readTimeout: Long
     private val defaultRetryWaitTime = 5000
 
-    /*
-    private val readerScript: String
-    private val writerScript: String
-    private val sharedReaderData = Binding()
-    private val sharedWriterData = Binding()
-    private val groovyReaderShell = GroovyShell(sharedReaderData)
-    private val groovyWriterShell = GroovyShell(sharedWriterData)
-    private val groovyReaderScript: Script?
-    private val groovyWriterScript: Script?
-     */
-
     private val pollingTopics = HashMap<Topic, PlcValue?>()
 
     init {
@@ -54,24 +39,6 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
         pollingOldNew = polling.getBoolean("OldNew", false)
         writeTimeout = config.getLong("WriteTimeout", 100)
         readTimeout = config.getLong("ReadTimeout", 100)
-
-        /*
-        val defaultReaderScript = """
-            return value             
-        """.trimIndent()
-
-        val defaultWriterScript = """
-            return value
-        """.trimIndent()
-
-        val value = config.getJsonObject("Value", JsonObject())
-
-        readerScript = value.getString("Reader", defaultReaderScript)
-        writerScript = value.getString("Writer", defaultWriterScript)
-
-        groovyReaderScript = parseReaderGroovyScript()
-        groovyWriterScript = parseWriterGroovyScript()
-         */
     }
 
     override fun start(startPromise: Promise<Void>) {
@@ -83,62 +50,6 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
 
     private var pollingRequestId = 0
     private var pollingResponseId = 0
-
-    /*
-    private fun parseReaderGroovyScript(): Script? {
-        return if (readerScript.isNotEmpty()) {
-            val script =
-                """
-                def output(value) { $readerScript }
-                return output(value)
-                """.trimIndent()
-            groovyReaderShell.parse(script)
-        } else null
-    }
-
-    private fun parseWriterGroovyScript(): Script? {
-        return if (writerScript.isNotEmpty()) {
-            val script =
-                """                
-                def output(value) { $writerScript }
-                return output(value)
-                """.trimIndent()
-            groovyWriterShell.parse(script)
-        } else null
-    }
-
-    private fun transformReaderValue(address: String, value: Any): Any {
-        val x =  if (groovyReaderScript != null) {
-            sharedReaderData.setProperty("address", address)
-            sharedReaderData.setProperty("value", value)
-            try {
-                groovyReaderScript.run().toString()
-            } catch (e: Exception) {
-                e.toString()
-            }
-        } else {
-            value
-        }
-        logger.finest("transformReaderValue: $address > $value => $x")
-        return x
-    }
-
-    private fun transformWriterValue(address: String, value: Any): Any {
-        val x = if (groovyWriterScript != null) {
-            sharedWriterData.setProperty("address", address)
-            sharedWriterData.setProperty("value", value)
-            try {
-                groovyWriterScript.run().toString()
-            } catch (e: Exception) {
-                e.toString()
-            }
-        } else {
-            value
-        }
-        logger.finest("transformWriterValue: $address > $value => $x")
-        return x
-    }
-     */
 
     @Suppress("UNUSED_PARAMETER")
     private fun pollingExecutor(id: Long) {
@@ -284,27 +195,6 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
         return ret.future()
     }
 
-    /*
-        v.isNull -> ""
-        v.isBoolean -> v.boolean
-        v.isByte -> v.byte
-        v.isShort -> v.short
-        v.isInteger -> v.integer
-        v.isLong -> v.long
-        v.isBigInteger -> v.bigInteger
-        v.isFloat -> v.float
-        v.isDouble -> v.double
-        v.isBigInteger -> v.bigInteger
-        v.isString -> v.string
-        v.isDuration -> v.duration
-        v.isTime -> v.time
-        v.isDate -> v.date
-        v.isDateTime -> v.dateTime
-        v.isList -> "<list>"
-        v.isStruct -> "<struct>"
-        else -> "unhandled"
-     */
-
     private fun toValue(node: String, value: PlcValue): TopicValuePlc {
         val data = when {
             value.isStruct && value.keys.isNotEmpty() -> {
@@ -315,7 +205,6 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
             }
             else -> value.`object`
         }
-        //return TopicValuePlc(value = transformReaderValue(node, data!!))
         return TopicValuePlc(value = data!!.toString())
     }
 
@@ -483,7 +372,6 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
                 promise.complete(false)
             } else {
                 val builder: PlcWriteRequest.Builder = plc!!.writeRequestBuilder()
-                //builder.addItem("value", node, transformWriterValue(node, value))
                 builder.addItem("value", node, value)
                 val request = builder.build()
                 val response = request.execute()

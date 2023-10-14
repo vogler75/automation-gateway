@@ -17,10 +17,8 @@ dependencies {
     implementation project(':lib-plc4x')
 
     implementation project(':lib-influxdb')
-    //implementation project(':lib-iotdb')
     implementation project(':lib-jdbc')
     implementation project(':lib-kafka')
-    implementation project(':lib-neo4j')
 
     implementation "io.vertx:vertx-core:$vertxVersion"
     implementation "io.vertx:vertx-config-yaml:$vertxVersion"

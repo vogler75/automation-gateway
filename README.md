@@ -272,6 +272,7 @@ Example MQTT Topic:
 > plc/mod/node/coil:1  
 
 # Version History
+- [1.20.3 Moved IoTDB and Neo4J to separate branches](#1203-moved-iotdb-and-neo4j-to-separate-branches)
 - [1.20.2 Modifed JSON Format of Kafka Logger](#1202-modifed-json-format-of-kafka-logger)
 - [1.20.1 Kafka properties in the config file](#1201-kafka-properties-in-the-config-file)  
 - [1.20 Cleanup and GraalVM Native Build](#120-cleanup-and-graalvm-native-build)  
@@ -298,6 +299,9 @@ Example MQTT Topic:
 - 1.2 Simple Polling for PLC4X Driver    
 - 1.1 PLC4X Driver    
 - 1.0 Initial Version  
+## 1.20.3 Moved IoTDB and Neo4J to separate branches 
+IoTDB and Neo4J are now in separate branches and are removed from the main branch
+
 ## 1.20.2 Modifed JSON Format of Kafka Logger
 Added times in ms epoch and also added the value as double and as string. 
 ```
@@ -351,6 +355,7 @@ Removed Features:
 Fixed bug: Topic data class now contains two separate fields "path" and "node". Before there was only one field "address". This also fixed a Bug when connecting/disconnecting of topics with wildcards.
 
 ## 1.19 Neo4j Logger  
+!! **NOT AVAILABLE ANYMORE** !!  Separate Branch !!  
 Added Neo4j as an option to log values from OPC UA to the graph database. Additionally the OPC UA node structure can also be replicated to the graph database. This will be done only once at the startup of the Automation Gateway.  
 ```
 Database:
@@ -396,6 +401,7 @@ MqttServer:
 ```
 
 ## 1.18.2 Raw value to engineering value conversion for PLC4X driver
+!! **NOT AVAILABLE ANYMORE** !!  
 It is now possible to define Groovy functions to convert raw values to engineering values. Every incoming or outgoing value will be passed through the defined functions. The functions can currently only be defined at the connection level, so every value coming from this PLC connection goes through the conversion functions.  
 
 ```
@@ -594,6 +600,7 @@ Database:
 ```
 
 ## 1.12 MQTT Driver with Groovy script transformer
+!! **NOT AVAILABLE ANYMORE** !!  
 Added a inital version of a **MQTT Driver** to get values from a MQTT Broker into Frankenstein. A Groovy script can be used to transform the values to an OPC UA format, so that Frankenstein can be used to log those value to databases. Functionality is currently very limited, only subscribe is implemented.
 
 In this example we transform values of a MQTT Broker from this format: {"TimeMS":1620327963328,"Value":10.277357833719135} to our internal TopicValueOpc format by using a Groovy script and then log some topic values to an InfluxDB.
@@ -683,6 +690,7 @@ EMIT CHANGES;
 ```
 
 ## 1.10 Apache IoTDB Database Logger
+!! **NOT AVAILABLE ANYMORE** !!  Separate Branch !!  
 Added **Apache IoTDB** as tag logger option.
 ```
 Database:

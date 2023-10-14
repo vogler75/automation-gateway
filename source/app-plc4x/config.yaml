@@ -24,10 +24,3 @@ Plc4x:
       WriteTimeout: 100
       ReadTimeout: 100
       LogLevel: ALL
-      Value:
-        Reader: >
-          def x = value as int;
-          return x > 32767 ? 32767 - x : x
-        Writer: > 
-          def x = value as int;
-          return x < 0 ? 32767 - x : x

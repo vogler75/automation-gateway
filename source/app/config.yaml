@@ -100,12 +100,21 @@ OpcUaClient:
       SamplingInterval: 0.0
       DiscardOldest: true
 
-
 Database:
   Logger:
+    - Id: mqtt1
+      Type: Mqtt
+      Enabled: true
+      LogLevel: INFO
+      Host: linux0.rocworks.local
+      Port: 1883
+      Logging:
+        - Topic: opc/demo1/path/Objects/Variables/#
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/#
+
     - Id: kafka1
       Type: Kafka
-      Enabled: true
+      Enabled: false
       LogLevel: INFO
       Servers: linux0.rocworks.local:9092
       Configs:

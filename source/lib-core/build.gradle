@@ -28,8 +28,6 @@ dependencies {
     implementation "io.vertx:vertx-config-yaml:$vertxVersion"
     implementation "io.vertx:vertx-service-discovery:$vertxVersion"
     implementation "io.vertx:vertx-web-graphql:$vertxVersion"
-    implementation "io.vertx:vertx-hazelcast:$vertxVersion"
 
-    //implementation "org.codehaus.groovy:groovy-all:3.0.8"
     implementation "io.reactivex.rxjava2:rxjava:2.2.21"
 }

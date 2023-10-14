@@ -36,19 +36,9 @@ class ServiceHandler(val vertx: Vertx, val logger: Logger) {
             .setType(type)
             .setName(name)
             .setLocation(JsonObject()
-                .put("node", Cluster.getNodeId())
                 .put("endpoint", endpoint))
         discovery.publish(record, promise)
         return promise.future()
-    }
-
-    fun removeClusterNode(nodeId: String) {
-        discovery.getRecords({ r -> r.location.getString("node", "") == nodeId}) {
-            it.result().forEach { record ->
-                logger.info("Remove service [${record.location.getString("endpoint")}] of node [$nodeId]")
-                try { discovery.unpublish(record.registration) } catch (e: java.lang.Exception) { e.printStackTrace() }
-            }
-        }
     }
 
     companion object {

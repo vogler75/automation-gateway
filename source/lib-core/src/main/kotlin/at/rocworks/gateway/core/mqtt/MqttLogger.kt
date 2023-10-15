@@ -10,6 +10,7 @@ import io.vertx.core.json.JsonObject
 import io.vertx.mqtt.MqttClient
 import io.vertx.mqtt.MqttClientOptions
 import io.vertx.mqtt.messages.MqttPublishMessage
+import java.util.UUID
 import java.util.concurrent.TimeUnit
 
 class MqttLogger (config: JsonObject) : LoggerBase(config) {
@@ -30,11 +31,13 @@ class MqttLogger (config: JsonObject) : LoggerBase(config) {
         username?.let { options.username = it }
         password?.let { options.password = it }
         ssl?.let { options.setSsl(it) }
+        options.setTrustAll(true)
+        options.setClientId(UUID.randomUUID().toString())
         client = MqttClient.create(vertx, options)
 
         client?.publishCompletionHandler(Handler { id: Int -> println("Id of just received PUBACK or PUBCOMP packet is $id") })
         client?.connect(port, host) {
-            logger.info("Mqtt client connect [${it.succeeded()}] [${it.result().code()}]")
+            logger.info("Mqtt client connect [${it.succeeded()}] [${it.cause()}]")
             if (it.succeeded()) {
                 promise.complete()
             }

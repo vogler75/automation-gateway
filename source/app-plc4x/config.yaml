@@ -14,13 +14,29 @@ MqttServer:
 
 Plc4x:
   Drivers:
-    - Id: "niryo"
+    - Id: "demo"
       Enabled: true
-      Url: "modbus://192.168.1.9:5020"
+      Url: "modbus://localhost:502"
       Polling:
-        Time: 100
-        Timeout: 90
+        Time: 1000
+        Timeout: 900
         OldNew: true
       WriteTimeout: 100
       ReadTimeout: 100
-      LogLevel: ALL
+      LogLevel: INFO    
+
+Database:
+  Logger:
+    - Id: mqtt1
+      Type: Mqtt
+      Enabled: true
+      Host: linux0.rocworks.local
+      Port: 1883
+      Ssl: false
+      WriteParameters:
+        QueueSize: 20000
+        BlockSize: 10000
+      Logging: 
+        - Topic: plc/demo/node/holding-register:1:INT 
+        - Topic: plc/demo/node/holding-register:2:INT 
+        - Topic: plc/demo/node/holding-register:3:INT 

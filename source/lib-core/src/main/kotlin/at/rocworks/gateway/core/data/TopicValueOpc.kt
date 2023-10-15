@@ -21,22 +21,11 @@ data class TopicValueOpc (
     override fun valueAsObject() = value
     override fun statusAsString() = statusCode.toString()
     override fun valueAsString() = value?.toString() ?: ""
-
     override fun serverTime() = serverTime
     override fun sourceTime() = sourceTime
 
-    companion object {
-        fun fromDataValue(v: DataValue): TopicValueOpc {
-            return TopicValueOpc(
-                value = if (v.value.isNotNull) v.value.value else null,
-                statusCode = v.statusCode?.value ?: StatusCode.BAD.value,
-                sourceTime = v.sourceTime?.javaInstant ?: Instant.MIN,
-                serverTime = v.serverTime?.javaInstant ?: Instant.MIN,
-                sourcePicoseconds = v.sourcePicoseconds?.toInt() ?: 0,
-                serverPicoseconds = v.serverPicoseconds?.toInt() ?: 0,
-            )
-        }
 
+    companion object {
         fun fromJsonObject(json: JsonObject): TopicValueOpc = json.mapTo(TopicValueOpc::class.java)
     }
 }

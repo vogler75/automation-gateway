@@ -8,21 +8,13 @@ data class TopicValuePlc(
     val time: Instant = Instant.now(),
 ) : TopicValue() {
     // default constructor needed for json to object mapping
-    constructor() : this(null, Instant.MAX)
-
-    override fun dataTypeName() = value?.javaClass?.simpleName ?: ""
+    constructor() : this(null, Instant.MIN)
 
     override fun hasValue() = value!=null
 
     override fun valueAsObject() = value
     override fun statusAsString() = ""
     override fun valueAsString() = value?.toString() ?: ""
-
-    override fun valueAsDouble(): Double? = when (value) {
-        is Boolean -> if (value) 1.0 else 0.0
-        else -> valueAsString().toDoubleOrNull()
-    }
-
     override fun serverTime() = time
     override fun sourceTime() = time
 

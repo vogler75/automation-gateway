@@ -567,7 +567,7 @@ class OpcUaDriver(private val config: JsonObject) : DriverBase(config) {
             node != null && node is String -> {
                 val nodeId = NodeId.parse(node)
                 client!!.readValue(0.0, TimestampsToReturn.Both, nodeId).thenAccept { value ->
-                    val result = TopicValueOpc.fromDataValue(value).encodeToJson()
+                    val result = fromDataValue(value).encodeToJson()
                     message.reply(JsonObject().put("Ok", true).put("Result", result))
                 }
             }
@@ -576,7 +576,7 @@ class OpcUaDriver(private val config: JsonObject) : DriverBase(config) {
                 client!!.readValues(0.0, TimestampsToReturn.Both, nodeIds).thenAccept { list ->
                     val result = JsonArray()
                     list.forEach {
-                        result.add(TopicValueOpc.fromDataValue(it).encodeToJson())
+                        result.add(fromDataValue(it).encodeToJson())
                     }
                     message.reply(JsonObject().put("Ok", true).put("Result", result))
                 }
@@ -756,7 +756,7 @@ class OpcUaDriver(private val config: JsonObject) : DriverBase(config) {
         try {
             logger.finest {"Got value $topic $data" }
 
-            val value = TopicValueOpc.fromDataValue(data)
+            val value = fromDataValue(data)
 
             if (value.value is org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.ULong)
                 return
@@ -909,5 +909,16 @@ class OpcUaDriver(private val config: JsonObject) : DriverBase(config) {
         if (seconds > 0.100)
             logger.warning("Browsing address [${path}] took long time [${seconds}]s")
         return resolvedNodeIds
+    }
+
+    fun fromDataValue(v: DataValue): TopicValueOpc {
+        return TopicValueOpc(
+            value = if (v.value.isNotNull) v.value.value else null,
+            statusCode = v.statusCode?.value ?: StatusCode.BAD.value,
+            sourceTime = v.sourceTime?.javaInstant ?: Instant.MIN,
+            serverTime = v.serverTime?.javaInstant ?: Instant.MIN,
+            sourcePicoseconds = v.sourcePicoseconds?.toInt() ?: 0,
+            serverPicoseconds = v.serverPicoseconds?.toInt() ?: 0,
+        )
     }
 }

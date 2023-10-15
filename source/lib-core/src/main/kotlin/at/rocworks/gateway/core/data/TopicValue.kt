@@ -14,9 +14,10 @@ abstract class TopicValue {
     abstract fun valueAsObject(): Any?
     abstract fun statusAsString(): String
     abstract fun valueAsString(): String
-
-    open fun valueAsDouble(): Double? = valueAsString().toDoubleOrNull()
-
+    open fun valueAsDouble(): Double? = when (val value = valueAsObject()) {
+        is Boolean -> if (value) 1.0 else 0.0
+        else -> valueAsString().toDoubleOrNull()
+    }
     abstract fun sourceTime(): Instant
     abstract fun serverTime(): Instant
 

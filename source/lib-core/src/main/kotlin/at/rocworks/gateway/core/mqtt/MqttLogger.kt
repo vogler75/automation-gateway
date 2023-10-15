@@ -21,6 +21,7 @@ class MqttLogger (config: JsonObject) : LoggerBase(config) {
     private val password: String? = config.getString("Password")
     private val ssl: Boolean? = config.getBoolean("Ssl")
     private val qos: Int = config.getInteger("Qos", 0)
+    private val topic: String = config.getString("Topic", "")
 
     override fun open(): Future<Unit> {
         val promise = Promise.promise<Unit>()
@@ -53,8 +54,9 @@ class MqttLogger (config: JsonObject) : LoggerBase(config) {
         var point: DataPoint? = writeValueQueue.poll(10, TimeUnit.MILLISECONDS)
         while (point != null) {
             try {
+                val topic = (if (this.topic.isEmpty()) "" else this.topic+"/") + point.topic.systemBrowsePath()
                 client?.publish(
-                    point.topic.systemBrowsePath(),
+                    topic,
                     point.value.encodeToJson().toBuffer(),
                     MqttQoS.valueOf(qos), false, false
                 )

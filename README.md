@@ -272,33 +272,39 @@ Example MQTT Topic:
 > plc/mod/node/coil:1  
 
 # Version History
-- [1.20.3 Moved IoTDB and Neo4J to separate branches](#1203-moved-iotdb-and-neo4j-to-separate-branches)
-- [1.20.2 Modifed JSON Format of Kafka Logger](#1202-modifed-json-format-of-kafka-logger)
-- [1.20.1 Kafka properties in the config file](#1201-kafka-properties-in-the-config-file)  
-- [1.20 Cleanup and GraalVM Native Build](#120-cleanup-and-graalvm-native-build)  
-- [1.19 Neo4j Logger](#119-neo4j-logger)  
-- [1.18.3 Added MQTT Websocket Option and simple Authentication](#1183-added-mqtt-websocket-option-and-simple-authentication)  
-- [1.18.2 Raw value to engineering value conversion for PLC4X driver](#1182-raw-value-to-engineering-value-conversion-for-plc4x-driver)  
-- [1.18.1 Features and bug fixes in PLC4X driver](#1181-features-and-fixes-in-plc4x-driver)  
-- [1.18 Removed Apache Ignite](#118-removed-apache-ignite)  
-- [1.17 Added CrateDB as supported JDBC database for logging](#117-added-cratedb-as-supported-jdbc-database-for-logging)  
-- [1.16 JDBC Logger to write field values to relational databases](#116-jdbc-logger-to-write-field-values-to-relational-databases)  
-- [1.15 Nats Logger to write field values to a Nats server](#115-nats-logger-to-write-field-values-to-a-nats-server)  
-- [1.14 Fixes and optimizations](#114-fixes-and-optimizations)  
-- [1.13 MQTT Logger to write field values to a MQTT Broker](#113-mqtt-logger-to-write-field-values-to-a-mqtt-broker)  
-- [1.12 MQTT Driver with Groovy script transformer](#112-mqtt-driver-with-groovy-script-transformer)
-- [1.11 Apache Kafka Database Logger](#111-apache-kafka-database-logger)  
-- [1.10 Apache IoTDB Database Logger](#110-apache-iotdb-database-logger)  
-- [1.9 Apache Ignite as Cluster option and Ignite as Memory-Store](#19-apache-ignite-as-cluster-option-and-ignite-as-memory-store)  
-- [1.8 Upgrade to VertX 4.0.3](#18-upgrade-to-vertx-403)  
-- [1.7 DDS Driver (subscribe and publish)](#17-dds-driver-subscribe-and-publish)  
-- [1.6 Added GraphiQL](#16-added-graphiql-httplocalhost4000graphiql)  
-- [1.5 OPC UA Schemas to GraphQL Schema Importer](#15-opc-ua-schemas-to-graphql-schema-importer)  
-- 1.4 Build GraphQL Schema from OPC UA Schemas   
-- 1.3 OPC UA Browsing and fixes   
-- 1.2 Simple Polling for PLC4X Driver    
-- 1.1 PLC4X Driver    
-- 1.0 Initial Version  
+- [Frankenstein Automation Gateway](#frankenstein-automation-gateway)
+- [Content](#content)
+- [Build and Run](#build-and-run)
+  - [Configuration](#configuration)
+  - [OPC UA Client Configuration](#opc-ua-client-configuration)
+  - [OPC UA Schema in GraphQL](#opc-ua-schema-in-graphql)
+  - [Topic Mapping](#topic-mapping)
+  - [Logger Configuration](#logger-configuration)
+  - [Build Docker Image](#build-docker-image)
+  - [Using PLC4X](#using-plc4x)
+- [Version History](#version-history)
+  - [1.20.3 Moved IoTDB and Neo4J to separate branches](#1203-moved-iotdb-and-neo4j-to-separate-branches)
+  - [1.20.2 Modifed JSON Format of Kafka Logger](#1202-modifed-json-format-of-kafka-logger)
+  - [1.20.1 Kafka properties in the config file](#1201-kafka-properties-in-the-config-file)
+  - [1.20 Cleanup and GraalVM Native Build](#120-cleanup-and-graalvm-native-build)
+  - [1.19 Neo4j Logger](#119-neo4j-logger)
+  - [1.18.3 Added MQTT Websocket Option and simple Authentication](#1183-added-mqtt-websocket-option-and-simple-authentication)
+  - [1.18.2 Raw value to engineering value conversion for PLC4X driver](#1182-raw-value-to-engineering-value-conversion-for-plc4x-driver)
+  - [1.18.1 Features and fixes in PLC4X driver](#1181-features-and-fixes-in-plc4x-driver)
+  - [1.18 Removed Apache Ignite](#118-removed-apache-ignite)
+  - [1.17 Added CrateDB as supported JDBC database for logging](#117-added-cratedb-as-supported-jdbc-database-for-logging)
+  - [1.16 JDBC Logger to write field values to relational databases](#116-jdbc-logger-to-write-field-values-to-relational-databases)
+  - [1.15 Nats Logger to write field values to a Nats server](#115-nats-logger-to-write-field-values-to-a-nats-server)
+  - [1.14 Fixes and optimizations](#114-fixes-and-optimizations)
+  - [1.13 MQTT Logger to write field values to a MQTT Broker](#113-mqtt-logger-to-write-field-values-to-a-mqtt-broker)
+  - [1.12 MQTT Driver with Groovy script transformer](#112-mqtt-driver-with-groovy-script-transformer)
+  - [1.11 Apache Kafka Database Logger](#111-apache-kafka-database-logger)
+  - [1.10 Apache IoTDB Database Logger](#110-apache-iotdb-database-logger)
+  - [1.9 Apache Ignite as Cluster option and Ignite as Memory-Store](#19-apache-ignite-as-cluster-option-and-ignite-as-memory-store)
+  - [1.8 Upgrade to VertX 4.0.3](#18-upgrade-to-vertx-403)
+  - [1.7 DDS Driver (subscribe and publish)](#17-dds-driver-subscribe-and-publish)
+  - [1.6 Added GraphiQL (http://localhost:4000/graphiql/)](#16-added-graphiql-httplocalhost4000graphiql)
+  - [1.5 OPC UA Schemas to GraphQL Schema Importer](#15-opc-ua-schemas-to-graphql-schema-importer)
 ## 1.20.3 Moved IoTDB and Neo4J to separate branches 
 IoTDB and Neo4J are now in separate branches and are removed from the main branch
 
@@ -492,9 +498,9 @@ You can specify the table name in the config file with the option "SqlTableName"
 
 Specify JDBC drivers in the lib-jdbc/build.gradle file:  
 ```
-    runtimeOnly group: 'org.postgresql', name: 'postgresql', version: '42.2.20'
-    runtimeOnly group: 'mysql', name: 'mysql-connector-java', version: '8.0.25'
-    runtimeOnly group: 'com.microsoft.sqlserver', name: 'mssql-jdbc', version: '9.2.1.jre11'
+    runtimeOnly group: 'org.postgresql', name: 'postgresql', version: 'x.x.x'
+    runtimeOnly group: 'mysql', name: 'mysql-connector-java', version: 'x.x.x'
+    runtimeOnly group: 'com.microsoft.sqlserver', name: 'mssql-jdbc', version: 'x.x.x.jre11'
 ```
 
 Create a table with this structure. For PostgreSQL, MySQL and Microsoft SQL Server the table will be created on startup automatically.  

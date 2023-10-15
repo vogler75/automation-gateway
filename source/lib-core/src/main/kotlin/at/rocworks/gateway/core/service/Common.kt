@@ -42,9 +42,7 @@ object Common {
 
             // Register Message Types
             vertx.eventBus().registerDefaultCodec(Topic::class.java, CodecTopic())
-            vertx.eventBus().registerDefaultCodec(TopicValueGeneric::class.java,
-                CodecTopicValueGeneric()
-            )
+            vertx.eventBus().registerDefaultCodec(TopicValue::class.java,CodecTopicValue())
 
             // Retrieve Config
             val config = retrieveConfig(vertx, configFilePath)

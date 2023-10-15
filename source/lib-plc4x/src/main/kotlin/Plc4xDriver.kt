@@ -1,5 +1,5 @@
 import at.rocworks.gateway.core.data.Topic
-import at.rocworks.gateway.core.data.TopicValueGeneric
+import at.rocworks.gateway.core.data.TopicValue
 import at.rocworks.gateway.core.driver.DriverBase
 import at.rocworks.gateway.core.driver.MonitoredItem
 
@@ -195,7 +195,7 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
         return ret.future()
     }
 
-    private fun toValue(@Suppress("UNUSED_PARAMETER") node: String, value: PlcValue): TopicValueGeneric {
+    private fun toValue(@Suppress("UNUSED_PARAMETER") node: String, value: PlcValue): TopicValue {
         val data = when {
             value.isStruct && value.keys.isNotEmpty() -> {
                 value.struct[value.keys.first()]?.`object`
@@ -205,7 +205,7 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
             }
             else -> value.`object`
         }
-        return TopicValueGeneric(value = data!!.toString())
+        return TopicValue(value = data!!.toString())
     }
 
     private fun valueConsumer(topic: Topic, data: PlcValue) {

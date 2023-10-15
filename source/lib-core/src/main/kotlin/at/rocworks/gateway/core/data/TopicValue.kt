@@ -1,37 +1,38 @@
 package at.rocworks.gateway.core.data
 
 import io.vertx.core.json.JsonObject
-import java.lang.Exception
 import java.time.Instant
 
-abstract class TopicValue {
-    val className: String = this.javaClass.simpleName // must be public to be added in json
+data class TopicValue (
+    val value: Any?,
+    val statusCode: Long = 0,
+    val sourceTime: Instant = Instant.now(),
+    val serverTime: Instant = Instant.now(),
+    val sourcePicoseconds: Int = 0,
+    val serverPicoseconds: Int = 0
+) {
+    // default constructor needed for json to object mapping
+    constructor() : this(null,0, Instant.MIN, Instant.MIN, 0, 0)
 
-    fun encodeToJson(): JsonObject = JsonObject.mapFrom(this)
+    fun hasValue() = value!=null
 
-    abstract fun hasValue(): Boolean
+    fun valueAsObject() = value
+    fun statusAsString() = statusCode.toString()
+    fun valueAsString() = value?.toString() ?: ""
+    fun valueAsDouble(): Double? = valueAsString().toDoubleOrNull()
 
-    abstract fun valueAsObject(): Any?
-    abstract fun statusAsString(): String
-    abstract fun valueAsString(): String
-    open fun valueAsDouble(): Double? = when (val value = valueAsObject()) {
-        is Boolean -> if (value) 1.0 else 0.0
-        else -> valueAsString().toDoubleOrNull()
-    }
-    abstract fun sourceTime(): Instant
-    abstract fun serverTime(): Instant
-
+    fun serverTime() = serverTime
+    fun sourceTime() = sourceTime
     fun sourceTimeMs(): Long = sourceTime().toEpochMilli()
     fun serverTimeMs(): Long = serverTime().toEpochMilli()
-
     fun serverTimeAsISO(): String = serverTime().toString()
     fun sourceTimeAsISO(): String = sourceTime().toString()
 
-    open fun dataTypeName(): String = valueAsObject()?.javaClass?.simpleName ?: ""
+    fun dataTypeName(): String = valueAsObject()?.javaClass?.simpleName ?: ""
+
+    fun encodeToJson(): JsonObject = JsonObject.mapFrom(this)
 
     companion object {
-        fun fromJsonObject(json: JsonObject): TopicValue {
-            return TopicValueGeneric.fromJsonObject(json)
-        }
+        fun fromJsonObject(json: JsonObject): TopicValue = json.mapTo(TopicValue::class.java)
     }
 }

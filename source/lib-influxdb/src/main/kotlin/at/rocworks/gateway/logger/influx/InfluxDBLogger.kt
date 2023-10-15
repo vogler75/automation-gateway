@@ -59,22 +59,15 @@ class InfluxDBLogger(config: JsonObject) : LoggerBase(config) {
             .tag("status", dp.value.statusAsString())
             .addField("servertime", dp.value.serverTimeAsISO()) // TODO: as string or EpochMilli?
 
-        if (dp.value.hasStruct()) {
-            dp.value.asFlatMap().forEach { (k, v) ->
-                val d = v.toString().toDoubleOrNull()
-                if (d!=null) point.addField(k, d)
-                else point.addField(k, v.toString())
-            }
+        val numeric: Double? = dp.value.valueAsDouble()
+        if (numeric != null) {
+            //logger.debug("topic [$topic] numeric [$numeric]")
+            point.addField("value", numeric)
         } else {
-            val numeric: Double? = dp.value.valueAsDouble()
-            if (numeric != null) {
-                //logger.debug("topic [$topic] numeric [$numeric]")
-                point.addField("value", numeric)
-            } else {
-                //logger.debug("topic [$topic] text [${value.valueAsString()}]")
-                point.addField("text", dp.value.valueAsString())
-            }
+            //logger.debug("topic [$topic] text [${value.valueAsString()}]")
+            point.addField("text", dp.value.valueAsString())
         }
+
         return point.build()
     }
 

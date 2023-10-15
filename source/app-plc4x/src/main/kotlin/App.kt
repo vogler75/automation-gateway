@@ -1,4 +1,5 @@
 import at.rocworks.gateway.core.graphql.GraphQLServer
+import at.rocworks.gateway.core.mqtt.MqttDriver
 import at.rocworks.gateway.core.mqtt.MqttLogger
 import at.rocworks.gateway.core.mqtt.MqttServer
 import at.rocworks.gateway.core.opcua.KeyStoreLoader
@@ -29,14 +30,34 @@ object App {
 
     private fun createServices(vertx: Vertx, config: JsonObject) {
         // OPC UA Client
-        val enabled = config.getJsonArray("OpcUaClient")
+        val enabledOpcUa = config.getJsonArray("OpcUaClient")
             ?.filterIsInstance<JsonObject>()
             ?.filter { it.getBoolean("Enabled", true) }
-            ?: listOf()
-        enabled.map {
-            vertx.deployVerticle(OpcUaDriver(it))
-        }
+            ?.map {
+                vertx.deployVerticle(OpcUaDriver(it))
+                it
+            }?: listOf()
 
+        // Mqtt Client
+        val enabledMqtt = config.getJsonArray("MqttClient")
+            ?.filterIsInstance<JsonObject>()
+            ?.filter { it.getBoolean("Enabled", true) }
+            ?.map {
+                vertx.deployVerticle(MqttDriver(it))
+                it
+            }?: listOf()
+
+        // Plc4x Client
+        val enabledPlc = config.getJsonObject("Plc4x")
+            ?.getJsonArray("Drivers")
+            ?.filterIsInstance<JsonObject>()
+            ?.filter { it.getBoolean("Enabled", true) }
+            ?.map {
+                vertx.deployVerticle(Plc4xDriver(it))
+                it
+            }?: listOf()
+
+        val enabled = enabledOpcUa.union(enabledMqtt).union(enabledPlc)
         val defaultSystem = if (enabled.isNotEmpty()) enabled.first().getString("Id") else "default"
 
         // Mqtt Server
@@ -63,15 +84,6 @@ object App {
             ?.filterIsInstance<JsonObject>()
             ?.forEach {
                 createLogger(vertx, it)
-            }
-
-        // Plc4x
-        config.getJsonObject("Plc4x")
-            ?.getJsonArray("Drivers")
-            ?.filterIsInstance<JsonObject>()
-            ?.filter { it.getBoolean("Enabled") }
-            ?.forEach {
-                vertx.deployVerticle(Plc4xDriver(it))
             }
     }
 

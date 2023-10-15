@@ -1,11 +1,9 @@
 package at.rocworks.gateway.core.mqtt
-/*
+
 import at.rocworks.gateway.core.data.Topic
 import at.rocworks.gateway.core.driver.DriverBase
 import at.rocworks.gateway.core.driver.MonitoredItem
-import groovy.lang.Binding
-import groovy.lang.GroovyShell
-import groovy.lang.Script
+
 import io.netty.handler.codec.mqtt.MqttQoS
 import io.vertx.core.CompositeFuture
 import io.vertx.core.Future
@@ -34,41 +32,10 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
     private val qos: Int = config.getInteger("Qos", 0)
     private val maxMessageSizeKb = config.getInteger("MaxMessageSizeKb", 8) * 1024
 
-    private val readerScript: String
-    private val writerScript: String
-
-    private val sharedReaderData = Binding()
-    private val sharedWriterData = Binding()
-    private val groovyReaderShell = GroovyShell(sharedReaderData)
-    private val groovyWriterShell = GroovyShell(sharedWriterData)
-    private val groovyReaderScript: Script?
-    private val groovyWriterScript: Script?
-
     private val subscribedTopics = HashSet<Topic>() // Subscribed topic name can have wildcard
     private val receivedTopics = HashMap<String, List<Topic>>()
 
     init {
-        val value = config.getJsonObject("Value", JsonObject())
-
-        val defaultReaderScript = """
-            return [
-              className: "TopicValueOpc",
-              sourceTime: Instant.now().toString(),
-              serverTime: Instant.now().toString(),
-              value: value,
-              statusCode: 0
-            ]                        
-        """.trimIndent()
-
-        val defaultWriterScript = """
-            return value
-        """.trimIndent()
-
-        readerScript = value.getString("Reader", defaultReaderScript)
-        writerScript = value.getString("Writer", defaultWriterScript)
-
-        groovyReaderScript = parseReaderGroovyScript()
-        groovyWriterScript = parseWriterGroovyScript()
     }
 
     override fun connect(): Future<Boolean> {
@@ -90,56 +57,12 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
         return promise.future()
     }
 
-    private fun parseReaderGroovyScript(): Script? {
-        return if (readerScript.isNotEmpty()) {
-            val script =
-                """
-                import java.time.*                     
-                import groovy.json.*
-                def output(value) { $readerScript }
-                return JsonOutput.toJson(output(value))
-                """.trimIndent()
-            groovyReaderShell.parse(script)
-        } else null
-    }
-
-    private fun parseWriterGroovyScript(): Script? {
-        return if (writerScript.isNotEmpty()) {
-            val script =
-                """
-                import java.time.*                     
-                import groovy.json.*
-                def output(value) { $writerScript }
-                return output(new JsonBuilder(value))
-                """.trimIndent()
-            groovyWriterShell.parse(script)
-        } else null
-    }
-
     private fun transformReaderValue(value: Buffer): String {
-        return if (groovyReaderScript != null) {
-            sharedReaderData.setProperty("value", value.toString(Charset.defaultCharset()))
-            try {
-                groovyReaderScript.run().toString()
-            } catch (e: Exception) {
-                e.toString()
-            }
-        } else {
-            value.toString(Charset.defaultCharset())
-        }
+        return value.toString(Charset.defaultCharset())
     }
 
     private fun transformWriterValue(value: String): Buffer {
-        return if (groovyWriterScript != null) {
-            sharedWriterData.setProperty("value", value)
-            try {
-                Buffer.buffer(groovyWriterScript.run().toString())
-            } catch (e: Exception) {
-                Buffer.buffer(e.toString())
-            }
-        } else {
-            Buffer.buffer(value)
-        }
+        return Buffer.buffer(value)
     }
 
     override fun disconnect(): Future<Boolean> {
@@ -181,12 +104,13 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
         val promise = Promise.promise<Boolean>()
 
         subscribedTopics.removeIf { topic ->
-            topics.filter { it.topicName == topic.topicName }.count() > 0
+            topics.filter { it.topicName == topic.topicName }.isNotEmpty()
         }
 
         items.map { (it as MqttMonitoredItem).item }
             .filter { node ->
-                subscribedTopics.filter { it.node == node }.count() == 0 }
+                subscribedTopics.filter { it.node == node }.isEmpty()
+            }
             .forEach { node ->
                 logger.info("Unsubscribe node [${node}]", )
                 client?.unsubscribe(node)?.onComplete {
@@ -230,9 +154,7 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
                 }
             }
 
-            receivedTopics[receivedTopic]?.let {
-                it.forEach(::publish)
-            } ?: run {
+            receivedTopics[receivedTopic]?.forEach(::publish) ?: run {
                 val topics = subscribedTopics.filter { compareTopic(receivedTopic, it.node) }
                 receivedTopics[receivedTopic] = topics
                 topics.forEach(::publish)
@@ -307,4 +229,3 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
         message.reply(JsonObject().put("Ok", false))
     }
 }
- */

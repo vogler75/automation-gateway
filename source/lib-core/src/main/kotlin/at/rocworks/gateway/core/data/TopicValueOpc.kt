@@ -25,12 +25,6 @@ data class TopicValueOpc (
     override fun serverTime() = serverTime
     override fun sourceTime() = sourceTime
 
-    override fun hasStruct() = false
-
-    override fun asFlatMap(): Map<String, Any> {
-        return if (value!=null) mapOf(Pair("value", value)) else mapOf()
-    }
-
     companion object {
         fun fromDataValue(v: DataValue): TopicValueOpc {
             return TopicValueOpc(

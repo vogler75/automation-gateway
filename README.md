@@ -560,6 +560,7 @@ Database:
 ```
 
 ## 1.15 Nats Logger to write field values to a Nats server
+!! **NOT AVAILABLE ANYMORE** !!  
 Added a [Nats](https://nats.io) Logger to write field values to a Nats server. It is like a database logger, but it writes the values to a configurable Nats server. Any values which get into Frankenstein (OPC UA, PLC4X, DDS, MQTT) by a Driver can be logged to a Nats server. The values are stored in JSON format.
 ```
 Database:
@@ -767,6 +768,7 @@ There are Docker examples available in the docker/examples directory.
 Upgraded to VertX 4.0.3 and splitted the value type to a base class with subclasses for Opc, Plc and DDS. The app names have been changed, the clustered apps are now named with "cluster". DDS values can now be logged to InfluxDB.  
 
 ## 1.7 DDS Driver (subscribe and publish)
+!! **NOT AVAILABLE ANYMORE** !!  
 Added a first version of DDS support. Currently only MQTT subscribe and publish to DDS topics are functional. It is the app-dds application, the app-gateway must also be up and running.
 
 You need to install OpenDDS and build it with Java support. And you also have to compile your DDS IDL files with Java support. See the ReadMe.txt in the idl directory of app-dds.

@@ -195,7 +195,7 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
         return ret.future()
     }
 
-    private fun toValue(node: String, value: PlcValue): TopicValuePlc {
+    private fun toValue(@Suppress("UNUSED_PARAMETER") node: String, value: PlcValue): TopicValuePlc {
         val data = when {
             value.isStruct && value.keys.isNotEmpty() -> {
                 value.struct[value.keys.first()]?.`object`

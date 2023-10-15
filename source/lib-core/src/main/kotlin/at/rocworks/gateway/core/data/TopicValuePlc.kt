@@ -26,12 +26,6 @@ data class TopicValuePlc(
     override fun serverTime() = time
     override fun sourceTime() = time
 
-    override fun hasStruct() = false
-
-    override fun asFlatMap(): Map<String, Any> {
-        return if (value!=null) mapOf(Pair("value", value)) else mapOf()
-    }
-
     companion object {
         fun fromJsonObject(json: JsonObject): TopicValuePlc = json.mapTo(TopicValuePlc::class.java)
     }

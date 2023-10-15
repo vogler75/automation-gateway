@@ -1,7 +1,7 @@
 package at.rocworks.gateway.core.opcua
 
 import at.rocworks.gateway.core.data.Topic
-import at.rocworks.gateway.core.data.TopicValueOpc
+import at.rocworks.gateway.core.data.TopicValueGeneric
 import at.rocworks.gateway.core.driver.DriverBase
 import at.rocworks.gateway.core.driver.MonitoredItem
 import com.google.common.cache.CacheBuilder
@@ -911,8 +911,8 @@ class OpcUaDriver(private val config: JsonObject) : DriverBase(config) {
         return resolvedNodeIds
     }
 
-    fun fromDataValue(v: DataValue): TopicValueOpc {
-        return TopicValueOpc(
+    private fun fromDataValue(v: DataValue): TopicValueGeneric {
+        return TopicValueGeneric(
             value = if (v.value.isNotNull) v.value.value else null,
             statusCode = v.statusCode?.value ?: StatusCode.BAD.value,
             sourceTime = v.sourceTime?.javaInstant ?: Instant.MIN,

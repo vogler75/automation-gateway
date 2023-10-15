@@ -1,15 +1,13 @@
 package at.rocworks.gateway.core.data
 
 import io.vertx.core.json.JsonObject
-import org.eclipse.milo.opcua.stack.core.types.builtin.DataValue
-import org.eclipse.milo.opcua.stack.core.types.builtin.StatusCode
 import java.time.Instant
 
-data class TopicValueOpc (
+data class TopicValueGeneric (
     val value: Any?,
-    val statusCode: Long,
-    val sourceTime: Instant,
-    val serverTime: Instant,
+    val statusCode: Long = 0,
+    val sourceTime: Instant = Instant.now(),
+    val serverTime: Instant = Instant.now(),
     val sourcePicoseconds: Int = 0,
     val serverPicoseconds: Int = 0
 ) : TopicValue() {
@@ -26,6 +24,6 @@ data class TopicValueOpc (
 
 
     companion object {
-        fun fromJsonObject(json: JsonObject): TopicValueOpc = json.mapTo(TopicValueOpc::class.java)
+        fun fromJsonObject(json: JsonObject): TopicValueGeneric = json.mapTo(TopicValueGeneric::class.java)
     }
 }

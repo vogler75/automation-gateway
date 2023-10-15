@@ -31,11 +31,7 @@ abstract class TopicValue {
 
     companion object {
         fun fromJsonObject(json: JsonObject): TopicValue {
-            return when (val objectClassName = json.getString("className", "")) {
-                TopicValueOpc::class.java.simpleName -> TopicValueOpc.fromJsonObject(json)
-                TopicValuePlc::class.java.simpleName -> TopicValuePlc.fromJsonObject(json)
-                else -> throw Exception("Unhandled class [$objectClassName] in JsonObject!")
-            }
+            return TopicValueGeneric.fromJsonObject(json)
         }
     }
 }

@@ -191,8 +191,7 @@ class MqttServer(config: JsonObject, private val endpoint: MqttEndpoint) : Abstr
             when (t.systemType) {
                 Topic.SystemType.Mqtt,
                 Topic.SystemType.Opc,
-                Topic.SystemType.Plc,
-                Topic.SystemType.Dds -> subscribeDriverTopic(t.systemType.name, t, qos, ret)
+                Topic.SystemType.Plc -> subscribeDriverTopic(t.systemType.name, t, qos, ret)
                 Topic.SystemType.Unknown -> subscribeMqttTopic(t, qos, ret)
                 else -> {
                     logger.warning("Invalid topic [${t}]")
@@ -209,7 +208,6 @@ class MqttServer(config: JsonObject, private val endpoint: MqttEndpoint) : Abstr
     private fun unsubscribeTopic(topics: List<String>) {
         val opc = HashMap<String, ArrayList<Topic>>()
         val plc = HashMap<String, ArrayList<Topic>>()
-        val dds = HashMap<String, ArrayList<Topic>>()
         val mqtt = HashMap<String, ArrayList<Topic>>()
 
         fun add(list: HashMap<String, ArrayList<Topic>>, topic: Topic) {
@@ -226,7 +224,6 @@ class MqttServer(config: JsonObject, private val endpoint: MqttEndpoint) : Abstr
                     Topic.SystemType.Mqtt -> add(mqtt, t)
                     Topic.SystemType.Opc -> add(opc, t)
                     Topic.SystemType.Plc -> add(plc, t)
-                    Topic.SystemType.Dds -> add(dds, t)
                     Topic.SystemType.Unknown -> unsubscribeMqttTopic(t)
                     else -> {
                         logger.severe("Invalid topic [${t}]")
@@ -239,7 +236,6 @@ class MqttServer(config: JsonObject, private val endpoint: MqttEndpoint) : Abstr
 
         opc.forEach { if (it.value.size > 0) unsubscribeDriverTopics(Topic.SystemType.Opc.name, it.key, it.value) }
         plc.forEach { if (it.value.size > 0) unsubscribeDriverTopics(Topic.SystemType.Plc.name, it.key, it.value) }
-        dds.forEach { if (it.value.size > 0) unsubscribeDriverTopics(Topic.SystemType.Dds.name, it.key, it.value) }
         mqtt.forEach { if (it.value.size > 0) unsubscribeDriverTopics(Topic.SystemType.Mqtt.name, it.key, it.value) }
     }
 
@@ -318,8 +314,7 @@ class MqttServer(config: JsonObject, private val endpoint: MqttEndpoint) : Abstr
             when (topic.systemType) {
                 Topic.SystemType.Mqtt,
                 Topic.SystemType.Opc,
-                Topic.SystemType.Plc,
-                Topic.SystemType.Dds -> {
+                Topic.SystemType.Plc -> {
                     val request = JsonObject()
                     val type = topic.systemType.name
                     request.put("Topic", topic.encodeToJson())

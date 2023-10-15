@@ -146,7 +146,6 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
                     val buffer: Buffer? = when (topic.format) {
                         Topic.Format.Value -> payload
                         Topic.Format.Json -> Buffer.buffer(json(topic).encode())
-                        Topic.Format.Pretty -> Buffer.buffer(json(topic).encodePrettily())
                     }
                     vertx.eventBus().publish(topic.topicName, buffer)
                 } catch (e: Exception) {

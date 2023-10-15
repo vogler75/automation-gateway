@@ -444,8 +444,7 @@ class OpcUaDriver(private val config: JsonObject) : DriverBase(config) {
                 when (topic.format) {
                     Topic.Format.Value ->
                         DataValue(getVariantOfValue(value, nodeId), null, writeGetTime())
-                    Topic.Format.Json,
-                    Topic.Format.Pretty -> {
+                    Topic.Format.Json -> {
                         logger.warning("Value format not yet implemented!") // TODO
                         DataValue(Variant.NULL_VALUE, null, null)
                     }
@@ -774,7 +773,6 @@ class OpcUaDriver(private val config: JsonObject) : DriverBase(config) {
                         }
                     }
                     Topic.Format.Json -> Buffer.buffer(json().encode())
-                    Topic.Format.Pretty -> Buffer.buffer(json().encodePrettily())
                 }
                 if (buffer!=null) {
                     vertx.eventBus().publish(topic.topicName, buffer)

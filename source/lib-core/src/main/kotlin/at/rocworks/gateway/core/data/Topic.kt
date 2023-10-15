@@ -17,7 +17,6 @@ data class Topic (
         Sys,
         Opc,
         Plc,
-        Dds,
         Mqtt
     }
 
@@ -29,7 +28,6 @@ data class Topic (
 
     enum class Format {
         Json,
-        Pretty,
         Value
     }
 
@@ -51,14 +49,12 @@ data class Topic (
 
             val opcUri = SystemType.Opc.name
             val plcUri = SystemType.Plc.name
-            val ddsUri = SystemType.Dds.name
             val mqttUri = SystemType.Mqtt.name
 
             val optFmt = "(|:Json|:Pretty|:Value)"
             fun getFmt(s: String) = when (s.toLowerCase()) {
                 ":" + Format.Value.name.toLowerCase() -> Format.Value
                 ":" + Format.Json.name.toLowerCase() -> Format.Json
-                ":" + Format.Pretty.name.toLowerCase() -> Format.Pretty
                 else -> Format.Json
             }
 
@@ -100,18 +96,6 @@ data class Topic (
                     topic,
                     systemType = SystemType.Plc,
                     topicType = TopicType.Node,
-                    systemName = it.destructured.component1(),
-                    format = getFmt(it.destructured.component2()),
-                    path = "",
-                    node = it.destructured.component3()
-                )
-            }
-            // --- DDS ---
-            ?: """${ddsUri}/(\w+)/Path$optFmt/(.*)$""".toRegex(RegexOption.IGNORE_CASE).find(topic)?.let {
-                Topic(
-                    topic,
-                    systemType = SystemType.Dds,
-                    topicType = TopicType.Path,
                     systemName = it.destructured.component1(),
                     format = getFmt(it.destructured.component2()),
                     path = "",

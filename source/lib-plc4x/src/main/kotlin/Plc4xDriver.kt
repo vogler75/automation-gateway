@@ -222,7 +222,6 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
                     }
                 }
                 Topic.Format.Json -> Buffer.buffer(json().encode())
-                Topic.Format.Pretty -> Buffer.buffer(json().encodePrettily())
             }
             if (buffer!=null) vertx.eventBus().publish(topic.topicName, buffer)
         } catch (e: java.lang.Exception) {
@@ -273,8 +272,7 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
                         Topic.Format.Value -> {
                             writeValueAsync(topic.node, value.toString()).onComplete(ret)
                         }
-                        Topic.Format.Json,
-                        Topic.Format.Pretty -> {
+                        Topic.Format.Json -> {
                             logger.warning("Value format not yet implemented!") // TODO
                         }
                     }

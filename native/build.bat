@@ -20,5 +20,6 @@ native-image --no-fallback ^
 --initialize-at-run-time=io.netty.internal.tcnative.CertificateVerifier ^
 --initialize-at-run-time=io.netty.internal.tcnative.SSL ^
 --initialize-at-run-time=io.netty.internal.tcnative.SSLPrivateKeyMethod ^
+--initialize-at-run-time=io.netty.internal.tcnative.CertificateCompressionAlgo ^
 -cp %CLASSPATH% App
 

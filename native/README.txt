@@ -1,3 +1,8 @@
+######################
+graalvm-jdk-17.0.8+9.1
+openjdk 17.0.8.1 2023-08-22 LTS
+######################
+
 # Add Native-Image to GraalVM
 gu install native-image
 

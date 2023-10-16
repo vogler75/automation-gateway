@@ -9,7 +9,13 @@
   }, {
     "pattern":"\\QMETA-INF/services/io.vertx.core.spi.VertxServiceProvider\\E"
   }, {
+    "pattern":"\\Qkafka/kafka-version.properties\\E"
+  }, {
     "pattern":"\\Qorg/slf4j/impl/StaticLoggerBinder.class\\E"
+  }, {
+    "pattern":"java.base:\\Qjdk/internal/icu/impl/data/icudt67b/nfkc.nrm\\E"
+  }, {
+    "pattern":"java.base:\\Qjdk/internal/icu/impl/data/icudt67b/uprops.icu\\E"
   }, {
     "pattern":"java.base:\\Qsun/net/idn/uidna.spp\\E"
   }, {

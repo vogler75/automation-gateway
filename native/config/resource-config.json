@@ -1,21 +1,21 @@
 {
   "resources":{
-  "includes":[
-    {
-      "pattern":"\\QMETA-INF/MANIFEST.MF\\E"
-    }, 
-    {
-      "pattern":"\\QMETA-INF/services/io.vertx.config.spi.ConfigProcessor\\E"
-    }, 
-    {
-      "pattern":"\\QMETA-INF/services/io.vertx.config.spi.ConfigStoreFactory\\E"
-    }, 
-    {
-      "pattern":"\\QMETA-INF/services/io.vertx.core.spi.VertxServiceProvider\\E"
-    }, 
-    {
-      "pattern":"\\Qorg/slf4j/impl/StaticLoggerBinder.class\\E"
-    }
-  ]},
+  "includes":[{
+    "pattern":"\\QMETA-INF/MANIFEST.MF\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/io.vertx.config.spi.ConfigProcessor\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/io.vertx.config.spi.ConfigStoreFactory\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/io.vertx.core.spi.VertxServiceProvider\\E"
+  }, {
+    "pattern":"\\Qorg/slf4j/impl/StaticLoggerBinder.class\\E"
+  }, {
+    "pattern":"java.base:\\Qsun/net/idn/uidna.spp\\E"
+  }, {
+    "pattern":"java.base:\\Qsun/text/resources/nfkc.icu\\E"
+  }, {
+    "pattern":"java.base:\\Qsun/text/resources/uprops.icu\\E"
+  }]},
   "bundles":[]
 }

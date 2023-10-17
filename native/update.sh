@@ -1,6 +1,6 @@
 echo "Build..."
 cd ../source
-gradle build
+./gradlew build
 
 echo "Unpack..."
 cd ../native

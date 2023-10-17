@@ -11,7 +11,13 @@
   }, {
     "pattern":"\\Qkafka/kafka-version.properties\\E"
   }, {
+    "pattern":"\\Qlogback.xml\\E"
+  }, {
+    "pattern":"\\Qlogging.properties\\E"
+  }, {
     "pattern":"\\Qorg/slf4j/impl/StaticLoggerBinder.class\\E"
+  }, {
+    "pattern":"\\Qsimplelogger.properties\\E"
   }, {
     "pattern":"java.base:\\Qjdk/internal/icu/impl/data/icudt67b/nfkc.nrm\\E"
   }, {
@@ -23,5 +29,8 @@
   }, {
     "pattern":"java.base:\\Qsun/text/resources/uprops.icu\\E"
   }]},
-  "bundles":[]
+  "bundles":[{
+    "name":"i18n.Parsing",
+    "locales":["und"]
+  }]
 }

@@ -3,9 +3,6 @@ graalvm-jdk-17.0.8+9.1
 openjdk 17.0.8.1 2023-08-22 LTS
 ######################
 
-# Add Native-Image to GraalVM
-gu install native-image
-
 ######################
 # Linux
 ######################
@@ -33,9 +30,9 @@ or
 ######################
 # Build
 ######################
-> update.sh  # build and copy java distribution of app to source and gets classpath
-> run.sh     # start the java distribution with agento to collect GraalVM configs
-> build.sh   # build native image with GraalVM
+> build-source.sh  # build and copy java distribution of app to source and get classpath
+> build-config.sh  # start the java distribution with agento to collect GraalVM configs
+> build-native.sh  # build native image with GraalVM
 
 ######################
 # Notes

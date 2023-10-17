@@ -30,9 +30,13 @@ object Common {
             val targetStream: InputStream = FileInputStream(initialFile)
             LogManager.getLogManager().readConfiguration(targetStream)
         } catch (e: Exception) {
-            println("Using default logging.properties...")
-            val stream = this::class.java.classLoader.getResourceAsStream("logging.properties")
-            LogManager.getLogManager().readConfiguration(stream)
+            try {
+                println("Using default logging.properties...")
+                val stream = this::class.java.classLoader.getResourceAsStream("logging.properties")
+                LogManager.getLogManager().readConfiguration(stream)
+            } catch (e: Exception) {
+                println("Unable to read default logging.properties!")
+            }
         }
     }
 

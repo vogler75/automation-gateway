@@ -882,14 +882,18 @@ class OpcUaDriver(private val config: JsonObject) : DriverBase(config) {
     private fun browsePath(path: String): List<Pair<NodeId, String>> {
         val resolvedNodeIds = mutableListOf<Pair<NodeId, String>>()
         val items = Topic.splitAddress(path)
-        logger.finest("Browse address [$path]")
+        logger.finest("Browse address [$path] [${items.joinToString("|")}]")
         fun find(node: String, itemIdx: Int, path: String) {
             val item = items[itemIdx]
+            logger.finest { "Find $node | $item ($itemIdx) | $path" }
             val nodeId = NodeId.parseOrNull(node)
             if (nodeId != null) {
-                val result = browseNode(nodeId)
+                val nodes = browseNode(nodeId)
+                logger.finest { "- Nodes: ${nodes.filterIsInstance<JsonObject>().joinToString { it.getString("BrowseName") }}" }
+                val result = nodes
                     .filterIsInstance<JsonObject>()
                     .filter { item == "#" || item == "+" || item == it.getString("BrowseName", "") }
+                logger.finest { "- Found: ${result.joinToString { it.getString("BrowseName") }}" }
                 val nextIdx = if (item != "#" && itemIdx + 1 < items.size) itemIdx + 1 else itemIdx
                 result.forEach {
                     val childNodeId = NodeId.parseOrNull(it.getString("NodeId"))

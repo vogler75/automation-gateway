@@ -23,15 +23,16 @@ object Common {
     const val BUS_ROOT_URI_LOG = "Log"
 
     fun initLogging() {
-        //val stream = Cluster::class.java.classLoader.getResourceAsStream("logging.properties")
+
         try {
             println("Loading logging.properties...")
             val initialFile = File("logging.properties")
             val targetStream: InputStream = FileInputStream(initialFile)
             LogManager.getLogManager().readConfiguration(targetStream)
         } catch (e: Exception) {
-            println("Error loading logging.properties!")
-            exitProcess(-1)
+            println("Using default logging.properties...")
+            val stream = this::class.java.classLoader.getResourceAsStream("logging.properties")
+            LogManager.getLogManager().readConfiguration(stream)
         }
     }
 

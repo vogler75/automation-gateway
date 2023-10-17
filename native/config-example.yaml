@@ -1,88 +1,152 @@
-# Example Configuration File for the Automation Gateway
-#
-# Note: The OpcUaClient connections are all disabled.  
-#
-
 MqttServer:
   Listeners:
     - Id: Mqtt
-      Enabled: true
-      Port: 1883
+      Port: 2883
       Host: 0.0.0.0
+      MaxMessageSizeKb: 8192
+      #Username: demo
+      #Password: demo
       LogLevel: INFO # ALL | INFO
 
     - Id: MqttWs
-      Enabled: true
-      Websocket: true      
-      Port: 1884
+      Port: 2884
       Host: 0.0.0.0
-      Username: system
-      Password: manager
+      Websocket: true
+      MaxMessageSizeKb: 8192
+      #Username: demo
+      #Password: demo
       LogLevel: INFO # ALL | INFO
 
 GraphQLServer:
   Listeners:
-    - Port: 4000
+    - Port: 4001
       Enabled: true
-      LogLevel: ALL
+      LogLevel: INFO
       GraphiQL: false
       WriteSchemaToFile: false
-      #Schemas:
-      #  - System: opc1
-      #    FieldName: BrowseName
-      #  - System: opc2
-      #    FieldName: BrowseName
-      #  - System: unified
-      #    FieldName: DisplayName
 
 OpcUaClient:
-  - Id: "opc1"
-    Enabled: false
+  - Id: "demo1"
+    Enabled: true
     LogLevel: INFO
     EndpointUrl: "opc.tcp://192.168.1.3:62540/server"
     UpdateEndpointUrl: true
     SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#None
+    KeepAliveFailuresAllowed: 0
+    SubscriptionSamplingInterval: 0.0
 
-  - Id: "opc2"
-    Enabled: false
+  - Id: "demo2"
+    Enabled: true
     LogLevel: INFO
     EndpointUrl: "opc.tcp://192.168.1.3:62541"
     UpdateEndpointUrl: true
     SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#None
+    KeepAliveFailuresAllowed: 0
+    SubscriptionSamplingInterval: 0.0
 
-  - Id: "panel"
+  - Id: "scada"
+    Enabled: true
+    LogLevel: INFO
+    EndpointUrl: "opc.tcp://nuc1:4840/freeopcua/server/"
+    UpdateEndpointUrl: true
+    SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#None
+    KeepAliveFailuresAllowed: 0
+    SubscriptionSamplingInterval: 0.0
+
+  - Id: "ignition"
     Enabled: false
     LogLevel: INFO
-    EndpointUrl:  "opc.tcp://192.168.1.136:4890"
+    EndpointUrl: "opc.tcp://192.168.1.3:62550/discovery"
     UpdateEndpointUrl: true
+    SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#None
+    KeepAliveFailuresAllowed: 0
+    SubscriptionSamplingInterval: 0.0
+    UsernameProvider:
+      Username: opcuauser
+      Password: password
+
+  - Id: "winccoa"
+    Enabled: false
+    LogLevel: INFO
+    EndpointUrl: "opc.tcp://centos1.rocworks.local:4840"
+    UpdateEndpointUrl: true
+    SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#None
+    KeepAliveFailuresAllowed: 0
+    SubscriptionSamplingInterval: 0.0
+
+  - Id: "winccua"
+    Enabled: false
+    LogLevel: INFO
+    EndpointUrl:  "opc.tcp://DESKTOP-KHLB071.rocworks.local:4890"
     SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#Basic128Rsa15
-    SubscriptionSamplingInterval: 100
+    SubscriptionSamplingInterval: 0
     UsernameProvider:
       Username: username1
       Password: password1
+    WriteParameters:
+      QueueSize: 1000
+      BlockSize: 100
+      WithTime: true
+    MonitoringParameters:
+      BufferSize: 10
+      SamplingInterval: 0.0
+      DiscardOldest: true
 
-  - Id: "unified"
-    Enabled: false
+MqttClient:
+  - Id: "home"
+    Enabled: true
     LogLevel: INFO
-    EndpointUrl:  "opc.tcp://192.168.1.190:4890"
-    UpdateEndpointUrl: true
-    SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#Basic128Rsa15
-    SubscriptionSamplingInterval: 100
-    UsernameProvider:
-      Username: username1
-      Password: password1
+    Host: nuc1.rocworks.local
+    Port: 1883
+    #Username: ""
+    #Password: ""
 
 Database:
   Logger:
-    - Id: influx
-      Enabled: false
+    - Id: mqtt1
+      Type: Mqtt
+      Enabled: true
+      Host: linux0.rocworks.local
+      Port: 1883
+      Format: SPARKPLUGB
+      WriteParameters:
+        QueueSize: 20000
+        BlockSize: 2000
+      Topic: Enterprise/Site/Area/Line
+      Logging:
+        - Topic: opc/demo1/path/Objects/Variables/#
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/#
+        - Topic: mqtt/home/path/Test/#
+
+    - Id: kafka1
+      Type: Kafka
+      Enabled: true
+      LogLevel: INFO
+      Servers: linux0.rocworks.local:9092
+      Configs:
+        batch.size: 25000
+        group.id: frankenstein-producer
+        enable.auto.commit: true
+        auto.commit.interval.ms: 1000
+      WriteParameters:
+        QueueSize: 20000
+        BlockSize: 2000
+      TopicName: opcua
+      Logging:
+        - Topic: opc/demo1/path/Objects/Variables/#
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/#
+
+    - Id: influx1
       Type: InfluxDB
-      Url: http://192.168.1.3:8086
+      Enabled: true
+      Url: http://nuc1.rocworks.local:8086
       Database: test
       Username: ""
       Password: ""
       WriteParameters:
         QueueSize: 20000
-        BlockSize: 10000
+        BlockSize: 2000
       Logging:
-      - Topic: opc/opc1/path/Objects/Dynamic/+
+        - Topic: opc/demo1/path/Objects/Variables/#
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/#
+

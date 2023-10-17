@@ -26,16 +26,16 @@ News and Blog posts can be found [here](https://www.rocworks.at/wordpress/?cat=3
 
 # Build and Run
 
-It needs [Java 11](https://openjdk.java.net/projects/jdk/11/) or higher. There is an issue with Java 8 update 292 and bouncycastl encryption. [here](https://github.com/bcgit/bc-java/issues/941) you can find more information about this issue..
+It needs [Java 17](https://openjdk.java.net/projects/jdk/17/) or higher. There is an issue with Java 8 update 292 and bouncycastl encryption. [here](https://github.com/bcgit/bc-java/issues/941) you can find more information about this issue..
 
-You can open the project in IntelliJ IDEA IDE and build it there or use grade to build it from command line. You can download [gradle 7](https://gradle.org/releases/) and build it from command line. Use **version 7** of gradle! Check the version of gradle if you install gradle on Linux with your package management system. On some distributions gradle is too old and will throw errors during build phase. 
+You can open the project in IntelliJ IDEA IDE and build it there or use grade to build it from command line. Use the included "gradlew" command. Tt will download and use the right gradle version.
 
 ```
 > cd source/app
-> gradle build
+> gradlew build
 
 > export GATEWAY_CONFIG=config.yaml  # Set configuration file (default is config.yaml)
-> gradle run
+> gradlew run
 ```
 You can also pass the configuration filename as an argument.
 

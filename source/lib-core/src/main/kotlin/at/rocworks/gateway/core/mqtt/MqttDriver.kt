@@ -18,6 +18,9 @@ import io.vertx.mqtt.MqttClientOptions
 import io.vertx.mqtt.messages.MqttPublishMessage
 
 import java.nio.charset.Charset
+import java.util.*
+import kotlin.collections.HashMap
+import kotlin.collections.HashSet
 
 class MqttDriver(val config: JsonObject) : DriverBase(config) {
     override fun getType() = Topic.SystemType.Mqtt
@@ -28,8 +31,12 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
     private val host: String = config.getString("Host", "localhost")
     private val username: String? = config.getString("Username")
     private val password: String? = config.getString("Password")
+    private val clientId: String = config.getString("ClientId", UUID.randomUUID().toString())
+    private val cleanSession: Boolean = config.getBoolean("CleanSession", true)
     private val ssl: Boolean = config.getBoolean("Ssl", false)
+    private val trustAll: Boolean = config.getBoolean("TrustAll", true)
     private val qos: Int = config.getInteger("Qos", 0)
+
     private val maxMessageSizeKb = config.getInteger("MaxMessageSizeKb", 8) * 1024
 
     private val subscribedTopics = HashSet<Topic>() // Subscribed topic name can have wildcard
@@ -41,17 +48,21 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
     override fun connect(): Future<Boolean> {
         val promise = Promise.promise<Boolean>()
         val options = MqttClientOptions()
-        options.isCleanSession = true
+
         username?.let { options.username = it }
         password?.let { options.password = it }
-        options.isSsl = ssl
-        options.maxMessageSize = maxMessageSizeKb
+        options.setClientId(clientId)
+        options.setCleanSession(cleanSession)
+        options.setSsl(ssl)
+        options.setTrustAll(trustAll)
+        options.setMaxMessageSize(maxMessageSizeKb)
 
         client = MqttClient.create(vertx, options)
         client?.publishHandler(::valueConsumer)
         client?.connect(port, host) {
-            logger.info("Mqtt client connect [${it.succeeded()}] [${it.result().code()}]")
-            promise.complete(it.succeeded())
+            logger.info("Mqtt client connect [${it.succeeded()}] [${it.cause()}]")
+            if (it.succeeded()) promise.complete()
+            else promise.fail("Connect failed!")
         } ?: promise.fail("Client is null!")
 
         return promise.future()

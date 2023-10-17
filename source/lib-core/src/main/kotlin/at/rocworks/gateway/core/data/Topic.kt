@@ -52,9 +52,9 @@ data class Topic (
             val mqttUri = SystemType.Mqtt.name
 
             val optFmt = "(|:Json|:Pretty|:Value)"
-            fun getFmt(s: String) = when (s.toLowerCase()) {
-                ":" + Format.Value.name.toLowerCase() -> Format.Value
-                ":" + Format.Json.name.toLowerCase() -> Format.Json
+            fun getFmt(s: String) = when (s.lowercase()) {
+                ":" + Format.Value.name.lowercase() -> Format.Value
+                ":" + Format.Json.name.lowercase() -> Format.Json
                 else -> Format.Json
             }
 

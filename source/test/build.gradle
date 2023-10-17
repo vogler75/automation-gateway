@@ -2,12 +2,6 @@ plugins {
     id 'gateway.kotlin-application-conventions'
 }
 
-compileKotlin {
-    kotlinOptions {
-        jvmTarget = "17"
-    }
-}
-
 dependencies {
     implementation project(':lib-core')
     implementation 'io.vertx:vertx-core:4.0.3'

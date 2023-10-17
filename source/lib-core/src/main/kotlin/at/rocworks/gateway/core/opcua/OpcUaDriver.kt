@@ -241,7 +241,7 @@ class OpcUaDriver(private val config: JsonObject) : DriverBase(config) {
         val tree = browseNode(NodeId.parse(nodeId), maxLevel=-1)
         logger.info("Object browsing finished.")
         if (writeSchemaToFile) {
-            File("schema-${id}.json".toLowerCase()).writeText(tree.encodePrettily())
+            File("schema-${id}.json".lowercase()).writeText(tree.encodePrettily())
         }
         return tree
     }

@@ -239,7 +239,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
 
         val schema = typeDefinitions.joinToString(separator = "\n")
         if (writeSchemaFiles)
-            File("graphql-${system}.gql".toLowerCase()).writeText(schema)
+            File("graphql-${system}.gql".lowercase()).writeText(schema)
 
         return schema
     }

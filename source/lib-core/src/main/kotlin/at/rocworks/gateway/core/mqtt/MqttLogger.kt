@@ -107,18 +107,6 @@ class MqttLogger (config: JsonObject) : LoggerBase(config) {
         return Buffer.buffer(SparkplugBPayloadEncoder().getBytes(payload, false))
     }
 
-    @Throws(SparkplugInvalidTypeException::class)
-    private fun newRecord(name: String, type: MetricDataType): Metric {
-        val random = Random()
-        val timestamp = Date()
-        println("Creatine new $type record, $timestamp")
-        // Metric name = Record type
-        // Metric datatype = (not used)
-        // Metric value = (not used)
-        // Metric properties = Record fields
-        return MetricBuilder(name, type, null).timestamp(timestamp).createMetric()
-    }
-
     override fun queryExecutor(
         system: String,
         nodeId: String,

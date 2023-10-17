@@ -10,12 +10,16 @@ import io.vertx.core.json.JsonObject
 import io.vertx.mqtt.MqttClient
 import io.vertx.mqtt.MqttClientOptions
 import org.eclipse.tahu.message.SparkplugBPayloadEncoder
+import org.eclipse.tahu.message.model.DataSet.DataSetBuilder
 import org.eclipse.tahu.message.model.Metric
 import org.eclipse.tahu.message.model.Metric.MetricBuilder
 import org.eclipse.tahu.message.model.MetricDataType
+import org.eclipse.tahu.message.model.Row.RowBuilder
 import org.eclipse.tahu.message.model.SparkplugBPayload.SparkplugBPayloadBuilder
+import org.eclipse.tahu.protobuf.SparkplugBProto.Payload.DataSet.Row
 import java.util.*
 import java.util.concurrent.TimeUnit
+import kotlin.collections.LinkedHashMap
 
 
 class MqttLogger (config: JsonObject) : LoggerBase(config) {
@@ -139,7 +143,7 @@ class MqttLogger (config: JsonObject) : LoggerBase(config) {
             .setTimestamp(Date())
             .setUuid(UUID.randomUUID().toString())
             .createPayload()
-        payload.addMetric(metric(point))
+        metric(point)?.let { payload.addMetric(it) }
         if (spbSeq++ == 255) spbSeq=0
         return Buffer.buffer(SparkplugBPayloadEncoder().getBytes(payload, false))
     }
@@ -149,16 +153,42 @@ class MqttLogger (config: JsonObject) : LoggerBase(config) {
             .setTimestamp(Date())
             .setUuid(UUID.randomUUID().toString())
             .createPayload()
-        points.forEach { point -> payload.addMetric(metric(point)) }
+        points.forEach { point -> metric(point)?.let { payload.addMetric(it) } }
         if (spbSeq++ == 255) spbSeq=0
         return Buffer.buffer(SparkplugBPayloadEncoder().getBytes(payload, false))
     }
 
     private fun metric(point: DataPoint): Metric? {
-        val dataType = MetricDataType.String
-        return MetricBuilder(point.topic.browsePath, dataType, point.value.value.toString())
-            .timestamp(Date(point.value.sourceTime.toEpochMilli()))
-            .createMetric()
+        try {
+            //logger.info("${point.topic.browsePath} ${point.value.dataTypeName()} ${point.value.value?.javaClass?.name}")
+            if (point.value.value != null) {
+                if (point.value.value is LinkedHashMap<*, *>) {
+                    val map = point.value.value.entries.associate { item -> item.key.toString() to item.value }
+                    return MetricBuilder(point.topic.browsePath, MetricDataType.String, JsonObject(map).toString())
+                        .timestamp(Date(point.value.sourceTime.toEpochMilli()))
+                        .createMetric()
+                } else {
+                    val dataType = when (point.value.value) {
+                        is Boolean -> MetricDataType.Boolean
+                        is Int -> MetricDataType.Int32
+                        is Long -> MetricDataType.Int64
+                        is Double -> MetricDataType.Double
+                        is String -> MetricDataType.String
+                        else -> MetricDataType.Unknown
+                    }
+                    if (dataType != MetricDataType.Unknown) {
+                        return MetricBuilder(point.topic.browsePath, dataType, point.value.value)
+                            .timestamp(Date(point.value.sourceTime.toEpochMilli()))
+                            .createMetric()
+                    } else {
+                        logger.warning("Unhandled datatype ${point.value.dataTypeName()} for ${point.topic.browsePath}! value: ${point.value.value}")
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return null
     }
 
     override fun queryExecutor(

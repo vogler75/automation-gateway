@@ -162,7 +162,6 @@ class OpcUaDriver(private val config: JsonObject) : DriverBase(config) {
 
     private fun endpointFilter(): Predicate<EndpointDescription> {
         return Predicate { e: EndpointDescription ->
-            //endpointUpdater(e)
             securityPolicy == null || e.securityPolicyUri == securityPolicy.uri
         }
     }
@@ -427,7 +426,7 @@ class OpcUaDriver(private val config: JsonObject) : DriverBase(config) {
                     !(value == "0" || value.equals("false", ignoreCase = true))
                 )
                 else -> {
-                    logger.warning("Unhandled data type $type")
+                    logger.warning("Unhandled datatype $type")
                     Variant.NULL_VALUE
                 }
             }

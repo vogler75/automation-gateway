@@ -20,7 +20,7 @@ repositories {
 }
 
 dependencies {
-    implementation 'org.eclipse.milo:sdk-client:0.6.3'
+    implementation 'org.eclipse.milo:sdk-client:0.6.11'
     implementation 'org.eclipse.milo:dictionary-reader:0.6.3'
 
     implementation "io.vertx:vertx-core:$vertxVersion"
@@ -30,4 +30,8 @@ dependencies {
     implementation "io.vertx:vertx-web-graphql:$vertxVersion"
 
     implementation "io.reactivex.rxjava2:rxjava:2.2.21"
+    implementation "org.eclipse.tahu:tahu-core:1.0.5"
+
+    implementation 'org.slf4j:slf4j-api:1.7.32'
+    implementation 'org.slf4j:slf4j-simple:1.7.32'
 }

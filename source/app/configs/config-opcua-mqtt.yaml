@@ -10,9 +10,10 @@ Database:
     - Id: mqtt1
       Type: Mqtt
       Enabled: true
-      Host: linux0.rocworks.local
-      Port: 1883
-      Ssl: false
-      Topic: Enterprise/Site
+      Mqtt:
+        Host: linux0.rocworks.local
+        Port: 1883
+        Ssl: false
+        Topic: Enterprise/Site
       Logging:
         - Topic: opc/demo/path/Objects/Demo/SimulationMass/#

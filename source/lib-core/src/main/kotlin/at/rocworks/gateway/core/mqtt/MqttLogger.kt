@@ -25,20 +25,21 @@ import kotlin.collections.LinkedHashMap
 class MqttLogger (config: JsonObject) : LoggerBase(config) {
     var client: MqttClient? = null
 
-    private val port: Int = config.getInteger("Port", 1883)
-    private val host: String = config.getString("Host", "localhost")
-    private val username: String? = config.getString("Username")
-    private val password: String? = config.getString("Password")
-    private val clientId: String = config.getString("ClientId", UUID.randomUUID().toString())
-    private val cleanSession: Boolean = config.getBoolean("CleanSession", true)
-    private val ssl: Boolean = config.getBoolean("Ssl", false)
-    private val trustAll: Boolean = config.getBoolean("TrustAll", true)
-    private val qos: Int = config.getInteger("Qos", 0)
-    private val topic: String = config.getString("Topic", "")
-    private val bulkMessages: Boolean = config.getBoolean("BulkMessages", false)
-    private val format: String = config.getString("Format", "JSON")
-    private val retained: Boolean = config.getBoolean("Retained", false)
-    private val maxMessageSizeKb = config.getInteger("MaxMessageSizeKb", 8) * 1024
+    private val configMqtt = config.getJsonObject("Mqtt", config)
+    private val port: Int = configMqtt.getInteger("Port", 1883)
+    private val host: String = configMqtt.getString("Host", "localhost")
+    private val username: String? = configMqtt.getString("Username")
+    private val password: String? = configMqtt.getString("Password")
+    private val clientId: String = configMqtt.getString("ClientId", UUID.randomUUID().toString())
+    private val cleanSession: Boolean = configMqtt.getBoolean("CleanSession", true)
+    private val ssl: Boolean = configMqtt.getBoolean("Ssl", false)
+    private val trustAll: Boolean = configMqtt.getBoolean("TrustAll", true)
+    private val qos: Int = configMqtt.getInteger("Qos", 0)
+    private val retained: Boolean = configMqtt.getBoolean("Retained", false)
+    private val topic: String = configMqtt.getString("Topic", "")
+    private val format: String = configMqtt.getString("Format", "JSON")
+    private val bulkMessages: Boolean = configMqtt.getBoolean("BulkMessages", false)
+    private val maxMessageSizeKb = configMqtt.getInteger("MaxMessageSizeKb", 8) * 1024
 
     private val formatter: (DataPoint) -> Buffer = when (format) {
         "RAW" -> ::rawFormat

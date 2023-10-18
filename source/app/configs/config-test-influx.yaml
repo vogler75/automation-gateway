@@ -25,10 +25,11 @@ Database:
   Logger:
     - Id: influx
       Type: InfluxDB
-      Url: http://nuc1:8086
-      Database: test
-      Username: ""
-      Password: ""
+      InfluxDB:        
+        Url: http://nuc1:8086
+        Database: test
+        Username: ""
+        Password: ""
       WriteParameters:
         QueueSize: 20000
         BlockSize: 10000

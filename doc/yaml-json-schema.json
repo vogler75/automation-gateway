@@ -1,0 +1,459 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$ref": "#/definitions/Frankenstein",
+    "definitions": {
+        "Frankenstein": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "MqttServer": {
+                    "$ref": "#/definitions/MqttServer"
+                },
+                "MqttClient": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/MqttClient"
+                    }
+                },                
+                "GraphQLServer": {
+                    "$ref": "#/definitions/GraphQLServer"
+                },
+                "OpcUaClient": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/OpcUaClient"
+                    }
+                },
+                "Database": {
+                    "$ref": "#/definitions/Database"
+                }
+            },
+            "required": [
+            ],
+            "title": "Frankenstein"
+        },
+        "LogLevel": {
+            "type": "string",
+            "enum": ["INFO", "ALL", "SEVERE", "WARNING", "CONFIG", "FINE", "FINER", "FINEST", "OFF"]
+        },
+        "Database": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "Logger": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Logger"
+                    }
+                }
+            },
+            "required": [
+                "Logger"
+            ],
+            "title": "Database"
+        },
+        "Logger": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "Id": { "type": "string" },
+                "Type": { "type": "string", "enum": ["Mqtt", "Kafka", "InfluxDB", "Jdbc"] },
+                "Enabled": { "type": "boolean" },
+                "LogLevel": { "$ref": "#/definitions/LogLevel" },
+                "WriteParameters": { "$ref": "#/definitions/LoggerWriteParameters" },
+                "Logging": {
+                    "type": "array",
+                    "items": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/definitions/Logging"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    }
+                },
+                "Mqtt": {
+                    "type": "object",
+                    "properties": {
+                        "Host": { "type": "string" },
+                        "Port": { "type": "integer" },
+                        "Ssl": { "type": "boolean" },     
+                        "TrustAll": { "type": "boolean" },     
+                        "Username": { "type": "string" },
+                        "Password": { "type": "string" },                                      
+                        "ClientId": { "type": "string" },                                      
+                        "CleanSession": { "type": "boolean" },
+                        "Qos": { "type": "integer" },
+                        "Retained": { "type": "boolean" },
+                        "Topic": { "type": "string" },
+                        "Format": { "type": "string" },
+                        "BulkMessages": { "type": "boolean" },
+                        "MaxMessageSizeKb": { "type": "integer" }
+                    }                    
+                },
+                "Kafka": {
+                    "type": "object",
+                    "properties": {  
+                        "Servers": { "type": "string" },
+                        "TopicName": { "type": "string" },   
+                        "KeyName": { "type": "string" },
+                        "Configs": { "$ref": "#/definitions/KafkaPublisherConfigs" }                                                      
+                    },
+                    "required": ["Servers"]               
+                },
+                "Jdbc": {
+                    "type": "object",
+                    "properties": {
+                        "Url": { "type": "string" },
+                        "Username": { "type": "string" },
+                        "Password": { "type": "string" },
+                        "SqlTableName": { "type": "string"},
+                        "SqlInsertStatement": { "type": "string"},
+                        "SqlQueryStatement": { "type": "string"}                        
+                    },
+                    "required": ["Url"]
+                },
+                "InfluxDB": {
+                    "type": "object",
+                    "properties": {  
+                        "Url": { "type": "string","format": "uri" },
+                        "Database": { "type": "string" },
+                        "Username": { "type": "string" },
+                        "Password": { "type": "string" }                            
+                    },
+                    "required": ["Url", "Database"]
+                }
+            },
+            "required": [
+                "Id",
+                "Type",
+                "Logging"
+            ],            
+            "title": "Logger"
+        },
+        "KafkaPublisherConfigs": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+                "group.id": {
+                    "type": "string"
+                },                
+                "batch.size": {
+                    "type": "integer"
+                },
+                "enable.auto.commit": {
+                    "type": "boolean"
+                },
+                "auto.commit.interval.ms": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "group.id"
+            ],
+            "title": "Configs"
+        },
+        "Logging": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "Topic": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "Topic"
+            ],
+            "title": "Logging"
+        },
+        "LoggerWriteParameters": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "QueueSize": {
+                    "type": "integer"
+                },
+                "BlockSize": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "BlockSize",
+                "QueueSize"
+            ],
+            "title": "LoggerWriteParameters"
+        },
+        "GraphQLServer": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "Listeners": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/GraphQLServerListener"
+                    }
+                }
+            },
+            "required": [
+                "Listeners"
+            ],
+            "title": "GraphQLServer"
+        },
+        "GraphQLServerListener": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "Port": {
+                    "type": "integer"
+                },
+                "Enabled": {
+                    "type": "boolean"
+                },
+                "LogLevel": {
+                    "$ref": "#/definitions/LogLevel"
+                },
+                "GraphiQL": {
+                    "type": "boolean"
+                },
+                "WriteSchemaToFile": {
+                    "type": "boolean"
+                },
+                "Schemas": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                            "System": {
+                                "type": "string"
+                            },
+                            "FieldName": {
+                                "type": "string"
+                            },
+                            "RootNodes": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "required": [
+                            "System"
+                        ],
+                        "title": "Schema"
+                    }
+                }
+            },
+            "required": [
+                "Port"
+            ],
+            "title": "GraphQLServerListener"
+        },        
+        "MqttServer": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "Listeners": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/MqttServerListener"
+                    }
+                }
+            },
+            "required": [
+                "Listeners"
+            ],
+            "title": "MqttServer"
+        },
+        "MqttServerListener": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "Id": { "type": "string" },
+                "Enabled": { "type": "boolean" },
+                "Port": { "type": "integer" },
+                "Host": { "type": "string" },
+                "MaxMessageSizeKb": { "type": "integer" },
+                "Username": { "type": "string" },
+                "Password": { "type": "string" },
+                "LogLevel": { "$ref": "#/definitions/LogLevel" },
+                "Websocket": { "type": "boolean" }
+            },
+            "required": [
+                "Id",
+                "Host",
+                "Port"
+            ],
+            "title": "MqttServerListener"
+        },
+        "MqttClient": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "Id": { "type": "string" },
+                "Enabled": { "type": "boolean" },
+                "LogLevel": { "$ref": "#/definitions/LogLevel" },
+                "Host": { "type": "string" },
+                "Port": { "type": "integer" },
+                "MaxMessageSizeKb": { "type": "integer" },
+                "Ssl": { "type": "boolean" },
+                "TrustAll": { "type": "boolean" },
+                "ClientId": { "type": "string" },
+                "CleanSession": { "type": "boolean" },
+                "Qos": { "type": "integer" }
+            },
+            "required": [
+                "Id",
+                "Host",
+                "Port"
+            ],
+            "title": "MqttClient"
+        },        
+        "OpcUaClient": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "Id": {
+                    "type": "string"
+                },
+                "Enabled": {
+                    "type": "boolean"
+                },
+                "LogLevel": {
+                    "$ref": "#/definitions/LogLevel"
+                },
+                "EndpointUrl": {
+                    "type": "string"
+                },
+                "UpdateEndpointUrl": {
+                    "type": "boolean"
+                },
+                "SecurityPolicy": {
+                    "type": "string",
+                    "enum": [
+                        "None",
+                        "Basic256Sha256",
+                        "Basic256",
+                        "Basic128Rsa15",
+                        "Aes256_Sha256_RsaPss",
+                        "Aes128_Sha256_RsaOaep"
+                    ]
+                },
+                "SecurityPolicyUri": {
+                    "type": "string",
+                    "enum": [
+                        "http://opcfoundation.org/UA/SecurityPolicy#None",
+                        "http://opcfoundation.org/UA/SecurityPolicy#Basic256Sha256",
+                        "http://opcfoundation.org/UA/SecurityPolicy#Basic256",
+                        "http://opcfoundation.org/UA/SecurityPolicy#Basic128Rsa15",
+                        "http://opcfoundation.org/UA/SecurityPolicy#Aes256_Sha256_RsaPss",
+                        "http://opcfoundation.org/UA/SecurityPolicy#Aes128_Sha256_RsaOaep"
+                    ]
+                },
+                "KeepAliveFailuresAllowed": {
+                    "type": "integer"
+                },
+                "SubscriptionSamplingInterval": {
+                    "type": "integer"
+                },
+                "WriteSchemaToFile": {
+                    "type": "boolean"
+                },
+                "UsernameProvider": {
+                    "$ref": "#/definitions/OpcUaClientUsernameProvider"
+                },
+                "WriteParameters": {
+                    "$ref": "#/definitions/OpcUaClientWriteParameters"
+                },
+                "MonitoringParameters": {
+                    "$ref": "#/definitions/OpcUaClientMonitoringParameters"
+                },
+                "ConnectTimeout": {
+                    "type": "integer"
+                },
+                "RequestTimeout": {
+                    "type": "integer"
+                },
+                "AddressCache": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                        "MaximumSize": {
+                            "type": "integer"
+                        },
+                        "ExpireAfterSeconds": {
+                            "type": "integer"
+                        }
+                    }
+                }
+            },
+            "required": [
+                "Id",
+                "EndpointUrl"
+            ],
+            "title": "OpcUaClient"
+        },
+        "OpcUaClientMonitoringParameters": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "BufferSize": {
+                    "type": "integer"
+                },
+                "SamplingInterval": {
+                    "type": "integer"
+                },
+                "DiscardOldest": {
+                    "type": "boolean"
+                },
+                "DataChangeTrigger": {
+                    "type": "string",
+                    "enum": ["Status", "StatusValue", "StatusValueTimestamp"]
+                }
+            },
+            "required": [
+                "BufferSize",
+                "DiscardOldest",
+                "SamplingInterval"
+            ],
+            "title": "MonitoringParameters"
+        },
+        "OpcUaClientUsernameProvider": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "Username": {
+                    "type": "string"
+                },
+                "Password": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "Password",
+                "Username"
+            ],
+            "title": "UsernameProvider"
+        },
+        "OpcUaClientWriteParameters": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "QueueSize": {
+                    "type": "integer"
+                },
+                "BlockSize": {
+                    "type": "integer"
+                },
+                "WithTime": {
+                    "type": "boolean"
+                }
+            },
+            "required": [
+            ],
+            "title": "WriteParameters"
+        }
+    }
+}

@@ -21,8 +21,9 @@ Database:
   Logger:
     - Id: kafka1
       Type: Kafka
+      Kafka:
+        Servers: nuc1:9092
       Enabled: true
-      Servers: nuc1:9092
       WriteParameters:
         QueueSize: 20000
         BlockSize: 10000
@@ -31,10 +32,11 @@ Database:
 
     - Id: influx1
       Type: InfluxDB
-      Url: http://nuc1:8086
-      Database: test
-      Username: ""
-      Password: ""
+      InfluxDB:        
+        Url: http://nuc1:8086
+        Database: test
+        Username: ""
+        Password: ""
       WriteParameters:
         QueueSize: 20000
         BlockSize: 10000

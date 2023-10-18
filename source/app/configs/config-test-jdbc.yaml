@@ -26,9 +26,10 @@ Database:
     - Id: postgres
       Type: Jdbc
       Enabled: false
-      Url: jdbc:postgresql://nuc1:5432/scada
-      Username: system
-      Password: manager
+      Jdbc:        
+        Url: jdbc:postgresql://nuc1:5432/scada
+        Username: system
+        Password: manager
       Logging:
         - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_SByte/+
         - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Byte/+
@@ -46,9 +47,10 @@ Database:
     - Id: mysql
       Type: Jdbc
       Enabled: false
-      Url: jdbc:mysql://nuc1:3306/scada
-      Username: root
-      Password: manager
+      Jdbc:        
+        Url: jdbc:mysql://nuc1:3306/scada
+        Username: root
+        Password: manager
       Logging:
         - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_SByte/+
         - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Byte/+
@@ -66,9 +68,10 @@ Database:
     - Id: mssql
       Type: Jdbc
       Enabled: false
-      Url: jdbc:sqlserver://nuc1;databaseName=scada
-      Username: sa
-      Password: Manager4711#
+      Jdbc:        
+        Url: jdbc:sqlserver://nuc1;databaseName=scada
+        Username: sa
+        Password: Manager4711#
       Logging:
         - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_SByte/+
         - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Byte/+
@@ -86,10 +89,11 @@ Database:
     - Id: crate
       Type: Jdbc
       Enabled: true
-      Url: jdbc:crate://nuc1:5433/
-      Username: crate
-      Password:
-      SqlTableName: events2
+      Jdbc:        
+        Url: jdbc:crate://nuc1:5433/
+        Username: crate
+        Password:
+        SqlTableName: events2
       Logging:
         - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_SByte/+
         - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Byte/+

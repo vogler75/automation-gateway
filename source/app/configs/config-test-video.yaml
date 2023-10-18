@@ -24,16 +24,6 @@ MqttClient:
     Port: 1883
     Ssl: false
     MaxMessageSizeKb: 512
-    Value:
-      Reader: >
-        def source = new JsonSlurper().parseText(value)
-        return [
-          className: "TopicValueOpc",
-          sourceTime: Instant.ofEpochMilli(source.Timestamp).toString(),
-          serverTime: Instant.now().toString(),
-          value: source.Jpg,
-          statusCode: 0
-        ]
 
 Database:
   Logger:

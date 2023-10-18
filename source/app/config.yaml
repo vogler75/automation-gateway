@@ -19,14 +19,15 @@ MqttServer:
 
 GraphQLServer:
   Listeners:
-    - Port: 4000
+    - Port: 4001
+      Enabled: false
       LogLevel: INFO
-      GraphiQL: true
-      WriteSchemaToFile: false
-      Schemas:
-        - System: scada
-        - System: demo1             
-        - System: demo2             
+      GraphiQL: false
+      WriteSchemaToFile: false      
+#      Schemas:
+#        - System: scada
+#        - System: demo1
+#        - System: demo2
 #        - System: ignition
 #        - System: unified
 #          FieldName: DisplayName
@@ -35,7 +36,7 @@ GraphQLServer:
 
 OpcUaClient:
   - Id: "demo1"
-    Enabled: true
+    Enabled: false
     LogLevel: INFO
     EndpointUrl: "opc.tcp://192.168.1.3:62540/server"
     UpdateEndpointUrl: true
@@ -46,6 +47,7 @@ OpcUaClient:
   - Id: "demo2"
     Enabled: true
     LogLevel: INFO
+    WriteSchemaToFile: false
     EndpointUrl: "opc.tcp://192.168.1.3:62541"
     UpdateEndpointUrl: true
     SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#None
@@ -53,7 +55,7 @@ OpcUaClient:
     SubscriptionSamplingInterval: 0.0
 
   - Id: "scada"
-    Enabled: true
+    Enabled: false
     LogLevel: INFO
     EndpointUrl: "opc.tcp://nuc1:4840/freeopcua/server/"
     UpdateEndpointUrl: true
@@ -104,28 +106,84 @@ Database:
   Logger:
     - Id: mqtt1
       Type: Mqtt
+      Mqtt:
+        Host: linux0.rocworks.local
+        Port: 1883
+        Ssl: false
+        Topic: Enterprise/Site/Area/Line
+        Format: SPARKPLUGB
+        BulkMessages: false                   
       Enabled: true
-      LogLevel: INFO
-      Host: linux0.rocworks.local
-      Port: 1883
+      LogLevel: INFO       
+      WriteParameters:
+        QueueSize: 20000
+        BlockSize: 10000
       Logging:
-        - Topic: opc/demo1/path/Objects/Variables/#
-        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/#
+#        - Topic: mqtt/home/path/Test/#
+#        - Topic: opc/demo1/path/Objects/Variables/#
+#        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/#
+        -
+#        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Boolean/#
+#        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Byte/#
+#        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_ByteString/#
+#        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_DateTime/#
+#        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Double/#
+#        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Duration/#
+#        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Float/#
+#        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Int16/#
+#        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Int32/#
+#        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Int64/#
+#        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Integer/#
+#        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Number/#
+#        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_SByte/#
+#        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_String/#
+#        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_UInt16/#
+#        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_UInt32/#
+#        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_UInteger/#
+#        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_UtcTime/#
+#        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Variant/#
+
+#        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Guid/#
+#        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_LocaleId/#
+#        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_LocalizedText/#
+#        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_NodeId/#
+#        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/XmlElement/#
+
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Boolean/Boolean_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Byte/Byte_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_ByteString/ByteString_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_DateTime/DateTime_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Double/Double_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Duration/Duration_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Float/Float_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Int16/Int16_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Int32/Int32_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Int64/Int64_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Integer/Integer_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Number/Number_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_SByte/SByte_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_String/String_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_UInt16/UInt16_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_UInt32/UInt32_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_UInteger/UInteger_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_UtcTime/UtcTime_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Variant/Variant_00
 
     - Id: kafka1
       Type: Kafka
       Enabled: false
       LogLevel: INFO
-      Servers: linux0.rocworks.local:9092
-      Configs:
-        batch.size: 25000
-        group.id: frankenstein-producer
-        enable.auto.commit: true
-        auto.commit.interval.ms: 1000
+      Kafka:
+        Servers: linux0.rocworks.local:9092
+        Configs:
+          batch.size: 25000
+          group.id: frankenstein-producer
+          enable.auto.commit: true
+          auto.commit.interval.ms: 1000
+        TopicName: opcua          
       WriteParameters:
         QueueSize: 20000
-        BlockSize: 10000
-      TopicName: opcua
+        BlockSize: 10000     
       Logging:
         - Topic: opc/demo1/path/Objects/Variables/#
         - Topic: opc/demo2/path/Objects/Demo/SimulationMass/#
@@ -133,10 +191,11 @@ Database:
     - Id: influx1
       Type: InfluxDB
       Enabled: false
-      Url: http://nuc1.rocworks.local:8087
-      Database: test
-      Username: ""
-      Password: ""
+      InfluxDB:        
+        Url: http://nuc1.rocworks.local:8087
+        Database: test
+        Username: ""
+        Password: ""
       WriteParameters:
         QueueSize: 20000
         BlockSize: 10000

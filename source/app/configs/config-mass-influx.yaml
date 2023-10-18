@@ -74,10 +74,11 @@ Database:
   Logger:
     - Id: iotdb1
       Type: InfluxDB
-      Url: http://server2:8086
-      Database: scada1
-      Username: ""
-      Password: ""
+      InfluxDB:
+        Url: http://server2:8086
+        Database: scada1
+        Username: ""
+        Password: ""
       WriteParameters:
         QueueSize: 20000
         BlockSize: 10000
@@ -194,10 +195,11 @@ Database:
 
     - Id: iotdb2
       Type: InfluxDB
-      Url: http://server2:8086
-      Database: scada2
-      Username: ""
-      Password: ""
+      InfluxDB:        
+        Url: http://server2:8086
+        Database: scada2
+        Username: ""
+        Password: ""
       WriteParameters:
         QueueSize: 20000
         BlockSize: 10000
@@ -314,10 +316,11 @@ Database:
 
     - Id: iotdb3
       Type: InfluxDB
-      Url: http://server2:8086
-      Database: scada3
-      Username: ""
-      Password: ""
+      InfluxDB:        
+        Url: http://server2:8086
+        Database: scada3
+        Username: ""
+        Password: ""
       WriteParameters:
         QueueSize: 20000
         BlockSize: 10000
@@ -434,10 +437,11 @@ Database:
 
     - Id: iotdb4
       Type: InfluxDB
-      Url: http://server2:8086
-      Database: scada4
-      Username: ""
-      Password: ""
+      InfluxDB:        
+        Url: http://server2:8086
+        Database: scada4
+        Username: ""
+        Password: ""
       WriteParameters:
         QueueSize: 20000
         BlockSize: 10000
@@ -554,10 +558,11 @@ Database:
 
     - Id: iotdb5
       Type: InfluxDB
-      Url: http://server2:8086
-      Database: scada5
-      Username: ""
-      Password: ""
+      InfluxDB:        
+        Url: http://server2:8086
+        Database: scada5
+        Username: ""
+        Password: ""
       WriteParameters:
         QueueSize: 20000
         BlockSize: 10000
@@ -720,7 +725,7 @@ OpcUaClient:
     Enabled: false
     LogLevel: INFO
     EndpointUrl:  "opc.tcp://desktop-9o6hthf:4890"
-    SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#Basic128Rsa15
+    SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#None
     SubscriptionSamplingInterval: 0
     UsernameProvider:
       Username: opcuauser

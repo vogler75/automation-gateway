@@ -20,57 +20,17 @@ MqttClient:
     Host: 192.168.1.6
     Port: 1883
     Ssl: false
-    Value:
-      Reader: >
-        def source = new JsonSlurper().parseText(value);
-        return [ 
-          className: "TopicValueOpc",
-          sourceTime: Instant.ofEpochMilli(source.TimeMS).toString(),
-          serverTime: Instant.now().toString(),
-          value: source.Value,
-          statusCode: 0 
-        ];
-      Writer: > 
-        return value;
 
 Database:
   Logger:
     - Id: influx1
       Type: InfluxDB
       Enabled: true
-      Url: http://nuc1.rocworks.local:8086
-      Database: test
-      Username: ""
-      Password: ""
-      WriteParameters:
-        QueueSize: 20000
-        BlockSize: 10000
-      Logging:
-        - Topic: mqtt/mqtt1/path/Meter_Input/WattAct
-        - Topic: mqtt/mqtt1/path/Meter_Output/WattAct
-        - Topic: mqtt/mqtt1/path/PV/Spot/+
-
-    - Id: iotdb1
-      Type: IoTDB
-      Enabled: false
-      Host: nuc1.rocworks.local
-      Port: 6667
-      Database: root.test
-      Username: root
-      Password: root
-      WriteDetails: false
-      WriteParameters:
-        QueueSize: 20000
-        BlockSize: 10000
-      Logging:
-        - Topic: mqtt/mqtt1/path/Meter_Input/WattAct
-        - Topic: mqtt/mqtt1/path/Meter_Output/WattAct
-        - Topic: mqtt/mqtt1/path/PV/Spot/+
-
-    - Id: kafka1
-      Type: Kafka
-      Enabled: true
-      Servers: nuc1.rocworks.local:9092
+      InfluxDB:
+        Url: http://nuc1.rocworks.local:8086
+        Database: test
+        Username: ""
+        Password: ""
       WriteParameters:
         QueueSize: 20000
         BlockSize: 10000

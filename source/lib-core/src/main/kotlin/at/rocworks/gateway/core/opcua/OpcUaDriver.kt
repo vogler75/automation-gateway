@@ -102,8 +102,10 @@ class OpcUaDriver(private val config: JsonObject) : DriverBase(config) {
     }
 
     init {
+        val securityPolicyName = config.getString("SecurityPolicy", null)
         val securityPolicyConf = config.getString("SecurityPolicyUri", null)
-        securityPolicy = if (securityPolicyConf != null) SecurityPolicy.fromUri(securityPolicyConf) else null
+        securityPolicy = if (securityPolicyName != null) SecurityPolicy.fromUri("http://opcfoundation.org/UA/SecurityPolicy#$securityPolicyName")
+                         else if (securityPolicyConf != null) SecurityPolicy.fromUri(securityPolicyConf) else null
         identityProvider = if (config.containsKey("UsernameProvider")) {
             val value = config.getJsonObject("UsernameProvider") as JsonObject
             UsernameProvider(value.getString("Username"), value.getString("Password"))

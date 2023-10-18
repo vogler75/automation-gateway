@@ -74,11 +74,12 @@ Database:
   Logger:
     - Id: iotdb1
       Type: IoTDB
-      Host: server2
-      Port: 6667
-      Database: root.scada1
-      Username: "root"
-      Password: "root"
+      IoTDB:
+        Host: server2
+        Port: 6667
+        Database: root.scada1
+        Username: "root"
+        Password: "root"
       WriteParameters:
         QueueSize: 20000
         BlockSize: 10000        

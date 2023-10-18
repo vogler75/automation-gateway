@@ -12,6 +12,7 @@ dependencies {
     implementation project(':lib-influxdb')
     implementation project(':lib-jdbc')
     implementation project(':lib-kafka')
+    implementation project(':lib-iotdb')
 
     implementation "io.vertx:vertx-core:$vertxVersion"
     implementation "io.vertx:vertx-config-yaml:$vertxVersion"

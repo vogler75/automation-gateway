@@ -9,10 +9,11 @@ data class TopicValue (
     val sourceTime: Instant = Instant.now(),
     val serverTime: Instant = Instant.now(),
     val sourcePicoseconds: Int = 0,
-    val serverPicoseconds: Int = 0
+    val serverPicoseconds: Int = 0,
+    val dataType: Class<Any>? = value?.javaClass
 ) {
     // default constructor needed for json to object mapping
-    constructor() : this(null,0, Instant.MIN, Instant.MIN, 0, 0)
+    constructor() : this(null, 0, Instant.MIN, Instant.MIN, 0, 0)
 
     fun hasValue() = value!=null
 

@@ -41,14 +41,14 @@ class MqttLogger (config: JsonObject) : LoggerBase(config) {
     private val bulkMessages: Boolean = configMqtt.getBoolean("BulkMessages", false)
     private val maxMessageSizeKb = configMqtt.getInteger("MaxMessageSizeKb", 8) * 1024
 
-    private val formatter: (DataPoint) -> Buffer = when (format) {
+    private val formatter: (DataPoint) -> Buffer = when (format.uppercase()) {
         "RAW" -> ::rawFormat
         "JSON" -> ::jsonFormat
         "SPARKPLUGB" -> ::spbFormat
         else -> ::unknownFormat
     }
 
-    private val bulkFormatter: (List<DataPoint>) -> Buffer = when (format) {
+    private val bulkFormatter: (List<DataPoint>) -> Buffer = when (format.uppercase()) {
         "JSON" -> ::jsonBulkFormat
         "SPARKPLUGB" -> ::spbBulkFormat
         else -> ::unknownBulkFormat

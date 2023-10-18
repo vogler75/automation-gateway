@@ -2,4 +2,4 @@ rootProject.name = 'gateway'
 
 include('app', 'app-plc4x', 'test')
 
-include('lib-core', 'lib-plc4x', 'lib-influxdb', 'lib-kafka', 'lib-jdbc')
+include('lib-core', 'lib-plc4x', 'lib-influxdb', 'lib-kafka', 'lib-jdbc', 'lib-iotdb')

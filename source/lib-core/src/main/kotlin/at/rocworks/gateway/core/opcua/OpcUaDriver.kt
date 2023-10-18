@@ -30,7 +30,7 @@ import org.eclipse.milo.opcua.sdk.client.nodes.UaNode
 import org.eclipse.milo.opcua.stack.core.*
 import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy
 import org.eclipse.milo.opcua.stack.core.types.builtin.*
-import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger
+import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.*
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.*
 import org.eclipse.milo.opcua.stack.core.types.enumerated.*
 import org.eclipse.milo.opcua.stack.core.types.structured.*
@@ -917,8 +917,29 @@ class OpcUaDriver(private val config: JsonObject) : DriverBase(config) {
     }
 
     private fun fromDataValue(v: DataValue): TopicValue {
+        val result = if (v.value.isNull) null
+        else when (val value = v.value.value) {
+            is UInteger -> value.toLong()
+            is ULong -> value.toLong()
+            is UByte -> value.toInt()
+            is UShort -> value.toInt()
+            is UNumber -> value.toLong()
+            is DateTime -> value.javaDate
+            is NodeId -> value.toParseableString()
+            is ExpandedNodeId -> value.toParseableString()
+            is LocalizedText -> value.text
+            is Variant -> value.toString()
+            is QualifiedName -> value.toString()
+            is StatusCode -> value.toString()
+            is ExtensionObject -> value.toString()
+            is ByteString -> value.toString()
+            is DiagnosticInfo -> value.toString()
+            is XmlElement -> value.toString()
+            is DataValue -> value.toString()
+            else -> value
+        }
         return TopicValue(
-            value = if (v.value.isNotNull) v.value.value else null,
+            value = result,
             statusCode = v.statusCode?.value ?: StatusCode.BAD.value,
             sourceTime = v.sourceTime?.javaInstant ?: Instant.MIN,
             serverTime = v.serverTime?.javaInstant ?: Instant.MIN,

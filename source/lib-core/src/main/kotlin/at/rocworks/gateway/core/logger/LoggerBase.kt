@@ -117,7 +117,7 @@ abstract class LoggerBase(config: JsonObject) : AbstractVerticle() {
         }
     }
 
-    private fun subscribeTopics() { // TODO: Same in Influx
+    private fun subscribeTopics() {
         val handler = ServiceHandler(vertx, logger)
         services.forEach { it ->
             handler.observeService(it.first.name, it.second) { service ->

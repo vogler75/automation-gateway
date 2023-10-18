@@ -1,0 +1,24 @@
+plugins {
+    id 'gateway.kotlin-library-conventions'
+}
+
+project.ext {
+    vertxVersion = "4.2.4"
+}
+
+repositories {
+    mavenLocal()
+    maven {
+        url = uri('https://repo.maven.apache.org/maven2/')
+    }
+}
+
+dependencies {
+    api project(':lib-core')
+
+    implementation "io.vertx:vertx-core:$vertxVersion"
+    implementation "io.vertx:vertx-config-yaml:$vertxVersion"
+    implementation "io.vertx:vertx-service-discovery:$vertxVersion"
+
+    implementation 'org.apache.iotdb:iotdb-session:1.2.2'
+}

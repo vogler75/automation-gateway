@@ -9,6 +9,8 @@ import at.rocworks.gateway.core.service.Common
 import at.rocworks.gateway.logger.influx.InfluxDBLogger
 import at.rocworks.gateway.logger.jdbc.JdbcLogger
 import at.rocworks.gateway.logger.kafka.KafkaLogger
+import at.rocworks.gateway.logger.iotdb.IoTDBLogger
+
 import io.vertx.core.Vertx
 import io.vertx.core.json.JsonObject
 import java.util.logging.Logger
@@ -79,6 +81,7 @@ object App {
                 "Kafka" ->  vertx.deployVerticle(KafkaLogger(config))
                 "Jdbc" -> vertx.deployVerticle(JdbcLogger(config))
                 "InfluxDB" -> vertx.deployVerticle(InfluxDBLogger(config))
+                "IoTDB" -> vertx.deployVerticle(IoTDBLogger(config))
                 else -> logger.severe("Unknown database type [${type}]")
             }
         }

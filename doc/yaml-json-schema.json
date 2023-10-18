@@ -57,7 +57,10 @@
             "additionalProperties": false,
             "properties": {
                 "Id": { "type": "string" },
-                "Type": { "type": "string", "enum": ["Mqtt", "Kafka", "InfluxDB", "Jdbc"] },
+                "Type": { 
+                    "type": "string", 
+                    "enum": ["Mqtt", "Kafka", "InfluxDB", "Jdbc", "IoTDB"] 
+                },
                 "Enabled": { "type": "boolean" },
                 "LogLevel": { "$ref": "#/definitions/LogLevel" },
                 "WriteParameters": { "$ref": "#/definitions/LoggerWriteParameters" },
@@ -88,7 +91,7 @@
                         "Qos": { "type": "integer" },
                         "Retained": { "type": "boolean" },
                         "Topic": { "type": "string" },
-                        "Format": { "type": "string" },
+                        "Format": { "type": "string", "enum": ["Raw", "Json", "SparkplugB"]},
                         "BulkMessages": { "type": "boolean" },
                         "MaxMessageSizeKb": { "type": "integer" }
                     }                    
@@ -124,7 +127,19 @@
                         "Password": { "type": "string" }                            
                     },
                     "required": ["Url", "Database"]
-                }
+                },
+                "IoTDB": {
+                    "type": "object",
+                    "properties": {  
+                        "Host": { "type": "string" },
+                        "Port": { "type": "integer" },                        
+                        "Username": { "type": "string" },
+                        "Password": { "type": "string" },
+                        "Database": { "type": "string" },
+                        "WriteDetails": { "type": "boolean" }
+                    },
+                    "required": ["Host", "Port", "Database"]
+                }                
             },
             "required": [
                 "Id",

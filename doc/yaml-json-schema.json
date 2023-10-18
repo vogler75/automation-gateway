@@ -151,10 +151,7 @@
         "KafkaPublisherConfigs": {
             "type": "object",
             "additionalProperties": true,
-            "properties": {
-                "group.id": {
-                    "type": "string"
-                },                
+            "properties": {             
                 "batch.size": {
                     "type": "integer"
                 },
@@ -166,7 +163,6 @@
                 }
             },
             "required": [
-                "group.id"
             ],
             "title": "Configs"
         },

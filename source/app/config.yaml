@@ -131,7 +131,6 @@ Database:
         Servers: linux0.rocworks.local:9092
         Configs:
           batch.size: 25000
-          group.id: frankenstein-producer
           enable.auto.commit: true
           auto.commit.interval.ms: 1000
         TopicName: opcua          

@@ -215,12 +215,12 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
             val value = toValue(topic.node, data)
             when (topic.format) {
                 Topic.Format.Value -> {
-                    val data = Buffer.buffer(value.valueAsString())
-                    vertx.eventBus().publish(topic.topicName, data)
+                    val message = Buffer.buffer(value.valueAsString())
+                    vertx.eventBus().publish(topic.topicName, message)
                 }
                 Topic.Format.Json -> {
-                    val data = DataPoint(topic, value)
-                    vertx.eventBus().publish(topic.topicName, data)
+                    val message = DataPoint(topic, value)
+                    vertx.eventBus().publish(topic.topicName, message)
                 }
             }
         } catch (e: java.lang.Exception) {

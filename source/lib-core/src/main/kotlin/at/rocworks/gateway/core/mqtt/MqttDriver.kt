@@ -145,8 +145,8 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
 
     private fun toValue(buffer: Buffer) : TopicValue {
         return when (val json = Json.decodeValue(buffer)) {
-            is JsonObject -> TopicValue(json as JsonObject)
-            is JsonArray -> TopicValue(json as JsonArray)
+            is JsonObject -> TopicValue(json)
+            is JsonArray -> TopicValue(json)
             else -> TopicValue(json)
         }
     }
@@ -165,8 +165,8 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
                             vertx.eventBus().publish(topic.topicName, payload)
                         }
                         Topic.Format.Json -> {
-                            val message = DataPoint(topic, toValue(payload))
-                            vertx.eventBus().publish(topic.topicName, message)
+                            val output = DataPoint(topic, toValue(payload))
+                            vertx.eventBus().publish(topic.topicName, output)
                         }
                     }
                 } catch (e: Exception) {

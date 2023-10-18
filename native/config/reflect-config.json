@@ -24,10 +24,22 @@
   "name":"[Lcom.fasterxml.jackson.databind.ser.Serializers;"
 },
 {
+  "name":"[Ljava.lang.Class;"
+},
+{
   "name":"[Ljava.lang.Object;"
 },
 {
   "name":"[Ljava.lang.String;"
+},
+{
+  "name":"[Ljava.lang.reflect.Constructor;"
+},
+{
+  "name":"[Ljava.lang.reflect.Field;"
+},
+{
+  "name":"[Ljava.lang.reflect.Method;"
 },
 {
   "name":"[Ljava.util.concurrent.CompletableFuture;"
@@ -93,7 +105,7 @@
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
-  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"getServerPicoseconds","parameterTypes":[] }, {"name":"getServerTime","parameterTypes":[] }, {"name":"getSourcePicoseconds","parameterTypes":[] }, {"name":"getSourceTime","parameterTypes":[] }, {"name":"getStatusCode","parameterTypes":[] }, {"name":"getValue","parameterTypes":[] }]
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"getDataType","parameterTypes":[] }, {"name":"getServerPicoseconds","parameterTypes":[] }, {"name":"getServerTime","parameterTypes":[] }, {"name":"getSourcePicoseconds","parameterTypes":[] }, {"name":"getSourceTime","parameterTypes":[] }, {"name":"getStatusCode","parameterTypes":[] }, {"name":"getValue","parameterTypes":[] }]
 },
 {
   "name":"ch.qos.logback.classic.encoder.PatternLayoutEncoder",
@@ -158,6 +170,10 @@
 },
 {
   "name":"com.fasterxml.jackson.databind.ext.Java7SupportImpl",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"com.fasterxml.jackson.databind.ser.std.ClassSerializer",
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
@@ -532,6 +548,11 @@
   "fields":[{"name":"TYPE"}]
 },
 {
+  "name":"java.lang.Class",
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true
+},
+{
   "name":"java.lang.Cloneable",
   "queryAllDeclaredMethods":true
 },
@@ -878,6 +899,10 @@
 },
 {
   "name":"org.apache.harmony.security.provider.crypto.CryptoProvider"
+},
+{
+  "name":"org.apache.iotdb.service.rpc.thrift.IClientRPCService$Iface",
+  "methods":[{"name":"insertRecords","parameterTypes":["org.apache.iotdb.service.rpc.thrift.TSInsertRecordsReq"] }, {"name":"openSession","parameterTypes":["org.apache.iotdb.service.rpc.thrift.TSOpenSessionReq"] }, {"name":"requestStatementId","parameterTypes":["long"] }]
 },
 {
   "name":"org.apache.kafka.clients.producer.internals.DefaultPartitioner",

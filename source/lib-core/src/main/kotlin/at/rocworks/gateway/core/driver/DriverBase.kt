@@ -147,7 +147,7 @@ abstract class DriverBase(config: JsonObject) : AbstractVerticle() {
     private fun publishHandler(message: Message<JsonObject>) {
         val topic = Topic.decodeFromJson(message.body().getJsonObject("Topic"))
         val data = message.body().getBuffer("Data")
-        logger.finest { "Publish [${topic.toString()}] [${data.toString()}]" }
+        logger.finest { "Publish [$topic] [$data]" }
         try {
             publishTopic(topic, data).onComplete { result: AsyncResult<Boolean> ->
                 if (result.cause() != null) result.cause().printStackTrace()

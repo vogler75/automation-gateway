@@ -11,23 +11,22 @@ MqttServer:
     - Id: MqttWs
       Port: 1884
       Host: 0.0.0.0
-      Websocket: true
+      Websocket: true      
       MaxMessageSizeKb: 8192
       #Username: demo
       #Password: demo
-      LogLevel: INFO # ALL | INFO
+      LogLevel: ALL
 
 GraphQLServer:
   Listeners:
     - Port: 4001
-      Enabled: false
+      Enabled: true
       LogLevel: INFO
-      GraphiQL: false
-      WriteSchemaToFile: false      
-#      Schemas:
-#        - System: scada
-#        - System: demo1
-#        - System: demo2
+      GraphiQL: true      
+      Schemas:
+      #  - System: scada
+       - System: demo1
+       - System: demo2
 #        - System: ignition
 #        - System: unified
 #          FieldName: DisplayName
@@ -36,7 +35,7 @@ GraphQLServer:
 
 OpcUaClient:
   - Id: "demo1"
-    Enabled: false
+    Enabled: true
     LogLevel: INFO
     EndpointUrl: "opc.tcp://192.168.1.3:62540/server"
     UpdateEndpointUrl: true
@@ -106,6 +105,7 @@ Database:
   Logger:
     - Id: mqtt1
       Type: Mqtt
+      Enabled: false
       Mqtt:
         Host: linux0.rocworks.local
         Port: 1883
@@ -113,7 +113,6 @@ Database:
         Topic: Enterprise/Site/Area/Line
         Format: Json
         BulkMessages: false                   
-      Enabled: true
       LogLevel: INFO       
       WriteParameters:
         QueueSize: 20000
@@ -123,26 +122,26 @@ Database:
         # - Topic: opc/demo1/path/Objects/Variables/#
         # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/#
 
-        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Boolean/Boolean_00
-        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Byte/Byte_00
-        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_ByteString/ByteString_00
-        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_DateTime/DateTime_00
-        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Double/Double_00
-        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Duration/Duration_00
-        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Float/Float_00
-        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Int16/Int16_00
-        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Int32/Int32_00
-        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Int64/Int64_00
-        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_SByte/SByte_00
-        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_String/String_00
-        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_UInt16/UInt16_00
-        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_UInt32/UInt32_00
-        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_UtcTime/UtcTime_00
-        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Guid/Guid_00
-        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_LocaleId/LocaleId_00
-        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_LocalizedText/LocalizedText_00
-        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_NodeId/NodeId_00
-        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_XmlElement/XmlElement_00        
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Boolean/Boolean_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Byte/Byte_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_ByteString/ByteString_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_DateTime/DateTime_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Double/Double_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Duration/Duration_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Float/Float_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Int16/Int16_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Int32/Int32_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Int64/Int64_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_SByte/SByte_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_String/String_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_UInt16/UInt16_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_UInt32/UInt32_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_UtcTime/UtcTime_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Guid/Guid_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_LocaleId/LocaleId_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_LocalizedText/LocalizedText_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_NodeId/NodeId_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_XmlElement/XmlElement_00        
         
         # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Number/Number_00 # It delivers different datatypes
         # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Integer/Integer_00 # It delivers different datatypes
@@ -156,7 +155,7 @@ Database:
         # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_DateTime/#
         # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Double/#
         # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Duration/#
-        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Float/#
+        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Float/#
         # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Int16/#
         # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Int32/#
         # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Int64/#
@@ -196,14 +195,33 @@ Database:
         - Topic: opc/demo1/path/Objects/Variables/#
         - Topic: opc/demo2/path/Objects/Demo/SimulationMass/#
 
+        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Boolean/Boolean_00
+        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Byte/Byte_00
+        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_ByteString/ByteString_00
+        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_DateTime/DateTime_00
+        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Double/Double_00
+        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Duration/Duration_00
+        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Float/Float_00
+        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Int16/Int16_00
+        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Int32/Int32_00
+        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Int64/Int64_00
+        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_SByte/SByte_00
+        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_String/String_00
+        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_UInt16/UInt16_00
+        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_UInt32/UInt32_00
+        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_UtcTime/UtcTime_00
+        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Guid/Guid_00
+        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_LocaleId/LocaleId_00
+        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_LocalizedText/LocalizedText_00
+        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_NodeId/NodeId_00
+        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_XmlElement/XmlElement_00          
+
     - Id: influx1
       Type: InfluxDB
       Enabled: false
       InfluxDB:        
-        Url: http://nuc1.rocworks.local:8087
+        Url: http://nuc1b.rocworks.local:8086
         Database: test
-        Username: ""
-        Password: ""
       WriteParameters:
         QueueSize: 20000
         BlockSize: 10000
@@ -211,16 +229,6 @@ Database:
         - Topic: opc/demo1/path/Objects/Variables/#
         - Topic: opc/demo2/path/Objects/Demo/SimulationMass/#
 
-    - Id: iotdb1
-      Type: IoTDB
-      Enabled: true
-      IoTDB:
-        Host: linux0.rocworks.local
-        Port: 6667
-        Database: root.gateway
-        Username: "root"
-        Password: "root"      
-      Logging:
         # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Boolean/Boolean_00
         # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Byte/Byte_00
         # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_ByteString/ByteString_00
@@ -242,23 +250,57 @@ Database:
         # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_NodeId/NodeId_00
         # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_XmlElement/XmlElement_00  
 
-        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Boolean/#
-        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Byte/#
-        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_ByteString/#
-        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_DateTime/#
-        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Double/#
-        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Duration/#
+    - Id: iotdb1
+      Type: IoTDB
+      Enabled: false
+      IoTDB:
+        Host: linux0.rocworks.local
+        Port: 6667
+        Database: root.gateway
+        Username: "root"
+        Password: "root"      
+      Logging:
+        - Topic: opc/demo1/path/Objects/Variables/#
+        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/#
+
+        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Boolean/Boolean_00
+        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Byte/Byte_00
+        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_ByteString/ByteString_00
+        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_DateTime/DateTime_00
+        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Double/Double_00
+        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Duration/Duration_00
+        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Float/Float_00
+        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Int16/Int16_00
+        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Int32/Int32_00
+        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Int64/Int64_00
+        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_SByte/SByte_00
+        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_String/String_00
+        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_UInt16/UInt16_00
+        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_UInt32/UInt32_00
+        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_UtcTime/UtcTime_00
+        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Guid/Guid_00
+        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_LocaleId/LocaleId_00
+        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_LocalizedText/LocalizedText_00
+        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_NodeId/NodeId_00
+        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_XmlElement/XmlElement_00  
+
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Boolean/#
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Byte/#
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_ByteString/#
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_DateTime/#
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Double/#
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Duration/#
         - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Float/#
-        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Int16/#
-        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Int32/#
-        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Int64/#
-        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_SByte/#
-        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_String/#
-        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_UInt16/#
-        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_UInt32/#
-        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_UtcTime/#
-        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Guid/#
-        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_LocaleId/#
-        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_LocalizedText/#
-        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_NodeId/#
-        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_XmlElement/#           
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Int16/#
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Int32/#
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Int64/#
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_SByte/#
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_String/#
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_UInt16/#
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_UInt32/#
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_UtcTime/#
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Guid/#
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_LocaleId/#
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_LocalizedText/#
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_NodeId/#
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_XmlElement/#           

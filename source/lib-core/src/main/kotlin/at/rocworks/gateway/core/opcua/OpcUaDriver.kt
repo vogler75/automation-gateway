@@ -1,5 +1,6 @@
 package at.rocworks.gateway.core.opcua
 
+import at.rocworks.gateway.core.data.DataPoint
 import at.rocworks.gateway.core.data.Topic
 import at.rocworks.gateway.core.data.TopicValue
 import at.rocworks.gateway.core.driver.DriverBase
@@ -759,24 +760,19 @@ class OpcUaDriver(private val config: JsonObject) : DriverBase(config) {
 
             val value = fromDataValue(data)
 
-            if (value.value is org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.ULong)
+            if (value.hasNoValue() || value.value is ULong)
                 return
 
             try {
-                fun json() = JsonObject()
-                    .put("Topic", topic.encodeToJson())
-                    .put("Value", value.encodeToJson())
-
-                val buffer : Buffer? = when (topic.format) {
+                when (topic.format) {
                     Topic.Format.Value -> {
-                        data.value?.value?.let {
-                            Buffer.buffer(it.toString())
-                        }
+                        val message = Buffer.buffer(value.valueAsString())
+                        vertx.eventBus().publish(topic.topicName, message)
                     }
-                    Topic.Format.Json -> Buffer.buffer(json().encode())
-                }
-                if (buffer!=null) {
-                    vertx.eventBus().publish(topic.topicName, buffer)
+                    Topic.Format.Json -> {
+                        val message = DataPoint(topic, value)
+                        vertx.eventBus().publish(topic.topicName, message)
+                    }
                 }
             } catch (e: Exception) {
                 val type = if (value.value != null) value.value::class.qualifiedName else "?"

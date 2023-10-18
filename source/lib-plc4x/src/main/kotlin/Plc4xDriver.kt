@@ -1,3 +1,4 @@
+import at.rocworks.gateway.core.data.DataPoint
 import at.rocworks.gateway.core.data.Topic
 import at.rocworks.gateway.core.data.TopicValue
 import at.rocworks.gateway.core.driver.DriverBase
@@ -69,7 +70,7 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
                 response.whenComplete { readResponse, throwable ->
                     ++pollingResponseId
                     if (readResponse != null) {
-                        logger.finest("Poll response [${readResponse.asPlcValue.toString()}]", )
+                        logger.finest("Poll response [${readResponse.asPlcValue}]")
                         pollingTopics.forEach { topic ->
                             val value = readResponse.getPlcValue(topic.key.topicName)
                             if (!pollingOldNew || value.toString() != topic.value.toString()) { // TODO: String Compare?
@@ -112,7 +113,7 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
             val info = (if (it.metadata?.canRead() == true) "Read " else " ") +
                     (if (it.metadata?.canWrite() == true) "Write " else " ") +
                     if (it.metadata?.canSubscribe() == true) "Subscribe " else " "
-            logger.severe("This connection supports: ${info}")
+            logger.severe("This connection supports: $info")
         }
     }
 
@@ -156,7 +157,7 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
     }
 
     private fun subscribeTopic(topics: List<Topic>) : Future<Boolean> {
-        logger.info("Subscribe topic [${topics.size}]", )
+        logger.info("Subscribe topic [${topics.size}]")
         val ret = Promise.promise<Boolean>()
         when {
             plc?.metadata?.canSubscribe() == false -> {
@@ -209,21 +210,19 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
     }
 
     private fun valueConsumer(topic: Topic, data: PlcValue) {
-        logger.finest("Got value [${topic.topicName}] [${data.toString()}]")
+        logger.finest("Got value [${topic.topicName}] [$data]")
         try {
-            fun json() = JsonObject()
-                .put("Topic", topic.encodeToJson())
-                .put("Value", toValue(topic.node, data).encodeToJson())
-
-            val buffer : Buffer? = when (topic.format) {
+            val value = toValue(topic.node, data)
+            when (topic.format) {
                 Topic.Format.Value -> {
-                    toValue(topic.node, data).value.toString().let {
-                        Buffer.buffer(it)
-                    }
+                    val data = Buffer.buffer(value.valueAsString())
+                    vertx.eventBus().publish(topic.topicName, data)
                 }
-                Topic.Format.Json -> Buffer.buffer(json().encode())
+                Topic.Format.Json -> {
+                    val data = DataPoint(topic, value)
+                    vertx.eventBus().publish(topic.topicName, data)
+                }
             }
-            if (buffer!=null) vertx.eventBus().publish(topic.topicName, buffer)
         } catch (e: java.lang.Exception) {
             e.printStackTrace()
         }

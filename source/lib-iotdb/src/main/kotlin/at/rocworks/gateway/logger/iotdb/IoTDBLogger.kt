@@ -1,5 +1,6 @@
 package at.rocworks.gateway.logger.iotdb
 
+import at.rocworks.gateway.core.data.DataPoint
 import at.rocworks.gateway.core.data.TopicValue
 import at.rocworks.gateway.core.logger.LoggerBase
 import io.vertx.core.Future
@@ -10,6 +11,8 @@ import java.util.concurrent.TimeUnit
 
 import org.apache.iotdb.session.Session
 import org.apache.iotdb.tsfile.file.metadata.enums.TSDataType
+import java.util.*
+import kotlin.collections.LinkedHashMap
 
 class IoTDBLogger(config: JsonObject) : LoggerBase(config) {
     private val configIoTDB = config.getJsonObject("IoTDB", config)
@@ -17,7 +20,7 @@ class IoTDBLogger(config: JsonObject) : LoggerBase(config) {
     private val port = configIoTDB.getInteger("Port", 6667)
     private val username = configIoTDB.getString("Username", "")
     private val password = configIoTDB.getString("Password", "")
-    private val database = configIoTDB.getString("Database", "root.gateway")
+    private val database = configIoTDB.getString("Database", "root.test")
     private val writeDetails = configIoTDB.getBoolean("WriteDetails", false)
 
     private val session: Session = if (username == null || username == "")
@@ -50,14 +53,17 @@ class IoTDBLogger(config: JsonObject) : LoggerBase(config) {
         val valuesList = mutableListOf<List<Any>>()
 
         fun getDataTypeAndValue(topicValue: TopicValue): Pair<TSDataType?, Any?> {
-            println("${topicValue.dataType} ${topicValue.dataTypeName()} ${topicValue.value} ")
             return when (val value = topicValue.valueAsObject()) {
                 is String -> TSDataType.TEXT to value
                 is Double -> if (!value.isNaN()) TSDataType.DOUBLE to value.toDouble() else null to null
                 is Float -> if (!value.isNaN()) TSDataType.FLOAT to value.toFloat() else null to null
-                is Int -> TSDataType.INT64 to value.toInt()
+                is Int -> TSDataType.INT32 to value.toInt()
+                is Byte -> TSDataType.INT32 to value.toInt()
+                is Short -> TSDataType.INT32 to value.toInt()
                 is Long -> TSDataType.INT64 to value.toLong()
                 is Boolean -> TSDataType.BOOLEAN to value
+                is Date -> TSDataType.INT64 to value.time
+                is UUID -> TSDataType.TEXT to value.toString()
                 else -> {
                     if (value is LinkedHashMap<*, *>) {
                         val map = value.entries.associate { item -> item.key.toString() to item.value }
@@ -122,7 +128,7 @@ class IoTDBLogger(config: JsonObject) : LoggerBase(config) {
                 session.insertRecords(deviceIds, times, measurementList, typesList, valuesList)
                 valueCounterOutput += deviceIds.size
             } catch (e: Exception) {
-                logger.severe("Error writing records [${e.message}]", )
+                logger.severe("Error writing records [${e.message}]")
             }
         }
     }

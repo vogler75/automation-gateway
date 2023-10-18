@@ -1,5 +1,6 @@
 package at.rocworks.gateway.logger.kafka
 
+import at.rocworks.gateway.core.data.DataPoint
 import at.rocworks.gateway.core.logger.LoggerBase
 import io.vertx.core.Future
 import io.vertx.core.Promise

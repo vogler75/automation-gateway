@@ -16,6 +16,7 @@ data class TopicValue (
     constructor() : this(null, 0, Instant.MIN, Instant.MIN, 0, 0)
 
     fun hasValue() = value!=null
+    fun hasNoValue() = value==null
 
     fun valueAsObject() = value
     fun statusAsString() = statusCode.toString()

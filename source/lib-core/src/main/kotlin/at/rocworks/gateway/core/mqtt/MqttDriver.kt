@@ -1,6 +1,8 @@
 package at.rocworks.gateway.core.mqtt
 
+import at.rocworks.gateway.core.data.DataPoint
 import at.rocworks.gateway.core.data.Topic
+import at.rocworks.gateway.core.data.TopicValue
 import at.rocworks.gateway.core.driver.DriverBase
 import at.rocworks.gateway.core.driver.MonitoredItem
 
@@ -141,24 +143,32 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
         }
     }
 
+    private fun toValue(buffer: Buffer) : TopicValue {
+        return when (val json = Json.decodeValue(buffer)) {
+            is JsonObject -> TopicValue(json as JsonObject)
+            is JsonArray -> TopicValue(json as JsonArray)
+            else -> TopicValue(json)
+        }
+    }
+
     private fun valueConsumer(message: MqttPublishMessage) {
         logger.finest { "Got value [${message.topicName()}] [${ message.payload()}]" }
         try {
             val receivedTopic = message.topicName()
             val payload : Buffer = message.payload()
 
-            fun json(topic: Topic) = JsonObject()
-                .put("Topic", topic.encodeToJson())
-                .put("Value", Json.decodeValue(transformReaderValue(payload)))
-
             fun publish(topic: Topic) {
                 try {
                     topic.browsePath = receivedTopic
-                    val buffer: Buffer? = when (topic.format) {
-                        Topic.Format.Value -> payload
-                        Topic.Format.Json -> Buffer.buffer(json(topic).encode())
+                    when (topic.format) {
+                        Topic.Format.Value -> {
+                            vertx.eventBus().publish(topic.topicName, payload)
+                        }
+                        Topic.Format.Json -> {
+                            val message = DataPoint(topic, toValue(payload))
+                            vertx.eventBus().publish(topic.topicName, message)
+                        }
                     }
-                    vertx.eventBus().publish(topic.topicName, buffer)
                 } catch (e: Exception) {
                     logger.warning("Exception on publish value [${e.message}]", )
                 }

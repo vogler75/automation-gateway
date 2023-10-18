@@ -1,5 +1,6 @@
 package at.rocworks.gateway.core.mqtt
 
+import at.rocworks.gateway.core.data.DataPoint
 import at.rocworks.gateway.core.data.Topic
 import io.netty.handler.codec.mqtt.MqttQoS
 import io.vertx.core.AbstractVerticle
@@ -242,7 +243,7 @@ class MqttServer(config: JsonObject, private val endpoint: MqttEndpoint) : Abstr
     private fun subscribeMqttTopic(t: Topic, qos: MqttQoS, ret: Promise<Boolean>) {
         logger.finest { "Register [${t.topicName}]" }
         val consumer = vertx.eventBus().consumer<Buffer>(t.topicName) {
-            valueConsumer(t, qos, it.body())
+            valueConsumerMqttTopic(t, qos, it.body())
         }
         this.topicConsumer[t.topicName] = consumer as MessageConsumer<*>
         ret.complete(true)
@@ -255,12 +256,14 @@ class MqttServer(config: JsonObject, private val endpoint: MqttEndpoint) : Abstr
     }
 
     private fun subscribeDriverTopic(type: String, t: Topic, qos: MqttQoS, ret: Promise<Boolean>) {
-        val consumer = vertx.eventBus().consumer<Any>(t.topicName) { valueConsumer(t, qos, it.body()) }
+        val consumer = vertx.eventBus().consumer<DataPoint>(t.topicName) {
+            valueConsumerDataPoint(t, qos, it.body())
+        }
         val r = JsonObject().put("ClientId", endpoint.clientIdentifier()).put("Topic", t.encodeToJson())
         vertx.eventBus().request<JsonObject>("${type}/${t.systemName}/Subscribe", r) {
             logger.finest { "Subscribe response [${it.succeeded()}] [${it.result()?.body()}]" }
             if (it.succeeded() && it.result().body().getBoolean("Ok")) {
-                this.topicConsumer[t.topicName] = consumer as MessageConsumer<Any>
+                this.topicConsumer[t.topicName] = consumer as MessageConsumer<*>
                 ret.complete(true)
             } else {
                 consumer.unregister()
@@ -283,17 +286,21 @@ class MqttServer(config: JsonObject, private val endpoint: MqttEndpoint) : Abstr
         }
     }
 
-    private fun valueConsumer(topic: Topic, qos: MqttQoS, value: Any) {
-        when (value) {
-            is Buffer -> valueConsumerBuffer(topic, qos, value)
-            is String -> valueConsumerBuffer(topic, qos, Buffer.buffer(value))
-            is JsonObject -> valueConsumerBuffer(topic, qos, value.toBuffer())
-            is JsonArray -> valueConsumerBuffer(topic, qos, value.toBuffer())
-            else -> logger.warning("Got unhandled class of instance [${value.javaClass.simpleName}]")
+    private fun valueConsumerDataPoint(topic: Topic, qos: MqttQoS, data: DataPoint) {
+        try {
+            logger.finest { "Publish [${data.encodeToJson()}]" }
+            if (endpoint.isConnected) {
+                val value = Buffer.buffer(data.encodeToJson().toString())
+                endpoint.publish(topic.topicName, value, qos, false /*isDup*/, false /* isRetain */)
+            } else {
+                logger.warning("Publish topic [${topic}] to client [${endpoint.clientIdentifier()}] which is not connected anymore!")
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 
-    private fun valueConsumerBuffer(topic: Topic, qos: MqttQoS, value: Buffer) {
+    private fun valueConsumerMqttTopic(topic: Topic, qos: MqttQoS, value: Buffer) {
         try {
             logger.finest { "Publish [${value}]" }
             if (endpoint.isConnected) {

@@ -1,5 +1,6 @@
 package at.rocworks.gateway.core.mqtt
 
+import at.rocworks.gateway.core.data.DataPoint
 import at.rocworks.gateway.core.logger.LoggerBase
 import io.netty.handler.codec.mqtt.MqttQoS
 import io.vertx.core.Future

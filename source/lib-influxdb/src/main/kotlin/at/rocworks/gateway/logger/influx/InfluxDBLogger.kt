@@ -1,5 +1,6 @@
 package at.rocworks.gateway.logger.influx
 
+import at.rocworks.gateway.core.data.DataPoint
 import at.rocworks.gateway.core.logger.LoggerBase
 import io.vertx.core.Future
 import io.vertx.core.Promise
@@ -14,12 +15,12 @@ import org.influxdb.dto.*
 
 
 class InfluxDBLogger(config: JsonObject) : LoggerBase(config) {
-    private val configJdbc = config.getJsonObject("Jdbc", config)
+    private val configJdbc = config.getJsonObject("InfluxDB", config)
 
     private val url = configJdbc.getString("Url", "")
     private val username = configJdbc.getString("Username", "")
     private val password = configJdbc.getString("Password", "")
-    private val database = configJdbc.getString("Database", "scada")
+    private val database = configJdbc.getString("Database", "test")
 
     private val session: InfluxDB = if (username == null || username == "")
         InfluxDBFactory.connect(url)

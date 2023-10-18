@@ -1,5 +1,6 @@
 package at.rocworks.gateway.core.logger
 
+import at.rocworks.gateway.core.data.DataPoint
 import at.rocworks.gateway.core.data.Topic
 import at.rocworks.gateway.core.data.TopicValue
 import at.rocworks.gateway.core.service.Common
@@ -8,9 +9,7 @@ import at.rocworks.gateway.core.service.ServiceHandler
 import io.vertx.core.AbstractVerticle
 import io.vertx.core.Future
 import io.vertx.core.Promise
-import io.vertx.core.buffer.Buffer
 import io.vertx.core.eventbus.Message
-import io.vertx.core.json.Json
 import io.vertx.core.json.JsonObject
 import io.vertx.servicediscovery.Status
 
@@ -126,7 +125,9 @@ abstract class LoggerBase(config: JsonObject) : AbstractVerticle() {
                     topics
                         .filter { it.systemType.name == service.type && it.systemName == service.name }
                         .forEach { topic ->
-                            vertx.eventBus().consumer<Any>(topic.topicName) { valueConsumer(it.body()) }
+                            vertx.eventBus().consumer<DataPoint>(topic.topicName) {
+                                valueConsumerDataPoint(it.body())
+                            }
                             subscribeTopic(ServiceHandler.endpointOf(service), topic)
                         }
                 }
@@ -143,23 +144,6 @@ abstract class LoggerBase(config: JsonObject) : AbstractVerticle() {
             }
         }
     }
-
-    private fun valueConsumer(value: Any) {
-        try {
-            when (value) {
-                is Buffer -> valueConsumer(Json.decodeValue(value) as JsonObject)
-                is JsonObject -> valueConsumer(value)
-                else -> logger.warning("Got unhandled class of instance [${value.javaClass.simpleName}]")
-            }
-        } catch (e: Exception) {
-            logger.severe(e.message)
-        }
-    }
-
-    protected data class DataPoint(
-        val topic: Topic,
-        val value: TopicValue
-    )
 
     abstract fun writeExecutor()
 
@@ -179,7 +163,32 @@ abstract class LoggerBase(config: JsonObject) : AbstractVerticle() {
     private var valueCounterInput : Int = 0
     @Volatile var valueCounterOutput : Int = 0
 
-    private fun valueConsumer(data: JsonObject) {
+    private fun valueConsumerDataPoint(data: DataPoint) {
+        valueCounterInput++
+        try {
+            val topic = data.topic
+            val value = data.value
+            if (value.hasNoValue()) return
+
+            logger.finest { "Got value $topic $value" }
+
+            try {
+                writeValueQueue.add(data)
+                if (writeValueQueueFull) {
+                    writeValueQueueFull = false
+                    logger.warning("Logger write queue not full anymore. [${writeValueQueue.size}]")
+                }
+            } catch (e: IllegalStateException) {
+                if (!writeValueQueueFull) {
+                    writeValueQueueFull = true
+                    logger.warning("Logger write queue is full! [${writeParameterQueueSize}]")
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+    private fun valueConsumerJsonObject(data: JsonObject) {
         valueCounterInput++
         try {
             val topic = Topic.decodeFromJson(data.getJsonObject("Topic"))

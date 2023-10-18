@@ -724,10 +724,11 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
 
         val topic = Topic.parseTopic("$type/$system/node:json/$nodeId")
         val flowable = Flowable.create(FlowableOnSubscribe<Map<String, Any?>> { emitter ->
-            val consumer = vertx.eventBus().consumer<Buffer>(topic.topicName) { message ->
+            val consumer = vertx.eventBus().consumer<DataPoint>(topic.topicName) { message ->
                 try {
-                    val data = message.body().toJsonObject()
-                    val output = TopicValue.fromJsonObject(data.getJsonObject("Value"))
+//                    val data = message.body().toJsonObject()
+//                    val output = TopicValue.fromJsonObject(data.getJsonObject("Value"))
+                    val output = message.body().value
                     if (!emitter.isCancelled) emitter.onNext(valueToGraphQL(type, system, nodeId, output))
                 } catch (e: Exception) {
                     e.printStackTrace()
@@ -766,10 +767,11 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
         val flowable = Flowable.create(FlowableOnSubscribe<Map<String, Any?>> { emitter ->
             val consumers = nodeIds.map { nodeId ->
                 val topic = "$type/$system/node:json/$nodeId"
-                vertx.eventBus().consumer<Buffer>(topic) { message ->
+                vertx.eventBus().consumer<DataPoint>(topic) { message ->
                     try {
-                        val data = message.body().toJsonObject()
-                        val output = TopicValue.fromJsonObject(data.getJsonObject("Value"))
+//                        val data = message.body().value
+//                        val output = TopicValue.fromJsonObject(data.getJsonObject("Value"))
+                        val output = message.body().value
                         if (!emitter.isCancelled) emitter.onNext(valueToGraphQL(type, system, nodeId, output))
                     } catch (e: Exception) {
                         e.printStackTrace()

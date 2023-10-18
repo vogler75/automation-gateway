@@ -26,7 +26,6 @@ GraphQLServer:
       LogLevel: INFO
       GraphiQL: true      
       Schemas:
-      #  - System: scada
        - System: demo1
        - System: demo2
 #        - System: ignition

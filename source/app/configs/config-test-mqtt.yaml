@@ -11,7 +11,6 @@ GraphQLServer:
       LogLevel: INFO
       GraphiQL: true
       WriteSchemaToFile: false
-      Schemas:
 
 MqttClient:
   - Id: "mqtt1"
@@ -19,13 +18,13 @@ MqttClient:
     LogLevel: INFO
     Host: 192.168.1.6
     Port: 1883
-    Ssl: false
+    Ssl: false    
 
 Database:
   Logger:
     - Id: influx1
       Type: InfluxDB
-      Enabled: true
+      Enabled: true      
       InfluxDB:
         Url: http://nuc1.rocworks.local:8086
         Database: test

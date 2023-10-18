@@ -283,7 +283,8 @@ Example MQTT Topic:
   - [Build Docker Image](#build-docker-image)
   - [Using PLC4X](#using-plc4x)
 - [Version History](#version-history)
-  - [1.20.3 Moved IoTDB and Neo4J to separate branches](#1203-moved-iotdb-and-neo4j-to-separate-branches)
+  - [1.21 IoTDB, MQTT SparkplugB Logger, YAML Schema, Native-Image](#121-iotdb-mqtt-sparkplugb-logger-yaml-schema-native-image)
+  - [1.20.3 Moved Neo4J to separate branches](#1203-moved-neo4j-to-separate-branches)
   - [1.20.2 Modifed JSON Format of Kafka Logger](#1202-modifed-json-format-of-kafka-logger)
   - [1.20.1 Kafka properties in the config file](#1201-kafka-properties-in-the-config-file)
   - [1.20 Cleanup and GraalVM Native Build](#120-cleanup-and-graalvm-native-build)
@@ -305,8 +306,54 @@ Example MQTT Topic:
   - [1.7 DDS Driver (subscribe and publish)](#17-dds-driver-subscribe-and-publish)
   - [1.6 Added GraphiQL (http://localhost:4000/graphiql/)](#16-added-graphiql-httplocalhost4000graphiql)
   - [1.5 OPC UA Schemas to GraphQL Schema Importer](#15-opc-ua-schemas-to-graphql-schema-importer)
-## 1.20.3 Moved IoTDB and Neo4J to separate branches 
-IoTDB and Neo4J are now in separate branches and are removed from the main branch
+
+## 1.21 IoTDB, MQTT SparkplugB Logger, YAML Schema, Native-Image
+* IoTDB is now again available as data logger.  
+* SparkplubB message format for MQTT logger.
+```
+  Logger:
+    - Id: mqtt1
+      Type: Mqtt
+      Enabled: true
+      LogLevel: INFO       
+      Mqtt:
+        Host: linux0.rocworks.local
+        Port: 1883
+        Topic: Enterprise/Site/Area/Line
+        Format: Json
+        BulkMessages: false                   
+      Logging:
+        - Topic: opc/demo1/path/Objects/Variables/#
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/#
+```
+* YAML json schema is now availabe in the doc directory. It can be used with the "YAML Language Support by Red Hat" Extension. In the settings find the Schema section, open the settings.json and add one line to the yaml.schemas sections: 
+```"
+yaml.schemas": {        
+        "your-path-to-gateway/doc/yaml-json-schema.json": ["config*.yaml"]
+}
+```
+* Update to Gradle 8.4 with new build files.
+* Native image build was upgraded to GraalVM 17 and Java 17.
+* Native image works with Mqtt,Kafka,InfluxDB and IoTDB.
+* Logger configurations have now a separate object for the type specific configurations (but the old style yaml format is still supported). This was necessary for the YAML json schema. 
+```
+- Id: iotdb1
+      Type: IoTDB
+      Enabled: false
+      IoTDB: # same name as Type
+        Host: linux0.rocworks.local
+        Port: 6667
+        Database: root.gateway
+        Username: "root"
+        Password: "root" 
+      LogLevel: INFO       
+
+```
+
+* For published data we use now a DataPoint type instead of JSON. With the JSON format we have lost the origin datatype of the source. By using the new DataPoint type (Topic+TopicValue) the data type is preserved. 
+
+## 1.20.3 Moved Neo4J to separate branches 
+Neo4J is now in a separate branch and is removed from the main branch
 
 ## 1.20.2 Modifed JSON Format of Kafka Logger
 Added times in ms epoch and also added the value as double and as string. 

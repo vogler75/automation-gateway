@@ -242,7 +242,7 @@ class MqttServer(config: JsonObject, private val endpoint: MqttEndpoint) : Abstr
 
     private fun subscribeMqttTopic(t: Topic, qos: MqttQoS, ret: Promise<Boolean>) {
         logger.finest { "Register [${t.topicName}]" }
-        val consumer = vertx.eventBus().consumer<Buffer>(t.topicName) {
+        val consumer = vertx.eventBus().consumer(t.topicName) {
             valueConsumerMqttTopic(t, qos, it.body())
         }
         this.topicConsumer[t.topicName] = consumer as MessageConsumer<*>
@@ -300,16 +300,31 @@ class MqttServer(config: JsonObject, private val endpoint: MqttEndpoint) : Abstr
         }
     }
 
-    private fun valueConsumerMqttTopic(topic: Topic, qos: MqttQoS, value: Buffer) {
-        try {
-            logger.finest { "Publish [${value}]" }
-            if (endpoint.isConnected) {
-                endpoint.publish(topic.topicName, value, qos, false /*isDup*/, false /* isRetain */)
-            } else {
-                logger.warning("Publish topic [${topic}] to client [${endpoint.clientIdentifier()}] which is not connected anymore!")
+    private fun valueConsumerMqttTopic(topic: Topic, qos: MqttQoS, value: Any) {
+        if (endpoint.isConnected) {
+            try {
+                logger.finest { "Publish [${value}]" }
+
+                fun publish(buffer: Buffer) = endpoint.publish(
+                    topic.topicName,
+                    buffer,
+                    qos,
+                    false /*isDup*/,
+                    false /* isRetain */
+                )
+
+                when (value) {
+                    is Buffer -> publish(value)
+                    is String -> publish(Buffer.buffer(value))
+                    is JsonObject -> publish(value.toBuffer())
+                    is JsonArray -> publish(value.toBuffer())
+                    else -> logger.warning("Got unhandled class of instance [${value.javaClass.simpleName}]")
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
+        } else {
+            logger.warning("Publish topic [${topic}] to client [${endpoint.clientIdentifier()}] which is not connected anymore!")
         }
     }
 

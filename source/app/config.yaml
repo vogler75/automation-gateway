@@ -19,7 +19,7 @@ MqttServer:
 
 GraphQLServer:
   Listeners:
-    - Port: 4001
+    - Port: 4000
       LogLevel: INFO
       GraphiQL: true
       WriteSchemaToFile: false
@@ -100,30 +100,17 @@ OpcUaClient:
       SamplingInterval: 0.0
       DiscardOldest: true
 
-MqttClient:
-  - Id: "home"
-    Enabled: true
-    LogLevel: INFO
-    Host: nuc1.rocworks.local
-    Port: 1883
-    Ssl: false 
-
 Database:
   Logger:
     - Id: mqtt1
       Type: Mqtt
       Enabled: true
+      LogLevel: INFO
       Host: linux0.rocworks.local
       Port: 1883
-      Ssl: false
-      WriteParameters:
-        QueueSize: 20000
-        BlockSize: 10000
-      Topic: Enterprise/Site/Area/Line
       Logging:
         - Topic: opc/demo1/path/Objects/Variables/#
         - Topic: opc/demo2/path/Objects/Demo/SimulationMass/#
-        - Topic: mqtt/home/path/Test/#
 
     - Id: kafka1
       Type: Kafka
@@ -156,4 +143,5 @@ Database:
       Logging:
         - Topic: opc/demo1/path/Objects/Variables/#
         - Topic: opc/demo2/path/Objects/Demo/SimulationMass/#
+
 

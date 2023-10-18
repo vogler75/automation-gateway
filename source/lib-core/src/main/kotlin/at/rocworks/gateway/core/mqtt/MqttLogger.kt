@@ -118,8 +118,8 @@ class MqttLogger (config: JsonObject) : LoggerBase(config) {
             client?.publish(this.topic, bulkFormatter(points), MqttQoS.valueOf(qos), false, retained)
     }
 
-    private fun unknownFormat(points: DataPoint) = Buffer.buffer("Unknown message format!")
-    private fun unknownBulkFormat(points: List<DataPoint>) = Buffer.buffer("Unknown bulk message format!")
+    private fun unknownFormat(@Suppress("UNUSED_PARAMETER")points: DataPoint) = Buffer.buffer("Unknown message format!")
+    private fun unknownBulkFormat(@Suppress("UNUSED_PARAMETER")points: List<DataPoint>) = Buffer.buffer("Unknown bulk message format!")
 
     private fun jsonFormat(point: DataPoint) : Buffer {
         val result = JsonObject()

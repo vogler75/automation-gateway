@@ -351,6 +351,7 @@ yaml.schemas": {
 ```
 
 * For published data we use now a DataPoint type instead of JSON. With the JSON format we have lost the origin datatype of the source. By using the new DataPoint type (Topic+TopicValue) the data type is preserved. 
+* Upgrade from Vert.X 4.2.4 to 4.2.7
 
 ## 1.20.3 Moved Neo4J to separate branches 
 Neo4J is now in a separate branch and is removed from the main branch

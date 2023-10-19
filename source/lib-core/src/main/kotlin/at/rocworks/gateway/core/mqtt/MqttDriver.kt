@@ -18,9 +18,12 @@ import io.vertx.core.json.JsonObject
 import io.vertx.mqtt.MqttClient
 import io.vertx.mqtt.MqttClientOptions
 import io.vertx.mqtt.messages.MqttPublishMessage
+import org.eclipse.tahu.message.SparkplugBPayloadDecoder
+import org.eclipse.tahu.message.SparkplugBPayloadEncoder
+import org.eclipse.tahu.message.model.Metric
+import org.eclipse.tahu.message.model.MetricDataType
+import org.eclipse.tahu.message.model.SparkplugBPayload
 
-import java.nio.charset.Charset
-import java.time.format.DateTimeParseException
 import java.util.*
 import kotlin.collections.HashMap
 import kotlin.collections.HashSet
@@ -39,11 +42,34 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
     private val ssl: Boolean = config.getBoolean("Ssl", false)
     private val trustAll: Boolean = config.getBoolean("TrustAll", true)
     private val qos: Int = config.getInteger("Qos", 0)
+    private val retained: Boolean = config.getBoolean("Retained", false)
+    private val format: String = config.getString("Format", "JSON")
 
     private val maxMessageSizeKb = config.getInteger("MaxMessageSizeKb", 8) * 1024
 
     private val subscribedTopics = HashSet<Topic>() // Subscribed topic name can have wildcard
     private val receivedTopics = HashMap<String, List<Topic>>()
+
+    private val decodeMessage: (topic: Topic, topicReceived: String, message: Buffer) -> List<DataPoint> = when (format.uppercase()) {
+        "RAW" -> ::decodeValueMessage
+        "JSON" -> ::decodeJsonMessage
+        "SPARKPLUGB" -> ::decodeSparkplugMessage
+        else -> throw Exception("Unknown message format for decode!")
+    }
+
+    private val encodeMessageValue: (topic: String, value: String) -> Buffer = when (format.uppercase()) {
+        "RAW" -> ::encodeValueMessage
+        "JSON" -> ::encodeJsonMessage
+        "SPARKPLUGB" -> ::encodeSparkplugBMessage
+        else -> throw Exception("Unknown message format for encode!")
+    }
+
+    private val encodeMessageJson: (topic: String, value: TopicValue) -> Buffer = when (format.uppercase()) {
+        "RAW" -> ::encodeValueMessage
+        "JSON" -> ::encodeJsonMessage
+        "SPARKPLUGB" -> ::encodeSparkplugBMessage
+        else -> throw Exception("Unknown message format for encode!")
+    }
 
     init {
     }
@@ -71,14 +97,6 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
         return promise.future()
     }
 
-    private fun transformReaderValue(value: Buffer): String {
-        return value.toString(Charset.defaultCharset())
-    }
-
-    private fun transformWriterValue(value: String): Buffer {
-        return Buffer.buffer(value)
-    }
-
     override fun disconnect(): Future<Boolean> {
         val promise = Promise.promise<Boolean>()
         client?.disconnect {
@@ -94,7 +112,7 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
 
     private fun compareTopic(actualTopic: String, subscribedNode: String): Boolean {
         val regex = subscribedNode.replace("+", "[^/]+").replace("#", ".+")
-        return actualTopic.matches(regex.toRegex())
+        return actualTopic.matches(regex.toRegex());
     }
 
     override fun subscribeTopics(topics: List<Topic>): Future<Boolean> {
@@ -118,17 +136,17 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
         val promise = Promise.promise<Boolean>()
 
         subscribedTopics.removeIf { topic ->
-            topics.filter { it.topicName == topic.topicName }.isNotEmpty()
+            topics.any { it.topicName == topic.topicName }
         }
 
         items.map { (it as MqttMonitoredItem).item }
             .filter { node ->
-                subscribedTopics.filter { it.node == node }.isEmpty()
+                subscribedTopics.none { it.node == node }
             }
             .forEach { node ->
                 logger.info("Unsubscribe node [${node}]", )
                 client?.unsubscribe(node)?.onComplete {
-                    logger.info("Unsubscribe node [${node}] result [${it.result()}]")
+                    logger.info("Unsubscribe node [${node}] result [${it.succeeded()}]")
                 }
                 resetReceivedTopics(node)
             }
@@ -144,21 +162,37 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
         }
     }
 
-    private fun toValue(buffer: Buffer) : List<TopicValue> {
-        return try {
-            when (val json = Json.decodeValue(buffer)) {
-                is JsonObject -> {
-                    listOf(TopicValue.decodeFromJson(json))
-                }
-                is JsonArray -> {
-                    json.filterIsInstance<JsonObject>().map { TopicValue.decodeFromJson(it) }
-                }
-                else -> listOf(TopicValue(json))
+    private fun decodeValueMessage(topic: Topic, topicReceived: String, payload: Buffer) : List<DataPoint> {
+        val clone = topic.copy(browsePath = topicReceived)
+        return listOf(DataPoint(clone, TopicValue(payload)))
+    }
+
+    private fun decodeJsonMessage(topic: Topic, topicReceived: String, payload: Buffer) : List<DataPoint> {
+        val clone = topic.copy(browsePath = topicReceived)
+        return when (val json = Json.decodeValue(payload)) {
+            is JsonObject -> {
+                listOf(DataPoint(clone, TopicValue.decodeFromJson(json)))
             }
+            is JsonArray -> {
+                json.filterIsInstance<JsonObject>().map {
+                    DataPoint(clone, TopicValue.decodeFromJson(it))
+                }
+            }
+            else -> listOf(DataPoint(clone, TopicValue(json)))
         }
-        catch (e: Exception) {
-            logger.warning("Unable to decode message: $buffer [$e]")
-            listOf(TopicValue(buffer))
+    }
+
+    private fun decodeSparkplugMessage(topic: Topic, topicReceived: String, payload: Buffer) : List<DataPoint> {
+        val decoder = SparkplugBPayloadDecoder()
+        val message = decoder.buildFromByteArray(payload.bytes, null)
+
+        return message.metrics.map {
+            var clone = topic.copy(node = it.name)
+            DataPoint(clone, TopicValue(
+                value = it.value,
+                sourceTime = it.timestamp.toInstant(),
+                serverTime = it.timestamp.toInstant()
+            ))
         }
     }
 
@@ -166,21 +200,12 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
         logger.finest { "Got value [${message.topicName()}] [${message.payload()}]" }
         try {
             val receivedTopic = message.topicName()
-            val payload : Buffer = message.payload()
-
+            val receivedPayload = message.payload()
             fun publish(topic: Topic) {
                 try {
-                    topic.browsePath = receivedTopic
-                    when (topic.format) {
-                        Topic.Format.Value -> {
-                            vertx.eventBus().publish(topic.topicName, payload)
-                        }
-                        Topic.Format.Json -> {
-                            toValue(payload).forEach { value ->
-                                val output = DataPoint(topic, value)
-                                vertx.eventBus().publish(topic.topicName, output)
-                            }
-                        }
+                    val data = decodeMessage(topic, receivedTopic, receivedPayload)
+                    data.forEach {
+                        vertx.eventBus().publish(it.topic.topicName, it)
                     }
                 } catch (e: Exception) {
                     logger.warning("Exception on publish [$topic] value [${e.message}]", )
@@ -199,7 +224,16 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
 
     override fun publishTopic(topic: Topic, value: Buffer): Future<Boolean> {
         val promise = Promise.promise<Boolean>()
-        promise.fail("publishTopic([$topic], [$value]) Not yet implemented")
+        //promise.fail("publishTopic([$topic], [$value]) Not yet implemented")
+
+        val message = when (topic.format) {
+            Topic.Format.Value -> encodeMessageValue(topic.node, value.toString())
+            Topic.Format.Json -> encodeMessageJson(topic.node, TopicValue.decodeFromJson(value.toJsonObject()))
+        }
+        client?.publish(topic.node, message, MqttQoS.valueOf(qos), false, retained)?.onComplete {
+            promise.complete(true)
+        }
+
         return promise.future()
     }
 
@@ -213,11 +247,51 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
         message.fail(-1, "Not yet implemented")
     }
 
+    private fun encodeValueMessage(@Suppress("UNUSED_PARAMETER")topic: String, value: String): Buffer = Buffer.buffer(value)
+    private fun encodeValueMessage(@Suppress("UNUSED_PARAMETER")topic: String, value: TopicValue): Buffer = Buffer.buffer(value.valueAsString())
+    private fun encodeJsonMessage(@Suppress("UNUSED_PARAMETER")topic: String, value: String): Buffer = TopicValue(value).encodeToJson().toBuffer()
+
+    private fun encodeJsonMessage(@Suppress("UNUSED_PARAMETER")topic: String, value: TopicValue): Buffer = value.encodeToJson().toBuffer()
+
+
+    private var spbSeq = 0
+    private fun encodeSparkplugBMessage(topic: String, value: String) : Buffer {
+        val payload = SparkplugBPayload.SparkplugBPayloadBuilder(spbSeq.toLong())
+            .setTimestamp(Date())
+            .setUuid(UUID.randomUUID().toString())
+            .createPayload()
+        val metric = Metric.MetricBuilder(
+            topic,
+            MetricDataType.String,
+            value
+        )
+        payload.addMetric(metric.createMetric())
+        if (spbSeq++ == 255) spbSeq=0
+        return Buffer.buffer(SparkplugBPayloadEncoder().getBytes(payload, false))
+    }
+
+    private fun encodeSparkplugBMessage(topic: String, value: TopicValue) : Buffer {
+        val payload = SparkplugBPayload.SparkplugBPayloadBuilder(spbSeq.toLong())
+            .setTimestamp(Date())
+            .setUuid(UUID.randomUUID().toString())
+            .createPayload()
+        val metric = Metric.MetricBuilder(
+            topic,
+            MetricDataType.String,  // TODO: handle different data types of value.value
+            value.valueAsString()
+        )
+        payload.addMetric(metric.createMetric())
+        if (spbSeq++ == 255) spbSeq=0
+        return Buffer.buffer(SparkplugBPayloadEncoder().getBytes(payload, false))
+    }
+
     override fun writeHandler(message: Message<JsonObject>) {
         val node = message.body().getValue("NodeId")
 
-        fun publish(client: MqttClient, topic: String, value: String): Future<Int> =
-            client.publish(topic, transformWriterValue(value), MqttQoS.AT_LEAST_ONCE, false, false) // TODO: configurable QoS...
+        fun publish(client: MqttClient, topic: String, value: String): Future<Int> {
+            val message = encodeMessageValue(topic, value)
+            return client.publish(topic, message, MqttQoS.valueOf(qos), false, retained)
+        }
 
         when {
             node != null && node is String -> {

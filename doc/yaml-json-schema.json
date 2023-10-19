@@ -313,7 +313,9 @@
                 "TrustAll": { "type": "boolean" },
                 "ClientId": { "type": "string" },
                 "CleanSession": { "type": "boolean" },
-                "Qos": { "type": "integer" }
+                "Qos": { "type": "integer" },
+                "Retained": { "type": "boolean" },
+                "Format": { "type": "string", "enum": ["Raw", "Json", "SparkplugB"]}
             },
             "required": [
                 "Id",

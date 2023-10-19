@@ -10,18 +10,16 @@ import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import io.vertx.mqtt.MqttClient
 import io.vertx.mqtt.MqttClientOptions
+
 import org.eclipse.tahu.message.SparkplugBPayloadEncoder
-import org.eclipse.tahu.message.model.DataSet.DataSetBuilder
 import org.eclipse.tahu.message.model.Metric
 import org.eclipse.tahu.message.model.Metric.MetricBuilder
 import org.eclipse.tahu.message.model.MetricDataType
-import org.eclipse.tahu.message.model.Row.RowBuilder
 import org.eclipse.tahu.message.model.SparkplugBPayload.SparkplugBPayloadBuilder
-import org.eclipse.tahu.protobuf.SparkplugBProto.Payload.DataSet.Row
+
 import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.collections.LinkedHashMap
-
 
 class MqttLogger (config: JsonObject) : LoggerBase(config) {
     var client: MqttClient? = null
@@ -118,8 +116,8 @@ class MqttLogger (config: JsonObject) : LoggerBase(config) {
             client?.publish(this.topic, bulkFormatter(points), MqttQoS.valueOf(qos), false, retained)
     }
 
-    private fun unknownFormat(@Suppress("UNUSED_PARAMETER")points: DataPoint) = Buffer.buffer("Unknown message format!")
-    private fun unknownBulkFormat(@Suppress("UNUSED_PARAMETER")points: List<DataPoint>) = Buffer.buffer("Unknown bulk message format!")
+    private fun unknownFormat(@Suppress("UNUSED_PARAMETER")points: DataPoint): Nothing = throw Exception("Unknown message format!")
+    private fun unknownBulkFormat(@Suppress("UNUSED_PARAMETER")points: List<DataPoint>): Nothing = throw Exception("Unknown bulk message format!")
 
     private fun jsonFormat(point: DataPoint) : Buffer {
         val result = JsonObject()
@@ -170,16 +168,21 @@ class MqttLogger (config: JsonObject) : LoggerBase(config) {
                         .timestamp(Date(point.value.sourceTime.toEpochMilli()))
                         .createMetric()
                 } else {
-                    val dataType = when (point.value.value) {
-                        is Boolean -> MetricDataType.Boolean
-                        is Int -> MetricDataType.Int32
-                        is Long -> MetricDataType.Int64
-                        is Double -> MetricDataType.Double
-                        is String -> MetricDataType.String
-                        else -> MetricDataType.Unknown
+                    val (type, value) = when (val value = point.value.value) {
+                        is Boolean -> MetricDataType.Boolean to value
+                        is Byte -> MetricDataType.Int8 to value
+                        is Short -> MetricDataType.Int16 to value
+                        is Int -> MetricDataType.Int32 to value
+                        is Long -> MetricDataType.Int64 to value
+                        is Float -> MetricDataType.Float to value
+                        is Double -> MetricDataType.Double to value
+                        is String -> MetricDataType.String to value
+                        is Date -> MetricDataType.DateTime to value
+                        is UUID -> MetricDataType.UUID to value.toString()
+                        else -> MetricDataType.Unknown to null
                     }
-                    if (dataType != MetricDataType.Unknown) {
-                        return MetricBuilder(point.topic.browsePath, dataType, point.value.value)
+                    if (type != MetricDataType.Unknown) {
+                        return MetricBuilder(point.topic.browsePath, type, value)
                             .timestamp(Date(point.value.sourceTime.toEpochMilli()))
                             .createMetric()
                     } else {

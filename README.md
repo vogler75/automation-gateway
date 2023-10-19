@@ -283,6 +283,7 @@ Example MQTT Topic:
   - [Build Docker Image](#build-docker-image)
   - [Using PLC4X](#using-plc4x)
 - [Version History](#version-history)
+  - [1.21.1 Fixes and SparkplugB for MQTT Client](#1211-fixes-and-sparkplugb-for-mqtt-client)
   - [1.21 IoTDB, MQTT SparkplugB Logger, YAML Schema, Native-Image](#121-iotdb-mqtt-sparkplugb-logger-yaml-schema-native-image)
   - [1.20.3 Moved Neo4J to separate branches](#1203-moved-neo4j-to-separate-branches)
   - [1.20.2 Modifed JSON Format of Kafka Logger](#1202-modifed-json-format-of-kafka-logger)
@@ -306,6 +307,19 @@ Example MQTT Topic:
   - [1.7 DDS Driver (subscribe and publish)](#17-dds-driver-subscribe-and-publish)
   - [1.6 Added GraphiQL (http://localhost:4000/graphiql/)](#16-added-graphiql-httplocalhost4000graphiql)
   - [1.5 OPC UA Schemas to GraphQL Schema Importer](#15-opc-ua-schemas-to-graphql-schema-importer)
+
+## 1.21.1 Fixes and SparkplugB for MQTT Client
+There is now a Format option for the MQTT client. It can now read SparkplugB messages from topics. You can use now a logger to log values from a MQTT broker which are in SparkplugB message format. You can also write values from GraphQL or publish a value from the MQTT server to the MQTT client. If the format of the MQTT client is set to SparkplugB, it will publish a SparkplubB message.
+```
+MqttClient:
+  - Id: "mqttclient1"
+    Host: linux0.rocworks.local
+    Port: 1883    
+    Format: SparkplugB # RAW | JSON
+```
+MQTT Publish Example:   
+* mqtt/mqttclient1/node:value/Enterprise/Test => Hallo World  
+* mqtt/mqttclient1/node:json/Enterprise/Test => {"value": "Hello World", "sourceTime":"2023-10-19T18:23:55.389Z"}  
 
 ## 1.21 IoTDB, MQTT SparkplugB Logger, YAML Schema, Native-Image
 * IoTDB is now again available as data logger.  

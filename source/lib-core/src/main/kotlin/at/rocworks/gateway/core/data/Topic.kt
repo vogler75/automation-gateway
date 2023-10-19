@@ -3,14 +3,14 @@ package at.rocworks.gateway.core.data
 import io.vertx.core.json.JsonObject
 
 data class Topic (
-    val topicName: String,
+    val topicName: String, // <SystemType> / <SystemName> / <Node|Path> ...
     val systemType: SystemType,
     val topicType: TopicType,
     val systemName: String,
     val path: String,
     val node: String,
     val format: Format = Format.Json,
-    var browsePath: String = ""
+    val browsePath: String = ""
 ) {
     enum class SystemType {
         Unknown,
@@ -33,8 +33,15 @@ data class Topic (
 
     fun isValid() = systemType != SystemType.Unknown && topicType != TopicType.Unknown
 
-    val addressItems : List<String>
+    private val addressItems : List<String>
         get() = splitAddress(this.node)
+
+    private val topicItems : List<String>
+        get() = splitAddress(this.topicName)
+
+    val topicWithBrowsePath : String
+        get() = if (browsePath.isNotEmpty()) topicItems.slice(0..2).joinToString("/")+"/$browsePath"
+                else topicName
 
     fun systemBrowsePath(): String = "$systemName/${if (browsePath=="") node else browsePath}"
 
@@ -122,7 +129,7 @@ data class Topic (
                     topicType = TopicType.Node,
                     systemName = it.destructured.component1(),
                     format = getFmt(it.destructured.component2()),
-                    path = "",
+                    path = it.destructured.component3(),
                     node = it.destructured.component3()
                 )
             }

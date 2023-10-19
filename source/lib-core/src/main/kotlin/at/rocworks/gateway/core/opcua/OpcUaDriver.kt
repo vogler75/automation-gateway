@@ -705,7 +705,7 @@ class OpcUaDriver(private val config: JsonObject) : DriverBase(config) {
                         Topic(
                             topicName = topic.topicName,
                             systemType = topic.systemType,
-                            topicType = Topic.TopicType.Node,
+                            topicType = topic.topicType, // Topic.TopicType.Node,
                             systemName = topic.systemName,
                             path = topic.path,
                             node = it.first.toParseableString(),
@@ -764,16 +764,8 @@ class OpcUaDriver(private val config: JsonObject) : DriverBase(config) {
                 return
 
             try {
-                when (topic.format) {
-                    Topic.Format.Value -> {
-                        val message = Buffer.buffer(value.valueAsString())
-                        vertx.eventBus().publish(topic.topicName, message)
-                    }
-                    Topic.Format.Json -> {
-                        val message = DataPoint(topic, value)
-                        vertx.eventBus().publish(topic.topicName, message)
-                    }
-                }
+                val message = DataPoint(topic, value)
+                vertx.eventBus().publish(topic.topicName, message)
             } catch (e: Exception) {
                 val type = if (value.value != null) value.value::class.qualifiedName else "?"
                 logger.severe("Exception at topic: ${topic.path}, datatype: $type, value ${value.value}, exception: ${e.message} ")

@@ -2,6 +2,7 @@ package at.rocworks.gateway.core.mqtt
 
 import at.rocworks.gateway.core.data.DataPoint
 import at.rocworks.gateway.core.data.Topic
+import at.rocworks.gateway.core.data.Topic.Format
 import io.netty.handler.codec.mqtt.MqttQoS
 import io.vertx.core.AbstractVerticle
 import io.vertx.core.CompositeFuture
@@ -289,16 +290,24 @@ class MqttServer(config: JsonObject, private val endpoint: MqttEndpoint) : Abstr
     private fun valueConsumer(topic: Topic, qos: MqttQoS, value: Any) {
         when (value) {
             is DataPoint -> valueConsumerDataPoint(topic, qos, value)
-            else -> valueConsumerMqttTopic(topic, qos, value)
+            else -> throw Exception("Unhandled message format!")
         }
     }
 
     private fun valueConsumerDataPoint(topic: Topic, qos: MqttQoS, value: DataPoint) {
         try {
-            logger.finest { "Publish [${value.encodeToJson()}]" }
+            logger.finest { "Publish [${value.topic.topicWithBrowsePath}]" }
             if (endpoint.isConnected) {
-                val value = Buffer.buffer(value.encodeToJson().toString())
-                endpoint.publish(topic.topicName, value, qos, false /*isDup*/, false /* isRetain */)
+                when (topic.format) {
+                    Format.Json -> {
+                        val payload = Buffer.buffer(value.encodeToJson().toString())
+                        endpoint.publish(value.topic.topicWithBrowsePath, payload, qos, false /*isDup*/, false /* isRetain */)
+                    }
+                    Format.Value -> {
+                        val payload = Buffer.buffer(value.value.valueAsString())
+                        endpoint.publish(value.topic.topicWithBrowsePath, payload, qos, false /*isDup*/, false /* isRetain */)
+                    }
+                }
             } else {
                 logger.warning("Publish topic [${topic}] to client [${endpoint.clientIdentifier()}] which is not connected anymore!")
             }
@@ -308,10 +317,9 @@ class MqttServer(config: JsonObject, private val endpoint: MqttEndpoint) : Abstr
     }
 
     private fun valueConsumerMqttTopic(topic: Topic, qos: MqttQoS, value: Any) {
-        if (endpoint.isConnected) {
-            try {
-                logger.finest { "Publish [${value}]" }
-
+        try {
+            logger.finest { "Publish [${value}]" }
+            if (endpoint.isConnected) {
                 fun publish(buffer: Buffer) = endpoint.publish(
                     topic.topicName,
                     buffer,
@@ -319,7 +327,6 @@ class MqttServer(config: JsonObject, private val endpoint: MqttEndpoint) : Abstr
                     false /*isDup*/,
                     false /* isRetain */
                 )
-
                 when (value) {
                     is Buffer -> publish(value)
                     is String -> publish(Buffer.buffer(value))
@@ -327,11 +334,11 @@ class MqttServer(config: JsonObject, private val endpoint: MqttEndpoint) : Abstr
                     is JsonArray -> publish(value.toBuffer())
                     else -> logger.warning("Got unhandled class of instance [${value.javaClass.simpleName}]")
                 }
-            } catch (e: Exception) {
-                e.printStackTrace()
+            } else {
+                logger.warning("Publish topic [${topic}] to client [${endpoint.clientIdentifier()}] which is not connected anymore!")
             }
-        } else {
-            logger.warning("Publish topic [${topic}] to client [${endpoint.clientIdentifier()}] which is not connected anymore!")
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 

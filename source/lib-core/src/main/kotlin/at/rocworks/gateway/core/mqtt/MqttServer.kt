@@ -256,8 +256,8 @@ class MqttServer(config: JsonObject, private val endpoint: MqttEndpoint) : Abstr
     }
 
     private fun subscribeDriverTopic(type: String, t: Topic, qos: MqttQoS, ret: Promise<Boolean>) {
-        val consumer = vertx.eventBus().consumer<DataPoint>(t.topicName) {
-            valueConsumerDataPoint(t, qos, it.body())
+        val consumer = vertx.eventBus().consumer(t.topicName) {
+            valueConsumer(t, qos, it.body())
         }
         val r = JsonObject().put("ClientId", endpoint.clientIdentifier()).put("Topic", t.encodeToJson())
         vertx.eventBus().request<JsonObject>("${type}/${t.systemName}/Subscribe", r) {
@@ -286,11 +286,18 @@ class MqttServer(config: JsonObject, private val endpoint: MqttEndpoint) : Abstr
         }
     }
 
-    private fun valueConsumerDataPoint(topic: Topic, qos: MqttQoS, data: DataPoint) {
+    private fun valueConsumer(topic: Topic, qos: MqttQoS, value: Any) {
+        when (value) {
+            is DataPoint -> valueConsumerDataPoint(topic, qos, value)
+            else -> valueConsumerMqttTopic(topic, qos, value)
+        }
+    }
+
+    private fun valueConsumerDataPoint(topic: Topic, qos: MqttQoS, value: DataPoint) {
         try {
-            logger.finest { "Publish [${data.encodeToJson()}]" }
+            logger.finest { "Publish [${value.encodeToJson()}]" }
             if (endpoint.isConnected) {
-                val value = Buffer.buffer(data.encodeToJson().toString())
+                val value = Buffer.buffer(value.encodeToJson().toString())
                 endpoint.publish(topic.topicName, value, qos, false /*isDup*/, false /* isRetain */)
             } else {
                 logger.warning("Publish topic [${topic}] to client [${endpoint.clientIdentifier()}] which is not connected anymore!")

@@ -6,9 +6,14 @@ data class DataPoint(
     val topic: Topic,
     val value: TopicValue
 ) {
-    fun encodeToJson(): JsonObject = JsonObject.mapFrom(this)
+    fun encodeToJson(): JsonObject = JsonObject()
+        .put("topic", topic.encodeToJson())
+        .put("value", value.encodeToJson())
 
     companion object {
-        fun fromJsonObject(json: JsonObject): DataPoint = json.mapTo(DataPoint::class.java)
+        fun fromJsonObject(json: JsonObject): DataPoint = DataPoint(
+            Topic.decodeFromJson(json.getJsonObject("topic")),
+            TopicValue.decodeFromJson(json.getJsonObject("value"))
+        )
     }
 }

@@ -12,7 +12,6 @@ import graphql.schema.idl.*
 import io.reactivex.*
 import io.vertx.core.*
 
-import io.vertx.core.buffer.Buffer
 import io.vertx.core.eventbus.DeliveryOptions
 import io.vertx.core.http.HttpServerOptions
 import io.vertx.core.json.JsonArray
@@ -428,7 +427,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
                         try {
                             val data = response.result().body().getJsonObject("Result")
                             if (data!=null) {
-                                val input = TopicValue.fromJsonObject(data)
+                                val input = TopicValue.decodeFromJson(data)
                                 val result = valueToGraphQL(type, system, nodeId, input)
                                 promise.complete(result)
                             } else {
@@ -473,7 +472,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
                     if (response.succeeded()) {
                         val list = response.result().body().getJsonArray("Result")
                         val result = nodeIds.zip(list.filterIsInstance<JsonObject>()).map {
-                            valueToGraphQL(type, system, it.first, TopicValue.fromJsonObject(it.second))
+                            valueToGraphQL(type, system, it.first, TopicValue.decodeFromJson(it.second))
                         }
                         promise.complete(result)
                     } else {
@@ -769,8 +768,6 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
                 val topic = "$type/$system/node:json/$nodeId"
                 vertx.eventBus().consumer<DataPoint>(topic) { message ->
                     try {
-//                        val data = message.body().value
-//                        val output = TopicValue.fromJsonObject(data.getJsonObject("Value"))
                         val output = message.body().value
                         if (!emitter.isCancelled) emitter.onNext(valueToGraphQL(type, system, nodeId, output))
                     } catch (e: Exception) {

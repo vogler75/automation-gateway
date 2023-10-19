@@ -20,6 +20,7 @@ import io.vertx.mqtt.MqttClientOptions
 import io.vertx.mqtt.messages.MqttPublishMessage
 
 import java.nio.charset.Charset
+import java.time.format.DateTimeParseException
 import java.util.*
 import kotlin.collections.HashMap
 import kotlin.collections.HashSet
@@ -143,16 +144,26 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
         }
     }
 
-    private fun toValue(buffer: Buffer) : TopicValue {
-        return when (val json = Json.decodeValue(buffer)) {
-            is JsonObject -> TopicValue(json)
-            is JsonArray -> TopicValue(json)
-            else -> TopicValue(json)
+    private fun toValue(buffer: Buffer) : List<TopicValue> {
+        return try {
+            when (val json = Json.decodeValue(buffer)) {
+                is JsonObject -> {
+                    listOf(TopicValue.decodeFromJson(json))
+                }
+                is JsonArray -> {
+                    json.filterIsInstance<JsonObject>().map { TopicValue.decodeFromJson(it) }
+                }
+                else -> listOf(TopicValue(json))
+            }
+        }
+        catch (e: Exception) {
+            logger.warning("Unable to decode message: $buffer [$e]")
+            listOf(TopicValue(buffer))
         }
     }
 
     private fun valueConsumer(message: MqttPublishMessage) {
-        logger.finest { "Got value [${message.topicName()}] [${ message.payload()}]" }
+        logger.finest { "Got value [${message.topicName()}] [${message.payload()}]" }
         try {
             val receivedTopic = message.topicName()
             val payload : Buffer = message.payload()
@@ -165,12 +176,14 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
                             vertx.eventBus().publish(topic.topicName, payload)
                         }
                         Topic.Format.Json -> {
-                            val output = DataPoint(topic, toValue(payload))
-                            vertx.eventBus().publish(topic.topicName, output)
+                            toValue(payload).forEach { value ->
+                                val output = DataPoint(topic, value)
+                                vertx.eventBus().publish(topic.topicName, output)
+                            }
                         }
                     }
                 } catch (e: Exception) {
-                    logger.warning("Exception on publish value [${e.message}]", )
+                    logger.warning("Exception on publish [$topic] value [${e.message}]", )
                 }
             }
 

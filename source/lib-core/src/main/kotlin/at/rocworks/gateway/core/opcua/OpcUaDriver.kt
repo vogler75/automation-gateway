@@ -714,7 +714,7 @@ class OpcUaDriver(private val config: JsonObject) : DriverBase(config) {
                         )
                     })
                 }
-                logger.info("Browse path result size [${resolvedTopics.size}]", )
+                logger.info("Browse path result size [${resolvedTopics.size}]")
                 if (topics.isEmpty()) {
                     ret.complete(true)
                 } else if (resolvedTopics.size>0) {
@@ -934,13 +934,19 @@ class OpcUaDriver(private val config: JsonObject) : DriverBase(config) {
             is DataValue -> value.toString()
             else -> value
         }
+
+        val statusCode = if (v.statusCode!=null) {
+            val x = StatusCodes.lookup(v.statusCode!!.value)
+            if (x.isPresent) x.get().first()
+            else ""
+        } else ""
         return TopicValue(
             value = result,
-            statusCode = v.statusCode?.value ?: StatusCode.BAD.value,
-            sourceTime = v.sourceTime?.javaInstant ?: Instant.MIN,
-            serverTime = v.serverTime?.javaInstant ?: Instant.MIN,
-            sourcePicoseconds = v.sourcePicoseconds?.toInt() ?: 0,
-            serverPicoseconds = v.serverPicoseconds?.toInt() ?: 0,
+            statusCode = statusCode,
+            sourceTime = v.sourceTime?.javaInstant ?: Instant.EPOCH,
+            serverTime = v.serverTime?.javaInstant ?: Instant.EPOCH,
+            //sourcePicoseconds = v.sourcePicoseconds?.toInt() ?: 0,
+            //serverPicoseconds = v.serverPicoseconds?.toInt() ?: 0,
         )
     }
 }

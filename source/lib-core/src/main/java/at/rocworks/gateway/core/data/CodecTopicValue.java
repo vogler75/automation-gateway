@@ -18,7 +18,7 @@ public class CodecTopicValue implements MessageCodec<TopicValue, TopicValue> {
     public TopicValue decodeFromWire(int i, Buffer buffer) {
         int len = buffer.getInt(i);
         JsonObject json = (JsonObject) Json.decodeValue(buffer.getBuffer(i, i+len));
-        return TopicValue.Companion.fromJsonObject(json);
+        return TopicValue.Companion.decodeFromJson(json);
     }
 
     @Override

@@ -192,7 +192,7 @@ abstract class LoggerBase(config: JsonObject) : AbstractVerticle() {
         valueCounterInput++
         try {
             val topic = Topic.decodeFromJson(data.getJsonObject("Topic"))
-            val value = TopicValue.fromJsonObject(data.getJsonObject("Value"))
+            val value = TopicValue.decodeFromJson(data.getJsonObject("Value"))
             if (!value.hasValue()) return
 
             logger.finest { "Got value $topic $value" }

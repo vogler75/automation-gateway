@@ -309,6 +309,8 @@
                 "LogLevel": { "$ref": "#/definitions/LogLevel" },
                 "Host": { "type": "string" },
                 "Port": { "type": "integer" },
+                "Username": { "type": "string" },
+                "Password": { "type": "string" },                  
                 "MaxMessageSizeKb": { "type": "integer" },
                 "Ssl": { "type": "boolean" },
                 "TrustAll": { "type": "boolean" },

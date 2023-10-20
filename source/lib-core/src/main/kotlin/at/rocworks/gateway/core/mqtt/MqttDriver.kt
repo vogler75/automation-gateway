@@ -187,7 +187,7 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
         val message = decoder.buildFromByteArray(payload.bytes, null)
 
         return message.metrics.map {
-            var clone = topic.copy(node = it.name)
+            val clone = topic.copy(node = it.name, browsePath = topicReceived)
             DataPoint(clone, TopicValue(
                 value = it.value,
                 sourceTime = it.timestamp.toInstant(),
@@ -289,8 +289,8 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
         val node = message.body().getValue("NodeId")
 
         fun publish(client: MqttClient, topic: String, value: String): Future<Int> {
-            val message = encodeMessageValue(topic, value)
-            return client.publish(topic, message, MqttQoS.valueOf(qos), false, retained)
+            val payload = encodeMessageValue(topic, value)
+            return client.publish(topic, payload, MqttQoS.valueOf(qos), false, retained)
         }
 
         when {

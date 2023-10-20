@@ -36,10 +36,13 @@ GraphQLServer:
 
 MqttClient:
   - Id: "MqttClient1"
-    Host: linux0.rocworks.local
-    Port: 1883    
-    Format: SparkplugB
-
+    Host: x.s1.eu.hivemq.cloud
+    Port: 8883    
+    Ssl: true
+    Format: SparkplugB    
+    Username: "vogler"
+    Password: "GzT!x"    
+    
 OpcUaClient:
   - Id: "demo1"
     Enabled: true
@@ -169,7 +172,7 @@ Database:
 
     - Id: InfluxLogger1
       Type: InfluxDB
-      Enabled: false
+      Enabled: true
       InfluxDB:        
         Url: http://nuc1b.rocworks.local:8086
         Database: test
@@ -179,6 +182,7 @@ Database:
       Logging:
         - Topic: opc/demo1/path/Objects/Variables/#
         - Topic: opc/demo2/path/Objects/Demo/SimulationMass/#
+        - Topic: mqtt/MqttClient1/path/Austria/Sparkplug/#        
 
     - Id: IotDBLogger1
       Type: IoTDB

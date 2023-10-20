@@ -40,7 +40,7 @@ data class Topic (
         get() = splitAddress(this.topicName)
 
     val topicWithBrowsePath : String
-        get() = if (browsePath.isNotEmpty()) topicItems.slice(0..2).joinToString("/")+"/$browsePath"
+        get() = if (topicType==TopicType.Path) topicItems.slice(0..2).joinToString("/")+"/$browsePath"
                 else topicName
 
     fun systemBrowsePath(): String = "$systemName/${if (browsePath=="") node else browsePath}"

@@ -10,7 +10,7 @@ MqttServer:
       LogLevel: INFO # ALL | INFO
 
     - Id: MqttWs
-      Enabled: false
+      Enabled: true
       Port: 1884
       Host: 0.0.0.0
       Websocket: true      
@@ -22,7 +22,7 @@ MqttServer:
 GraphQLServer:
   Listeners:
     - Port: 4001
-      Enabled: false
+      Enabled: true
       LogLevel: INFO
       GraphiQL: true      
       Schemas:
@@ -107,7 +107,7 @@ Database:
   Logger:
     - Id: mqtt1
       Type: Mqtt
-      Enabled: false
+      Enabled: true
       Mqtt:
         Host: linux0.rocworks.local
         Port: 1883
@@ -144,7 +144,7 @@ Database:
 
     - Id: influx1
       Type: InfluxDB
-      Enabled: false
+      Enabled: true
       InfluxDB:        
         Url: http://nuc1b.rocworks.local:8086
         Database: test
@@ -157,7 +157,7 @@ Database:
 
     - Id: iotdb1
       Type: IoTDB
-      Enabled: false
+      Enabled: true
       IoTDB:
         Host: linux0.rocworks.local
         Port: 6667

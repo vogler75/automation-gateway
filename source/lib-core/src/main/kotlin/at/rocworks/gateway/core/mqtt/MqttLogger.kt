@@ -1,27 +1,18 @@
 package at.rocworks.gateway.core.mqtt
 
 import at.rocworks.gateway.core.data.DataPoint
-import at.rocworks.gateway.core.logger.LoggerBase
+import at.rocworks.gateway.core.logger.LoggerPublisher
 import io.netty.handler.codec.mqtt.MqttQoS
 import io.vertx.core.Future
 import io.vertx.core.Promise
 import io.vertx.core.buffer.Buffer
-import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import io.vertx.mqtt.MqttClient
 import io.vertx.mqtt.MqttClientOptions
 
-import org.eclipse.tahu.message.SparkplugBPayloadEncoder
-import org.eclipse.tahu.message.model.Metric
-import org.eclipse.tahu.message.model.Metric.MetricBuilder
-import org.eclipse.tahu.message.model.MetricDataType
-import org.eclipse.tahu.message.model.SparkplugBPayload.SparkplugBPayloadBuilder
-
 import java.util.*
-import java.util.concurrent.TimeUnit
-import kotlin.collections.LinkedHashMap
 
-class MqttLogger (config: JsonObject) : LoggerBase(config) {
+class MqttLogger (config: JsonObject) : LoggerPublisher(config, "Mqtt") {
     var client: MqttClient? = null
 
     private val configMqtt = config.getJsonObject("Mqtt", config)
@@ -36,27 +27,7 @@ class MqttLogger (config: JsonObject) : LoggerBase(config) {
     private val qos: Int = configMqtt.getInteger("Qos", 0)
     private val retained: Boolean = configMqtt.getBoolean("Retained", false)
     private val topic: String = configMqtt.getString("Topic", "")
-    private val format: String = configMqtt.getString("Format", "JSON")
-    private val bulkMessages: Boolean = configMqtt.getBoolean("BulkMessages", false)
     private val maxMessageSizeKb = configMqtt.getInteger("MaxMessageSizeKb", 8) * 1024
-
-    private val formatter: (DataPoint) -> Buffer = when (format.uppercase()) {
-        "RAW" -> ::rawFormat
-        "JSON" -> ::jsonFormat
-        "SPARKPLUGB" -> ::spbFormat
-        else -> ::unknownFormat
-    }
-
-    private val bulkFormatter: (List<DataPoint>) -> Buffer = when (format.uppercase()) {
-        "JSON" -> ::jsonBulkFormat
-        "SPARKPLUGB" -> ::spbBulkFormat
-        else -> ::unknownBulkFormat
-    }
-
-    private val writeExecutorInstance: () -> Unit = when (bulkMessages) {
-        false -> ::singleWriteExecutor
-        true -> ::bulkWriteExecutor
-    }
 
     override fun open(): Future<Unit> {
         val promise = Promise.promise<Unit>()
@@ -86,114 +57,13 @@ class MqttLogger (config: JsonObject) : LoggerBase(config) {
         }
     }
 
-    override fun writeExecutor() {
-        try {
-            writeExecutorInstance()
-        } catch (e: Exception) {
-            logger.severe(e.message)
-        }
+    override fun publish(point: DataPoint, payload: Buffer) {
+        val topic = (if (this.topic.isEmpty()) "" else this.topic + "/") + point.topic.systemBrowsePath()
+        client?.publish(topic, payload, MqttQoS.valueOf(qos), false, retained)
     }
 
-    private fun singleWriteExecutor() {
-        var counter = 0
-        var point: DataPoint? = writeValueQueue.poll(10, TimeUnit.MILLISECONDS)
-        while (point != null) {
-            val topic = (if (this.topic.isEmpty()) "" else this.topic + "/") + point.topic.systemBrowsePath()
-            client?.publish(topic, formatter(point), MqttQoS.valueOf(qos), false, retained)
-            point = if (++counter < writeParameterBlockSize) writeValueQueue.poll() else null
-        }
-    }
-
-    private fun bulkWriteExecutor() {
-        var counter = 0
-        val points = mutableListOf<DataPoint>()
-        var point: DataPoint? = writeValueQueue.poll(10, TimeUnit.MILLISECONDS)
-        while (point != null) {
-            points.add(point)
-            point = if (++counter < writeParameterBlockSize) writeValueQueue.poll() else null
-        }
-        if (counter>0)
-            client?.publish(this.topic, bulkFormatter(points), MqttQoS.valueOf(qos), false, retained)
-    }
-
-    private fun unknownFormat(@Suppress("UNUSED_PARAMETER")points: DataPoint): Nothing = throw Exception("Unknown message format!")
-    private fun unknownBulkFormat(@Suppress("UNUSED_PARAMETER")points: List<DataPoint>): Nothing = throw Exception("Unknown bulk message format!")
-
-    private fun jsonFormat(point: DataPoint) : Buffer {
-        val result = JsonObject()
-        result.put("Topic", point.topic.encodeToJson())
-        result.put("Value", point.value.encodeToJson())
-        return result.toBuffer()
-    }
-    private fun jsonBulkFormat(points: List<DataPoint>) : Buffer {
-        val result = points.map { point ->
-            val item = JsonObject()
-            item.put("Topic", point.topic.encodeToJson())
-            item.put("Value", point.value.encodeToJson())
-            item
-        }
-        return JsonArray(result).toBuffer()
-    }
-
-    private fun rawFormat(point: DataPoint) = Buffer.buffer(point.value.value.toString())
-
-    private var spbSeq = 0
-    private fun spbFormat(point: DataPoint) : Buffer {
-        val payload = SparkplugBPayloadBuilder(spbSeq.toLong())
-            .setTimestamp(Date())
-            .setUuid(UUID.randomUUID().toString())
-            .createPayload()
-        metric(point)?.let { payload.addMetric(it) }
-        if (spbSeq++ == 255) spbSeq=0
-        return Buffer.buffer(SparkplugBPayloadEncoder().getBytes(payload, false))
-    }
-
-    private fun spbBulkFormat(points: List<DataPoint>) : Buffer {
-        val payload = SparkplugBPayloadBuilder(spbSeq.toLong())
-            .setTimestamp(Date())
-            .setUuid(UUID.randomUUID().toString())
-            .createPayload()
-        points.forEach { point -> metric(point)?.let { payload.addMetric(it) } }
-        if (spbSeq++ == 255) spbSeq=0
-        return Buffer.buffer(SparkplugBPayloadEncoder().getBytes(payload, false))
-    }
-
-    private fun metric(point: DataPoint): Metric? {
-        try {
-            //logger.info("${point.topic.browsePath} ${point.value.dataTypeName()} ${point.value.value?.javaClass?.name}")
-            if (point.value.value != null) {
-                if (point.value.value is LinkedHashMap<*, *>) {
-                    val map = point.value.value.entries.associate { item -> item.key.toString() to item.value }
-                    return MetricBuilder(point.topic.browsePath, MetricDataType.String, JsonObject(map).toString())
-                        .timestamp(Date(point.value.sourceTime.toEpochMilli()))
-                        .createMetric()
-                } else {
-                    val (type, value) = when (val value = point.value.value) {
-                        is Boolean -> MetricDataType.Boolean to value
-                        is Byte -> MetricDataType.Int8 to value
-                        is Short -> MetricDataType.Int16 to value
-                        is Int -> MetricDataType.Int32 to value
-                        is Long -> MetricDataType.Int64 to value
-                        is Float -> MetricDataType.Float to value
-                        is Double -> MetricDataType.Double to value
-                        is String -> MetricDataType.String to value
-                        is Date -> MetricDataType.DateTime to value
-                        is UUID -> MetricDataType.UUID to value.toString()
-                        else -> MetricDataType.Unknown to null
-                    }
-                    if (type != MetricDataType.Unknown) {
-                        return MetricBuilder(point.topic.browsePath, type, value)
-                            .timestamp(Date(point.value.sourceTime.toEpochMilli()))
-                            .createMetric()
-                    } else {
-                        logger.warning("Unhandled datatype ${point.value.dataTypeName()} for ${point.topic.browsePath}! value: ${point.value.value}")
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-        return null
+    override fun publish(points: List<DataPoint>, payload: Buffer) {
+        client?.publish(topic, payload, MqttQoS.valueOf(qos), false, retained)
     }
 
     override fun queryExecutor(

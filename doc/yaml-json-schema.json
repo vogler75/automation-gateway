@@ -91,7 +91,7 @@
                         "Qos": { "type": "integer" },
                         "Retained": { "type": "boolean" },
                         "Topic": { "type": "string" },
-                        "Format": { "type": "string", "enum": ["Raw", "Json", "SparkplugB"]},
+                        "Format": { "type": "string", "enum": ["Raw", "Json", "JsonSimple", "SparkplugB"]},
                         "BulkMessages": { "type": "boolean" },
                         "MaxMessageSizeKb": { "type": "integer" }
                     }                    
@@ -102,6 +102,7 @@
                         "Servers": { "type": "string" },
                         "TopicName": { "type": "string" },   
                         "KeyName": { "type": "string" },
+                        "Format": { "type": "string", "enum": ["Raw", "Json", "JsonSimple", "SparkplugB"]},
                         "Configs": { "$ref": "#/definitions/KafkaPublisherConfigs" }                                                      
                     },
                     "required": ["Servers"]               

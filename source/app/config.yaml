@@ -34,6 +34,12 @@ GraphQLServer:
 #          RootNodes:
 #            - "ns=1;s=2|Tags"
 
+MqttClient:
+  - Id: "MqttClient1"
+    Host: linux0.rocworks.local
+    Port: 1883    
+    Format: SparkplugB
+
 OpcUaClient:
   - Id: "demo1"
     Enabled: true
@@ -104,7 +110,7 @@ OpcUaClient:
 
 Database:
   Logger:
-    - Id: mqtt1
+    - Id: MqttLogger1
       Type: Mqtt
       Enabled: true
       Mqtt:
@@ -120,9 +126,29 @@ Database:
         BlockSize: 10000
       Logging:
         - Topic: opc/demo1/path/Objects/Variables/#
-        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/#
+        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/#
+        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Boolean/Boolean_00
+        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Byte/Byte_00
+        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_ByteString/ByteString_00
+        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_DateTime/DateTime_00
+        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Double/Double_00
+        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Duration/Duration_00
+        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Float/Float_00
+        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Int16/Int16_00
+        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Int32/Int32_00
+        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Int64/Int64_00
+        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_SByte/SByte_00
+        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_String/String_00
+        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_UInt16/UInt16_00
+        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_UInt32/UInt32_00
+        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_UtcTime/UtcTime_00
+        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Guid/Guid_00
+        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_LocaleId/LocaleId_00
+        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_LocalizedText/LocalizedText_00
+        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_NodeId/NodeId_00
+        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_XmlElement/XmlElement_00     
     
-    - Id: kafka1
+    - Id: KafkaLogger1
       Type: Kafka
       Enabled: true
       LogLevel: INFO
@@ -132,17 +158,18 @@ Database:
           batch.size: 25000
           enable.auto.commit: true
           auto.commit.interval.ms: 1000
-        TopicName: opcua          
+        TopicName: gateway
+        Format: Json
       WriteParameters:
         QueueSize: 20000
         BlockSize: 10000     
       Logging:
         - Topic: opc/demo1/path/Objects/Variables/#
-        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/#        
+        # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/#        
 
-    - Id: influx1
+    - Id: InfluxLogger1
       Type: InfluxDB
-      Enabled: true
+      Enabled: false
       InfluxDB:        
         Url: http://nuc1b.rocworks.local:8086
         Database: test
@@ -153,9 +180,9 @@ Database:
         - Topic: opc/demo1/path/Objects/Variables/#
         - Topic: opc/demo2/path/Objects/Demo/SimulationMass/#
 
-    - Id: iotdb1
+    - Id: IotDBLogger1
       Type: IoTDB
-      Enabled: true
+      Enabled: false
       IoTDB:
         Host: linux0.rocworks.local
         Port: 6667

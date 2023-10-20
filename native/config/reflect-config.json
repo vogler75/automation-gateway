@@ -96,71 +96,6 @@
   "name":"[Z"
 },
 {
-  "name":"at.rocworks.gateway.core.data.Topic$Format",
-  "allDeclaredFields":true,
-  "queryAllDeclaredMethods":true
-},
-{
-  "name":"at.rocworks.gateway.core.data.TopicValue",
-  "allDeclaredFields":true,
-  "queryAllDeclaredMethods":true,
-  "queryAllDeclaredConstructors":true,
-  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"getDataType","parameterTypes":[] }, {"name":"getServerPicoseconds","parameterTypes":[] }, {"name":"getServerTime","parameterTypes":[] }, {"name":"getSourcePicoseconds","parameterTypes":[] }, {"name":"getSourceTime","parameterTypes":[] }, {"name":"getStatusCode","parameterTypes":[] }, {"name":"getValue","parameterTypes":[] }]
-},
-{
-  "name":"ch.qos.logback.classic.encoder.PatternLayoutEncoder",
-  "queryAllPublicMethods":true,
-  "methods":[{"name":"<init>","parameterTypes":[] }]
-},
-{
-  "name":"ch.qos.logback.classic.pattern.DateConverter",
-  "methods":[{"name":"<init>","parameterTypes":[] }]
-},
-{
-  "name":"ch.qos.logback.classic.pattern.LevelConverter",
-  "methods":[{"name":"<init>","parameterTypes":[] }]
-},
-{
-  "name":"ch.qos.logback.classic.pattern.LineSeparatorConverter",
-  "methods":[{"name":"<init>","parameterTypes":[] }]
-},
-{
-  "name":"ch.qos.logback.classic.pattern.LoggerConverter",
-  "methods":[{"name":"<init>","parameterTypes":[] }]
-},
-{
-  "name":"ch.qos.logback.classic.pattern.MessageConverter",
-  "methods":[{"name":"<init>","parameterTypes":[] }]
-},
-{
-  "name":"ch.qos.logback.core.ConsoleAppender",
-  "queryAllPublicMethods":true,
-  "methods":[{"name":"<init>","parameterTypes":[] }]
-},
-{
-  "name":"ch.qos.logback.core.OutputStreamAppender",
-  "methods":[{"name":"setEncoder","parameterTypes":["ch.qos.logback.core.encoder.Encoder"] }]
-},
-{
-  "name":"ch.qos.logback.core.encoder.Encoder",
-  "methods":[{"name":"valueOf","parameterTypes":["java.lang.String"] }]
-},
-{
-  "name":"ch.qos.logback.core.encoder.LayoutWrappingEncoder",
-  "methods":[{"name":"setParent","parameterTypes":["ch.qos.logback.core.spi.ContextAware"] }]
-},
-{
-  "name":"ch.qos.logback.core.pattern.PatternLayoutEncoderBase",
-  "methods":[{"name":"setPattern","parameterTypes":["java.lang.String"] }]
-},
-{
-  "name":"ch.qos.logback.core.spi.ContextAware",
-  "methods":[{"name":"valueOf","parameterTypes":["java.lang.String"] }]
-},
-{
-  "name":"com.android.org.conscrypt.OpenSSLProvider"
-},
-{
   "name":"com.digitalpetri.netty.fsm.ChannelFsmFactory$1",
   "methods":[{"name":"channelInactive","parameterTypes":["io.netty.channel.ChannelHandlerContext"] }, {"name":"exceptionCaught","parameterTypes":["io.netty.channel.ChannelHandlerContext","java.lang.Throwable"] }, {"name":"userEventTriggered","parameterTypes":["io.netty.channel.ChannelHandlerContext","java.lang.Object"] }]
 },
@@ -475,10 +410,6 @@
   "fields":[{"name":"producerLimit"}]
 },
 {
-  "name":"io.vertx.core.eventbus.impl.EventBusImpl",
-  "fields":[{"name":"inboundInterceptors"}, {"name":"outboundInterceptors"}]
-},
-{
   "name":"io.vertx.core.http.impl.Http1xOrH2CHandler",
   "queriedMethods":[{"name":"channelRead","parameterTypes":["io.netty.channel.ChannelHandlerContext","java.lang.Object"] }]
 },
@@ -611,7 +542,7 @@
 },
 {
   "name":"java.lang.String",
-  "fields":[{"name":"TYPE"}]
+  "fields":[]
 },
 {
   "name":"java.lang.Thread",
@@ -628,10 +559,6 @@
 {
   "name":"java.lang.constant.ConstantDesc",
   "queryAllDeclaredMethods":true
-},
-{
-  "name":"java.lang.invoke.MethodHandles$Lookup",
-  "methods":[{"name":"<init>","parameterTypes":["java.lang.Class","int"] }]
 },
 {
   "name":"java.lang.management.BufferPoolMXBean",
@@ -845,10 +772,6 @@
   "name":"javax.management.ObjectName"
 },
 {
-  "name":"javax.management.StandardEmitterMBean",
-  "methods":[{"name":"cacheMBeanInfo","parameterTypes":["javax.management.MBeanInfo"] }, {"name":"getCachedMBeanInfo","parameterTypes":[] }, {"name":"getMBeanInfo","parameterTypes":[] }]
-},
-{
   "name":"javax.management.openmbean.CompositeData"
 },
 {
@@ -882,23 +805,12 @@
   "queryAllPublicMethods":true
 },
 {
-  "name":"jdk.management.jfr.FlightRecorderMXBeanImpl",
-  "queryAllPublicConstructors":true,
-  "methods":[{"name":"cacheMBeanInfo","parameterTypes":["javax.management.MBeanInfo"] }, {"name":"getCachedMBeanInfo","parameterTypes":[] }, {"name":"getMBeanInfo","parameterTypes":[] }, {"name":"getNotificationInfo","parameterTypes":[] }]
-},
-{
   "name":"jdk.management.jfr.RecordingInfo",
   "queryAllPublicMethods":true
 },
 {
   "name":"jdk.management.jfr.SettingDescriptorInfo",
   "queryAllPublicMethods":true
-},
-{
-  "name":"libcore.io.Memory"
-},
-{
-  "name":"org.apache.harmony.security.provider.crypto.CryptoProvider"
 },
 {
   "name":"org.apache.iotdb.service.rpc.thrift.IClientRPCService$Iface",
@@ -1297,9 +1209,6 @@
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
-  "name":"org.conscrypt.OpenSSLProvider"
-},
-{
   "name":"org.eclipse.milo.opcua.stack.client.transport.tcp.OpcClientTcpChannelInitializer"
 },
 {
@@ -1459,9 +1368,6 @@
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
-  "name":"org.robolectric.Robolectric"
-},
-{
   "name":"sun.management.ClassLoadingImpl",
   "queryAllPublicConstructors":true
 },
@@ -1499,9 +1405,6 @@
   "methods":[{"name":"arrayBaseOffset","parameterTypes":["java.lang.Class"] }, {"name":"arrayIndexScale","parameterTypes":["java.lang.Class"] }, {"name":"copyMemory","parameterTypes":["long","long","long"] }, {"name":"copyMemory","parameterTypes":["java.lang.Object","long","java.lang.Object","long","long"] }, {"name":"getAndAddLong","parameterTypes":["java.lang.Object","long","long"] }, {"name":"getAndSetObject","parameterTypes":["java.lang.Object","long","java.lang.Object"] }, {"name":"getBoolean","parameterTypes":["java.lang.Object","long"] }, {"name":"getByte","parameterTypes":["long"] }, {"name":"getByte","parameterTypes":["java.lang.Object","long"] }, {"name":"getDouble","parameterTypes":["java.lang.Object","long"] }, {"name":"getFloat","parameterTypes":["java.lang.Object","long"] }, {"name":"getInt","parameterTypes":["long"] }, {"name":"getInt","parameterTypes":["java.lang.Object","long"] }, {"name":"getLong","parameterTypes":["long"] }, {"name":"getLong","parameterTypes":["java.lang.Object","long"] }, {"name":"getObject","parameterTypes":["java.lang.Object","long"] }, {"name":"invokeCleaner","parameterTypes":["java.nio.ByteBuffer"] }, {"name":"objectFieldOffset","parameterTypes":["java.lang.reflect.Field"] }, {"name":"putBoolean","parameterTypes":["java.lang.Object","long","boolean"] }, {"name":"putByte","parameterTypes":["long","byte"] }, {"name":"putByte","parameterTypes":["java.lang.Object","long","byte"] }, {"name":"putDouble","parameterTypes":["java.lang.Object","long","double"] }, {"name":"putFloat","parameterTypes":["java.lang.Object","long","float"] }, {"name":"putInt","parameterTypes":["long","int"] }, {"name":"putInt","parameterTypes":["java.lang.Object","long","int"] }, {"name":"putLong","parameterTypes":["long","long"] }, {"name":"putLong","parameterTypes":["java.lang.Object","long","long"] }, {"name":"putObject","parameterTypes":["java.lang.Object","long","java.lang.Object"] }, {"name":"storeFence","parameterTypes":[] }]
 },
 {
-  "name":"sun.misc.VM"
-},
-{
   "name":"sun.nio.ch.SelectorImpl",
   "fields":[{"name":"publicSelectedKeys"}, {"name":"selectedKeys"}]
 },
@@ -1532,10 +1435,6 @@
 {
   "name":"sun.security.provider.JavaKeyStore$JKS",
   "methods":[{"name":"<init>","parameterTypes":[] }]
-},
-{
-  "name":"sun.security.provider.NativePRNG",
-  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"<init>","parameterTypes":["java.security.SecureRandomParameters"] }]
 },
 {
   "name":"sun.security.provider.SHA",

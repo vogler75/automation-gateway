@@ -1,5 +1,5 @@
-MqttServer:
-  Listeners:
+Servers:
+  Mqtt:
     - Id: Mqtt
       Enabled: true
       Port: 1883
@@ -19,8 +19,7 @@ MqttServer:
       #Password: demo
       LogLevel: ALL
 
-GraphQLServer:
-  Listeners:
+  GraphQL:
     - Port: 4001
       Enabled: true
       LogLevel: INFO
@@ -34,7 +33,8 @@ GraphQLServer:
 #          RootNodes:
 #            - "ns=1;s=2|Tags"
 
-MqttClient:
+Drivers:  
+  Mqtt:
   - Id: "MqttClient1"
     Host: x.s1.eu.hivemq.cloud
     Port: 8883    
@@ -43,7 +43,7 @@ MqttClient:
     Username: "vogler"
     Password: "GzT!x"    
     
-OpcUaClient:
+  OpcUa:
   - Id: "demo1"
     Enabled: true
     LogLevel: INFO
@@ -111,18 +111,16 @@ OpcUaClient:
       SamplingInterval: 0.0
       DiscardOldest: true
 
-Database:
-  Logger:
+Loggers:
+  Mqtt:
     - Id: MqttLogger1
-      Type: Mqtt
       Enabled: true
-      Mqtt:
-        Host: linux0.rocworks.local
-        Port: 1883
-        Ssl: false
-        Topic: Enterprise/Site/Area/Line
-        Format: Json
-        BulkMessages: false                   
+      Host: linux0.rocworks.local
+      Port: 1883
+      Ssl: false
+      Topic: Enterprise/Site/Area/Line
+      Format: Json
+      BulkMessages: false                   
       LogLevel: INFO       
       WriteParameters:
         QueueSize: 20000
@@ -151,18 +149,17 @@ Database:
         # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_NodeId/NodeId_00
         # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_XmlElement/XmlElement_00     
     
+  Kafka:
     - Id: KafkaLogger1
-      Type: Kafka
       Enabled: true
       LogLevel: INFO
-      Kafka:
-        Servers: linux0.rocworks.local:9092
-        Configs:
-          batch.size: 25000
-          enable.auto.commit: true
-          auto.commit.interval.ms: 1000
-        TopicName: gateway
-        Format: Json
+      Servers: linux0.rocworks.local:9092
+      Configs:
+        batch.size: 25000
+        enable.auto.commit: true
+        auto.commit.interval.ms: 1000
+      TopicName: gateway
+      Format: Json
       WriteParameters:
         QueueSize: 20000
         BlockSize: 10000     
@@ -170,12 +167,11 @@ Database:
         - Topic: opc/demo1/path/Objects/Variables/#
         # - Topic: opc/demo2/path/Objects/Demo/SimulationMass/#        
 
+  InfluxDB:
     - Id: InfluxLogger1
-      Type: InfluxDB
       Enabled: true
-      InfluxDB:        
-        Url: http://nuc1b.rocworks.local:8086
-        Database: test
+      Url: http://nuc1b.rocworks.local:8086
+      Database: test
       WriteParameters:
         QueueSize: 20000
         BlockSize: 10000
@@ -184,15 +180,14 @@ Database:
         - Topic: opc/demo2/path/Objects/Demo/SimulationMass/#
         - Topic: mqtt/MqttClient1/path/Austria/Sparkplug/#        
 
+  IoTDB:
     - Id: IotDBLogger1
-      Type: IoTDB
       Enabled: false
-      IoTDB:
-        Host: linux0.rocworks.local
-        Port: 6667
-        Database: root.gateway
-        Username: "root"
-        Password: "root"      
+      Host: linux0.rocworks.local
+      Port: 6667
+      Database: root.gateway
+      Username: "root"
+      Password: "root"      
       Logging:
         - Topic: opc/demo1/path/Objects/Variables/#
         - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Boolean/#

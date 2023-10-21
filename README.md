@@ -44,7 +44,15 @@ There is also "App-plc4x" which includes the [plc4x](https://plc4x.apache.org/) 
 
 ## Configuration
 
-See config.yaml in the app directory for an example how to configure the Gateway. You can pass a configuration file name to the program as the first argument or by setting a environment variable GATEWAY_CONFIG. If no argument is given then config.yaml will be used. If there are any questions about the configuration, please get in touch with me. 
+See config.yaml in the app directory for an example how to configure the Gateway. You can pass a configuration file name to the program as the first argument or by setting a environment variable GATEWAY_CONFIG. If no argument is given then config.yaml will be used. 
+* There is a YAML schema in the doc directory. This can be used with Visual Studio Code to create a valid YAML configuration for the gateway.
+
+* In Visual Studio Codee install the "YAML Language Support by Red Hat" Extension. In the settings of this extension you will find the "schema" section, open the settings.json and add one line to the yaml.schemas sections: 
+```"
+yaml.schemas": {        
+        "your-path-to-gateway/doc/yaml-json-schema.json": ["config*.yaml"]
+}
+```
 
 If you enable [GraphiQL](https://github.com/graphql/graphiql), a graphical ui to build and execute GraphQL queries, then you can access GraphiQL with  
 > http://localhost:4000/graphiql/ **! trailing slash is important !**
@@ -64,6 +72,8 @@ GraphQLServer:
       LogLevel: INFO
       GraphiQL: true
 ```
+
+
 
 ## OPC UA Client Configuration
 See config directory for more example configurations.
@@ -271,7 +281,7 @@ Example MQTT Topic:
 > plc/mod/node:json/coil:1  
 > plc/mod/node/coil:1  
 
-# Version History
+# Version history
 - [Frankenstein Automation Gateway](#frankenstein-automation-gateway)
 - [Content](#content)
 - [Build and Run](#build-and-run)
@@ -282,8 +292,8 @@ Example MQTT Topic:
   - [Logger Configuration](#logger-configuration)
   - [Build Docker Image](#build-docker-image)
   - [Using PLC4X](#using-plc4x)
-- [Version History](#version-history)
-  - [1.21.2 Fixes and SparkplugB for Kafka & MQTT Logger](#1212-fixes-and-sparkplugb-for-kafka--mqtt-logger)
+- [Version history](#version-history)
+  - [1.21.2 Fixes and SparkplugB for Kafka \& MQTT Logger](#1212-fixes-and-sparkplugb-for-kafka--mqtt-logger)
   - [1.21.1 Fixes and SparkplugB for MQTT Client](#1211-fixes-and-sparkplugb-for-mqtt-client)
   - [1.21 IoTDB, MQTT SparkplugB Logger, YAML Schema, Native-Image](#121-iotdb-mqtt-sparkplugb-logger-yaml-schema-native-image)
   - [1.20.3 Moved Neo4J to separate branches](#1203-moved-neo4j-to-separate-branches)

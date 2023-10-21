@@ -1,5 +1,8 @@
 [
   {
-    "interfaces":["org.influxdb.impl.InfluxDBService"]}
-  
+    "interfaces":["org.apache.iotdb.service.rpc.thrift.IClientRPCService$Iface"]
+  },
+  {
+    "interfaces":["org.influxdb.impl.InfluxDBService"]
+  }
 ]

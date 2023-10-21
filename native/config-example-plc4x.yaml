@@ -103,6 +103,17 @@ Drivers:
       SamplingInterval: 0.0
       DiscardOldest: true
 
+  Plc4x:
+  - Id: "demo3"
+    Enabled: true
+    Url: "modbus://192.168.1.158:502"
+    Polling:
+      Time: 100
+      OldNew: true
+    WriteTimeout: 100
+    ReadTimeout: 100
+    LogLevel: INFO          
+
 Loggers:
   Mqtt:
     - Id: mqtt1
@@ -110,7 +121,7 @@ Loggers:
       Host: linux0.rocworks.local
       Port: 1883
       Ssl: false
-      Topic: Enterprise/Site/Area/Line
+      Topic: test
       Format: Json
       BulkMessages: false                   
       LogLevel: INFO       
@@ -120,6 +131,9 @@ Loggers:
       Logging:
         - Topic: opc/demo1/path/Objects/Variables/#
         - Topic: opc/demo2/path/Objects/Demo/SimulationMass/#
+        - Topic: plc/demo3/node/holding-register:1:INT 
+        - Topic: plc/demo3/node/holding-register:2:INT 
+        - Topic: plc/demo3/node/holding-register:3:INT         
 
   Kafka:  
     - Id: kafka1

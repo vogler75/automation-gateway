@@ -58,7 +58,8 @@ class MqttLogger (config: JsonObject) : LoggerPublisher(config, "Mqtt") {
     }
 
     override fun publish(point: DataPoint, payload: Buffer) {
-        val topic = (if (this.topic.isEmpty()) "" else this.topic + "/") + point.topic.systemBrowsePath()
+        val topic = if (this.topic.isEmpty()) point.topic.systemBrowsePath()
+                    else this.topic + "/" + point.topic.browsePath
         client?.publish(topic, payload, MqttQoS.valueOf(qos), false, retained)
     }
 

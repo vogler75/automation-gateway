@@ -55,7 +55,7 @@ abstract class DriverBase(config: JsonObject) : AbstractVerticle() {
         logger.info("Driver start [$id]")
         vertx.executeBlocking<Void> {
             try {
-                connect().onComplete {
+                connect().onSuccess {
                     logger.info("Connect complete")
                     connectHandlers()
                     registerService()

@@ -57,15 +57,8 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
         else -> throw Exception("Unknown message format for decode!")
     }
 
-    private val encodeMessageValue: (topic: String, value: String) -> Buffer = when (format.uppercase()) {
-        "RAW" -> ::encodeValueMessage
-        "JSON" -> ::encodeJsonMessage
-        "SPARKPLUGB" -> ::encodeSparkplugBMessage
-        else -> throw Exception("Unknown message format for encode!")
-    }
-
-    private val encodeMessageJson: (topic: String, value: TopicValue) -> Buffer = when (format.uppercase()) {
-        "RAW" -> ::encodeValueMessage
+    private val encodeMessage: (topic: String, value: TopicValue) -> Buffer = when (format.uppercase()) {
+        "RAW" -> ::encodeRawMessage
         "JSON" -> ::encodeJsonMessage
         "SPARKPLUGB" -> ::encodeSparkplugBMessage
         else -> throw Exception("Unknown message format for encode!")
@@ -224,11 +217,10 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
 
     override fun publishTopic(topic: Topic, value: Buffer): Future<Boolean> {
         val promise = Promise.promise<Boolean>()
-        //promise.fail("publishTopic([$topic], [$value]) Not yet implemented")
 
         val message = when (topic.format) {
-            Topic.Format.Value -> encodeMessageValue(topic.node, value.toString())
-            Topic.Format.Json -> encodeMessageJson(topic.node, TopicValue.decodeFromJson(value.toJsonObject()))
+            Topic.Format.Value -> encodeMessage(topic.node, TopicValue(value.toString()))
+            Topic.Format.Json -> encodeMessage(topic.node, TopicValue.decodeFromJson(value.toJsonObject()))
         }
         client?.publish(topic.node, message, MqttQoS.valueOf(qos), false, retained)?.onComplete {
             promise.complete(true)
@@ -246,32 +238,17 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
         logger.severe("readHandler() Not yet implemented")
         message.fail(-1, "Not yet implemented")
     }
+    @Suppress("UNUSED_PARAMETER")
+    private fun encodeRawMessage(topic: String, value: TopicValue): Buffer =
+        Buffer.buffer(value.valueAsString())
+    @Suppress("UNUSED_PARAMETER")
+    private fun encodeJsonMessage(topic: String, value: TopicValue): Buffer =
+        value.encodeToJson().toBuffer()
 
-    private fun encodeValueMessage(@Suppress("UNUSED_PARAMETER")topic: String, value: String): Buffer = Buffer.buffer(value)
-    private fun encodeValueMessage(@Suppress("UNUSED_PARAMETER")topic: String, value: TopicValue): Buffer = Buffer.buffer(value.valueAsString())
-    private fun encodeJsonMessage(@Suppress("UNUSED_PARAMETER")topic: String, value: String): Buffer = TopicValue(value).encodeToJson().toBuffer()
-
-    private fun encodeJsonMessage(@Suppress("UNUSED_PARAMETER")topic: String, value: TopicValue): Buffer = value.encodeToJson().toBuffer()
-
-
-    private var spbSeq = 0
-    private fun encodeSparkplugBMessage(topic: String, value: String) : Buffer {
-        val payload = SparkplugBPayload.SparkplugBPayloadBuilder(spbSeq.toLong())
-            .setTimestamp(Date())
-            .setUuid(UUID.randomUUID().toString())
-            .createPayload()
-        val metric = Metric.MetricBuilder(
-            topic,
-            MetricDataType.String,
-            value
-        )
-        payload.addMetric(metric.createMetric())
-        if (spbSeq++ == 255) spbSeq=0
-        return Buffer.buffer(SparkplugBPayloadEncoder().getBytes(payload, false))
-    }
+    private var spbSequenceNumber = 0
 
     private fun encodeSparkplugBMessage(topic: String, value: TopicValue) : Buffer {
-        val payload = SparkplugBPayload.SparkplugBPayloadBuilder(spbSeq.toLong())
+        val payload = SparkplugBPayload.SparkplugBPayloadBuilder(spbSequenceNumber.toLong())
             .setTimestamp(Date())
             .setUuid(UUID.randomUUID().toString())
             .createPayload()
@@ -281,7 +258,7 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
             value.valueAsString()
         )
         payload.addMetric(metric.createMetric())
-        if (spbSeq++ == 255) spbSeq=0
+        if (spbSequenceNumber++ == 255) spbSequenceNumber=0
         return Buffer.buffer(SparkplugBPayloadEncoder().getBytes(payload, false))
     }
 
@@ -289,7 +266,7 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
         val node = message.body().getValue("NodeId")
 
         fun publish(client: MqttClient, topic: String, value: String): Future<Int> {
-            val payload = encodeMessageValue(topic, value)
+            val payload = encodeMessage(topic, TopicValue(value))
             return client.publish(topic, payload, MqttQoS.valueOf(qos), false, retained)
         }
 

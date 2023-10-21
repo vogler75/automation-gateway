@@ -281,7 +281,7 @@ Example MQTT Topic:
 > plc/mod/node:json/coil:1  
 > plc/mod/node/coil:1  
 
-# Version history
+# Version History
 - [Frankenstein Automation Gateway](#frankenstein-automation-gateway)
 - [Content](#content)
 - [Build and Run](#build-and-run)
@@ -292,7 +292,7 @@ Example MQTT Topic:
   - [Logger Configuration](#logger-configuration)
   - [Build Docker Image](#build-docker-image)
   - [Using PLC4X](#using-plc4x)
-- [Version history](#version-history)
+- [Version History](#version-history)
   - [1.21.2 Fixes and SparkplugB for Kafka \& MQTT Logger](#1212-fixes-and-sparkplugb-for-kafka--mqtt-logger)
   - [1.21.1 Fixes and SparkplugB for MQTT Client](#1211-fixes-and-sparkplugb-for-mqtt-client)
   - [1.21 IoTDB, MQTT SparkplugB Logger, YAML Schema, Native-Image](#121-iotdb-mqtt-sparkplugb-logger-yaml-schema-native-image)

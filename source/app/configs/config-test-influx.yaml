@@ -1,12 +1,10 @@
-MqttServer:
-  Listeners:
-    - Id: Mqtt
-      Port: 1883
+Servers:
+  Mqtt:
+    - Port: 1883
       Host: 0.0.0.0
       LogLevel: INFO # ALL | INFO
 
-GraphQLServer:
-  Listeners:
+  GraphQL:
     - Port: 4000
       LogLevel: INFO
       GraphiQL: true
@@ -21,15 +19,13 @@ GraphQLServer:
       #  - System: winccoa
       #    FieldName: BrowseName # BrowseName | DisplayName
 
-Database:
-  Logger:
-    - Id: influx
-      Type: InfluxDB
-      InfluxDB:        
-        Url: http://nuc1:8086
-        Database: test
-        Username: ""
-        Password: ""
+Loggers:
+  InfluxDB:
+    - Id: influx      
+      Url: http://nuc1:8086
+      Database: test
+      Username: ""
+      Password: ""
       WriteParameters:
         QueueSize: 20000
         BlockSize: 10000
@@ -47,7 +43,8 @@ Database:
         #- Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_UInt32/+
         - Topic: opc/opc1/path/Objects/Demo/Scalar/Scalar_Static/Scalar_Static_Int64
 
-OpcUaClient:
+Drivers:
+  OpcUa:
   - Id: "opc1"
     Enabled: true
     LogLevel: INFO

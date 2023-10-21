@@ -1,12 +1,6 @@
-# Example Configuration File for the Automation Gateway
-#
-# Note: The OpcUaClient connections are all disabled.  
-#
-
-MqttServer:
-  Listeners:
-    - Id: Mqtt
-      Port: 1883
+Servers:
+  Mqtt:
+    - Port: 1883
       Host: 0.0.0.0
       LogLevel: INFO # ALL | INFO
 
@@ -18,13 +12,12 @@ MqttServer:
       Password: manager
       LogLevel: INFO # ALL | INFO
 
-GraphQLServer:
-  Listeners:
+  GraphQL:
     - Port: 4000
       LogLevel: INFO
       GraphiQL: true
       WriteSchemaToFile: false
-      Schemas:
+      #Schemas:
       #  - System: opc1
       #    FieldName: BrowseName
       #  - System: opc2
@@ -32,7 +25,8 @@ GraphQLServer:
       #  - System: opc3
       #    FieldName: BrowseName
 
-OpcUaClient:
+Drivers:
+  OpcUa:
   - Id: "opc1"
     Enabled: true
     LogLevel: INFO
@@ -148,11 +142,10 @@ OpcUaClient:
       SamplingInterval: 1.0
       DiscardOldest: true
 
-Database:
-  Logger:
+Loggers:
+  Neo4j:
     - Id: neo4j1
       Enabled: true
-      Type: Neo4j
       Url: bolt://nuc1.rocworks.local:7687
       Username: "neo4j"
       Password: "manager"

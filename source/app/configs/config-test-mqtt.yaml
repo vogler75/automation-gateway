@@ -1,18 +1,17 @@
-MqttServer:
-  Listeners:
-    - Id: Mqtt
-      Port: 1883
+Servers:
+  Mqtt:
+    - Port: 1883
       Host: 0.0.0.0
       LogLevel: INFO # ALL | INFO
 
-GraphQLServer:
-  Listeners:
+  GraphQL:
     - Port: 4000
       LogLevel: INFO
       GraphiQL: true
       WriteSchemaToFile: false
 
-MqttClient:
+Drivers:
+  Mqtt:
   - Id: "mqtt1"
     Enabled: true
     LogLevel: INFO
@@ -20,16 +19,14 @@ MqttClient:
     Port: 1883
     Ssl: false    
 
-Database:
-  Logger:
+Loggers:
+  InfluxDB:
     - Id: influx1
-      Type: InfluxDB
       Enabled: true      
-      InfluxDB:
-        Url: http://nuc1.rocworks.local:8086
-        Database: test
-        Username: ""
-        Password: ""
+      Url: http://nuc1.rocworks.local:8086
+      Database: test
+      Username: ""
+      Password: ""
       WriteParameters:
         QueueSize: 20000
         BlockSize: 10000

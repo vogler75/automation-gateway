@@ -1,12 +1,10 @@
-MqttServer:
-  Listeners:
-    - Id: Mqtt
-      Port: 1883
+Servers:
+  Mqtt:
+    - Port: 1883
       Host: 0.0.0.0
       LogLevel: INFO # ALL | INFO
 
-GraphQLServer:
-  Listeners:
+  GraphQL:
     - Port: 4000
       LogLevel: INFO
       GraphiQL: true
@@ -21,15 +19,13 @@ GraphQLServer:
       #  - System: winccoa
       #    FieldName: BrowseName # BrowseName | DisplayName
 
-Database:
-  Logger:
-    - Id: postgres
-      Type: Jdbc
+Loggers:
+  Jdbc:
+    - Id: postgres      
       Enabled: false
-      Jdbc:        
-        Url: jdbc:postgresql://nuc1:5432/scada
-        Username: system
-        Password: manager
+      Url: jdbc:postgresql://nuc1:5432/scada
+      Username: system
+      Password: manager
       Logging:
         - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_SByte/+
         - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Byte/+
@@ -45,12 +41,10 @@ Database:
         - Topic: opc/opc1/path/Objects/Demo/Scalar/Scalar_Static/Scalar_Static_String
 
     - Id: mysql
-      Type: Jdbc
       Enabled: false
-      Jdbc:        
-        Url: jdbc:mysql://nuc1:3306/scada
-        Username: root
-        Password: manager
+      Url: jdbc:mysql://nuc1:3306/scada
+      Username: root
+      Password: manager
       Logging:
         - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_SByte/+
         - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Byte/+
@@ -66,12 +60,10 @@ Database:
         - Topic: opc/opc1/path/Objects/Demo/Scalar/Scalar_Static/Scalar_Static_String
 
     - Id: mssql
-      Type: Jdbc
       Enabled: false
-      Jdbc:        
-        Url: jdbc:sqlserver://nuc1;databaseName=scada
-        Username: sa
-        Password: Manager4711#
+      Url: jdbc:sqlserver://nuc1;databaseName=scada
+      Username: sa
+      Password: Manager4711#
       Logging:
         - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_SByte/+
         - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Byte/+
@@ -87,13 +79,11 @@ Database:
         - Topic: opc/opc1/path/Objects/Demo/Scalar/Scalar_Static/Scalar_Static_String
 
     - Id: crate
-      Type: Jdbc
       Enabled: true
-      Jdbc:        
-        Url: jdbc:crate://nuc1:5433/
-        Username: crate
-        Password:
-        SqlTableName: events2
+      Url: jdbc:crate://nuc1:5433/
+      Username: crate
+      Password: ""
+      SqlTableName: events2
       Logging:
         - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_SByte/+
         - Topic: opc/opc1/path/Objects/Demo/SimulationMass/SimulationMass_Byte/+
@@ -108,7 +98,8 @@ Database:
         - Topic: opc/opc1/path/Objects/Demo/Scalar/Scalar_Static/Scalar_Static_Int64
         - Topic: opc/opc1/path/Objects/Demo/Scalar/Scalar_Static/Scalar_Static_String
 
-OpcUaClient:
+Drivers:
+  OpcUa:
   - Id: "opc1"
     Enabled: true
     LogLevel: INFO

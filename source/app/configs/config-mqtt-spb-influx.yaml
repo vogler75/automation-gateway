@@ -1,20 +1,19 @@
-MqttServer:
-  Listeners:
-    - Id: Mqtt
-      Enabled: true
+Servers:
+  Mqtt:
+    - Enabled: true
       Port: 1883
       Host: 0.0.0.0
       MaxMessageSizeKb: 8192
       LogLevel: INFO # ALL | INFO
 
-GraphQLServer:
-  Listeners:
+  GraphQL:
     - Port: 4001
       Enabled: true
       LogLevel: INFO
       GraphiQL: true      
 
-MqttClient:
+Drivers:
+  Mqtt:
   - Id: "MqttClient1"
     Host: xxxxxxxxxxxxxxxxxx.s1.eu.hivemq.cloud
     Port: 8883    
@@ -23,14 +22,12 @@ MqttClient:
     Username: "vogler"
     Password: "xxxxxxxxxxxxxxxx"    
 
-Database:
-  Logger:
+Loggers:
+  InfluxDB:
     - Id: InfluxLogger1
-      Type: InfluxDB
-      Enabled: true
-      InfluxDB:        
-        Url: http://nuc1b.rocworks.local:8086
-        Database: test
+      Enabled: true 
+      Url: http://nuc1b.rocworks.local:8086
+      Database: test
       WriteParameters:
         QueueSize: 20000
         BlockSize: 10000

@@ -68,7 +68,7 @@ class MqttServer(config: JsonObject, private val endpoint: MqttEndpoint) : Abstr
         }
     }
 
-    private val id = config.getString("Id", "Mqtt")
+    private val id = config.getString("Id", "MqttServer")
     private val logger = Logger.getLogger(id)
 
     private val topicConsumer = mutableMapOf<String, MessageConsumer<*>>()

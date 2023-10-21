@@ -1,12 +1,11 @@
-MqttServer:
-  Listeners:
+Servers:
+  Mqtt:
     - Id: Mqtt
       Port: 1883
       Host: 0.0.0.0
       LogLevel: INFO # ALL | INFO
 
-GraphQLServer:
-  Listeners:
+  GraphQL:
     - Port: 4000
       LogLevel: INFO
       GraphiQL: true
@@ -21,20 +20,18 @@ GraphQLServer:
       #  - System: winccoa
       #    FieldName: BrowseName # BrowseName | DisplayName
 
-Database:
-  Logger:
+Loggers:
+  Kafka:
     - Id: kafka1
-      Type: Kafka
       Enabled: true
-      Kafka:        
-        Servers: 192.168.1.131:9092
-        TopicName: test # default is the system id of the topic      
-        #KeyName: test # default is the node path name        
-        Configs:
-          batch.size: 25000
-          group.id: frankenstein-producer
-          enable.auto.commit: true
-          auto.commit.interval.ms: 1000
+      Servers: 192.168.1.131:9092
+      TopicName: test # default is the system id of the topic      
+      #KeyName: test # default is the node path name        
+      Configs:
+        batch.size: 25000
+        group.id: frankenstein-producer
+        enable.auto.commit: true
+        auto.commit.interval.ms: 1000
       WriteParameters:
         QueueSize: 10000
         BlockSize: 1000
@@ -62,7 +59,8 @@ Database:
         - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_Unt16/+
         - Topic: opc/opc2/path/Objects/Demo/SimulationMass/SimulationMass_UInt32/+
 
-OpcUaClient:
+Drivers:
+  OpcUa:
   - Id: "opc1"
     Enabled: true
     LogLevel: INFO

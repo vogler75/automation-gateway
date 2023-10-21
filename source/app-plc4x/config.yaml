@@ -1,41 +1,37 @@
-GraphQLServer:
-  Listeners:
+Servers:
+  GraphQL:
     - Port: 4000
       LogLevel: INFO
       GraphiQL: true
 
-MqttServer:
-  Listeners:
+  Mqtt:
     - Id: Mqtt
       Port: 1883
       Host: 0.0.0.0
       Enabled: true
       LogLevel: INFO # ALL | INFO
 
-Plc4x:
-  Drivers:
+Drivers:
+  Plc4x:
     - Id: "demo"
       Enabled: true
       Url: "modbus://localhost:502"
       Polling:
-        Time: 1000
-        Timeout: 900
+        Time: 100
         OldNew: true
       WriteTimeout: 100
       ReadTimeout: 100
       LogLevel: INFO    
 
-Database:
-  Logger:
+Loggers:
+  Mqtt:
     - Id: mqtt1
-      Type: Mqtt
       Enabled: true
       Host: linux0.rocworks.local
       Port: 1883
       Ssl: false
-      WriteParameters:
-        QueueSize: 20000
-        BlockSize: 10000
+      Topic: modbus
+      Format: Raw
       Logging: 
         - Topic: plc/demo/node/holding-register:1:INT 
         - Topic: plc/demo/node/holding-register:2:INT 

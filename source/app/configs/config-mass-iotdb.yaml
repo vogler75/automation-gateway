@@ -1,12 +1,10 @@
-MqttServer:
-  Listeners:
-    - Id: Mqtt
-      Port: 1883
+Servers:
+  Mqtt:
+    - Port: 1883
       Host: 0.0.0.0
       LogLevel: INFO # ALL | INFO
 
-GraphQLServer:
-  Listeners:
+  GraphQL:
     - Port: 4000
       LogLevel: INFO
       GraphiQL: true
@@ -70,16 +68,14 @@ GraphQLServer:
       #  - System: winccoa
       #    FieldName: BrowseName # BrowseName | DisplayName
 
-Database:
-  Logger:
+Loggers:
+  IoTDB:
     - Id: iotdb1
-      Type: IoTDB
-      IoTDB:
-        Host: server2
-        Port: 6667
-        Database: root.scada1
-        Username: "root"
-        Password: "root"
+      Host: server2
+      Port: 6667
+      Database: root.scada1
+      Username: "root"
+      Password: "root"
       WriteParameters:
         QueueSize: 20000
         BlockSize: 10000        
@@ -195,7 +191,6 @@ Database:
         - Topic: opc/opc10/path/Objects/Demo/SimulationMass/SimulationMass_UInt32/+
 
     - Id: iotdb2
-      Type: IoTDB
       Host: server2
       Port: 6667
       Database: root.scada2
@@ -317,7 +312,6 @@ Database:
         - Topic: opc/opc20/path/Objects/Demo/SimulationMass/SimulationMass_UInt32/+
 
     - Id: iotdb3
-      Type: IoTDB
       Host: server2
       Port: 6667
       Database: root.scada3
@@ -439,7 +433,6 @@ Database:
         - Topic: opc/opc30/path/Objects/Demo/SimulationMass/SimulationMass_UInt32/+
 
     - Id: iotdb4
-      Type: IoTDB
       Host: server2
       Port: 6667
       Database: root.scada4
@@ -561,7 +554,6 @@ Database:
         - Topic: opc/opc40/path/Objects/Demo/SimulationMass/SimulationMass_UInt32/+
 
     - Id: iotdb5
-      Type: IoTDB
       Host: server2
       Port: 6667
       Database: root.scada5
@@ -681,8 +673,8 @@ Database:
         - Topic: opc/opc49/path/Objects/Demo/SimulationMass/SimulationMass_UInt32/+
         - Topic: opc/opc50/path/Objects/Demo/SimulationMass/SimulationMass_UInt32/+      
 
-OpcUaClient:
-
+Drivers:
+  OpcUa:
   - Id: "winccoa"
     Enabled: false
     LogLevel: INFO

@@ -29,7 +29,7 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
     private val pollingOldNew: Boolean
     private val writeTimeout: Long
     private val readTimeout: Long
-    private val defaultRetryWaitTime = 5000
+    private val retryWaitTime: Long
 
     private val pollingTopics = HashMap<Topic, PlcValue?>()
 
@@ -37,9 +37,10 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
         val polling = config.getJsonObject("Polling", JsonObject())
         pollingTime = polling.getLong("Time", 0)
         pollingTimeout = polling.getLong("Timeout", pollingTime)
-        pollingOldNew = polling.getBoolean("OldNew", false)
+        pollingOldNew = polling.getBoolean("OldNew", true)
         writeTimeout = config.getLong("WriteTimeout", 100)
         readTimeout = config.getLong("ReadTimeout", 100)
+        retryWaitTime = config.getLong("RetryWaitTime", 5000)
     }
 
     override fun start(startPromise: Promise<Void>) {
@@ -130,7 +131,7 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
                 ret.complete(true)
             } catch (e: Exception) {
                 logger.info("Plc4x connect failed! Wait and retry... " + e.message)
-                vertx.setTimer(defaultRetryWaitTime.toLong()) { connectClientThread(ret) }
+                vertx.setTimer(retryWaitTime.toLong()) { connectClientThread(ret) }
             } catch (e: Exception) {
                 ret.fail(e)
             }
@@ -196,7 +197,7 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
         return ret.future()
     }
 
-    private fun toValue(@Suppress("UNUSED_PARAMETER") node: String, value: PlcValue): TopicValue {
+    private fun toValue(value: PlcValue): TopicValue {
         val data = when {
             value.isStruct && value.keys.isNotEmpty() -> {
                 value.struct[value.keys.first()]?.`object`
@@ -206,13 +207,13 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
             }
             else -> value.`object`
         }
-        return TopicValue(value = data!!.toString())
+        return TopicValue(value = data)
     }
 
     private fun valueConsumer(topic: Topic, data: PlcValue) {
         logger.finest("Got value [${topic.topicName}] [$data]")
         try {
-            val value = toValue(topic.node, data)
+            val value = toValue(data)
             val message = DataPoint(topic, value)
             vertx.eventBus().publish(topic.topicName, message)
         } catch (e: java.lang.Exception) {
@@ -300,7 +301,7 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
                         response.whenComplete { readResponse, throwable ->
                             if (readResponse != null) {
                                 try {
-                                    val result = toValue(node, readResponse.getPlcValue("value")).encodeToJson()
+                                    val result = toValue(readResponse.getPlcValue("value")).encodeToJson()
                                     message.reply(JsonObject().put("Ok", true).put("Result", result))
                                 } catch (e: Exception) {
                                     e.printStackTrace()

@@ -7,6 +7,7 @@ import at.rocworks.gateway.core.opcua.OpcUaDriver
 import at.rocworks.gateway.core.service.Common
 
 import at.rocworks.gateway.logger.influx.InfluxDBLogger
+import at.rocworks.gateway.logger.iotdb.IoTDBLogger
 import at.rocworks.gateway.logger.jdbc.JdbcLogger
 import at.rocworks.gateway.logger.kafka.KafkaLogger
 
@@ -14,6 +15,7 @@ import kotlin.Throws
 import kotlin.jvm.JvmStatic
 
 import io.vertx.core.Vertx
+import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 
 import java.lang.Exception
@@ -29,62 +31,61 @@ object App {
     }
 
     private fun createServices(vertx: Vertx, config: JsonObject) {
-        // OPC UA Client
-        val enabledOpcUa = config.getJsonArray("OpcUaClient")
-            ?.filterIsInstance<JsonObject>()
-            ?.filter { it.getBoolean("Enabled", true) }
-            ?.map {
-                vertx.deployVerticle(OpcUaDriver(it))
-                it
-            }?: listOf()
+        // Drivers
+        val enabled = config.getJsonObject("Drivers")
+            ?.filter { it.value is JsonArray }
+            ?.flatMap { (type, list) ->
+                (list as JsonArray)
+                    .filterIsInstance<JsonObject>()
+                    .filter { it.getBoolean("Enabled", true) }
+                    .map {
+                        when (type) {
+                            "OpcUa" -> vertx.deployVerticle(OpcUaDriver(it))
+                            "Mqtt" -> vertx.deployVerticle(MqttDriver(it))
+                            "Plc4x" -> vertx.deployVerticle(Plc4xDriver(it))
+                        }
+                        it
+                    }
+            } ?: listOf()
+        val defaultSystem = if (enabled.isNotEmpty()) enabled.first().getString("Id") else ""
 
-        // Mqtt Client
-        val enabledMqtt = config.getJsonArray("MqttClient")
-            ?.filterIsInstance<JsonObject>()
-            ?.filter { it.getBoolean("Enabled", true) }
-            ?.map {
-                vertx.deployVerticle(MqttDriver(it))
-                it
-            }?: listOf()
-
-        // Plc4x Client
-        val enabledPlc = config.getJsonObject("Plc4x")
-            ?.getJsonArray("Drivers")
-            ?.filterIsInstance<JsonObject>()
-            ?.filter { it.getBoolean("Enabled", true) }
-            ?.map {
-                vertx.deployVerticle(Plc4xDriver(it))
-                it
-            }?: listOf()
-
-        val enabled = enabledOpcUa.union(enabledMqtt).union(enabledPlc)
-        val defaultSystem = if (enabled.isNotEmpty()) enabled.first().getString("Id") else "default"
-
-        // Mqtt Server
-        config.getJsonObject("MqttServer")
-            ?.getJsonArray("Listeners")
-            ?.filterIsInstance<JsonObject>()
-            ?.filter { it.getBoolean("Enabled", true) }
-            ?.forEach {
-                MqttServer.create(vertx, it)
+        // Servers
+        config.getJsonObject("Servers")
+            ?.filter { it.value is JsonArray }
+            ?.forEach { (type, list) ->
+                (list as JsonArray)
+                    .filterIsInstance<JsonObject>()
+                    .filter { it.getBoolean("Enabled", true) }
+                    .forEach { config ->
+                        when (type) {
+                            "Mqtt" -> MqttServer.create(vertx, config)
+                            "GraphQL" -> GraphQLServer.create(vertx, config, defaultSystem)
+                        }
+                    }
             }
 
-        // Start GraphQL Server
-        config.getJsonObject("GraphQLServer")
-            ?.getJsonArray("Listeners")
-            ?.filterIsInstance<JsonObject>()
-            ?.filter { it.getBoolean("Enabled", true) }
-            ?.forEach {
-                GraphQLServer.create(vertx, it, defaultSystem)
+        // Loggers
+        config.getJsonObject("Loggers")
+            ?.filter { it.value is JsonArray }
+            ?.forEach { (type, list) ->
+                (list as JsonArray)
+                    .filterIsInstance<JsonObject>()
+                    .filter { it.getBoolean("Enabled", true) }
+                    .forEach { config -> createLogger(vertx, type, config)
+                    }
             }
+    }
 
-        // DB Logger
-        config.getJsonObject("Database")
-            ?.getJsonArray("Logger")
-            ?.filterIsInstance<JsonObject>()
-            ?.forEach {
-                createLogger(vertx, it)
-            }
+    private fun createLogger(vertx: Vertx, type: String, config: JsonObject) {
+        val logger = Logger.getLogger(javaClass.simpleName)
+        when (type) {
+            "Mqtt" -> vertx.deployVerticle(MqttLogger(config))
+            "Kafka" ->  vertx.deployVerticle(KafkaLogger(config))
+            "Jdbc" -> vertx.deployVerticle(JdbcLogger(config))
+            "InfluxDB" -> vertx.deployVerticle(InfluxDBLogger(config))
+            "IoTDB" -> vertx.deployVerticle(IoTDBLogger(config))
+            else -> logger.severe("Unknown database type [${type}]")
+        }
     }
 
     private fun createLogger(vertx: Vertx, config: JsonObject) {

@@ -12,12 +12,11 @@ import io.vertx.kafka.client.producer.KafkaProducerRecord
 
 import java.util.concurrent.TimeUnit
 
-class KafkaLogger(config: JsonObject) : LoggerPublisher(config, "Kafka") {
-    private val configKafka = config.getJsonObject("Kafka", config)
-    private val servers = configKafka.getString("Servers", "localhost:9092")
-    private val configs = configKafka.getJsonObject("Configs")
-    private val topicName = configKafka.getString("TopicName", "Gateway")
-    private val keyName = configKafka.getString("KeyName", null)
+class KafkaLogger(config: JsonObject) : LoggerPublisher(config) {
+    private val servers = config.getString("Servers", "localhost:9092")
+    private val configs = config.getJsonObject("Configs")
+    private val topicName = config.getString("TopicName", "Gateway")
+    private val keyName = config.getString("KeyName", null)
 
     @Volatile
     private var producer: KafkaProducer<String, String>? = null

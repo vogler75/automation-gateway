@@ -1,12 +1,10 @@
-MqttServer:
-  Listeners:
-    - Id: Mqtt
-      Port: 1883
+Servers:
+  Mqtt:
+    - Port: 1883
       Host: 0.0.0.0
       LogLevel: INFO # ALL | INFO
 
-GraphQLServer:
-  Listeners:
+  GraphQL:
     - Port: 4000
       LogLevel: INFO
       GraphiQL: true
@@ -70,15 +68,13 @@ GraphQLServer:
       #  - System: winccoa
       #    FieldName: BrowseName # BrowseName | DisplayName
 
-Database:
-  Logger:
-    - Id: iotdb1
-      Type: InfluxDB
-      InfluxDB:
-        Url: http://server2:8086
-        Database: scada1
-        Username: ""
-        Password: ""
+Loggers:
+  InfluxDB:
+    - Id: db1
+      Url: http://server2:8086
+      Database: scada1
+      Username: ""
+      Password: ""
       WriteParameters:
         QueueSize: 20000
         BlockSize: 10000
@@ -193,13 +189,11 @@ Database:
         - Topic: opc/opc9/path/Objects/Demo/SimulationMass/SimulationMass_UInt32/+
         - Topic: opc/opc10/path/Objects/Demo/SimulationMass/SimulationMass_UInt32/+
 
-    - Id: iotdb2
-      Type: InfluxDB
-      InfluxDB:        
-        Url: http://server2:8086
-        Database: scada2
-        Username: ""
-        Password: ""
+    - Id: db2
+      Url: http://server2:8086
+      Database: scada2
+      Username: ""
+      Password: ""
       WriteParameters:
         QueueSize: 20000
         BlockSize: 10000
@@ -314,13 +308,11 @@ Database:
         - Topic: opc/opc19/path/Objects/Demo/SimulationMass/SimulationMass_UInt32/+
         - Topic: opc/opc20/path/Objects/Demo/SimulationMass/SimulationMass_UInt32/+
 
-    - Id: iotdb3
-      Type: InfluxDB
-      InfluxDB:        
-        Url: http://server2:8086
-        Database: scada3
-        Username: ""
-        Password: ""
+    - Id: db3       
+      Url: http://server2:8086
+      Database: scada3
+      Username: ""
+      Password: ""
       WriteParameters:
         QueueSize: 20000
         BlockSize: 10000
@@ -435,13 +427,11 @@ Database:
         - Topic: opc/opc29/path/Objects/Demo/SimulationMass/SimulationMass_UInt32/+
         - Topic: opc/opc30/path/Objects/Demo/SimulationMass/SimulationMass_UInt32/+
 
-    - Id: iotdb4
-      Type: InfluxDB
-      InfluxDB:        
-        Url: http://server2:8086
-        Database: scada4
-        Username: ""
-        Password: ""
+    - Id: db4     
+      Url: http://server2:8086
+      Database: scada4
+      Username: ""
+      Password: ""
       WriteParameters:
         QueueSize: 20000
         BlockSize: 10000
@@ -556,13 +546,11 @@ Database:
         - Topic: opc/opc39/path/Objects/Demo/SimulationMass/SimulationMass_UInt32/+
         - Topic: opc/opc40/path/Objects/Demo/SimulationMass/SimulationMass_UInt32/+
 
-    - Id: iotdb5
-      Type: InfluxDB
-      InfluxDB:        
-        Url: http://server2:8086
-        Database: scada5
-        Username: ""
-        Password: ""
+    - Id: db5       
+      Url: http://server2:8086
+      Database: scada5
+      Username: ""
+      Password: ""
       WriteParameters:
         QueueSize: 20000
         BlockSize: 10000
@@ -677,8 +665,8 @@ Database:
         - Topic: opc/opc49/path/Objects/Demo/SimulationMass/SimulationMass_UInt32/+
         - Topic: opc/opc50/path/Objects/Demo/SimulationMass/SimulationMass_UInt32/+      
 
-OpcUaClient:
-
+Drivers:
+  OpcUa:
   - Id: "winccoa"
     Enabled: false
     LogLevel: INFO

@@ -12,7 +12,7 @@ import io.vertx.mqtt.MqttClientOptions
 
 import java.util.*
 
-class MqttLogger (config: JsonObject) : LoggerPublisher(config, "Mqtt") {
+class MqttLogger (config: JsonObject) : LoggerPublisher(config) {
     var client: MqttClient? = null
 
     private val configMqtt = config.getJsonObject("Mqtt", config)
@@ -58,8 +58,8 @@ class MqttLogger (config: JsonObject) : LoggerPublisher(config, "Mqtt") {
     }
 
     override fun publish(point: DataPoint, payload: Buffer) {
-        val topic = if (this.topic.isEmpty()) point.topic.systemBrowsePath()
-                    else this.topic + "/" + point.topic.browsePath
+        val topic = if (this.topic.isEmpty()) if (point.topic.hasBrowsePath) point.topic.systemWithBrowsePath else point.topic.node
+                    else this.topic + "/" + (if (point.topic.hasBrowsePath) point.topic.browsePath else point.topic.node)
         client?.publish(topic, payload, MqttQoS.valueOf(qos), false, retained)
     }
 

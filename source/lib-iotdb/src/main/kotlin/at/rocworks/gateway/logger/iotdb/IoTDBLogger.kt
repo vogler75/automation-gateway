@@ -15,13 +15,12 @@ import java.util.*
 import kotlin.collections.LinkedHashMap
 
 class IoTDBLogger(config: JsonObject) : LoggerBase(config) {
-    private val configIoTDB = config.getJsonObject("IoTDB", config)
-    private val host = configIoTDB.getString("Host", "localhost")
-    private val port = configIoTDB.getInteger("Port", 6667)
-    private val username = configIoTDB.getString("Username", "")
-    private val password = configIoTDB.getString("Password", "")
-    private val database = configIoTDB.getString("Database", "root.test")
-    private val writeDetails = configIoTDB.getBoolean("WriteDetails", false)
+    private val host = config.getString("Host", "localhost")
+    private val port = config.getInteger("Port", 6667)
+    private val username = config.getString("Username", "")
+    private val password = config.getString("Password", "")
+    private val database = config.getString("Database", "root.test")
+    private val writeDetails = config.getBoolean("WriteDetails", false)
 
     private val session: Session = if (username == null || username == "")
         Session(host, port)
@@ -79,7 +78,8 @@ class IoTDBLogger(config: JsonObject) : LoggerBase(config) {
         fun addDetails(point: DataPoint) {
             try {
                 val time = point.value.sourceTime().toEpochMilli()
-                val path = point.topic.systemBrowsePath().replace("/", ".")
+                val path = if (point.topic.hasBrowsePath) point.topic.systemWithBrowsePath.replace("/", ".")
+                           else point.topic.node
                 val status = point.value.statusAsString()
                 val (dataType, value) = getDataTypeAndValue(point.value)
                 if (dataType != null && value != null) {

@@ -39,11 +39,15 @@ data class Topic (
     private val topicItems : List<String>
         get() = splitAddress(this.topicName)
 
+    val hasBrowsePath: Boolean
+        get() = !browsePath.isNullOrEmpty()
+
     val topicWithBrowsePath : String
         get() = if (topicType==TopicType.Path) topicItems.slice(0..2).joinToString("/")+"/$browsePath"
                 else topicName
 
-    fun systemBrowsePath(): String = "$systemName/${if (browsePath=="") node else browsePath}"
+    val systemWithBrowsePath: String
+        get() = "$systemName/${if (browsePath=="") node else browsePath}"
 
     fun encodeToJson() = encodeToJson(this)
 

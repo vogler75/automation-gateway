@@ -10,13 +10,11 @@ import java.util.concurrent.TimeUnit
 
 
 class JdbcLogger(config: JsonObject) : LoggerBase(config) {
-    private val configJdbc = config.getJsonObject("Jdbc", config)
+    private val url = config.getString("Url", "jdbc:postgresql://localhost:5432/scada")
+    private val username = config.getString("Username", "")
+    private val password = config.getString("Password", "")
 
-    private val url = configJdbc.getString("Url", "jdbc:postgresql://localhost:5432/scada")
-    private val username = configJdbc.getString("Username", "")
-    private val password = configJdbc.getString("Password", "")
-
-    private val sqlTableName = configJdbc.getString("SqlTableName", "events")
+    private val sqlTableName = config.getString("SqlTableName", "events")
 
     // --------------------------------------------------------------------------------------------------------------
 
@@ -81,7 +79,7 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
 
     // --------------------------------------------------------------------------------------------------------------
 
-    private var sqlInsertStatement = configJdbc.getString("SqlInsertStatement", "")
+    private var sqlInsertStatement = config.getString("SqlInsertStatement", "")
 
     private val sqlInsertStatementPostgreSQL =  """
         INSERT INTO $sqlTableName (sys, nodeid, sourcetime, servertime, numericvalue, stringvalue, status)
@@ -107,7 +105,7 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
 
     // --------------------------------------------------------------------------------------------------------------
 
-    private val sqlQueryStatement = configJdbc.getString("SqlQueryStatement", """
+    private val sqlQueryStatement = config.getString("SqlQueryStatement", """
         SELECT sourcetime, servertime, numericvalue, stringvalue, status
          FROM $sqlTableName 
          WHERE sys = ? AND nodeid = ? AND sourcetime >= ? AND sourcetime <= ? 

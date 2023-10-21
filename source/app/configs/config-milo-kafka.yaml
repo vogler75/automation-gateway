@@ -1,12 +1,10 @@
-MqttServer:
-  Listeners:
-    - Id: Mqtt
-      Port: 1883
+Servers:
+  Mqtt:
+    - Port: 1883
       Host: 0.0.0.0
       LogLevel: INFO # ALL | INFO
 
-GraphQLServer:
-  Listeners:
+  GraphQL:
     - Port: 4000
       LogLevel: INFO
       GraphiQL: true
@@ -17,12 +15,10 @@ GraphQLServer:
           RootNodes:
             - ns=2;s=Dynamic
       
-Database:
-  Logger:
+Loggers:
+  Kafka:
     - Id: kafka1
-      Type: Kafka
-      Kafka:
-        Servers: nuc1:9092
+      Servers: nuc1:9092
       Enabled: true
       WriteParameters:
         QueueSize: 20000
@@ -30,20 +26,20 @@ Database:
       Logging:
         - Topic: opc/milo/path/Objects/Dynamic/+
 
-    - Id: influx1
-      Type: InfluxDB
-      InfluxDB:        
-        Url: http://nuc1:8086
-        Database: test
-        Username: ""
-        Password: ""
+  InfluxDB:
+    - Id: influx1   
+      Url: http://nuc1:8086
+      Database: test
+      Username: ""
+      Password: ""
       WriteParameters:
         QueueSize: 20000
         BlockSize: 10000
       Logging:
         - Topic: opc/milo/path/Objects/Dynamic/+
 
-OpcUaClient:
+Drivers:
+  OpcUa:
   - Id: "milo"
     Enabled: true
     LogLevel: INFO

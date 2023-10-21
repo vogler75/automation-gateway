@@ -45,7 +45,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
         }
     }
 
-    private val id = javaClass.simpleName
+    private val id = config.getString("Id", "GraphQLServer")
     private val logger = Logger.getLogger(id)
 
     private val schemas: JsonObject = JsonObject()

@@ -59,16 +59,16 @@ If you enable [GraphiQL](https://github.com/graphql/graphiql), a graphical ui to
 > http://localhost:4000/graphiql/ **! trailing slash is important !**
 
 ```
-MqttServer:
-  Listeners:
+Servers:
+  Mqtt:
     - Id: Mqtt
       Port: 1883
       Host: 0.0.0.0
       LogLevel: INFO # ALL | INFO
       
-GraphQLServer:
-  Listeners:
-    - Port: 4000
+  GraphQL:
+    - Id: GraphQL
+      Port: 4000
       Enabled: true
       LogLevel: INFO
       GraphiQL: true
@@ -79,11 +79,13 @@ GraphQLServer:
 ## OPC UA Client Configuration
 See config directory for more example configurations.
 ```
+Drivers:
+  OpcUa:
   - Id: "unified"
-    Enabled: false
+    Enabled: true
     LogLevel: INFO
     EndpointUrl:  "opc.tcp://desktop-9o6hthf:4890"
-    SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#Basic128Rsa15
+    SecurityPolicy: Basic128Rsa15
     SubscriptionSamplingInterval: 0
     UsernameProvider:
       Username: opcuauser
@@ -102,9 +104,10 @@ See config directory for more example configurations.
 
 The GraphQL server can read the OPC UA object schema and convert it to a GraphQL schema. The starting NodeIds can be set to reduce the amount of browsed items. Browsing can take some while if the OPC UA server holds a huge structure of tags!
 ```
-GraphQLServer:
-  Listeners:
-    - Port: 4000
+Servers:
+  GraphQL:
+    - Id: GraphQL
+      Port: 4000
       Enabled: true
       LogLevel: INFO                    # ALL | INFO
       GraphiQL: true
@@ -118,7 +121,8 @@ GraphQLServer:
 ```
 
 ```
-OpcUaClient:
+Drivers:
+  OpcUa
   - Id: "unified" 
     Enabled: true
     LogLevel: INFO
@@ -201,10 +205,9 @@ Loggers for different type of sinks can be defined in the configuration file. Al
 
 In the "Logging" section we can specify the Topics which should be logged to the sink. The Topics follow the same rule as MQTT Topics and will map to sources like OPC UA or PLC4X. See [Topic Mapping](#topic-mapping).
 ```
-Database:
-  Logger:
+Loggers:
+  InfluxDB:
     - Id: influx1
-      Type: InfluxDB
       Enabled: true
       Url: http://192.168.1.13:8086
       Database: test
@@ -239,18 +242,18 @@ You the application app-plc4x to get values from various source supported by PLC
 ```
 > cd app-plc4x
 cat config.yaml
-Plc4x:
-  Drivers:
-    - Id: "machine1"
-      Enabled: true
-      Url: "modbus://127.0.0.1:502"
-      Polling:
-        Time: 1000 # ms
-        Timeout: 900 # ms
-        OldNew: true
-      WriteTimeout: 100 # ms
-      ReadTimeout: 100 # ms
-      LogLevel: ALL
+Drivers:
+  Plc4x:
+  - Id: "machine1"
+    Enabled: true
+    Url: "modbus://127.0.0.1:502"
+    Polling:
+      Time: 1000 # ms
+      Timeout: 900 # ms
+      OldNew: true
+    WriteTimeout: 100 # ms
+    ReadTimeout: 100 # ms
+    LogLevel: ALL
 
 > gradle run
 ```
@@ -283,32 +286,81 @@ Example MQTT Topic:
 > plc/mod/node/coil:1  
 
 # Version History
-- [Version History](#version-history)
-  - [1.21.2 Fixes and SparkplugB for Kafka \& MQTT Logger](#1212-fixes-and-sparkplugb-for-kafka--mqtt-logger)
-  - [1.21.1 Fixes and SparkplugB for MQTT Client](#1211-fixes-and-sparkplugb-for-mqtt-client)
-  - [1.21 IoTDB, MQTT SparkplugB Logger, YAML Schema, Native-Image](#121-iotdb-mqtt-sparkplugb-logger-yaml-schema-native-image)
-  - [1.20.3 Moved Neo4J to separate branches](#1203-moved-neo4j-to-separate-branches)
-  - [1.20.2 Modifed JSON Format of Kafka Logger](#1202-modifed-json-format-of-kafka-logger)
-  - [1.20.1 Kafka properties in the config file](#1201-kafka-properties-in-the-config-file)
-  - [1.20 Cleanup and GraalVM Native Build](#120-cleanup-and-graalvm-native-build)
-  - [1.19 Neo4j Logger](#119-neo4j-logger)
-  - [1.18.3 Added MQTT Websocket Option and simple Authentication](#1183-added-mqtt-websocket-option-and-simple-authentication)
-  - [1.18.2 Raw value to engineering value conversion for PLC4X driver](#1182-raw-value-to-engineering-value-conversion-for-plc4x-driver)
-  - [1.18.1 Features and fixes in PLC4X driver](#1181-features-and-fixes-in-plc4x-driver)
-  - [1.18 Removed Apache Ignite](#118-removed-apache-ignite)
-  - [1.17 Added CrateDB as supported JDBC database for logging](#117-added-cratedb-as-supported-jdbc-database-for-logging)
-  - [1.16 JDBC Logger to write field values to relational databases](#116-jdbc-logger-to-write-field-values-to-relational-databases)
-  - [1.15 Nats Logger to write field values to a Nats server](#115-nats-logger-to-write-field-values-to-a-nats-server)
-  - [1.14 Fixes and optimizations](#114-fixes-and-optimizations)
-  - [1.13 MQTT Logger to write field values to a MQTT Broker](#113-mqtt-logger-to-write-field-values-to-a-mqtt-broker)
-  - [1.12 MQTT Driver with Groovy script transformer](#112-mqtt-driver-with-groovy-script-transformer)
-  - [1.11 Apache Kafka Database Logger](#111-apache-kafka-database-logger)
-  - [1.10 Apache IoTDB Database Logger](#110-apache-iotdb-database-logger)
-  - [1.9 Apache Ignite as Cluster option and Ignite as Memory-Store](#19-apache-ignite-as-cluster-option-and-ignite-as-memory-store)
-  - [1.8 Upgrade to VertX 4.0.3](#18-upgrade-to-vertx-403)
-  - [1.7 DDS Driver (subscribe and publish)](#17-dds-driver-subscribe-and-publish)
-  - [1.6 Added GraphiQL (http://localhost:4000/graphiql/)](#16-added-graphiql-httplocalhost4000graphiql)
-  - [1.5 OPC UA Schemas to GraphQL Schema Importer](#15-opc-ua-schemas-to-graphql-schema-importer)
+- [1.22 Config file changes](#122-config-file-changes)
+- [1.21.2 Fixes and SparkplugB for Kafka \& MQTT Logger](#1212-fixes-and-sparkplugb-for-kafka--mqtt-logger)
+- [1.21.1 Fixes and SparkplugB for MQTT Client](#1211-fixes-and-sparkplugb-for-mqtt-client)
+- [1.21 IoTDB, MQTT SparkplugB Logger, YAML Schema, Native-Image](#121-iotdb-mqtt-sparkplugb-logger-yaml-schema-native-image)
+- [1.20.3 Moved Neo4J to separate branches](#1203-moved-neo4j-to-separate-branches)
+- [1.20.2 Modifed JSON Format of Kafka Logger](#1202-modifed-json-format-of-kafka-logger)
+- [1.20.1 Kafka properties in the config file](#1201-kafka-properties-in-the-config-file)
+- [1.20 Cleanup and GraalVM Native Build](#120-cleanup-and-graalvm-native-build)
+- [1.19 Neo4j Logger](#119-neo4j-logger)
+- [1.18.3 Added MQTT Websocket Option and simple Authentication](#1183-added-mqtt-websocket-option-and-simple-authentication)
+- [1.18.2 Raw value to engineering value conversion for PLC4X driver](#1182-raw-value-to-engineering-value-conversion-for-plc4x-driver)
+- [1.18.1 Features and fixes in PLC4X driver](#1181-features-and-fixes-in-plc4x-driver)
+- [1.18 Removed Apache Ignite](#118-removed-apache-ignite)
+- [1.17 Added CrateDB as supported JDBC database for logging](#117-added-cratedb-as-supported-jdbc-database-for-logging)
+- [1.16 JDBC Logger to write field values to relational databases](#116-jdbc-logger-to-write-field-values-to-relational-databases)
+- [1.15 Nats Logger to write field values to a Nats server](#115-nats-logger-to-write-field-values-to-a-nats-server)
+- [1.14 Fixes and optimizations](#114-fixes-and-optimizations)
+- [1.13 MQTT Logger to write field values to a MQTT Broker](#113-mqtt-logger-to-write-field-values-to-a-mqtt-broker)
+- [1.12 MQTT Driver with Groovy script transformer](#112-mqtt-driver-with-groovy-script-transformer)
+- [1.11 Apache Kafka Database Logger](#111-apache-kafka-database-logger)
+- [1.10 Apache IoTDB Database Logger](#110-apache-iotdb-database-logger)
+- [1.9 Apache Ignite as Cluster option and Ignite as Memory-Store](#19-apache-ignite-as-cluster-option-and-ignite-as-memory-store)
+- [1.8 Upgrade to VertX 4.0.3](#18-upgrade-to-vertx-403)
+- [1.7 DDS Driver (subscribe and publish)](#17-dds-driver-subscribe-and-publish)
+- [1.6 Added GraphiQL (http://localhost:4000/graphiql/)](#16-added-graphiql-httplocalhost4000graphiql)
+- [1.5 OPC UA Schemas to GraphQL Schema Importer](#15-opc-ua-schemas-to-graphql-schema-importer)
+
+## 1.22 Config file changes
+!!! Config file structure has changed !!! 
+
+To have a consistant layout of the config file, it was necessary to change the structure of it. Existing config files must be changed! Please use the Visual Studio Code YAML plugin to change your existing configs. See [Configuration](#configuration).
+
+Example of the new config file:
+```
+Servers:
+  GraphQL:
+    - Id: "GraphQL"        
+  Mqtt:
+    - Id: "Mqtt"
+
+Drivers:   
+  Mqtt:
+    - Id: remote
+      Host: bd9c43f59b7a42deba3248fca439f378.s1.eu.hivemq.cloud
+      Port: 8883
+
+  OpcUa:
+    - Id: demo1
+      EndpointUrl: "opc.tcp://192.168.1.3:62540/server"
+      SecurityPolicy: None
+
+    - Id: demo2
+      EndpointUrl: "opc.tcp://192.168.1.3:62541"
+      SecurityPolicy: None     
+
+Loggers:    
+  InfluxDB:
+    - Id: InfluxLogger1      
+      Url: http://nuc1b.rocworks.local:8086
+      Database: test
+      Logging:
+        - Topic: opc/demo1/path/Objects/Variables/#
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/#
+        - Topic: mqtt/remote/path/Austria/Sparkplug/#
+
+  Mqtt:
+    - Id: MqttLogger1
+      Host: linux0.rocworks.local
+      Port: 1883
+      Format: Raw
+      Topic: test1
+      Logging:
+        - Topic: mqtt/remote/path/Austria/Sparkplug/#
+  
+```
 
 ## 1.21.2 Fixes and SparkplugB for Kafka & MQTT Logger
 Kafka and MQTT Logger can now publish SparkplugB message format. 

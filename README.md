@@ -11,6 +11,7 @@ Docker images can be found on [Docker Hub](https://hub.docker.com/r/rocworks/aut
 News and Blog posts can be found [here](https://www.rocworks.at/wordpress/?cat=39).  
 
 ![Gateway](doc/Automation-Gateway.png)
+![Architecture](doc/Architecture-Overview.png)
 
 # Content
 
@@ -282,16 +283,6 @@ Example MQTT Topic:
 > plc/mod/node/coil:1  
 
 # Version History
-- [Frankenstein Automation Gateway](#frankenstein-automation-gateway)
-- [Content](#content)
-- [Build and Run](#build-and-run)
-  - [Configuration](#configuration)
-  - [OPC UA Client Configuration](#opc-ua-client-configuration)
-  - [OPC UA Schema in GraphQL](#opc-ua-schema-in-graphql)
-  - [Topic Mapping](#topic-mapping)
-  - [Logger Configuration](#logger-configuration)
-  - [Build Docker Image](#build-docker-image)
-  - [Using PLC4X](#using-plc4x)
 - [Version History](#version-history)
   - [1.21.2 Fixes and SparkplugB for Kafka \& MQTT Logger](#1212-fixes-and-sparkplugb-for-kafka--mqtt-logger)
   - [1.21.1 Fixes and SparkplugB for MQTT Client](#1211-fixes-and-sparkplugb-for-mqtt-client)

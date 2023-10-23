@@ -33,21 +33,19 @@ data class Topic (
 
     fun isValid() = systemType != SystemType.Unknown && topicType != TopicType.Unknown
 
-    private val addressItems : List<String>
-        get() = splitAddress(this.node)
-
     private val topicItems : List<String>
         get() = splitAddress(this.topicName)
 
     val hasBrowsePath: Boolean
         get() = !browsePath.isNullOrEmpty()
 
-    val topicWithBrowsePath : String
-        get() = if (topicType==TopicType.Path) topicItems.slice(0..2).joinToString("/")+"/$browsePath"
-                else topicName
+    val topicNameAndPath : String
+        get() = if (topicType == TopicType.Path && hasBrowsePath) {
+            topicItems.slice(0..2).joinToString("/") + "/$browsePath"
+        } else topicName
 
-    val systemWithBrowsePath: String
-        get() = "$systemName/${if (browsePath=="") node else browsePath}"
+    val systemNameAndPath: String
+        get() = "$systemName/${browsePath.ifEmpty { node }}"
 
     fun encodeToJson() = encodeToJson(this)
 

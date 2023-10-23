@@ -60,7 +60,6 @@ class InfluxDBLogger(config: JsonObject) : LoggerBase(config) {
             .tag("tag", dp.topic.browsePath)
             .tag("address", dp.topic.node)
             .tag("status", dp.value.statusAsString())
-            .addField("servertime", dp.value.serverTimeAsISO()) // TODO: as string or EpochMilli?
 
         val numeric: Double? = dp.value.valueAsDouble()
         if (numeric != null) {

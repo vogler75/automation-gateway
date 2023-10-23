@@ -43,6 +43,7 @@ object App {
             } ?: listOf()
         val defaultSystem = if (enabled.isNotEmpty()) enabled.first().getString("Id") else ""
 
+
         // Servers
         config.getJsonObject("Servers")
             ?.filter { it.value is JsonArray }

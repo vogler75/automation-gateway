@@ -1,7 +1,6 @@
 package at.rocworks.gateway.logger.iotdb
 
 import at.rocworks.gateway.core.data.DataPoint
-import at.rocworks.gateway.core.data.TopicValue
 import at.rocworks.gateway.core.logger.LoggerBase
 import io.vertx.core.Future
 import io.vertx.core.Promise
@@ -20,7 +19,8 @@ class IoTDBLogger(config: JsonObject) : LoggerBase(config) {
     private val username = config.getString("Username", "")
     private val password = config.getString("Password", "")
     private val database = config.getString("Database", "root.test")
-    private val writeDetails = config.getBoolean("WriteDetails", false)
+
+    private val unhandledTypes = mutableListOf<String>()
 
     private val session: Session = if (username == null || username == "")
         Session(host, port)
@@ -51,61 +51,49 @@ class IoTDBLogger(config: JsonObject) : LoggerBase(config) {
         val typesList = mutableListOf<List<TSDataType>>()
         val valuesList = mutableListOf<List<Any>>()
 
-        fun getDataTypeAndValue(topicValue: TopicValue): Pair<TSDataType?, Any?> {
-            return when (val value = topicValue.valueAsObject()) {
-                is String -> TSDataType.TEXT to value
-                is Double -> if (!value.isNaN()) TSDataType.DOUBLE to value.toDouble() else null to null
-                is Float -> if (!value.isNaN()) TSDataType.FLOAT to value.toFloat() else null to null
-                is Int -> TSDataType.INT32 to value.toInt()
-                is Byte -> TSDataType.INT32 to value.toInt()
-                is Short -> TSDataType.INT32 to value.toInt()
-                is Long -> TSDataType.INT64 to value.toLong()
-                is Boolean -> TSDataType.BOOLEAN to value
-                is Date -> TSDataType.INT64 to value.time
-                is UUID -> TSDataType.TEXT to value.toString()
-                else -> {
-                    if (value is LinkedHashMap<*, *>) {
+        fun getDataTypeAndValue(point: DataPoint): Pair<TSDataType?, Any?> {
+            if (point.value.hasValue()) {
+                return when (val value = point.value.valueAsObject()!!) {
+                    is String -> TSDataType.TEXT to value
+                    is Double -> if (!value.isNaN()) TSDataType.DOUBLE to value.toDouble() else null to null
+                    is Float -> if (!value.isNaN()) TSDataType.FLOAT to value.toFloat() else null to null
+                    is Int -> TSDataType.INT32 to value.toInt()
+                    is Byte -> TSDataType.INT32 to value.toInt()
+                    is Short -> TSDataType.INT32 to value.toInt()
+                    is Long -> TSDataType.INT64 to value.toLong()
+                    is Boolean -> TSDataType.BOOLEAN to value
+                    is Date -> TSDataType.INT64 to value.time
+                    is UUID -> TSDataType.TEXT to value.toString()
+                    is LinkedHashMap<*, *> -> {
                         val map = value.entries.associate { item -> item.key.toString() to item.value }
                         TSDataType.TEXT to JsonObject(map).toString()
-                    } else {
-                        logger.warning("Unhandled datatype [${value?.javaClass?.name}]!")
+                    }
+                    else -> {
+                        val type=value!!.javaClass.canonicalName
+                        val hash=type+"::"+point.topic.hashCode()
+                        if (!unhandledTypes.contains(hash)) {
+                            logger.warning("Unhandled value datatype [${type}] for ${point.topic}!")
+                            unhandledTypes.add(hash)
+                        }
                         null to null
                     }
                 }
-            }
-        }
-
-        fun addDetails(point: DataPoint) {
-            try {
-                val time = point.value.sourceTime().toEpochMilli()
-                val path = if (point.topic.hasBrowsePath) point.topic.systemWithBrowsePath.replace("/", ".")
-                           else point.topic.node
-                val status = point.value.statusAsString()
-                val (dataType, value) = getDataTypeAndValue(point.value)
-                if (dataType != null && value != null) {
-                    deviceIds.add("${database}.${path}")
-                    times.add(time)
-                    measurementList.add(listOf("value", "status"))
-                    typesList.add(listOf(dataType, TSDataType.TEXT))
-                    valuesList.add(listOf(value, status))
-                }
-            } catch (e: Exception) {
-                logger.severe(e.message)
+            } else {
+                return null to null
             }
         }
 
         fun addValue(point: DataPoint) {
             try {
                 val time = point.value.sourceTime().toEpochMilli()
-                val path = "${point.topic.systemName}.${point.topic.browsePath}"
-                    .replace("/", ".")
-                    .substringBeforeLast(delimiter = '.')
+                val (path, name) = if (point.topic.hasBrowsePath) {
+                    val input = point.topic.systemNameAndPath.replace("/", ".")
+                    input.substringBeforeLast(delimiter = '.') to input.substringAfterLast(delimiter = '.')
+                } else {
+                    point.topic.node to "value"
+                }
 
-                val name = point.topic.browsePath
-                    .replace("/", ".")
-                    .substringAfterLast(delimiter = '.')
-
-                val (dataType, value) = getDataTypeAndValue(point.value)
+                val (dataType, value) = getDataTypeAndValue(point)
                 if (dataType != null && value != null) {
                     deviceIds.add("${database}.${path}")
                     times.add(time)
@@ -120,7 +108,7 @@ class IoTDBLogger(config: JsonObject) : LoggerBase(config) {
 
         var point: DataPoint? = writeValueQueue.poll(10, TimeUnit.MILLISECONDS)
         while (point != null && deviceIds.size <= writeParameterBlockSize) {
-            if (writeDetails) addDetails(point) else addValue(point)
+            addValue(point)
             point = writeValueQueue.poll()
         }
         if (deviceIds.size > 0) {

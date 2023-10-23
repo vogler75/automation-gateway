@@ -44,10 +44,11 @@ abstract class LoggerPublisher(val config: JsonObject) : LoggerBase(config) {
         }
     }
 
-    private fun unknownSoloFormat(@Suppress("UNUSED_PARAMETER")points: DataPoint): Nothing
+    @Suppress("UNUSED_PARAMETER")
+    private fun unknownSoloFormat(points: DataPoint): Nothing
     = throw Exception("Unknown message format!")
-
-    private fun unknownBulkFormat(@Suppress("UNUSED_PARAMETER")points: List<DataPoint>): Nothing
+    @Suppress("UNUSED_PARAMETER")
+    private fun unknownBulkFormat(points: List<DataPoint>): Nothing
         = throw Exception("Unknown bulk message format!")
 
     abstract fun publish(point: DataPoint, payload: Buffer)
@@ -81,7 +82,7 @@ abstract class LoggerPublisher(val config: JsonObject) : LoggerBase(config) {
                 false -> writeExecutorSolo()
             }
         } catch (e: Exception) {
-            logger.severe(e.message)
+            e.printStackTrace()
         }
     }
 

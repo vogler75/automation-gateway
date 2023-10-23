@@ -191,8 +191,7 @@
                 "Port": { "type": "integer" },                        
                 "Username": { "type": "string" },
                 "Password": { "type": "string" },
-                "Database": { "type": "string" },
-                "WriteDetails": { "type": "boolean" }
+                "Database": { "type": "string" }
             },
             "required": ["Id", "Host", "Port", "Database"]
         },             

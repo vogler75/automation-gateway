@@ -13,7 +13,7 @@ import io.vertx.mqtt.MqttClientOptions
 import java.util.*
 
 class MqttLogger (config: JsonObject) : LoggerPublisher(config) {
-    var client: MqttClient? = null
+    private var client : MqttClient? = null
 
     private val configMqtt = config.getJsonObject("Mqtt", config)
     private val port: Int = configMqtt.getInteger("Port", 1883)
@@ -29,21 +29,32 @@ class MqttLogger (config: JsonObject) : LoggerPublisher(config) {
     private val topic: String = configMqtt.getString("Topic", "")
     private val maxMessageSizeKb = configMqtt.getInteger("MaxMessageSizeKb", 8) * 1024
 
+    private var isConnected = false
+
     override fun open(): Future<Unit> {
         val promise = Promise.promise<Unit>()
-        val options = MqttClientOptions()
 
-        username?.let { options.username = it }
-        password?.let { options.password = it }
-        options.setClientId(clientId)
-        options.setCleanSession(cleanSession)
-        options.setSsl(ssl)
-        options.setTrustAll(trustAll)
-        options.setMaxMessageSize(maxMessageSizeKb)
+        if (client==null) {
+            val options = MqttClientOptions()
+            username?.let { options.username = it }
+            password?.let { options.password = it }
+            options.setClientId(clientId)
+            options.setCleanSession(cleanSession)
+            options.setSsl(ssl)
+            options.setTrustAll(trustAll)
+            options.setMaxMessageSize(maxMessageSizeKb)
+            client = MqttClient.create(vertx, options)
+            client!!.closeHandler {
+                logger.severe("Connection closed!")
+                reconnect()
+            }
+            client!!.exceptionHandler {
+                logger.severe(it.stackTraceToString())
+            }
+        }
 
-        client = MqttClient.create(vertx, options)
-        client?.connect(port, host) {
-            logger.info("Mqtt client connect [${it.succeeded()}] [${it.cause()}]")
+        client!!.connect(port, host) {
+            logger.info("Mqtt client connect [${it.succeeded()}] [${it.cause() ?: ""}]")
             if (it.succeeded()) promise.complete()
             else promise.fail("Connect failed!")
         } ?: promise.fail("Client is null!")
@@ -52,19 +63,41 @@ class MqttLogger (config: JsonObject) : LoggerPublisher(config) {
     }
 
     override fun close() {
-        client?.disconnect {
+        client!!.disconnect {
             logger.info("Mqtt client disconnect [${it.succeeded()}]")
         }
     }
 
+    fun publish(topic: String, payload: Buffer) {
+        if (client!!.isConnected) {
+            if (!this.isConnected) {
+                this.isConnected=true
+                logger.info("Client connected.")
+            }
+            client!!.publish(topic, payload, MqttQoS.valueOf(qos), false, retained)
+        } else {
+            if (this.isConnected) {
+                this.isConnected=false
+                logger.severe("Client disconnected!")
+            }
+        }
+    }
+
     override fun publish(point: DataPoint, payload: Buffer) {
-        val topic = if (this.topic.isEmpty()) if (point.topic.hasBrowsePath) point.topic.systemWithBrowsePath else point.topic.node
-                    else this.topic + "/" + (if (point.topic.hasBrowsePath) point.topic.browsePath else point.topic.node)
-        client?.publish(topic, payload, MqttQoS.valueOf(qos), false, retained)
+        val topic = if (this.topic.isEmpty()) {
+            if (point.topic.hasBrowsePath) {
+                point.topic.systemNameAndPath
+            } else {
+                point.topic.node
+            }
+        } else {
+            this.topic + "/" + (if (point.topic.hasBrowsePath) point.topic.browsePath else point.topic.node)
+        }
+        publish(topic, payload)
     }
 
     override fun publish(points: List<DataPoint>, payload: Buffer) {
-        client?.publish(topic, payload, MqttQoS.valueOf(qos), false, retained)
+        publish(this.topic, payload)
     }
 
     override fun queryExecutor(

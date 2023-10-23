@@ -296,16 +296,16 @@ class MqttServer(config: JsonObject, private val endpoint: MqttEndpoint) : Abstr
 
     private fun valueConsumerDataPoint(topic: Topic, qos: MqttQoS, value: DataPoint) {
         try {
-            logger.finest { "Publish [${value.topic.topicWithBrowsePath}]" }
+            logger.finest { "Publish [${value.topic.topicNameAndPath}]" }
             if (endpoint.isConnected) {
                 when (topic.format) {
                     Format.Json -> {
                         val payload = Buffer.buffer(value.encodeToJson().toString())
-                        endpoint.publish(value.topic.topicWithBrowsePath, payload, qos, false /*isDup*/, false /* isRetain */)
+                        endpoint.publish(value.topic.topicNameAndPath, payload, qos, false /*isDup*/, false /* isRetain */)
                     }
                     Format.Value -> {
                         val payload = Buffer.buffer(value.value.valueAsString())
-                        endpoint.publish(value.topic.topicWithBrowsePath, payload, qos, false /*isDup*/, false /* isRetain */)
+                        endpoint.publish(value.topic.topicNameAndPath, payload, qos, false /*isDup*/, false /* isRetain */)
                     }
                 }
             } else {

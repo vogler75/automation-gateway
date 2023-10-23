@@ -74,7 +74,7 @@ abstract class LoggerBase(config: JsonObject) : AbstractVerticle() {
                     if (result.succeeded()) {
                         connectPromise.complete()
                     } else {
-                        logger.warning("Connect failed...")
+                        logger.warning("Connect failed!")
                         vertx.setTimer(defaultRetryWaitTime) { connect(connectPromise) }
                     }
                 }
@@ -88,6 +88,7 @@ abstract class LoggerBase(config: JsonObject) : AbstractVerticle() {
     @Volatile
     private var reconnectOngoing = false
     protected fun reconnect() {
+        logger.info("Reconnect...")
         if (!reconnectOngoing) {
             reconnectOngoing = true
             val promise = Promise.promise<Void>()

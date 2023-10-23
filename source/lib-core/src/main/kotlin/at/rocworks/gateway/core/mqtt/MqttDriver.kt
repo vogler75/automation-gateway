@@ -81,6 +81,12 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
 
         client = MqttClient.create(vertx, options)
         client?.publishHandler(::valueConsumer)
+        client?.closeHandler {
+            logger.severe("Connection closed.")
+        }
+        client?.exceptionHandler {
+            logger.severe("Exception $it")
+        }
         client?.connect(port, host) {
             logger.info("Mqtt client connect [${it.succeeded()}] [${it.cause()}]")
             if (it.succeeded()) promise.complete()

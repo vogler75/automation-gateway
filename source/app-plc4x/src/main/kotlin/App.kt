@@ -87,17 +87,4 @@ object App {
             else -> logger.severe("Unknown database type [${type}]")
         }
     }
-
-    private fun createLogger(vertx: Vertx, config: JsonObject) {
-        val logger = Logger.getLogger(javaClass.simpleName)
-        if (config.getBoolean("Enabled", true)) {
-            when (val type = config.getString("Type")) {
-                "Mqtt" -> vertx.deployVerticle(MqttLogger(config))
-                "Kafka" ->  vertx.deployVerticle(KafkaLogger(config))
-                "Jdbc" -> vertx.deployVerticle(JdbcLogger(config))
-                "InfluxDB" -> vertx.deployVerticle(InfluxDBLogger(config))
-                else -> logger.severe("Unknown database type [${type}]")
-            }
-        }
-    }
 }

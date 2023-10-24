@@ -61,7 +61,7 @@ abstract class LoggerBase(config: JsonObject) : AbstractVerticle() {
 
         services = topics.map { Pair(it.systemType, it.systemName) }.distinct()
 
-        logger.info("Valid topics: ${topics.joinToString(separator = "|") { it.topicName }}")
+        logger.fine("Valid topics: ${topics.joinToString(separator = "|") { it.topicName }}")
     }
 
     abstract fun open(): Future<Unit>
@@ -139,7 +139,7 @@ abstract class LoggerBase(config: JsonObject) : AbstractVerticle() {
     private fun subscribeTopic(endpoint: String, topic: Topic) { // TODO: Same in Influx
         val request = JsonObject().put("ClientId", this.id).put("Topic", topic.encodeToJson())
         if (endpoint!="") {
-            logger.info("Subscribe to [${endpoint}]")
+            logger.fine("Subscribe to [${endpoint}] [$topic]")
             vertx.eventBus().request<JsonObject>("${endpoint}/Subscribe", request) {
                 logger.finest { "Subscribe response [${it.succeeded()}] [${it.result()?.body()}]" }
             }

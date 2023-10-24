@@ -43,6 +43,7 @@ import java.time.Duration
 import java.time.Instant
 import java.util.*
 import java.util.concurrent.ArrayBlockingQueue
+import java.util.concurrent.Callable
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.TimeUnit
 import java.util.function.Predicate
@@ -111,7 +112,7 @@ class OpcUaDriver(private val config: JsonObject) : DriverBase(config) {
             val value = config.getJsonObject("UsernameProvider") as JsonObject
             UsernameProvider(value.getString("Username"), value.getString("Password"))
         } else AnonymousProvider()
-        logger.info("RequestTimeout: [${requestTimeout}] " +
+        logger.fine("RequestTimeout: [${requestTimeout}] " +
             "ConnectTimeout: [${connectTimeout}] " +
             "KeepAliveFailuresAllowed: [${keepAliveFailuresAllowed}] " +
             "SubscriptionSamplingInterval [${subscriptionSamplingInterval}]")
@@ -124,7 +125,7 @@ class OpcUaDriver(private val config: JsonObject) : DriverBase(config) {
         dataChangeTrigger = if (dataChangeFilterStr == null) dataChangeTriggerDef else {
             DataChangeTrigger.valueOf(dataChangeFilterStr)
         }
-        logger.info("MonitoringParameters: "+
+        logger.fine("MonitoringParameters: "+
                 "BufferSize=$monitoringParametersBufferSize " +
                 "SamplingInterval=$monitoringParametersSamplingInterval " +
                 "DiscardOldest=$monitoringParametersDiscardOldest "+
@@ -134,7 +135,7 @@ class OpcUaDriver(private val config: JsonObject) : DriverBase(config) {
         writeParameterQueueSize = writeParameters?.getInteger("QueueSize", writeParameterQueueSizeDef) ?: writeParameterQueueSizeDef
         writeParametersBlockSize = writeParameters?.getInteger("BlockSize", writeParametersBlockSizeDef) ?: writeParametersBlockSizeDef
         writeParametersWithTime = writeParameters?.getBoolean("WithTime", writeParametersWithTimeDef) ?: writeParametersWithTimeDef
-        logger.info("WriteParameters: "+
+        logger.fine("WriteParameters: "+
                 "QueueSize=$writeParameterQueueSize "+
                 "BlockSize=$writeParametersBlockSize "+
                 "WithTime=$writeParametersWithTime ")
@@ -143,7 +144,7 @@ class OpcUaDriver(private val config: JsonObject) : DriverBase(config) {
         val maximumSize = addressCache.getLong("MaximumSize", 1000)
         val expireAfterSeconds = addressCache.getLong("ExpireAfterSeconds", 60)
 
-        logger.info("AddressCache: "+
+        logger.fine("AddressCache: "+
                 "MaximumSize=$maximumSize " +
                 "ExpireAfterSeconds=$expireAfterSeconds")
 
@@ -158,7 +159,7 @@ class OpcUaDriver(private val config: JsonObject) : DriverBase(config) {
                 }
             )
 
-        logger.info(KeyStoreLoader.APPLICATION_URI)
+        logger.fine("Application Uri: ${KeyStoreLoader.APPLICATION_URI}")
     }
 
     val writeGetTime = if (writeParametersWithTime) { -> DateTime.nowNanos() } else { -> null }
@@ -174,11 +175,11 @@ class OpcUaDriver(private val config: JsonObject) : DriverBase(config) {
             val parts = endpointUrl.split("://", ":", "/")
             when {
                 parts.size == 1 -> {
-                    logger.info("Update endpoint to host [${parts[1]}]!")
+                    logger.fine("Update endpoint to host [${parts[1]}]!")
                     EndpointUtil.updateUrl(endpoint, parts[1])
                 }
                 parts.size > 1 -> {
-                    logger.info("Update endpoint to host [${parts[1]}] and port [${parts[2]}]!")
+                    logger.fine("Update endpoint to host [${parts[1]}] and port [${parts[2]}]!")
                     EndpointUtil.updateUrl(endpoint, parts[1], parts[2].toInt())
                 }
                 else -> {
@@ -218,7 +219,7 @@ class OpcUaDriver(private val config: JsonObject) : DriverBase(config) {
                 if (createResult.succeeded()) {
                     connectClientAsync().onComplete { connectResult: AsyncResult<Boolean> ->
                         if (connectResult.succeeded()) {
-                            logger.info("Connect succeeded")
+                            logger.fine("Connect succeeded.")
                             client!!.addFaultListener { serviceFault ->
                                 logger.warning("Service Fault: $serviceFault")
                             }
@@ -239,9 +240,9 @@ class OpcUaDriver(private val config: JsonObject) : DriverBase(config) {
     }
 
     private fun browseSchema(nodeId: String): JsonArray {
-        logger.info("Start object browsing [${nodeId}]")
+        logger.fine("Start object browsing [${nodeId}]...")
         val tree = browseNode(NodeId.parse(nodeId), maxLevel=-1)
-        logger.info("Object browsing finished.")
+        logger.fine("Object browsing finished [${nodeId}].")
         if (writeSchemaToFile) {
             File("schema-${id}.json".lowercase()).writeText(tree.encodePrettily())
         }
@@ -307,10 +308,10 @@ class OpcUaDriver(private val config: JsonObject) : DriverBase(config) {
                         .setKeepAliveFailuresAllowed(uint((keepAliveFailuresAllowed)))
                         .build()
                 }
-                logger.info("OpcUaClient created.")
+                logger.fine("OpcUaClient created.")
                 ret.complete(true)
             } catch (e: UaException) {
-                logger.info("OpcUaClient create failed! Wait and retry... " + e.message)
+                logger.severe("OpcUaClient create failed! Wait and retry... " + e.message)
                 vertx.setTimer(defaultRetryWaitTime.toLong()) { createClientThread(ret) }
             } catch (e: Exception) {
                 ret.fail(e)
@@ -378,7 +379,7 @@ class OpcUaDriver(private val config: JsonObject) : DriverBase(config) {
         thread {
             val schema = JsonArray()
             nodeIds.filterIsInstance<String>().forEach { nodeId ->
-                logger.info("Browse from NodeId [${nodeId}]")
+                logger.fine("Browse from NodeId [${nodeId}]")
                 val item = getNodeData(NodeId.parse(nodeId))
                 item.put("Nodes", browseSchema(nodeId))
                 schema.add(item)
@@ -389,9 +390,9 @@ class OpcUaDriver(private val config: JsonObject) : DriverBase(config) {
 
     override fun subscribeTopics(topics: List<Topic>): Future<Boolean> {
         val promise = Promise.promise<Boolean>()
-        CompositeFuture.all(
-                subscribeNodes(topics.filter { it.topicType === Topic.TopicType.Node }),
-                subscribePaths(topics.filter { it.topicType === Topic.TopicType.Path })
+        Future.all(
+            subscribeNodes(topics.filter { it.topicType === Topic.TopicType.Node }),
+            subscribePaths(topics.filter { it.topicType === Topic.TopicType.Path })
         ).onComplete { promise.complete(it.succeeded()) }
         return promise.future()
     }
@@ -604,7 +605,7 @@ class OpcUaDriver(private val config: JsonObject) : DriverBase(config) {
             }
             node != null && node is JsonArray -> {
                 val values = message.body().getJsonArray("Value", JsonArray())
-                CompositeFuture.all(node.zip(values).mapNotNull {
+                Future.all(node.zip(values).mapNotNull {
                     if (it.first is String && it.second is String) {
                         val nodeId = NodeId.parseSafe(it.first as String)
                         if (nodeId.isPresent) {
@@ -630,7 +631,7 @@ class OpcUaDriver(private val config: JsonObject) : DriverBase(config) {
         val ret = Promise.promise<Boolean>()
         if (topics.isEmpty()) ret.complete(true)
         else {
-            logger.info("Subscribe nodes [${ topics.size}] sampling interval [${monitoringParametersSamplingInterval}]")
+            logger.fine("Subscribe nodes [${ topics.size}] sampling interval [${monitoringParametersSamplingInterval}]")
             val nodeIds = topics.map { NodeId.parseOrNull(it.node) }.toList()
             val requests = ArrayList<MonitoredItemCreateRequest>()
 
@@ -693,40 +694,42 @@ class OpcUaDriver(private val config: JsonObject) : DriverBase(config) {
     }
 
     private fun subscribePaths(topics: List<Topic>) : Future<Boolean> {
-        return vertx.executeBlocking { ret ->
+        val ret = Promise.promise<Boolean>()
+        vertx.executeBlocking(Callable {
             if (topics.isEmpty()) ret.complete(true)
             else
-            try {
-                val resolvedTopics = mutableListOf<Topic>()
-                topics.forEach { topic ->
-                    logger.info("Subscribe path [${topic.path}]")
-                    val resolvedNodeIds = pathNodeIdCache.get(topic.path)
-                    resolvedTopics.addAll(resolvedNodeIds.map {
-                        Topic(
-                            topicName = topic.topicName,
-                            systemType = topic.systemType,
-                            topicType = topic.topicType, // Topic.TopicType.Node,
-                            systemName = topic.systemName,
-                            path = topic.path,
-                            node = it.first.toParseableString(),
-                            format = topic.format,
-                            browsePath = it.second
-                        )
-                    })
+                try {
+                    val resolvedTopics = mutableListOf<Topic>()
+                    topics.forEach { topic ->
+                        logger.fine("Subscribe path [${topic.path}]")
+                        val resolvedNodeIds = pathNodeIdCache.get(topic.path)
+                        resolvedTopics.addAll(resolvedNodeIds.map {
+                            Topic(
+                                topicName = topic.topicName,
+                                systemType = topic.systemType,
+                                topicType = topic.topicType, // Topic.TopicType.Node,
+                                systemName = topic.systemName,
+                                path = topic.path,
+                                node = it.first.toParseableString(),
+                                format = topic.format,
+                                browsePath = it.second
+                            )
+                        })
+                    }
+                    logger.fine("Browse path result size [${resolvedTopics.size}]")
+                    if (topics.isEmpty()) {
+                        ret.complete(true)
+                    } else if (resolvedTopics.size>0) {
+                        subscribeNodes(resolvedTopics).onComplete(ret)
+                    } else {
+                        ret.complete(false)
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    ret.fail(e)
                 }
-                logger.info("Browse path result size [${resolvedTopics.size}]")
-                if (topics.isEmpty()) {
-                    ret.complete(true)
-                } else if (resolvedTopics.size>0) {
-                    subscribeNodes(resolvedTopics).onComplete(ret)
-                } else {
-                    ret.complete(false)
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-                ret.fail(e)
-            }
-        }
+        })
+        return ret.future()
     }
 
     private fun getRootNodeIdOfName(item: String) = when (item) {
@@ -799,7 +802,7 @@ class OpcUaDriver(private val config: JsonObject) : DriverBase(config) {
                         val tNow = Instant.now()
                         if (Duration.between(tLast, tNow).seconds > 1 ) {
                             tLast = tNow
-                            logger.info("Browsed [${counter}] items...")
+                            logger.fine("Browsed [${counter}] items...")
                         }
                     }
                     val item = JsonObject()
@@ -862,7 +865,7 @@ class OpcUaDriver(private val config: JsonObject) : DriverBase(config) {
         val duration = Duration.between(tStart, Instant.now())
         val seconds = duration.seconds + duration.nano/1_000_000_000.0
         if (seconds > 1.0) {
-            logger.info("Browsed [${counter}] items in [${seconds}] seconds [${if (seconds>0) counter / seconds else 0}] items/s.")
+            logger.warning("Browsing nodes took long time: [${nodeId}] with [${counter}] items in [${seconds}] seconds [${if (seconds>0) counter / seconds else 0}] items/s.")
         }
 
         return result
@@ -900,7 +903,7 @@ class OpcUaDriver(private val config: JsonObject) : DriverBase(config) {
         val duration = Duration.between(tStart, Instant.now())
         val seconds = duration.seconds + duration.nano/1_000_000_000.0
         if (seconds > 0.100)
-            logger.warning("Browsing address [${path}] took long time [${seconds}]s")
+            logger.warning("Browsing childs took long time: [${path}] took [${seconds}]s")
         return resolvedNodeIds
     }
 

@@ -286,6 +286,7 @@ Example MQTT Topic:
 > plc/mod/node/coil:1  
 
 # Version History
+- [1.23 Upgrade to VertX 4.4.6](#123-upgrade-to-vertx-446)
 - [1.22 Config file changes](#122-config-file-changes)
 - [1.21.2 Fixes and SparkplugB for Kafka \& MQTT Logger](#1212-fixes-and-sparkplugb-for-kafka--mqtt-logger)
 - [1.21.1 Fixes and SparkplugB for MQTT Client](#1211-fixes-and-sparkplugb-for-mqtt-client)
@@ -312,6 +313,11 @@ Example MQTT Topic:
 - [1.7 DDS Driver (subscribe and publish)](#17-dds-driver-subscribe-and-publish)
 - [1.6 Added GraphiQL (http://localhost:4000/graphiql/)](#16-added-graphiql-httplocalhost4000graphiql)
 - [1.5 OPC UA Schemas to GraphQL Schema Importer](#15-opc-ua-schemas-to-graphql-schema-importer)
+
+## 1.23 Upgrade to VertX 4.4.6
+The GraphQL server websocket subprotocol now changed to the new one: "graphql-transport-ws". The older Apollo subprotocol "graphql-ws" is not supported anymore.  
+
+Note: In some GraphQL context the naming of the two protocols can be confusing. From [apollographql.com](https://www.apollographql.com/docs/react/data/subscriptions/): Confusingly, the subscriptions-transport-ws library calls its WebSocket subprotocol graphql-ws, and the graphql-ws library calls its subprotocol graphql-transport-ws! The names of the protocol and the websocket subprotocol are exchangend.
 
 ## 1.22 Config file changes
 !!! Config file structure has changed !!! 

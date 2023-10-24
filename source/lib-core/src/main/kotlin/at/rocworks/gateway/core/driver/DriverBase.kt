@@ -13,6 +13,7 @@ import io.vertx.core.json.JsonObject
 import java.lang.Exception
 
 import java.util.ArrayList
+import java.util.concurrent.Callable
 import java.util.concurrent.ExecutionException
 import java.util.function.Consumer
 import java.util.logging.Level
@@ -52,16 +53,16 @@ abstract class DriverBase(config: JsonObject) : AbstractVerticle() {
     }
 
     override fun start(startPromise: Promise<Void>) {
-        logger.info("Driver start [$id]")
-        vertx.executeBlocking<Void> {
+        logger.fine("Driver start [$id]")
+        vertx.executeBlocking(Callable {
             try {
                 connect().onSuccess {
-                    logger.info("Connect complete")
+                    logger.fine("Connect complete")
                     connectHandlers()
                     registerService()
                     subscribeOnStartup.forEach {
                         val topic = Topic.parseTopic("$uri/$it")
-                        logger.info("Subscribe to topic [$topic]")
+                        logger.fine("Subscribe to topic [$topic]")
                         if (topic.isValid()) subscribeTopic(id, topic)
                     }
                     startPromise.complete()
@@ -71,12 +72,12 @@ abstract class DriverBase(config: JsonObject) : AbstractVerticle() {
             } catch (e: Exception) {
                 startPromise.fail(e)
             }
-        }
+        })
     }
 
     override fun stop(stopPromise: Promise<Void>) {
         logger.info("Driver stop [$id]")
-        vertx.executeBlocking<Void> {
+        vertx.executeBlocking(Callable {
             try {
                 disconnectHandlers()
                 disconnect().onSuccess {
@@ -85,14 +86,14 @@ abstract class DriverBase(config: JsonObject) : AbstractVerticle() {
             } catch (e: Exception) {
                 stopPromise.fail(e)
             }
-        }
+        })
     }
 
     private fun registerService() {
         val handler = ServiceHandler(vertx, logger)
         handler.registerService(getType().name, id, uri).onComplete {
             if (it.succeeded()) {
-                logger.info("Service registered.")
+                logger.fine("Service registered.")
             } else {
                 logger.warning("Service registration failed!")
             }
@@ -100,7 +101,7 @@ abstract class DriverBase(config: JsonObject) : AbstractVerticle() {
     }
 
     private fun connectHandlers() {
-        logger.info("Connect handlers to [$uri]")
+        logger.finest("Connect handlers to [$uri]")
         messageHandlers = listOf<MessageConsumer<JsonObject>>(
             vertx.eventBus().consumer("$uri/ServerInfo") { serverInfoHandler(it) },
             vertx.eventBus().consumer("$uri/Subscribe") { subscribeHandler(it) },

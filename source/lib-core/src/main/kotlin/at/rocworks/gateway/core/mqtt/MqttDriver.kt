@@ -118,9 +118,9 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
         val promise = Promise.promise<Boolean>()
         if (topics.isEmpty()) promise.complete(true)
         else {
-            logger.info("Subscribe to [${topics.size}] topics")
+            logger.fine("Subscribe to [${topics.size}] topics")
             topics.forEach { topic ->
-                logger.info("Subscribe topic [${topic.topicName}] node [${topic.node}]")
+                logger.fine("Subscribe topic [${topic.topicName}] node [${topic.node}]")
                 client?.subscribe(topic.node, qos)
                 registry.addMonitoredItem(MqttMonitoredItem(topic.node), topic)
                 subscribedTopics.add(topic)
@@ -290,7 +290,7 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
             node != null && node is JsonArray -> {
                 val values = message.body().getJsonArray("Value", JsonArray())
                 client?.let { client ->
-                    CompositeFuture.all(node.zip(values).mapNotNull {
+                    Future.all(node.zip(values).mapNotNull {
                         if (it.first is String && it.second is String) {
                             publish(client, it.first as String, it.second as String)
                         } else null

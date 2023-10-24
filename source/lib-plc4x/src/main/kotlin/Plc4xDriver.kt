@@ -158,7 +158,7 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
     }
 
     private fun subscribeTopic(topics: List<Topic>) : Future<Boolean> {
-        logger.info("Subscribe topic [${topics.size}]")
+        logger.fine("Subscribe topic [${topics.size}]")
         val ret = Promise.promise<Boolean>()
         when {
             plc?.metadata?.canSubscribe() == false -> {

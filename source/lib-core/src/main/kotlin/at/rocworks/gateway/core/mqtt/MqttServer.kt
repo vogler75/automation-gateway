@@ -4,10 +4,7 @@ import at.rocworks.gateway.core.data.DataPoint
 import at.rocworks.gateway.core.data.Topic
 import at.rocworks.gateway.core.data.Topic.Format
 import io.netty.handler.codec.mqtt.MqttQoS
-import io.vertx.core.AbstractVerticle
-import io.vertx.core.CompositeFuture
-import io.vertx.core.Promise
-import io.vertx.core.Vertx
+import io.vertx.core.*
 import io.vertx.core.buffer.Buffer
 import io.vertx.core.eventbus.MessageConsumer
 import io.vertx.core.json.JsonArray
@@ -150,7 +147,7 @@ class MqttServer(config: JsonObject, private val endpoint: MqttEndpoint) : Abstr
             val xs = message.topicSubscriptions().map {
                 subscribeTopic(it).future()
             }
-            CompositeFuture.all(xs).onComplete {
+            Future.all(xs).onComplete {
                 // ack the subscriptions request
                 val grantedQosLevels = xs.map {
                     if (it.succeeded() && it.result()) MqttQoS.AT_MOST_ONCE else MqttQoS.FAILURE

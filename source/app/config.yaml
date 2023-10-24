@@ -7,7 +7,7 @@ Servers:
       MaxMessageSizeKb: 8192
       #Username: demo
       #Password: demo
-      LogLevel: INFO # ALL | INFO
+      LogLevel: INFO
 
     - Id: MqttWs
       Enabled: true
@@ -17,7 +17,7 @@ Servers:
       MaxMessageSizeKb: 8192
       #Username: demo
       #Password: demo
-      LogLevel: ALL
+      LogLevel: INFO
 
   GraphQL:
     - Port: 4001
@@ -115,8 +115,26 @@ Loggers:
       LogLevel: INFO
       MaxMessageSizeKb: 1024
       Logging:
-        - Topic: opc/demo2/path/Objects/Demo/#
-    
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Boolean/Boolean_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Byte/Byte_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_ByteString/ByteString_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_DateTime/DateTime_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Double/Double_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Duration/Duration_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Float/Float_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Int16/Int16_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Int32/Int32_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Int64/Int64_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_SByte/SByte_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_String/String_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_UInt16/UInt16_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_UInt32/UInt32_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_UtcTime/UtcTime_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Guid/Guid_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_LocaleId/LocaleId_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_LocalizedText/LocalizedText_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_NodeId/NodeId_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_XmlElement/XmlElement_00
   Kafka:
     - Id: KafkaLogger1
       Enabled: false
@@ -129,7 +147,26 @@ Loggers:
       TopicName: gateway
       Format: Json   
       Logging:
-        - Topic: opc/demo2/path/Objects/Demo/#
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Boolean/Boolean_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Byte/Byte_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_ByteString/ByteString_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_DateTime/DateTime_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Double/Double_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Duration/Duration_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Float/Float_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Int16/Int16_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Int32/Int32_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Int64/Int64_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_SByte/SByte_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_String/String_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_UInt16/UInt16_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_UInt32/UInt32_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_UtcTime/UtcTime_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Guid/Guid_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_LocaleId/LocaleId_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_LocalizedText/LocalizedText_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_NodeId/NodeId_00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_XmlElement/XmlElement_00
 
   InfluxDB:
     - Id: InfluxLogger1
@@ -157,6 +194,7 @@ Loggers:
        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_LocalizedText/LocalizedText_00
        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_NodeId/NodeId_00
        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_XmlElement/XmlElement_00
+
   IoTDB:
     - Id: IotDBLogger1
       Enabled: false

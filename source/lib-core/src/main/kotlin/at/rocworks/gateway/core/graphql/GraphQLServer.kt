@@ -19,7 +19,6 @@ import io.vertx.core.json.JsonObject
 
 import io.vertx.ext.web.Router
 import io.vertx.ext.web.handler.BodyHandler
-import io.vertx.ext.web.handler.graphql.ApolloWSHandler
 import io.vertx.ext.web.handler.graphql.GraphQLHandler
 
 import java.io.File
@@ -33,6 +32,7 @@ import java.util.logging.Level
 import java.util.logging.Logger
 import io.vertx.ext.web.handler.graphql.GraphiQLHandler
 import io.vertx.ext.web.handler.graphql.GraphiQLHandlerOptions
+import io.vertx.ext.web.handler.graphql.ws.GraphQLWSHandler
 import io.vertx.servicediscovery.Status
 import kotlin.concurrent.thread
 
@@ -72,14 +72,14 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
         thread {
             val schemas = config.getJsonArray("Schemas", JsonArray()) ?: JsonArray()
             if (schemas.isEmpty) {
-                logger.info("Default schema...")
+                logger.fine("Default schema...")
                 getGenericSchema().let { (schema, wiring) ->
                     startGraphQLServer(build(schema, wiring))
                     logger.info("GraphQL ready")
                     startPromise.complete()
                 }
             } else {
-                logger.info("Build schema...")
+                logger.fine("Build schema...")
                 val (generic, wiring) = getGenericSchema(withSystems = true)
 
                 val results = schemas.filterIsInstance<JsonObject>().map { systemConfig ->
@@ -106,7 +106,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
                         .dataFetcher("Systems", dataFetcher)
                 )
 
-                CompositeFuture.all(results).onComplete {
+                Future.all(results).onComplete {
                     val schema = generic + systemTypes + (results.joinToString(separator = "\n") { it.result() })
 
                     if (writeSchemaFiles)
@@ -346,7 +346,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
     private fun startGraphQLServer(graphql: GraphQL) {
         val router = Router.router(vertx)
         router.route().handler(BodyHandler.create())
-        router.route("/graphql").handler(ApolloWSHandler.create(graphql))
+        router.route("/graphql").handler(GraphQLWSHandler.create(graphql));
         router.route("/graphql").handler(GraphQLHandler.create(graphql))
 
         if (enableGraphiQL) {
@@ -356,7 +356,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
         }
 
         val httpServerOptions = HttpServerOptions()
-            .setWebSocketSubProtocols(listOf("graphql-ws"))
+            .setWebSocketSubProtocols(listOf("graphql-transport-ws"))
         val httpServer = vertx.createHttpServer(httpServerOptions)
         val httpPort = config.getInteger("Port", 4000)
         httpServer.requestHandler(router).listen(httpPort)
@@ -725,8 +725,6 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
         val flowable = Flowable.create(FlowableOnSubscribe<Map<String, Any?>> { emitter ->
             val consumer = vertx.eventBus().consumer<DataPoint>(topic.topicName) { message ->
                 try {
-//                    val data = message.body().toJsonObject()
-//                    val output = TopicValue.fromJsonObject(data.getJsonObject("Value"))
                     val output = message.body().value
                     if (!emitter.isCancelled) emitter.onNext(valueToGraphQL(type, system, nodeId, output))
                 } catch (e: Exception) {

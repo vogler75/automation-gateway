@@ -69,7 +69,7 @@ class IoTDBLogger(config: JsonObject) : LoggerBase(config) {
                         TSDataType.TEXT to JsonObject(map).toString()
                     }
                     else -> {
-                        val type=value!!.javaClass.canonicalName
+                        val type=value.javaClass.canonicalName
                         val hash=type+"::"+point.topic.hashCode()
                         if (!unhandledTypes.contains(hash)) {
                             logger.warning("Unhandled value datatype [${type}] for ${point.topic}!")

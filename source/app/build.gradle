@@ -15,6 +15,7 @@ dependencies {
     implementation project(':lib-iotdb')
 
     implementation "io.vertx:vertx-core:$vertxVersion"
+    implementation "io.vertx:vertx-lang-kotlin:$vertxVersion"
     implementation "io.vertx:vertx-config-yaml:$vertxVersion"
     implementation "io.vertx:vertx-service-discovery:$vertxVersion"
 

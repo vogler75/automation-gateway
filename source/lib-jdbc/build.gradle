@@ -17,6 +17,7 @@ dependencies {
     api project(':lib-core')
 
     implementation "io.vertx:vertx-core:$vertxVersion"
+    implementation "io.vertx:vertx-lang-kotlin:$vertxVersion"
     implementation "io.vertx:vertx-config-yaml:$vertxVersion"
     implementation "io.vertx:vertx-service-discovery:$vertxVersion"
 }

@@ -18,6 +18,7 @@ dependencies {
     implementation 'org.eclipse.milo:dictionary-reader:0.6.3'
 
     implementation "io.vertx:vertx-core:$vertxVersion"
+    implementation "io.vertx:vertx-lang-kotlin:$vertxVersion"
     implementation "io.vertx:vertx-mqtt:$vertxVersion"
     implementation "io.vertx:vertx-config-yaml:$vertxVersion"
     implementation "io.vertx:vertx-service-discovery:$vertxVersion"

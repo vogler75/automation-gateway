@@ -15,7 +15,7 @@ repositories {
 
 dependencies {
     implementation 'org.eclipse.milo:sdk-client:0.6.11'
-    implementation 'org.eclipse.milo:dictionary-reader:0.6.3'
+    implementation 'org.eclipse.milo:dictionary-reader:0.6.11'
 
     implementation "io.vertx:vertx-core:$vertxVersion"
     implementation "io.vertx:vertx-lang-kotlin:$vertxVersion"

@@ -1,6 +1,9 @@
 package at.rocworks.gateway.core.driver
 
 import at.rocworks.gateway.core.data.Topic
+import at.rocworks.gateway.core.service.Common
+import at.rocworks.gateway.core.service.Component
+import at.rocworks.gateway.core.service.ComponentLogger
 import at.rocworks.gateway.core.service.ServiceHandler
 
 import io.vertx.core.*
@@ -18,15 +21,16 @@ import java.util.concurrent.ExecutionException
 import java.util.function.Consumer
 import java.util.logging.Level
 import java.util.logging.Logger
+import kotlin.concurrent.thread
 
-abstract class DriverBase(config: JsonObject) : AbstractVerticle() {
+abstract class DriverBase(config: JsonObject) : Component(config) {
     protected abstract fun getType(): Topic.SystemType
 
-    protected val id: String = config.getString("Id", DriverBase::class.java.simpleName)
+    protected val id: String = config.getString("Id", "")
 
-    protected val uri = "${getType().name}/$id"
+    private val uri = "${getType().name}/$id"
 
-    protected val logger: Logger =  Logger.getLogger(id)
+    protected val logger: Logger =  ComponentLogger.getLogger(this::class.java.simpleName, id)
 
     private val subscribeOnStartup: List<String> =
         config.getJsonArray("SubscribeOnStartup", JsonArray()).filterIsInstance<String>().toList()
@@ -52,8 +56,17 @@ abstract class DriverBase(config: JsonObject) : AbstractVerticle() {
         })
     }
 
+    override fun getComponentId(): String {
+        return id
+    }
+
+    override fun getComponentConfig(): JsonObject {
+        return this.config
+    }
+
     override fun start(startPromise: Promise<Void>) {
         logger.fine("Driver start [$id]")
+        super.start()
         vertx.executeBlocking(Callable {
             try {
                 connect().onSuccess {
@@ -77,6 +90,7 @@ abstract class DriverBase(config: JsonObject) : AbstractVerticle() {
 
     override fun stop(stopPromise: Promise<Void>) {
         logger.info("Driver stop [$id]")
+        super.stop()
         vertx.executeBlocking(Callable {
             try {
                 disconnectHandlers()
@@ -203,7 +217,7 @@ abstract class DriverBase(config: JsonObject) : AbstractVerticle() {
         val items = ArrayList<MonitoredItem>()
         topics.forEach { topic ->
             val (count, removed) = registry.delClient(clientId, topic)
-            logger.info("Unsubscribe [${count}] [${topic}]")
+            logger.fine("Unsubscribe [${count}] [${topic}]")
             if (!removed) {
                 logger.warning("Client [${clientId}] was not subscribed to [${topic}]")
             } else if (count == 0) {

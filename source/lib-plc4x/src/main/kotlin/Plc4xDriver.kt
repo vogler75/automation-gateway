@@ -390,4 +390,8 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
     override fun schemaHandler(message: Message<JsonObject>) {
         TODO("Not yet implemented")
     }
+
+    override fun getComponentGroup(): ComponentGroup {
+        return ComponentGroup.Driver
+    }
 }

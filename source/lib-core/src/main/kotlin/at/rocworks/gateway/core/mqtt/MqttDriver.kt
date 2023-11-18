@@ -28,7 +28,7 @@ import java.util.*
 import kotlin.collections.HashMap
 import kotlin.collections.HashSet
 
-class MqttDriver(val config: JsonObject) : DriverBase(config) {
+class MqttDriver(config: JsonObject) : DriverBase(config) {
     override fun getType() = Topic.SystemType.Mqtt
 
     var client: MqttClient? = null
@@ -67,6 +67,14 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
     init {
     }
 
+    override fun getComponentId(): String {
+        return id
+    }
+
+    override fun getComponentConfig(): JsonObject {
+        return this.config
+    }
+
     override fun connect(): Future<Boolean> {
         val promise = Promise.promise<Boolean>()
         val options = MqttClientOptions()
@@ -89,7 +97,10 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
         }
         client?.connect(port, host) {
             logger.info("Mqtt client connect [${it.succeeded()}] [${it.cause()}]")
-            if (it.succeeded()) promise.complete()
+            if (it.succeeded()) {
+                resubscribe()
+                promise.complete()
+            }
             else promise.fail("Connect failed!")
         } ?: promise.fail("Client is null!")
 
@@ -317,5 +328,9 @@ class MqttDriver(val config: JsonObject) : DriverBase(config) {
     override fun schemaHandler(message: Message<JsonObject>) {
         logger.severe("schemaHandler() Not yet implemented")
         message.reply(JsonObject().put("Ok", false))
+    }
+
+    override fun getComponentGroup(): ComponentGroup {
+        return ComponentGroup.Driver
     }
 }

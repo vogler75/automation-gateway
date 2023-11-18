@@ -46,8 +46,11 @@ class KafkaLogger(config: JsonObject) : LoggerPublisher(config) {
         return result.future()
     }
 
-    override fun close() {
+    override fun close(): Future<Unit> {
+        val promise = Promise.promise<Unit>()
         producer?.close()
+        promise.complete()
+        return promise.future()
     }
 
     override fun publish(point: DataPoint, payload: Buffer) {
@@ -74,5 +77,9 @@ class KafkaLogger(config: JsonObject) : LoggerPublisher(config) {
         result: (Boolean, List<List<Any>>?) -> Unit
     ) {
         result(false, null)
+    }
+
+    override fun getComponentGroup(): ComponentGroup {
+        return ComponentGroup.Logger
     }
 }

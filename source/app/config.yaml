@@ -104,7 +104,7 @@ Drivers:
 
 Loggers:
   Mqtt:
-    - Id: MqttLogger1
+    - Id: Mqtt1
       Enabled: true
       Host: linux0.rocworks.local
       Port: 1883
@@ -136,7 +136,7 @@ Loggers:
         - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_NodeId/NodeId_00
         - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_XmlElement/XmlElement_00
   Kafka:
-    - Id: KafkaLogger1
+    - Id: Kafka1
       Enabled: false
       LogLevel: INFO
       Servers: linux0.rocworks.local:9092
@@ -169,7 +169,7 @@ Loggers:
         - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_XmlElement/XmlElement_00
 
   InfluxDB:
-    - Id: InfluxLogger1
+    - Id: Influx1
       Enabled: false
       Url: http://nuc1b.rocworks.local:8086
       Database: test
@@ -196,7 +196,7 @@ Loggers:
        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_XmlElement/XmlElement_00
 
   IoTDB:
-    - Id: IotDBLogger1
+    - Id: IotDB1
       Enabled: false
       Host: linux0.rocworks.local
       Port: 6667

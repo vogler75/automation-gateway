@@ -9,7 +9,6 @@ import com.google.common.cache.CacheBuilder
 import com.google.common.cache.CacheLoader
 import com.google.common.cache.LoadingCache
 import io.vertx.core.AsyncResult
-import io.vertx.core.CompositeFuture
 import io.vertx.core.Future
 import io.vertx.core.Promise
 import io.vertx.core.buffer.Buffer
@@ -50,7 +49,7 @@ import java.util.function.Predicate
 import kotlin.concurrent.thread
 
 
-class OpcUaDriver(private val config: JsonObject) : DriverBase(config) {
+class OpcUaDriver(config: JsonObject) : DriverBase(config) {
     override fun getType() = Topic.SystemType.Opc
 
     private val endpointUrl: String = config.getString("EndpointUrl", "")
@@ -91,8 +90,6 @@ class OpcUaDriver(private val config: JsonObject) : DriverBase(config) {
     private var subscription: UaSubscription? = null
 
     private val defaultRetryWaitTime = 5000
-
-    //private val schema = JsonObject()
 
     private var pathNodeIdCache: LoadingCache<String, List<Pair<NodeId, String>>>
 
@@ -280,12 +277,12 @@ class OpcUaDriver(private val config: JsonObject) : DriverBase(config) {
     }
 
     private fun createClientAsync(): Future<Boolean> {
-        val ret = Promise.promise<Boolean>()
-        createClientThread(ret)
-        return ret.future()
+        val promise = Promise.promise<Boolean>()
+        createClientThread(promise)
+        return promise.future()
     }
 
-    private fun createClientThread(ret: Promise<Boolean>) {
+    private fun createClientThread(promise: Promise<Boolean>) {
         thread {
             try {
                 client = OpcUaClient.create(
@@ -309,12 +306,12 @@ class OpcUaDriver(private val config: JsonObject) : DriverBase(config) {
                         .build()
                 }
                 logger.fine("OpcUaClient created.")
-                ret.complete(true)
+                promise.complete(true)
             } catch (e: UaException) {
                 logger.severe("OpcUaClient create failed! Wait and retry... " + e.message)
-                vertx.setTimer(defaultRetryWaitTime.toLong()) { createClientThread(ret) }
+                vertx.setTimer(defaultRetryWaitTime.toLong()) { createClientThread(promise) }
             } catch (e: Exception) {
-                ret.fail(e)
+                promise.fail(e)
             }
         }
     }
@@ -386,6 +383,10 @@ class OpcUaDriver(private val config: JsonObject) : DriverBase(config) {
             }
             message.reply(schema)
         }
+    }
+
+    override fun getComponentGroup(): ComponentGroup {
+        return ComponentGroup.Driver
     }
 
     override fun subscribeTopics(topics: List<Topic>): Future<Boolean> {

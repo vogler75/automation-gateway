@@ -170,11 +170,15 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
         return promise.future()
     }
 
-    override fun close() {
+    override fun close(): Future<Unit> {
+        val promise = Promise.promise<Unit>()
         connection?.let {
-            if (!it.isClosed)
+            if (!it.isClosed) {
                 it.close()
+            }
         }
+        promise.complete()
+        return promise.future()
     }
 
     override fun writeExecutor() {
@@ -268,5 +272,9 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
         } else {
             result(false, null)
         }
+    }
+
+    override fun getComponentGroup(): ComponentGroup {
+        return ComponentGroup.Logger
     }
 }

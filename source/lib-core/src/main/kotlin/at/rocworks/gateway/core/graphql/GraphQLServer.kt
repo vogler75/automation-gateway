@@ -2,6 +2,8 @@ package at.rocworks.gateway.core.graphql
 
 import at.rocworks.gateway.core.data.*
 import at.rocworks.gateway.core.service.Common
+import at.rocworks.gateway.core.service.Component
+import at.rocworks.gateway.core.service.ComponentLogger
 import at.rocworks.gateway.core.service.ServiceHandler
 
 import graphql.GraphQL
@@ -36,17 +38,11 @@ import io.vertx.ext.web.handler.graphql.ws.GraphQLWSHandler
 import io.vertx.servicediscovery.Status
 import kotlin.concurrent.thread
 
-class GraphQLServer(private val config: JsonObject, private val defaultSystem: String) : AbstractVerticle() {
+class GraphQLServer(config: JsonObject) : Component(config) {
     private val defaultType = Topic.SystemType.Opc.name
 
-    companion object {
-        fun create(vertx: Vertx, config: JsonObject, defaultSystem: String) {
-            vertx.deployVerticle(GraphQLServer(config, defaultSystem))
-        }
-    }
-
-    private val id = config.getString("Id", "GraphQLServer")
-    private val logger = Logger.getLogger(id)
+    private val id = config.getString("Id", "")
+    private val logger = ComponentLogger.getLogger(this::class.java.simpleName, id)
 
     private val schemas: JsonObject = JsonObject()
     private val defaultFieldName: String = "DisplayName"
@@ -58,7 +54,20 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
         logger.level = Level.parse(config.getString("LogLevel", "INFO"))
     }
 
+    override fun getComponentGroup(): ComponentGroup {
+        return ComponentGroup.Server
+    }
+
+    override fun getComponentId(): String {
+        return id
+    }
+
+    override fun getComponentConfig(): JsonObject {
+        return this.config
+    }
+
     override fun start(startPromise: Promise<Void>) {
+        super.start()
         fun build(schema: String, wiring: RuntimeWiring.Builder): GraphQL{
             try {
                 val typeDefinitionRegistry = SchemaParser().parse(schema)
@@ -126,6 +135,10 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
                 }
             }
         }
+    }
+
+    override fun stop() {
+        super.stop()
     }
 
     private fun fetchSchema(system: String, nodeIds: List<String>): Future<Boolean> {
@@ -403,7 +416,7 @@ class GraphQLServer(private val config: JsonObject, private val defaultSystem: S
 
         val system: String = env.getArgument("System")
             ?: ctx?.get("System") as String?
-            ?: defaultSystem
+            ?: ""
 
         return Pair(type, system)
     }

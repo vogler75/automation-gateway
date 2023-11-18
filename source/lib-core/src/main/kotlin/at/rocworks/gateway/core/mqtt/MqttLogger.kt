@@ -30,11 +30,13 @@ class MqttLogger (config: JsonObject) : LoggerPublisher(config) {
     private val maxMessageSizeKb = configMqtt.getInteger("MaxMessageSizeKb", 8) * 1024
 
     private var isConnected = false
+    private var isEnabled = false
 
     override fun open(): Future<Unit> {
         val promise = Promise.promise<Unit>()
 
         if (client==null) {
+            isEnabled = true
             val options = MqttClientOptions()
             username?.let { options.username = it }
             password?.let { options.password = it }
@@ -46,7 +48,7 @@ class MqttLogger (config: JsonObject) : LoggerPublisher(config) {
             client = MqttClient.create(vertx, options)
             client!!.closeHandler {
                 logger.severe("Connection closed!")
-                reconnect()
+                if (isEnabled) reconnect()
             }
             client!!.exceptionHandler {
                 logger.severe(it.stackTraceToString())
@@ -62,10 +64,14 @@ class MqttLogger (config: JsonObject) : LoggerPublisher(config) {
         return promise.future()
     }
 
-    override fun close() {
+    override fun close(): Future<Unit> {
+        val promise = Promise.promise<Unit>()
+        isEnabled = false
         client!!.disconnect {
+            promise.complete()
             logger.info("Mqtt client disconnect [${it.succeeded()}]")
         }
+        return promise.future()
     }
 
     fun publish(topic: String, payload: Buffer) {
@@ -108,5 +114,9 @@ class MqttLogger (config: JsonObject) : LoggerPublisher(config) {
         result: (Boolean, List<List<Any>>?) -> Unit
     ) {
         TODO("Not yet implemented")
+    }
+
+    override fun getComponentGroup(): ComponentGroup {
+        return ComponentGroup.Logger
     }
 }

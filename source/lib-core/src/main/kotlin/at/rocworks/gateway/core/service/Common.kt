@@ -6,24 +6,18 @@ import io.vertx.config.ConfigRetrieverOptions
 import io.vertx.config.ConfigStoreOptions
 import io.vertx.core.Vertx
 import io.vertx.core.json.JsonObject
-
 import java.io.File
 import java.io.FileInputStream
 import java.io.InputStream
 import java.util.logging.LogManager
 import java.util.logging.Logger
 
-import kotlin.concurrent.thread
-import kotlin.system.exitProcess
-
 object Common {
     private val logger = Logger.getLogger(javaClass.simpleName)
-    private val configFileName = System.getenv("GATEWAY_CONFIG") ?: "config.yaml"
-
+    private var configFileName : String = "config"
     const val BUS_ROOT_URI_LOG = "Log"
 
     fun initLogging() {
-
         try {
             println("Loading logging.properties...")
             val initialFile = File("logging.properties")
@@ -40,29 +34,38 @@ object Common {
         }
     }
 
-    fun initVertx(args: Array<String>, vertx: Vertx, services: (Vertx, JsonObject) -> Unit) {
+    fun initGateway(args: Array<String>, vertx: Vertx, onSuccess: (JsonObject)->Unit) {
         try {
-            val configFilePath = if (args.isNotEmpty()) args[0] else configFileName
-            logger.info("Gateway config file: $configFilePath")
-
             // Register Message Types
             vertx.eventBus().registerDefaultCodec(Topic::class.java, CodecTopic())
             vertx.eventBus().registerDefaultCodec(TopicValue::class.java,CodecTopicValue())
             vertx.eventBus().registerDefaultCodec(DataPoint::class.java,CodecDataPoint())
 
-            // Retrieve Config
-            val config = retrieveConfig(vertx, configFilePath)
-
-            // Go through the configuration file
-            config.getConfig { cfg ->
-                if (cfg != null && cfg.succeeded()) {
-                    thread { // because it will block
-                        services(vertx, cfg.result())
-                    }
+            // Config file format
+            configFileName = if (args.isNotEmpty()) args[0] else System.getenv("GATEWAY_CONFIG") ?: configFileName
+            try {
+                getConfigFileFormat()
+            } catch (e: Exception) {
+                if (File("$configFileName.json").exists()) {
+                    configFileName = "$configFileName.json"
+                } else  if (File("$configFileName.yaml").exists()) {
+                    configFileName = "$configFileName.yaml"
                 } else {
-                    println("Missing or invalid $configFilePath file!")
-                    config.close()
-                    vertx.close()
+                    throw Exception("No config file $configFileName.[json|yaml] found.")
+                }
+            }
+
+            // Retrieve Config
+            retrieveConfig(vertx)?.let { config ->
+                // Go through the configuration file
+                config.getConfig { cfg ->
+                    if (cfg != null && cfg.succeeded()) {
+                        onSuccess(cfg.result())
+                    } else {
+                        println("Missing or invalid $configFileName file! ${cfg.cause().message}")
+                        config.close()
+                        vertx.close()
+                    }
                 }
             }
         } catch (e: Exception) {
@@ -70,13 +73,37 @@ object Common {
         }
     }
 
-    private fun retrieveConfig(vertx: Vertx, configFilePath: String): ConfigRetriever = ConfigRetriever.create(
-        vertx,
-        ConfigRetrieverOptions().addStore(
-            ConfigStoreOptions()
-                .setType("file")
-                .setFormat("yaml")
-                .setConfig(JsonObject().put("path", configFilePath))
+    private fun getConfigFileFormat() : String {
+        return if (configFileName.endsWith(".yaml")) "yaml"
+        else if (configFileName.endsWith("json")) "json"
+        else {
+            throw Exception("Unknown config file format ${configFileName}!")
+        }
+    }
+
+    private fun retrieveConfig(vertx: Vertx): ConfigRetriever? {
+        logger.info("Gateway config file: $configFileName")
+        val format = getConfigFileFormat()
+
+        return ConfigRetriever.create(
+            vertx,
+            ConfigRetrieverOptions().addStore(
+                ConfigStoreOptions()
+                    .setType("file")
+                    .setFormat(format)
+                    .setConfig(JsonObject().put("path", configFileName))
+            )
         )
-    )
+    }
+
+    fun saveConfigToFile(config: JsonObject) {
+        val configFileName = configFileName.removeSuffix("."+getConfigFileFormat()) + ".json"
+        val file = File(configFileName)
+        try {
+            file.writeText(config.encodePrettily())
+            logger.info("Config file successfully written to ${configFileName}.")
+        } catch (e: Exception) {
+            logger.severe("Error writing to the file: ${e.message}")
+        }
+    }
 }

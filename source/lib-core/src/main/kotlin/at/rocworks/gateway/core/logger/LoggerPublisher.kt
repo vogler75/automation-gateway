@@ -12,7 +12,7 @@ import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.collections.LinkedHashMap
 
-abstract class LoggerPublisher(val config: JsonObject) : LoggerBase(config) {
+abstract class LoggerPublisher(config: JsonObject) : LoggerBase(config) {
     private fun getMessageFormat(): String = config.getString("Format", "JSON")
     private fun isBulkMessages(): Boolean = config.getBoolean("BulkMessages", false)
 

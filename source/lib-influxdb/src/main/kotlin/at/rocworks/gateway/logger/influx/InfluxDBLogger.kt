@@ -50,8 +50,11 @@ class InfluxDBLogger(config: JsonObject) : LoggerBase(config) {
         return result.future()
     }
 
-    override fun close() {
+    override fun close(): Future<Unit> {
+        val promise = Promise.promise<Unit>()
         session.close()
+        promise.complete()
+        return promise.future()
     }
 
     private fun influxPointOf(dp: DataPoint): Point {
@@ -120,5 +123,9 @@ class InfluxDBLogger(config: JsonObject) : LoggerBase(config) {
             logger.severe("Error executing query [${e.message}]")
             result(false, null)
         }
+    }
+
+    override fun getComponentGroup(): ComponentGroup {
+        return ComponentGroup.Logger
     }
 }

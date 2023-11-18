@@ -4,12 +4,14 @@ import at.rocworks.gateway.core.data.DataPoint
 import at.rocworks.gateway.core.data.Topic
 import at.rocworks.gateway.core.data.TopicValue
 import at.rocworks.gateway.core.service.Common
+import at.rocworks.gateway.core.service.Component
+import at.rocworks.gateway.core.service.ComponentLogger
 import at.rocworks.gateway.core.service.ServiceHandler
 
-import io.vertx.core.AbstractVerticle
 import io.vertx.core.Future
 import io.vertx.core.Promise
 import io.vertx.core.eventbus.Message
+import io.vertx.core.eventbus.MessageConsumer
 import io.vertx.core.json.JsonObject
 import io.vertx.servicediscovery.Status
 
@@ -17,6 +19,7 @@ import java.lang.IllegalStateException
 import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.ArrayBlockingQueue
+import java.util.concurrent.Callable
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.logging.Level
 import java.util.logging.Logger
@@ -24,9 +27,9 @@ import java.util.logging.Logger
 import kotlin.concurrent.thread
 import kotlin.math.roundToInt
 
-abstract class LoggerBase(config: JsonObject) : AbstractVerticle() {
-    protected val id: String = config.getString("Id", "Logger")
-    protected val logger: Logger = Logger.getLogger(id)
+abstract class LoggerBase(config: JsonObject) : Component(config) {
+    protected val id: String = config.getString("Id", "")
+    protected val logger: Logger = ComponentLogger.getLogger(this::class.java.simpleName, id)
 
     private val topics : List<Topic>
 
@@ -64,11 +67,19 @@ abstract class LoggerBase(config: JsonObject) : AbstractVerticle() {
         logger.fine("Valid topics: ${topics.joinToString(separator = "|") { it.topicName }}")
     }
 
+    override fun getComponentId(): String {
+        return id
+    }
+
+    override fun getComponentConfig(): JsonObject {
+        return this.config
+    }
+
     abstract fun open(): Future<Unit>
-    abstract fun close()
+    abstract fun close(): Future<Unit>
 
     fun connect(connectPromise: Promise<Void>) {
-        thread {
+        vertx.executeBlocking(Callable {
             try {
                 open().onComplete { result ->
                     if (result.succeeded()) {
@@ -82,7 +93,7 @@ abstract class LoggerBase(config: JsonObject) : AbstractVerticle() {
                 logger.warning("Error in connect [${e.message}]")
                 connectPromise.fail(e)
             }
-        }
+        })
     }
 
     @Volatile
@@ -99,24 +110,37 @@ abstract class LoggerBase(config: JsonObject) : AbstractVerticle() {
         }
     }
 
-    override fun start(startPromise: Promise<Void>) {
-        startPromise.future().onComplete {
-            vertx.eventBus().consumer("${Common.BUS_ROOT_URI_LOG}/$id/QueryHistory", ::queryHandler)
-            vertx.setPeriodic(1000, ::metricCalculator)
-            writeValueThread.start()
-            subscribeTopics()
+    private var busConsumerQueryHistory: MessageConsumer<JsonObject>? = null
+    private var periodicMetricCalculator: Long = 0
+
+    private fun writerThread() = thread(start = true) {
+        logger.info("Writer thread with queue size [${writeValueQueue.remainingCapacity()}]")
+        writeValueStop.set(false)
+        while (!writeValueStop.get()) {
+            writeExecutor()
         }
-        connect(startPromise)
+    }
+
+    override fun start(startPromise: Promise<Void>) {
+        super.start()
+        vertx.executeBlocking(Callable { connect(startPromise) })
+        busConsumerQueryHistory = vertx.eventBus().consumer("${Common.BUS_ROOT_URI_LOG}/$id/QueryHistory", ::queryHandler)
+        periodicMetricCalculator = vertx.setPeriodic(1000, ::metricCalculator)
+        writeValueThread = writerThread()
+        subscribeTopics()
     }
 
     override fun stop(stopPromise: Promise<Void>) {
+        super.stop()
+        busConsumerQueryHistory?.unregister()
+        vertx.cancelTimer(periodicMetricCalculator)
+        unsubscribeTopics()
         writeValueStop.set(true)
-        writeValueStopped.future().onComplete {
-            close()
-            stopPromise.complete()
-        }
+        vertx.executeBlocking(Callable { close() })
+        stopPromise.complete()
     }
 
+    private val messageConsumers = mutableListOf<MessageConsumer<DataPoint>>()
     private fun subscribeTopics() {
         val handler = ServiceHandler(vertx, logger)
         services.forEach { it ->
@@ -126,9 +150,9 @@ abstract class LoggerBase(config: JsonObject) : AbstractVerticle() {
                     topics
                         .filter { it.systemType.name == service.type && it.systemName == service.name }
                         .forEach { topic ->
-                            vertx.eventBus().consumer<DataPoint>(topic.topicName) {
+                            messageConsumers.add(vertx.eventBus().consumer<DataPoint>(topic.topicName) {
                                 valueConsumerDataPoint(it.body())
-                            }
+                            })
                             subscribeTopic(ServiceHandler.endpointOf(service), topic)
                         }
                 }
@@ -136,7 +160,12 @@ abstract class LoggerBase(config: JsonObject) : AbstractVerticle() {
         }
     }
 
-    private fun subscribeTopic(endpoint: String, topic: Topic) { // TODO: Same in Influx
+    private fun unsubscribeTopics() {
+        messageConsumers.forEach { it.unregister() }
+        topics.forEach { topic -> unsubscribeTopic("${topic.systemType}/${topic.systemName}", topic) }
+    }
+
+    private fun subscribeTopic(endpoint: String, topic: Topic) {
         val request = JsonObject().put("ClientId", this.id).put("Topic", topic.encodeToJson())
         if (endpoint!="") {
             logger.fine("Subscribe to [${endpoint}] [$topic]")
@@ -146,20 +175,22 @@ abstract class LoggerBase(config: JsonObject) : AbstractVerticle() {
         }
     }
 
+    private fun unsubscribeTopic(endpoint: String, topic: Topic) {
+        val request = JsonObject().put("ClientId", this.id).put("Topic", topic.encodeToJson())
+        if (endpoint!="") {
+            logger.fine("Unsubscribe from [${endpoint}] [$topic]")
+            vertx.eventBus().request<JsonObject>("${endpoint}/Unsubscribe", request) {
+                logger.finest { "Unsubscribe response [${it.succeeded()}] [${it.result()?.body()}]" }
+            }
+        }
+    }
+
     abstract fun writeExecutor()
 
     private val writeValueStop = AtomicBoolean(false)
-    private val writeValueStopped = Promise.promise<Boolean>()
     protected val writeValueQueue = ArrayBlockingQueue<DataPoint>(writeParameterQueueSize)
     private var writeValueQueueFull = false
-    private val writeValueThread =
-        thread(start = false) {
-            logger.info("Writer thread with queue size [${writeValueQueue.remainingCapacity()}]")
-            while (!writeValueStop.get()) {
-                writeExecutor()
-            }
-            writeValueStopped.complete()
-        }
+    private var writeValueThread : Thread? = null
 
     private var valueCounterInput : Int = 0
     @Volatile var valueCounterOutput : Int = 0

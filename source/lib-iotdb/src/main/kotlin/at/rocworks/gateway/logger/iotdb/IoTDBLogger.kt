@@ -40,8 +40,11 @@ class IoTDBLogger(config: JsonObject) : LoggerBase(config) {
         return promise.future()
     }
 
-    override fun close() {
+    override fun close(): Future<Unit> {
+        val promise = Promise.promise<Unit>()
         session.close()
+        promise.complete()
+        return promise.future()
     }
 
     override fun writeExecutor() {
@@ -129,5 +132,9 @@ class IoTDBLogger(config: JsonObject) : LoggerBase(config) {
         result: (Boolean, List<List<Any>>?) -> Unit
     ) {
         result(false, null)
+    }
+
+    override fun getComponentGroup(): ComponentGroup {
+        return ComponentGroup.Logger
     }
 }

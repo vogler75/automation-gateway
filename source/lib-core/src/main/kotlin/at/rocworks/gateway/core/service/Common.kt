@@ -1,6 +1,7 @@
 package at.rocworks.gateway.core.service
 
 import at.rocworks.gateway.core.data.*
+import at.rocworks.gateway.core.graphql.ConfigServer
 import io.vertx.config.ConfigRetriever
 import io.vertx.config.ConfigRetrieverOptions
 import io.vertx.config.ConfigStoreOptions
@@ -34,7 +35,9 @@ object Common {
         }
     }
 
-    fun initGateway(args: Array<String>, vertx: Vertx, onSuccess: (JsonObject)->Unit) {
+    fun initGateway(args: Array<String>,
+                    vertx: Vertx,
+                    factory: (Component.ComponentType, JsonObject) -> Component?) {
         try {
             // Register Message Types
             vertx.eventBus().registerDefaultCodec(Topic::class.java, CodecTopic())
@@ -60,7 +63,16 @@ object Common {
                 // Go through the configuration file
                 config.getConfig { cfg ->
                     if (cfg != null && cfg.succeeded()) {
-                        onSuccess(cfg.result())
+                        val componentHandler = ComponentHandler(vertx, cfg.result(), factory)
+                        val envConfigName = "GATEWAY_CONFIG_PORT"
+                        val envConfigPort = System.getenv(envConfigName) ?: "empty"
+                        val port = envConfigPort.toIntOrNull()
+                        if (port != null) {
+                            logger.info("Config GraphQL Server listening on port ${port}.")
+                            vertx.deployVerticle(ConfigServer(componentHandler, port))
+                        } else {
+                            logger.info("Config GraphQL Server not started [GATEWAY_CONFIG_PORT=${envConfigPort}].")
+                        }
                     } else {
                         println("Missing or invalid $configFileName file! ${cfg.cause().message}")
                         config.close()

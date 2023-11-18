@@ -51,9 +51,6 @@ object App {
 
         KeyStoreLoader.init()
         Common.initLogging()
-        Common.initGateway(args, vertx) { config ->
-            val componentHandler = ComponentHandler(vertx, config, ::factory)
-            vertx.deployVerticle(ConfigServer(componentHandler))
-        }
+        Common.initGateway(args, vertx, ::factory)
     }
 }

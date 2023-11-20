@@ -205,7 +205,7 @@ class OpcUaDriver(config: JsonObject) : DriverBase(config) {
 
         override fun onSubscriptionTransferFailed(subscription: UaSubscription, statusCode: StatusCode) {
             logger.warning("onSubscriptionTransferFailed: $statusCode")
-            createSubscription()
+            createSubscription { }
         }
     }
 
@@ -222,9 +222,9 @@ class OpcUaDriver(config: JsonObject) : DriverBase(config) {
                             }
 
                             client!!.subscriptionManager.addSubscriptionListener(subscriptionListener)
-                            createSubscription()
-
-                            promise.complete(true)
+                            createSubscription { result ->
+                                promise.complete(result)
+                            }
                         }
                     }
                 }
@@ -261,19 +261,19 @@ class OpcUaDriver(config: JsonObject) : DriverBase(config) {
         disconnect()
     }
 
-    private fun createSubscription() {
+    private fun createSubscription(onComplete: (Boolean)->Unit) {
         client!!.subscriptionManager
             .createSubscription(subscriptionSamplingInterval)
-            .whenCompleteAsync(::createSubscriptionComplete)
-    }
-
-    private fun createSubscriptionComplete(s: UaSubscription, e: Throwable?) {
-        if (e == null) {
-            subscription = s
-            resubscribe()
-        } else {
-            logger.severe("Unable to create subscription, reason: " + e.message)
-        }
+            .whenCompleteAsync { s, e ->
+                if (e == null) {
+                    subscription = s
+                    resubscribe()
+                    onComplete(true)
+                } else {
+                    logger.severe("Unable to create subscription, reason: " + e.message)
+                    onComplete(false)
+                }
+            }
     }
 
     private fun createClientAsync(): Future<Boolean> {

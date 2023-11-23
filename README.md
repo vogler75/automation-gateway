@@ -1,10 +1,10 @@
 # Frankenstein Automation Gateway
 
-Connect one or more OPC UA servers to the gateway and access the data from the OPC UA servers with a GraphQL or a MQTT client and store it in a range of databases and platforms like InfluxDB, IoTDB, Kafka and more.
+Connect one or more OPC UA servers or PLC4X devices to the gateway and access the data with a GraphQL or a MQTT client. The Gateway additionally offers functionality to log value changes from OPC UA, MQTT and PLC4X in a range of databases and platforms, including InfluxDB, IoTDB, Kafka, among others. Tested with up to 250000 value changes per second on comodity hardware.  
 
-The Gateway passes values through, it does not store data internally. The MQTT Broker is not a fully MQTT Broker! It does not keep values in memory. If you subscribe to a virtual MQTT-Topic, which must follow certain rules, then it will connect to the tags in OPC UA or PLC4X and will pass the values to the client. If multiple clients subscribe to the same virtual topic, then only one subscription to the device is made and the Gateway will distribute the values to all the clients.  
+The Gateway passes values through, it does not store data internally. The MQTT Broker is not a fully complient MQTT Broker. It does not keep values in memory. If you subscribe to a virtual MQTT-Topic, which must follow certain rules, then it will connect to the tags in OPC UA or PLC4X and will pass the values to the client. If multiple clients subscribe to the same virtual topic, then only one subscription to the device is made and the Gateway will distribute the values to all the clients.  
 
-The Gateway offers functionality to log value changes from OPC UA and PLC4X in a range of databases and platforms, including InfluxDB, IoTDB, Kafka, among others. Tested with up to 250000 value changes per second on comodity hardware!  
+The Gateway also has an integrated OPC UA server. You can define what kind of data from MQTT brokers, other OPC UA servers and from PLC4X devices you want to have in the integraded OPC UA server. 
 
 Docker images can be found on [Docker Hub](https://hub.docker.com/r/rocworks/automation-gateway).
 
@@ -286,6 +286,7 @@ Example MQTT Topic:
 > plc/mod/node/coil:1  
 
 # Version History
+- [1.24 Added OPC UA server](#124-added-opc-ua-server)
 - [1.23 Upgrade to VertX 4.4.6](#123-upgrade-to-vertx-446)
 - [1.22 Config file changes](#122-config-file-changes)
 - [1.21.2 Fixes and SparkplugB for Kafka \& MQTT Logger](#1212-fixes-and-sparkplugb-for-kafka--mqtt-logger)
@@ -313,6 +314,11 @@ Example MQTT Topic:
 - [1.7 DDS Driver (subscribe and publish)](#17-dds-driver-subscribe-and-publish)
 - [1.6 Added GraphiQL (http://localhost:4000/graphiql/)](#16-added-graphiql-httplocalhost4000graphiql)
 - [1.5 OPC UA Schemas to GraphQL Schema Importer](#15-opc-ua-schemas-to-graphql-schema-importer)
+
+## 1.24 Added OPC UA server
+The Gateway now also has an integrated OPC UA server. You can define what kind of data from MQTT brokers, other OPC UA servers and from PLC4X devices you want to have in the integraded OPC UA server. Data will be mapped to structured nodes in the OPC UA server. It is also possible to change the values in the OPC UA server and the changed values will be written back to the source (MQTT broker, other OPC UA server, PLC4X connected device).  
+
+There is now also a GraphQL interface for the configuration of the gateway. This GraphQL Server can be enabled by setting the environment variable "GATEWAY_CONFIG_PORT=9999". 9999 will be the port for the configuration GraphQL serer. This configuration GraphQL server can be used to build a configuration Ui for the gateway.  
 
 ## 1.23 Upgrade to VertX 4.4.6
 The GraphQL server websocket subprotocol now changed to the new one: "graphql-transport-ws". The older Apollo subprotocol "graphql-ws" is not supported anymore.  

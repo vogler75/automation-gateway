@@ -10,6 +10,15 @@ Servers:
       Enabled: true
       LogLevel: INFO # ALL | INFO
 
+  OpcUa:
+    - Port: 4842
+      Enabled: true
+      LogLevel: INFO      
+      Topics:
+        - Topic: plc/Modbus1/node/holding-register:1:INT
+        - Topic: plc/Modbus1/node/holding-register:2:INT
+        - Topic: plc/Modbus1/node/holding-register:3:INT      
+
 Drivers:
   Plc4x:
     - Id: "demo"

@@ -25,17 +25,11 @@ object App {
         val logger = Logger.getLogger(javaClass.simpleName)
 
         fun factory(type: Component.ComponentType, config: JsonObject): Component? {
-            return when (type) {
-                Component.ComponentType.MqttServer -> MqttServer(config)
-                Component.ComponentType.GraphQLServer -> GraphQLServer(config)
-                Component.ComponentType.OpcUaServer -> OpcUaServer(config)
-                Component.ComponentType.OpcUaDriver -> OpcUaDriver(config)
-                Component.ComponentType.MqttDriver -> MqttDriver(config)
-                Component.ComponentType.MqttLogger -> MqttLogger(config)
-                Component.ComponentType.KafkaLogger -> KafkaLogger(config)
-                Component.ComponentType.JdbcLogger -> JdbcLogger(config)
+            return Component.defaultFactory(type, config) ?: when (type) {
                 Component.ComponentType.InfluxDBLogger -> InfluxDBLogger(config)
-                Component.ComponentType.IoTDBLogger -> IoTDBLogger(config)
+                Component.ComponentType.IoTDBLogger    -> IoTDBLogger(config)
+                Component.ComponentType.KafkaLogger    -> KafkaLogger(config)
+                Component.ComponentType.JdbcLogger     -> JdbcLogger(config)
                 else -> {
                     logger.severe("Unknown component type [${type}]")
                     null

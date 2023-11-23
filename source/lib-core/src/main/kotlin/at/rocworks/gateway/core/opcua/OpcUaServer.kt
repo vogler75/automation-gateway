@@ -106,12 +106,14 @@ class OpcUaServer(config: JsonObject): Component(config) {
 
     override fun start(startPromise: Promise<Void>) {
         super.start()
-        serverInstance = OpcUaServerInstance(this).also {
-            it.startup()
+        thread {
+            writeValueThread = writerThread()
+            serverInstance = OpcUaServerInstance(this).also {
+                it.startup()
+                subscribeTopics()
+                startPromise.complete()
+            }
         }
-        writeValueThread = writerThread()
-        subscribeTopics()
-        startPromise.complete()
     }
 
     override fun stop(stopPromise: Promise<Void>) {

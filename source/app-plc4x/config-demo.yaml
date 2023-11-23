@@ -1,0 +1,69 @@
+Servers:
+  OpcUa:
+    - Port: 4842
+      Enabled: true
+      LogLevel: INFO      
+      Topics:
+        - Topic: mqtt/Emqx/path/test/#
+        - Topic: mqtt/Hivemq/path/Austria/Sparkplug/#
+        - Topic: opc/Demo1/path/Objects/Variables/#
+        - Topic: opc/Demo2/path/Objects/Demo/Scalar/Scalar_Static/#
+        - Topic: plc/Modbus1/node/holding-register:1:INT
+        - Topic: plc/Modbus1/node/holding-register:2:INT
+        - Topic: plc/Modbus1/node/holding-register:3:INT
+Drivers:
+  Mqtt:
+    - Id: "Hivemq"
+      Enabled: true
+      LogLevel: INFO
+      Host: xxxxxxxxxxxxxxxxxxxxxxxxxxxxx.s1.eu.hivemq.cloud
+      Port: 8883
+      Ssl: true
+      Format: SparkplugB
+      Username: "x"
+      Password: "x"
+
+    - Id: "Emqx"
+      Enabled: true
+      LogLevel: INFO
+      Host: 192.168.1.30
+      Port: 1883
+      Format: Raw
+
+  OpcUa:
+    - Id: "Demo1"
+      Enabled: true
+      LogLevel: INFO
+      EndpointUrl: "opc.tcp://192.168.1.3:62540/server"
+      UpdateEndpointUrl: true
+      SecurityPolicy: None
+
+    - Id: "Demo2"
+      Enabled: true
+      LogLevel: INFO
+      EndpointUrl: "opc.tcp://192.168.1.3:62541"
+      UpdateEndpointUrl: true
+      SecurityPolicy: None
+
+  Plc4x:
+    - Id: "Modbus1"
+      Enabled: true
+      LogLevel: INFO
+      Url: "modbus://192.168.1.159:502"
+      Polling:
+        Time: 250
+        OldNew: true
+
+Loggers:
+  Mqtt:
+    - Id: Mqtt1
+      Enabled: true
+      Host: linux0.rocworks.local
+      Port: 1883
+      Ssl: false
+      Topic: demo
+      Format: Json
+      BulkMessages: false
+      LogLevel: INFO
+      Logging:
+        - Topic: mqtt/Hivemq/path/Austria/Sparkplug/#

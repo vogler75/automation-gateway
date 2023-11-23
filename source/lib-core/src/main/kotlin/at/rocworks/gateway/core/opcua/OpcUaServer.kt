@@ -127,7 +127,7 @@ class OpcUaServer(config: JsonObject): Component(config) {
         fun onComplete(ok: Boolean, consumer: MessageConsumer<DataPoint>) {
             if (ok) messageConsumers.add(consumer)
         }
-        fun onMessage(topic: Topic, message: Message<DataPoint>) {
+        fun onMessage(@Suppress("UNUSED_PARAMETER") topic: Topic, message: Message<DataPoint>) {
             valueConsumerDataPoint(message.body())
         }
         services.forEach { it ->

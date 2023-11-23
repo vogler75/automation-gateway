@@ -65,7 +65,7 @@ class EventBus(val logger: Logger) {
             .put("ClientId", clientId)
             .put("Topic", topic.encodeToJson())
         vertx.eventBus().request<JsonObject>(address, request) {
-            logger.finest { "Subscribe response [${it.succeeded()}] [${it.result()?.body()}]" }
+            logger.fine { "Subscribe response [${it.succeeded()}] [${it.result()?.body()}]" }
             if (it.succeeded() && it.result().body().getBoolean("Ok")) {
                 onComplete(true, consumer)
             } else {
@@ -84,9 +84,9 @@ class EventBus(val logger: Logger) {
         val request = JsonObject().put("ClientId", clientId)
         request.put("Topic", topic.encodeToJson())
         val address = "${topic.systemType}/${topic.systemName}"
-        logger.fine("Unsubscribe from [${address}] [$topic]")
+        logger.fine { "Unsubscribe from [${address}] [$topic]" }
         vertx.eventBus().request<JsonObject>("${address}/Unsubscribe", request) {
-            logger.finest { "Unsubscribe response [${it.succeeded()}] [${it.result()?.body()}]" }
+            logger.fine { "Unsubscribe response [${it.succeeded()}] [${it.result()?.body()}]" }
             val ok = it.succeeded() && it.result().body().getBoolean("Ok")
             onComplete(ok)
         }
@@ -103,7 +103,7 @@ class EventBus(val logger: Logger) {
             request.put("Topics", JsonArray(group.value.map { it.encodeToJson() }))
             val address = "${group.key}/Unsubscribe"
             vertx.eventBus().request<JsonObject>(address, request) {
-                logger.finest { "Unsubscribe response [${it.succeeded()}] [${it.result()?.body()}]" }
+                logger.fine { "Unsubscribe response [${it.succeeded()}] [${it.result()?.body()}]" }
                 val ok = it.succeeded() && it.result().body().getBoolean("Ok")
                 onComplete(ok, group.value)
             }

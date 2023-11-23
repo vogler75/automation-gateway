@@ -23,22 +23,22 @@ class OpcUaSampledNode(
     private var tick: Long = 0L
 
     override fun onStartup() {
-        item.setValue(sampleInitialValue(System.currentTimeMillis()))
-        logger.fine("onStartup: ${node.nodeId} ${item.samplingInterval}")
+        item.setValue(sampleCurrentValue())
+        logger.finest { "onStartup: ${node.nodeId} ${item.samplingInterval}" }
         tick = vertx.setPeriodic(item.samplingInterval.toLong()) {
-            tick(System.currentTimeMillis())
+            tick()
         }
     }
 
     override fun onShutdown(): Unit = synchronized(this) {
-        logger.info("onShutdown: ${node.nodeId}")
+        logger.finest { "onShutdown: ${node.nodeId}" }
         vertx.cancelTimer(tick)
     }
 
-    private fun tick(currentTime: Long) {
+    private fun tick() {
         if (samplingEnabled) {
             try {
-                item.setValue(sampleCurrentValue(currentTime))
+                item.setValue(sampleCurrentValue())
             } catch (t: Throwable) {
                 logger.severe("Error sampling value for ${item.readValueId}: $t")
                 item.setValue(DataValue(StatusCodes.Bad_InternalError))
@@ -47,14 +47,14 @@ class OpcUaSampledNode(
     }
 
     fun modifyRate(newRate: Double) {
-        logger.info("modifyRate: ${node.nodeId} $newRate")
+        logger.fine { "modifyRate: ${node.nodeId} $newRate" }
         vertx.cancelTimer(tick)
         vertx.setPeriodic(newRate.toLong()) {
-            tick(System.currentTimeMillis())
+            tick()
         }
     }
 
-    private fun sampleCurrentValue(currentTime: Long): DataValue {
+    private fun sampleCurrentValue(): DataValue {
         return node.readAttribute(
             AttributeContext(item.session.server),
             item.readValueId.attributeId,
@@ -63,6 +63,4 @@ class OpcUaSampledNode(
             item.readValueId.dataEncoding
         )
     }
-
-     private fun sampleInitialValue(currentTime: Long): DataValue = sampleCurrentValue(currentTime)
 }

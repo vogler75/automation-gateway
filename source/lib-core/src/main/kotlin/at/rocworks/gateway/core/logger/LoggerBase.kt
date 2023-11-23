@@ -65,7 +65,7 @@ abstract class LoggerBase(config: JsonObject) : Component(config) {
 
         services = topics.map { Pair(it.systemType, it.systemName) }.distinct()
 
-        logger.fine("Valid topics: ${topics.joinToString(separator = "|") { it.topicName }}")
+        logger.fine { "Valid topics: ${topics.joinToString(separator = "|") { it.topicName }}" }
     }
 
     override fun getComponentId(): String {
@@ -146,7 +146,7 @@ abstract class LoggerBase(config: JsonObject) : Component(config) {
         fun onComplete(ok: Boolean, consumer: MessageConsumer<DataPoint>) {
             if (ok) messageConsumers.add(consumer)
         }
-        fun onMessage(topic: Topic, message: Message<DataPoint>) {
+        fun onMessage(@Suppress("UNUSED_PARAMETER") topic: Topic, message: Message<DataPoint>) {
             valueConsumerDataPoint(message.body())
         }
         services.forEach { it ->

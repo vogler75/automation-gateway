@@ -28,7 +28,7 @@ abstract class OpcUaSampledSpace(
 
     override fun onDataItemsCreated(items: List<DataItem>) {
         items.forEach { item ->
-            logger.fine("onDataItemsCreated: ${item.readValueId.nodeId}")
+            logger.fine { "onDataItemsCreated: ${item.readValueId.nodeId}" }
             val nodeId: NodeId = item.readValueId.nodeId
             val node: UaNode? = nodeManager.get(nodeId)
 
@@ -44,21 +44,21 @@ abstract class OpcUaSampledSpace(
 
     override fun onDataItemsModified(items: List<DataItem>) {
         items.forEach { item ->
-            logger.fine("onDataItemsModified: ${item.readValueId.nodeId}")
+            logger.fine { "onDataItemsModified: ${item.readValueId.nodeId}" }
             sampledNodes[item]?.modifyRate(item.samplingInterval)
         }
     }
 
     override fun onDataItemsDeleted(items: List<DataItem>) {
         items.forEach { item ->
-            logger.fine("onDataItemsDeleted: ${item.readValueId.nodeId}")
+            logger.fine { "onDataItemsDeleted: ${item.readValueId.nodeId}" }
             sampledNodes.remove(item)?.shutdown()
         }
     }
 
     override fun onMonitoringModeChanged(items: List<MonitoredItem>) {
         items.forEach { item ->
-            logger.fine("onMonitoringModeChanged: ${item.readValueId.nodeId} ${item.isSamplingEnabled}")
+            logger.fine { "onMonitoringModeChanged: ${item.readValueId.nodeId} ${item.isSamplingEnabled}" }
             sampledNodes[item]?.samplingEnabled = item.isSamplingEnabled
         }
     }

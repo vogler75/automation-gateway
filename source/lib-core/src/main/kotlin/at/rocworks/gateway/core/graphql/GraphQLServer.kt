@@ -81,14 +81,14 @@ class GraphQLServer(config: JsonObject) : Component(config) {
         thread {
             val schemas = config.getJsonArray("Schemas", JsonArray()) ?: JsonArray()
             if (schemas.isEmpty) {
-                logger.fine("Default schema...")
+                logger.fine { "Default schema..." }
                 getGenericSchema().let { (schema, wiring) ->
                     startGraphQLServer(build(schema, wiring))
                     logger.info("GraphQL ready")
                     startPromise.complete()
                 }
             } else {
-                logger.fine("Build schema...")
+                logger.fine { "Build schema..." }
                 val (generic, wiring) = getGenericSchema(withSystems = true)
 
                 val results = schemas.filterIsInstance<JsonObject>().map { systemConfig ->

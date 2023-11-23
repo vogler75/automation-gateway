@@ -78,13 +78,13 @@ class MqttLogger (config: JsonObject) : LoggerPublisher(config) {
         if (client!!.isConnected) {
             if (!this.isConnected) {
                 this.isConnected=true
-                logger.fine("Connected to MQTT broker.")
+                logger.fine { "Connected to MQTT broker." }
             }
             client!!.publish(topic, payload, MqttQoS.valueOf(qos), false, retained)
         } else {
             if (this.isConnected) {
                 this.isConnected=false
-                logger.fine("Disconnected from MQTT broker.")
+                logger.fine { "Disconnected from MQTT broker." }
             }
         }
     }

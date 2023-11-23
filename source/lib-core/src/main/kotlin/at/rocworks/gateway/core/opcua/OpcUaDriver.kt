@@ -111,10 +111,10 @@ class OpcUaDriver(config: JsonObject) : DriverBase(config) {
             val value = config.getJsonObject("UsernameProvider") as JsonObject
             UsernameProvider(value.getString("Username"), value.getString("Password"))
         } else AnonymousProvider()
-        logger.fine("RequestTimeout: [${requestTimeout}] " +
+        logger.fine {"RequestTimeout: [${requestTimeout}] " +
             "ConnectTimeout: [${connectTimeout}] " +
             "KeepAliveFailuresAllowed: [${keepAliveFailuresAllowed}] " +
-            "SubscriptionSamplingInterval [${subscriptionSamplingInterval}]")
+            "SubscriptionSamplingInterval [${subscriptionSamplingInterval}]"}
 
         val monitoringParameters = config.getJsonObject("MonitoringParameters")
         monitoringParametersBufferSize = uint(monitoringParameters?.getInteger("BufferSize", monitoringParametersBufferSizeDef) ?: monitoringParametersBufferSizeDef)
@@ -124,28 +124,28 @@ class OpcUaDriver(config: JsonObject) : DriverBase(config) {
         dataChangeTrigger = if (dataChangeFilterStr == null) dataChangeTriggerDef else {
             DataChangeTrigger.valueOf(dataChangeFilterStr)
         }
-        logger.fine("MonitoringParameters: "+
+        logger.fine {"MonitoringParameters: "+
                 "BufferSize=$monitoringParametersBufferSize " +
                 "SamplingInterval=$monitoringParametersSamplingInterval " +
                 "DiscardOldest=$monitoringParametersDiscardOldest "+
-                "DataChangeTrigger=$dataChangeTrigger")
+                "DataChangeTrigger=$dataChangeTrigger"}
 
         val writeParameters = config.getJsonObject("WriteParameters")
         writeParameterQueueSize = writeParameters?.getInteger("QueueSize", writeParameterQueueSizeDef) ?: writeParameterQueueSizeDef
         writeParametersBlockSize = writeParameters?.getInteger("BlockSize", writeParametersBlockSizeDef) ?: writeParametersBlockSizeDef
         writeParametersWithTime = writeParameters?.getBoolean("WithTime", writeParametersWithTimeDef) ?: writeParametersWithTimeDef
-        logger.fine("WriteParameters: "+
+        logger.fine {"WriteParameters: "+
                 "QueueSize=$writeParameterQueueSize "+
                 "BlockSize=$writeParametersBlockSize "+
-                "WithTime=$writeParametersWithTime ")
+                "WithTime=$writeParametersWithTime "}
 
         val addressCache = config.getJsonObject("AddressCache") ?: JsonObject()
         val maximumSize = addressCache.getLong("MaximumSize", 1000)
         val expireAfterSeconds = addressCache.getLong("ExpireAfterSeconds", 60)
 
-        logger.fine("AddressCache: "+
+        logger.fine {"AddressCache: "+
                 "MaximumSize=$maximumSize " +
-                "ExpireAfterSeconds=$expireAfterSeconds")
+                "ExpireAfterSeconds=$expireAfterSeconds"}
 
         pathNodeIdCache = CacheBuilder.newBuilder()
             .maximumSize(maximumSize)
@@ -158,7 +158,7 @@ class OpcUaDriver(config: JsonObject) : DriverBase(config) {
                 }
             )
 
-        logger.fine("Application Uri: ${KeyStoreLoader.APPLICATION_URI}")
+        logger.fine { "Application Uri: ${KeyStoreLoader.APPLICATION_URI}" }
     }
 
     val writeGetTime = if (writeParametersWithTime) { -> DateTime.nowNanos() } else { -> null }
@@ -174,11 +174,11 @@ class OpcUaDriver(config: JsonObject) : DriverBase(config) {
             val parts = endpointUrl.split("://", ":", "/")
             when {
                 parts.size == 1 -> {
-                    logger.fine("Update endpoint to host [${parts[1]}]!")
+                    logger.fine { "Update endpoint to host [${parts[1]}]!" }
                     EndpointUtil.updateUrl(endpoint, parts[1])
                 }
                 parts.size > 1 -> {
-                    logger.fine("Update endpoint to host [${parts[1]}] and port [${parts[2]}]!")
+                    logger.fine { "Update endpoint to host [${parts[1]}] and port [${parts[2]}]!" }
                     EndpointUtil.updateUrl(endpoint, parts[1], parts[2].toInt())
                 }
                 else -> {
@@ -218,7 +218,7 @@ class OpcUaDriver(config: JsonObject) : DriverBase(config) {
                 if (createResult.succeeded()) {
                     connectClientAsync().onComplete { connectResult: AsyncResult<Boolean> ->
                         if (connectResult.succeeded()) {
-                            logger.fine("Connect succeeded.")
+                            logger.fine { "Connect succeeded." }
                             client!!.addFaultListener { serviceFault ->
                                 logger.warning("Service Fault: $serviceFault")
                             }
@@ -239,9 +239,9 @@ class OpcUaDriver(config: JsonObject) : DriverBase(config) {
     }
 
     private fun browseSchema(nodeId: String): JsonArray {
-        logger.fine("Start object browsing [${nodeId}]...")
+        logger.fine { "Start object browsing [${nodeId}]..." }
         val tree = browseNode(NodeId.parse(nodeId), maxLevel=-1)
-        logger.fine("Object browsing finished [${nodeId}].")
+        logger.fine { "Object browsing finished [${nodeId}]." }
         if (writeSchemaToFile) {
             File("schema-${id}.json".lowercase()).writeText(tree.encodePrettily())
         }
@@ -308,7 +308,7 @@ class OpcUaDriver(config: JsonObject) : DriverBase(config) {
                         .setKeepAliveFailuresAllowed(uint((keepAliveFailuresAllowed)))
                         .build()
                 }
-                logger.fine("OpcUaClient created.")
+                logger.fine { "OpcUaClient created." }
                 promise.complete(true)
             } catch (e: UaException) {
                 logger.severe("OpcUaClient create failed! Wait and retry... " + e.message)
@@ -379,7 +379,7 @@ class OpcUaDriver(config: JsonObject) : DriverBase(config) {
         thread {
             val schema = JsonArray()
             nodeIds.filterIsInstance<String>().forEach { nodeId ->
-                logger.fine("Browse from NodeId [${nodeId}]")
+                logger.fine { "Browse from NodeId [${nodeId}]" }
                 val item = getNodeData(NodeId.parse(nodeId))
                 item.put("Nodes", browseSchema(nodeId))
                 schema.add(item)
@@ -466,9 +466,9 @@ class OpcUaDriver(config: JsonObject) : DriverBase(config) {
     override fun publishTopic(topic: Topic, value: TopicValue): Future<Boolean> {
         val ret = Promise.promise<Boolean>()
         try {
-            fun dataValue(nodeId: NodeId) = DataValue(
+            fun dataValue(@Suppress("UNUSED_PARAMETER") nodeId: NodeId) = DataValue(
                 Variant(value.value),
-                null, //if (value.isStatusGood()) StatusCode.GOOD else StatusCode.BAD,
+                if (value.isStatusGood()) StatusCode.GOOD else StatusCode.BAD,
                 writeGetTime()
             )
             writeValue(topic, ::dataValue, ret)
@@ -637,7 +637,7 @@ class OpcUaDriver(config: JsonObject) : DriverBase(config) {
         val ret = Promise.promise<Boolean>()
         if (topics.isEmpty()) ret.complete(true)
         else {
-            logger.fine("Subscribe nodes [${ topics.size}] sampling interval [${monitoringParametersSamplingInterval}]")
+            logger.fine { "Subscribe nodes [${ topics.size}] sampling interval [${monitoringParametersSamplingInterval}]" }
             val nodeIds = topics.map { NodeId.parseOrNull(it.node) }.toList()
             val requests = ArrayList<MonitoredItemCreateRequest>()
 
@@ -707,7 +707,7 @@ class OpcUaDriver(config: JsonObject) : DriverBase(config) {
                 try {
                     val resolvedTopics = mutableListOf<Topic>()
                     topics.forEach { topic ->
-                        logger.fine("Subscribe path [${topic.path}]")
+                        logger.fine { "Subscribe path [${topic.path}]" }
                         val resolvedNodeIds = pathNodeIdCache.get(topic.path)
                         resolvedTopics.addAll(resolvedNodeIds.map {
                             Topic(
@@ -722,7 +722,7 @@ class OpcUaDriver(config: JsonObject) : DriverBase(config) {
                             )
                         })
                     }
-                    logger.fine("Browse path result size [${resolvedTopics.size}]")
+                    logger.fine { "Browse path result size [${resolvedTopics.size}]" }
                     if (topics.isEmpty()) {
                         ret.complete(true)
                     } else if (resolvedTopics.size>0) {
@@ -765,7 +765,7 @@ class OpcUaDriver(config: JsonObject) : DriverBase(config) {
 
     private fun valueConsumer(topic: Topic, data: DataValue) {
         try {
-            logger.finest {"Got value $topic $data" }
+            logger.finest { "Got value $topic $data" }
 
             val value = fromDataValue(data)
 
@@ -807,7 +807,7 @@ class OpcUaDriver(config: JsonObject) : DriverBase(config) {
                         val tNow = Instant.now()
                         if (Duration.between(tLast, tNow).seconds > 1 ) {
                             tLast = tNow
-                            logger.fine("Browsed [${counter}] items...")
+                            logger.fine { "Browsed [${counter}] items..." }
                         }
                     }
                     val item = JsonObject()
@@ -879,7 +879,7 @@ class OpcUaDriver(config: JsonObject) : DriverBase(config) {
     private fun browsePath(path: String): List<Pair<NodeId, String>> {
         val resolvedNodeIds = mutableListOf<Pair<NodeId, String>>()
         val items = Topic.splitAddress(path)
-        logger.finest("Browse address [$path] [${items.joinToString("|")}]")
+        logger.finest { "Browse address [$path] [${items.joinToString("|")}]" }
         fun find(node: String, itemIdx: Int, path: String) {
             val item = items[itemIdx]
             logger.finest { "Find $node | $item ($itemIdx) | $path" }

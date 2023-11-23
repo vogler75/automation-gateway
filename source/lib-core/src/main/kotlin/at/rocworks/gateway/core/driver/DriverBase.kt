@@ -66,17 +66,17 @@ abstract class DriverBase(config: JsonObject) : Component(config) {
     }
 
     override fun start(startPromise: Promise<Void>) {
-        logger.fine("Driver start [$id]")
+        logger.fine { "Driver start [$id]" }
         super.start()
         vertx.executeBlocking(Callable {
             try {
                 connect().onSuccess {
-                    logger.fine("Connect complete")
+                    logger.fine { "Connect complete" }
                     connectHandlers()
                     registerService()
                     subscribeOnStartup.forEach {
                         val topic = Topic.parseTopic("${getUri()}/$it")
-                        logger.fine("Subscribe to topic [$topic]")
+                        logger.fine{ "Subscribe to topic [$topic]" }
                         if (topic.isValid()) subscribeTopic(id, topic)
                     }
                     startPromise.complete()
@@ -108,7 +108,7 @@ abstract class DriverBase(config: JsonObject) : Component(config) {
         val handler = ServiceHandler(vertx, logger)
         handler.registerService(getType().name, id, getUri()).onComplete {
             if (it.succeeded()) {
-                logger.fine("Service registered.")
+                logger.fine { "Service registered." }
             } else {
                 logger.warning("Service registration failed!")
             }
@@ -116,7 +116,7 @@ abstract class DriverBase(config: JsonObject) : Component(config) {
     }
 
     private fun connectHandlers() {
-        logger.finest("Connect handlers to [${getUri()}]")
+        logger.finest { "Connect handlers to [${getUri()}]" }
         messageHandlers = listOf<MessageConsumer<JsonObject>>(
             vertx.eventBus().consumer("${getUri()}/ServerInfo") { serverInfoHandler(it) },
             vertx.eventBus().consumer("${getUri()}/Subscribe") { subscribeHandler(it) },
@@ -229,7 +229,7 @@ abstract class DriverBase(config: JsonObject) : Component(config) {
         val items = ArrayList<MonitoredItem>()
         topics.forEach { topic ->
             val (count, removed) = registry.delClient(clientId, topic)
-            logger.fine("Unsubscribe [${count}] [${topic}]")
+            logger.fine { "Unsubscribe [${count}] [${topic}]" }
             if (!removed) {
                 logger.warning("Client [${clientId}] was not subscribed to [${topic}]")
             } else if (count == 0) {

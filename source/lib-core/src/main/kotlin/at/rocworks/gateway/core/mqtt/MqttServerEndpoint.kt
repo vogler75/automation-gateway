@@ -93,7 +93,7 @@ class MqttServerEndpoint(
 
     @Synchronized private fun unsubscribeAll() {
         if (!unsubscribeAllDone) {
-            logger.fine("Unsubscribe all [${this.topicConsumer.keys.size}]")
+            logger.fine { "Unsubscribe all [${this.topicConsumer.keys.size}]" }
             unsubscribeAllDone = true
             unsubscribeTopics(this.topicConsumer.keys.toList())
         }
@@ -134,7 +134,7 @@ class MqttServerEndpoint(
     }
 
     private fun unsubscribeHandler(message: MqttUnsubscribeMessage) {
-        logger.fine("Unsubscribe Handler [${message.topics().size}]")
+        logger.fine { "Unsubscribe Handler [${message.topics().size}]" }
         unsubscribeTopics(message.topics())
     }
 
@@ -143,7 +143,7 @@ class MqttServerEndpoint(
         if (!topicConsumer.contains(mqttTopicSubscription.topicName())) {
             val t = Topic.parseTopic(mqttTopicSubscription.topicName())
             val qos = mqttTopicSubscription.qualityOfService()
-            logger.fine() { "Subscribe request [${t}] with QoS [${qos}]" }
+            logger.fine { "Subscribe request [${t}] with QoS [${qos}]" }
             when (t.systemType) {
                 Topic.SystemType.Mqtt,
                 Topic.SystemType.Opc,

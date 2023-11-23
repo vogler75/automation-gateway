@@ -124,9 +124,9 @@ class MqttDriver(config: JsonObject) : DriverBase(config) {
         val promise = Promise.promise<Boolean>()
         if (topics.isEmpty()) promise.complete(true)
         else {
-            logger.fine("Subscribe to [${topics.size}] topics")
+            logger.fine { "Subscribe to [${topics.size}] topics" }
             topics.forEach { topic ->
-                logger.fine("Subscribe topic [${topic.topicName}] node [${topic.node}]")
+                logger.fine { "Subscribe topic [${topic.topicName}] node [${topic.node}]" }
                 client?.subscribe(topic.node, qos)
                 registry.addMonitoredItem(MqttMonitoredItem(topic.node), topic)
                 subscribedTopics.add(topic)
@@ -292,8 +292,8 @@ class MqttDriver(config: JsonObject) : DriverBase(config) {
             .setUuid(UUID.randomUUID().toString())
             .createPayload()
         val type = metricDataTypeOf(value.value)
-        val value = if (type == MetricDataType.String) value.valueAsString() else value.value
-        val metric = Metric.MetricBuilder(topic, type, value)
+        val data = if (type == MetricDataType.String) value.valueAsString() else value.value
+        val metric = Metric.MetricBuilder(topic, type, data)
         payload.addMetric(metric.createMetric())
         if (spbSequenceNumber++ == 255) spbSequenceNumber=0
         return Buffer.buffer(SparkplugBPayloadEncoder().getBytes(payload, false))

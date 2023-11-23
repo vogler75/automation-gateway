@@ -64,14 +64,14 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
                 pollingTopics.forEach {
                     builder.addItem(it.key.topicName, it.key.node)
                 }
-                logger.finest("Poll request [${localRequestId}] for [${pollingTopics.size}] items...")
+                logger.finest { "Poll request [${localRequestId}] for [${pollingTopics.size}] items..." }
                 val request = builder.build()
                 val response = request.execute()
                 response.orTimeout(pollingTimeout, TimeUnit.MILLISECONDS)
                 response.whenComplete { readResponse, throwable ->
                     ++pollingResponseId
                     if (readResponse != null) {
-                        logger.finest("Poll response [${readResponse.asPlcValue}]")
+                        logger.finest {"Poll response [${readResponse.asPlcValue}]" }
                         pollingTopics.forEach { topic ->
                             val value = readResponse.getPlcValue(topic.key.topicName)
                             if (!pollingOldNew || value.toString() != topic.value.toString()) { // TODO: String Compare?
@@ -162,7 +162,7 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
     }
 
     private fun subscribeTopic(topics: List<Topic>) : Future<Boolean> {
-        logger.fine("Subscribe topic [${topics.size}]")
+        logger.fine {"Subscribe topic [${topics.size}]" }
         val ret = Promise.promise<Boolean>()
         when {
             plc?.metadata?.canSubscribe() == false -> {
@@ -215,7 +215,7 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
     }
 
     private fun valueConsumer(topic: Topic, data: PlcValue) {
-        logger.finest("Got value [${topic.topicName}] [$data]")
+        logger.finest { "Got value [${topic.topicName}] [$data]" }
         try {
             val value = toValue(data)
             eventBus.publishDataPoint(vertx, DataPoint(topic, value))
@@ -382,7 +382,7 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
                 response.orTimeout(writeTimeout, TimeUnit.MILLISECONDS)
                 response.whenComplete { writeResponse, throwable ->
                     if (writeResponse != null) {
-                        logger.finest("Write response [${writeResponse.getResponseCode("value")}]")
+                        logger.finest { "Write response [${writeResponse.getResponseCode("value")}]" }
                         promise.complete(true)
                     } else {
                         logger.severe("Write error [$throwable]")

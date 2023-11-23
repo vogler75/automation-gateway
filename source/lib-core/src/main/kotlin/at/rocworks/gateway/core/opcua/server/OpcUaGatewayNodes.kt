@@ -34,8 +34,7 @@ class OpcUaGatewayNodes(
     private val logger = ComponentLogger.getLogger(this::class.java.simpleName)
 
     init {
-        lifecycleManager.addStartupTask {
-            //addDemoNodes()
+        lifecycleManager.addStartupTask {            
         }
     }
 
@@ -72,8 +71,6 @@ class OpcUaGatewayNodes(
                 dataValue.value.dataType.get().toNodeId(server.namespaceTable).get()
             else BuiltinDataType.Variant.nodeId
             val variableNode = addVariableNode(
-                id,
-                topic,
                 folder,
                 name,
                 dataTypeId = dataTypeId,
@@ -85,9 +82,9 @@ class OpcUaGatewayNodes(
             variableNodesID[id] = variableNode
             variableNodesTS[id] = dataValue.serverTime
 
-            variableNode.addAttributeObserver { node, attributeId, data ->
+            variableNode.addAttributeObserver { node, _, data ->
                 if (node is UaVariableNode && data is DataValue) {
-                    variableHasChanged(id, node, attributeId, data)
+                    variableHasChanged(id, node, data)
                 }
             }
         }
@@ -128,8 +125,6 @@ class OpcUaGatewayNodes(
     }
 
     private fun addVariableNode(
-        id: String,
-        topic: Topic,
         parent: NodeId,
         name: String,
         dataTypeId: NodeId,
@@ -170,12 +165,12 @@ class OpcUaGatewayNodes(
         variableNode.value = dataValue
     }
 
-    private fun variableHasChanged(id: String, variableNode: UaVariableNode, attributeId: AttributeId, dataValue: DataValue)
+    private fun variableHasChanged(id: String, variableNode: UaVariableNode, dataValue: DataValue)
     {
         val tsOld = variableNodesTS[id]?.javaTime
         val tsNew = dataValue.serverTime?.javaTime
         if (tsOld != tsNew) { // check if it was changed by a client (not by our server itself)
-            logger.info("AttributeObserver: ${variableNode.nodeId}")
+            logger.finest {"variableHasChanged: ${variableNode.nodeId}" }
             publishVariableValue(id, dataValue)
         }
     }

@@ -1,7 +1,8 @@
 package at.rocworks.gateway.core.driver
 
+import at.rocworks.gateway.core.data.EventBus
 import at.rocworks.gateway.core.data.Topic
-import at.rocworks.gateway.core.service.Common
+import at.rocworks.gateway.core.data.TopicValue
 import at.rocworks.gateway.core.service.Component
 import at.rocworks.gateway.core.service.ComponentLogger
 import at.rocworks.gateway.core.service.ServiceHandler
@@ -21,16 +22,16 @@ import java.util.concurrent.ExecutionException
 import java.util.function.Consumer
 import java.util.logging.Level
 import java.util.logging.Logger
-import kotlin.concurrent.thread
 
 abstract class DriverBase(config: JsonObject) : Component(config) {
     protected abstract fun getType(): Topic.SystemType
 
     protected val id: String = config.getString("Id", "")
 
-    private val uri = "${getType().name}/$id"
+    private fun getUri() = "${getType().name}/$id"
 
     protected val logger: Logger =  ComponentLogger.getLogger(this::class.java.simpleName, id)
+    protected val eventBus = EventBus(logger)
 
     private val subscribeOnStartup: List<String> =
         config.getJsonArray("SubscribeOnStartup", JsonArray()).filterIsInstance<String>().toList()
@@ -74,7 +75,7 @@ abstract class DriverBase(config: JsonObject) : Component(config) {
                     connectHandlers()
                     registerService()
                     subscribeOnStartup.forEach {
-                        val topic = Topic.parseTopic("$uri/$it")
+                        val topic = Topic.parseTopic("${getUri()}/$it")
                         logger.fine("Subscribe to topic [$topic]")
                         if (topic.isValid()) subscribeTopic(id, topic)
                     }
@@ -105,7 +106,7 @@ abstract class DriverBase(config: JsonObject) : Component(config) {
 
     private fun registerService() {
         val handler = ServiceHandler(vertx, logger)
-        handler.registerService(getType().name, id, uri).onComplete {
+        handler.registerService(getType().name, id, getUri()).onComplete {
             if (it.succeeded()) {
                 logger.fine("Service registered.")
             } else {
@@ -115,16 +116,16 @@ abstract class DriverBase(config: JsonObject) : Component(config) {
     }
 
     private fun connectHandlers() {
-        logger.finest("Connect handlers to [$uri]")
+        logger.finest("Connect handlers to [${getUri()}]")
         messageHandlers = listOf<MessageConsumer<JsonObject>>(
-            vertx.eventBus().consumer("$uri/ServerInfo") { serverInfoHandler(it) },
-            vertx.eventBus().consumer("$uri/Subscribe") { subscribeHandler(it) },
-            vertx.eventBus().consumer("$uri/Unsubscribe") { unsubscribeHandler(it) },
-            vertx.eventBus().consumer("$uri/Publish") { publishHandler(it) },
-            vertx.eventBus().consumer("$uri/Read") { readHandler(it) },
-            vertx.eventBus().consumer("$uri/Write") { writeHandler(it) },
-            vertx.eventBus().consumer("$uri/Browse") { browseHandler(it) },
-            vertx.eventBus().consumer("$uri/Schema") { schemaHandler(it) },
+            vertx.eventBus().consumer("${getUri()}/ServerInfo") { serverInfoHandler(it) },
+            vertx.eventBus().consumer("${getUri()}/Subscribe") { subscribeHandler(it) },
+            vertx.eventBus().consumer("${getUri()}/Unsubscribe") { unsubscribeHandler(it) },
+            vertx.eventBus().consumer("${getUri()}/Publish") { publishHandler(it) },
+            vertx.eventBus().consumer("${getUri()}/Read") { readHandler(it) },
+            vertx.eventBus().consumer("${getUri()}/Write") { writeHandler(it) },
+            vertx.eventBus().consumer("${getUri()}/Browse") { browseHandler(it) },
+            vertx.eventBus().consumer("${getUri()}/Schema") { schemaHandler(it) },
         )
     }
 
@@ -160,13 +161,24 @@ abstract class DriverBase(config: JsonObject) : Component(config) {
     }
 
     private fun publishHandler(message: Message<JsonObject>) {
-        val topic = Topic.decodeFromJson(message.body().getJsonObject("Topic"))
-        val data = message.body().getBuffer("Data")
-        logger.finest { "Publish [$topic] [$data]" }
+        val body = message.body()
+        val topic = Topic.decodeFromJson(body.getJsonObject("Topic"))
         try {
-            publishTopic(topic, data).onComplete { result: AsyncResult<Boolean> ->
-                if (result.cause() != null) result.cause().printStackTrace()
-                message.reply(JsonObject().put("Ok", result.succeeded() && result.result()))
+            if (body.containsKey("Value")) {
+                val value = TopicValue.decodeFromJson(body.getJsonObject("Value"))
+                logger.finest { "Publish [$topic] [$value]" }
+                publishTopic(topic, value).onComplete { result: AsyncResult<Boolean> ->
+                    if (result.cause() != null) result.cause().printStackTrace()
+                    message.reply(JsonObject().put("Ok", result.succeeded() && result.result()))
+                }
+            }
+            else if (body.containsKey("Buffer")) {
+                val value = body.getBuffer("Buffer")
+                logger.finest { "Publish [$topic] [$value]" }
+                publishTopic(topic, value).onComplete { result: AsyncResult<Boolean> ->
+                    if (result.cause() != null) result.cause().printStackTrace()
+                    message.reply(JsonObject().put("Ok", result.succeeded() && result.result()))
+                }
             }
         } catch (e: ExecutionException) {
             e.printStackTrace()
@@ -237,6 +249,7 @@ abstract class DriverBase(config: JsonObject) : Component(config) {
     protected abstract fun subscribeTopics(topics: List<Topic>): Future<Boolean>
     protected abstract fun unsubscribeTopics(topics: List<Topic>, items: List<MonitoredItem>): Future<Boolean>
     protected abstract fun publishTopic(topic: Topic, value: Buffer): Future<Boolean>
+    protected abstract fun publishTopic(topic: Topic, value: TopicValue): Future<Boolean>
 
     // GraphQL
     protected abstract fun readServerInfo(): JsonObject

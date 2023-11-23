@@ -14,7 +14,7 @@ abstract class Component(val config: JsonObject) : AbstractVerticle() {
 
     enum class ComponentType {
         None,
-        GraphQLServer, MqttServer,
+        GraphQLServer, MqttServer, OpcUaServer,
         OpcUaDriver, MqttDriver, Plc4xDriver,
         InfluxDBLogger, IoTDBLogger, JdbcLogger, KafkaLogger, MqttLogger
     }

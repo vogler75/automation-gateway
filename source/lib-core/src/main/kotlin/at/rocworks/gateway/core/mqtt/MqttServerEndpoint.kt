@@ -1,14 +1,15 @@
 package at.rocworks.gateway.core.mqtt
 
 import at.rocworks.gateway.core.data.DataPoint
+import at.rocworks.gateway.core.data.EventBus
 import at.rocworks.gateway.core.data.Topic
-import at.rocworks.gateway.core.service.Component
-import at.rocworks.gateway.core.service.ComponentLogger
+import at.rocworks.gateway.core.data.TopicValue
 import io.netty.handler.codec.mqtt.MqttQoS
 import io.vertx.core.AbstractVerticle
 import io.vertx.core.Future
 import io.vertx.core.Promise
 import io.vertx.core.buffer.Buffer
+import io.vertx.core.eventbus.Message
 import io.vertx.core.eventbus.MessageConsumer
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
@@ -17,10 +18,13 @@ import io.vertx.mqtt.MqttTopicSubscription
 import io.vertx.mqtt.messages.MqttPublishMessage
 import io.vertx.mqtt.messages.MqttSubscribeMessage
 import io.vertx.mqtt.messages.MqttUnsubscribeMessage
-import java.util.logging.Level
 import java.util.logging.Logger
 
-class MqttServerEndpoint(private val logger: Logger, private val endpoint: MqttEndpoint): AbstractVerticle() {
+class MqttServerEndpoint(
+    private val logger: Logger,
+    private val endpoint: MqttEndpoint
+): AbstractVerticle() {
+    private val eventBus = EventBus(logger)
 
     private val topicConsumer = mutableMapOf<String, MessageConsumer<*>>()
 
@@ -91,7 +95,7 @@ class MqttServerEndpoint(private val logger: Logger, private val endpoint: MqttE
         if (!unsubscribeAllDone) {
             logger.fine("Unsubscribe all [${this.topicConsumer.keys.size}]")
             unsubscribeAllDone = true
-            unsubscribeTopic(this.topicConsumer.keys.toList())
+            unsubscribeTopics(this.topicConsumer.keys.toList())
         }
     }
 
@@ -131,7 +135,7 @@ class MqttServerEndpoint(private val logger: Logger, private val endpoint: MqttE
 
     private fun unsubscribeHandler(message: MqttUnsubscribeMessage) {
         logger.fine("Unsubscribe Handler [${message.topics().size}]")
-        unsubscribeTopic(message.topics())
+        unsubscribeTopics(message.topics())
     }
 
     private fun subscribeTopic(mqttTopicSubscription: MqttTopicSubscription): Promise<Boolean> {
@@ -143,7 +147,7 @@ class MqttServerEndpoint(private val logger: Logger, private val endpoint: MqttE
             when (t.systemType) {
                 Topic.SystemType.Mqtt,
                 Topic.SystemType.Opc,
-                Topic.SystemType.Plc -> subscribeDriverTopic(t.systemType.name, t, qos, ret)
+                Topic.SystemType.Plc -> subscribeDriverTopic(t, qos, ret)
                 Topic.SystemType.Unknown -> subscribeMqttTopic(t, qos, ret)
                 else -> {
                     logger.warning("Invalid topic [${t}]")
@@ -157,38 +161,28 @@ class MqttServerEndpoint(private val logger: Logger, private val endpoint: MqttE
         return ret
     }
 
-    private fun unsubscribeTopic(topics: List<String>) {
-        val opc = HashMap<String, ArrayList<Topic>>()
-        val plc = HashMap<String, ArrayList<Topic>>()
-        val mqtt = HashMap<String, ArrayList<Topic>>()
-
-        fun add(list: HashMap<String, ArrayList<Topic>>, topic: Topic) {
-            val l = list.getOrDefault(topic.systemName, ArrayList())
-            if (l.size == 0) list[topic.systemName] = l
-            l.add(topic)
-        }
-
-        topics.forEach { topic ->
-            if (topics.contains(topic)) {
-                val t = Topic.parseTopic(topic)
-                logger.finest { "Unsubscribe request [${t}]" }
-                when (t.systemType) {
-                    Topic.SystemType.Mqtt -> add(mqtt, t)
-                    Topic.SystemType.Opc -> add(opc, t)
-                    Topic.SystemType.Plc -> add(plc, t)
-                    Topic.SystemType.Unknown -> unsubscribeMqttTopic(t)
-                    else -> {
-                        logger.severe("Invalid topic [${t}]")
+    private fun unsubscribeTopics(names: List<String>) {
+        val topics = names.map { Topic.parseTopic(it) }
+        topics.filter {
+            it.systemType == Topic.SystemType.Mqtt ||
+            it.systemType == Topic.SystemType.Plc ||
+            it.systemType == Topic.SystemType.Opc
+        }.let {
+            eventBus.requestUnsubscribeTopics(vertx, endpoint.clientIdentifier(), it) { ok, list ->
+                if (ok) {
+                    list.forEach { topic ->
+                        this.topicConsumer[topic.topicName]?.unregister()
+                        this.topicConsumer.remove(topic.topicName)
                     }
+                } else {
+                    logger.warning("Unsubscribe failed!")
                 }
-            } else {
-                logger.warning("Client [${endpoint.clientIdentifier()}] not subscribed to [${topic}]")
             }
         }
 
-        opc.forEach { if (it.value.size > 0) unsubscribeDriverTopics(Topic.SystemType.Opc.name, it.key, it.value) }
-        plc.forEach { if (it.value.size > 0) unsubscribeDriverTopics(Topic.SystemType.Plc.name, it.key, it.value) }
-        mqtt.forEach { if (it.value.size > 0) unsubscribeDriverTopics(Topic.SystemType.Mqtt.name, it.key, it.value) }
+        topics.filter { it.systemType == Topic.SystemType.Unknown }.forEach {
+            unsubscribeMqttTopic(it)
+        }
     }
 
     private fun subscribeMqttTopic(t: Topic, qos: MqttQoS, ret: Promise<Boolean>) {
@@ -206,35 +200,26 @@ class MqttServerEndpoint(private val logger: Logger, private val endpoint: MqttE
         this.topicConsumer.remove(t.topicName)
     }
 
-    private fun subscribeDriverTopic(type: String, t: Topic, qos: MqttQoS, ret: Promise<Boolean>) {
-        val consumer = vertx.eventBus().consumer(t.topicName) {
-            valueConsumer(t, qos, it.body())
-        }
-        val r = JsonObject().put("ClientId", endpoint.clientIdentifier()).put("Topic", t.encodeToJson())
-        vertx.eventBus().request<JsonObject>("${type}/${t.systemName}/Subscribe", r) {
-            logger.finest { "Subscribe response [${it.succeeded()}] [${it.result()?.body()}]" }
-            if (it.succeeded() && it.result().body().getBoolean("Ok")) {
-                this.topicConsumer[t.topicName] = consumer as MessageConsumer<*>
+    private fun subscribeDriverTopic(topic: Topic, qos: MqttQoS, ret: Promise<Boolean>) {
+        fun onComplete(ok: Boolean, consumer: MessageConsumer<DataPoint>) {
+            if (ok) {
+                this.topicConsumer[topic.topicName] = consumer
                 ret.complete(true)
             } else {
-                consumer.unregister()
+                println("Nak")
                 ret.complete(false)
             }
         }
-    }
-
-    private fun unsubscribeDriverTopics(type: String, systemName: String, list: List<Topic>) {
-        val r = JsonObject().put("ClientId", endpoint.clientIdentifier())
-        r.put("Topics", JsonArray(list.map { it.encodeToJson() }))
-        vertx.eventBus().request<JsonObject>("${type}/${systemName}/Unsubscribe", r) {
-            logger.finest { "Unsubscribe response [${it.succeeded()}] [${it.result()?.body()}]" }
-            if (it.succeeded() && it.result().body().getBoolean("Ok")) {
-                list.forEach { topic ->
-                    this.topicConsumer[topic.topicName]?.unregister()
-                    this.topicConsumer.remove(topic.topicName)
-                }
-            }
+        fun onMessage(topic: Topic, message: Message<DataPoint>) {
+            valueConsumer(topic, qos, message.body())
         }
+        eventBus.requestSubscribeTopic(
+            vertx,
+            endpoint.clientIdentifier(),
+            topic,
+            ::onComplete,
+            ::onMessage
+        )
     }
 
     private fun valueConsumer(topic: Topic, qos: MqttQoS, value: Any) {
@@ -296,21 +281,22 @@ class MqttServerEndpoint(private val logger: Logger, private val endpoint: MqttE
         try {
             logger.finest { "Publish message [${message.topicName()}]" }
             val topic = Topic.parseTopic(message.topicName())
-            val value = message.payload()
             when (topic.systemType) {
-                Topic.SystemType.Mqtt,
-                Topic.SystemType.Opc,
-                Topic.SystemType.Plc -> {
-                    val request = JsonObject()
-                    val type = topic.systemType.name
-                    request.put("Topic", topic.encodeToJson())
-                    request.put("Data", value)
-                    vertx.eventBus().request<JsonObject>("${type}/${topic.systemName}/Publish", request) {
-                        logger.finest { "Publish response [${it.succeeded()}] [${it.result()?.body()}]" }
+                Topic.SystemType.Mqtt, Topic.SystemType.Opc, Topic.SystemType.Plc -> {
+                    when (topic.format) {
+                        Topic.Format.Value -> {
+                            val value = message.payload()
+                            eventBus.requestPublishTopicBuffer(vertx, topic, value)
+                        }
+                        Topic.Format.Json -> {
+                            val value = TopicValue.decodeFromJson(message.payload().toJsonObject())
+                            eventBus.requestPublishTopicValue(vertx, topic, value)
+                        }
                     }
                 }
                 Topic.SystemType.Unknown -> {
-                    vertx.eventBus().publish(topic.topicName, value)
+                    val value = message.payload()
+                    eventBus.publishBufferValue(vertx, topic.topicName, value)
                 }
                 else -> logger.severe("Unhandled system type [${topic}]")
             }

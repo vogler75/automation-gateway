@@ -24,14 +24,24 @@ Servers:
       Enabled: true
       LogLevel: INFO
       GraphiQL: true      
-      Schemas:
-       - System: demo1
-       - System: demo2
-#        - System: ignition
-#        - System: unified
-#          FieldName: DisplayName
-#          RootNodes:
-#            - "ns=1;s=2|Tags"
+#      Schemas:
+#       - System: demo1
+#       - System: demo2
+#       - System: ignition
+#       - System: unified
+#         FieldName: DisplayName
+#         RootNodes:
+#           - "ns=1;s=2|Tags"
+
+  OpcUa:
+    - Port: 4841
+      Enabled: true
+      LogLevel: INFO
+      Topics:
+        - Topic: mqtt/Hivemq/path/Austria/Sparkplug/#
+        - Topic: mqtt/Hivemq/node/Austria/Sparkplug/Meter/Input/Watt
+        - Topic: opc/Demo2/path/Objects/Demo/SimulationMass/SimulationMass_Double/#
+        - Topic: opc/Demo2/node/ns=2;s=Double_00
 
 Drivers:  
   OpcUa:

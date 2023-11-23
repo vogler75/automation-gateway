@@ -25,6 +25,7 @@ class ComponentHandler(
         val group: Component.ComponentGroup
             get() = when (type) {
                 Component.ComponentType.GraphQLServer,
+                Component.ComponentType.OpcUaServer,
                 Component.ComponentType.MqttServer -> Component.ComponentGroup.Server
                 Component.ComponentType.OpcUaDriver,
                 Component.ComponentType.MqttDriver,
@@ -133,9 +134,10 @@ class ComponentHandler(
     fun deployComponent(type: Component.ComponentType, id: String) {
         var record = components["$type/$id"]
         if (record != null && record.component != null) {
-            vertx.deployVerticle(record.component) { result ->
+            val component = record.component!!
+            vertx.deployVerticle(component) { result ->
                 if (result.succeeded()) {
-                    logger.info("Component started successfully")
+                    logger.info("Component ${component.getComponentName()} started successfully")
                 } else {
                     logger.severe("Failed to stop component: " + result.cause())
                 }

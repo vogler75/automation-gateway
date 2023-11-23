@@ -28,9 +28,14 @@
     "pattern":"java.base:\\Qsun/text/resources/nfkc.icu\\E"
   }, {
     "pattern":"java.base:\\Qsun/text/resources/uprops.icu\\E"
+  }, {
+    "pattern":"java.xml:\\Qcom/sun/org/apache/xml/internal/serializer/Encodings.properties\\E"
   }]},
   "bundles":[{
+    "name":"com.sun.org.apache.xml.internal.serializer.XMLEntities",
+    "locales":[""]
+  }, {
     "name":"i18n.Parsing",
-    "locales":["und"]
+    "locales":["", "und"]
   }]
 }

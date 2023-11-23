@@ -5,9 +5,7 @@ import at.rocworks.gateway.core.data.Topic
 import at.rocworks.gateway.core.data.TopicValue
 import at.rocworks.gateway.core.driver.DriverBase
 import at.rocworks.gateway.core.driver.MonitoredItem
-
 import io.netty.handler.codec.mqtt.MqttQoS
-import io.vertx.core.CompositeFuture
 import io.vertx.core.Future
 import io.vertx.core.Promise
 import io.vertx.core.buffer.Buffer
@@ -23,10 +21,7 @@ import org.eclipse.tahu.message.SparkplugBPayloadEncoder
 import org.eclipse.tahu.message.model.Metric
 import org.eclipse.tahu.message.model.MetricDataType
 import org.eclipse.tahu.message.model.SparkplugBPayload
-
 import java.util.*
-import kotlin.collections.HashMap
-import kotlin.collections.HashSet
 
 class MqttDriver(config: JsonObject) : DriverBase(config) {
     override fun getType() = Topic.SystemType.Mqtt
@@ -154,7 +149,7 @@ class MqttDriver(config: JsonObject) : DriverBase(config) {
                 subscribedTopics.none { it.node == node }
             }
             .forEach { node ->
-                logger.info("Unsubscribe node [${node}]", )
+                logger.info("Unsubscribe node [${node}]")
                 client?.unsubscribe(node)?.onComplete {
                     logger.info("Unsubscribe node [${node}] result [${it.succeeded()}]")
                 }
@@ -211,14 +206,15 @@ class MqttDriver(config: JsonObject) : DriverBase(config) {
         try {
             val receivedTopic = message.topicName()
             val receivedPayload = message.payload()
+
             fun publish(topic: Topic) {
                 try {
-                    val data = decodeMessage(topic, receivedTopic, receivedPayload)
-                    data.forEach {
-                        vertx.eventBus().publish(it.topic.topicName, it)
+                    val dataPoints = decodeMessage(topic, receivedTopic, receivedPayload)
+                    dataPoints.forEach { dataPoint ->
+                        eventBus.publishDataPoint(vertx, dataPoint)
                     }
                 } catch (e: Exception) {
-                    logger.warning("Exception on publish [$topic] value [${e.message}]", )
+                    logger.warning("Exception on publish [$topic] value [${e.message}]")
                 }
             }
 
@@ -234,15 +230,20 @@ class MqttDriver(config: JsonObject) : DriverBase(config) {
 
     override fun publishTopic(topic: Topic, value: Buffer): Future<Boolean> {
         val promise = Promise.promise<Boolean>()
-
-        val message = when (topic.format) {
-            Topic.Format.Value -> encodeMessage(topic.node, TopicValue(value.toString()))
-            Topic.Format.Json -> encodeMessage(topic.node, TopicValue.decodeFromJson(value.toJsonObject()))
-        }
-        client?.publish(topic.node, message, MqttQoS.valueOf(qos), false, retained)?.onComplete {
+        val message = encodeMessage(topic.node, TopicValue(value.toString()))
+        client?.publish(topic.browsePath, message, MqttQoS.valueOf(qos), false, retained)?.onComplete {
             promise.complete(true)
         }
 
+        return promise.future()
+    }
+
+    override fun publishTopic(topic: Topic, value: TopicValue): Future<Boolean> {
+        val promise = Promise.promise<Boolean>()
+        val message = encodeMessage(topic.node, value)
+        client?.publish(topic.browsePath, message, MqttQoS.valueOf(qos), false, retained)?.onComplete {
+            promise.complete(true)
+        }
         return promise.future()
     }
 
@@ -264,16 +265,35 @@ class MqttDriver(config: JsonObject) : DriverBase(config) {
 
     private var spbSequenceNumber = 0
 
+    private fun metricDataTypeOf(value: Any?): MetricDataType {
+        return when (value) {
+            is Byte -> MetricDataType.Int8
+            is Short -> MetricDataType.Int16
+            is Int -> MetricDataType.Int32
+            is Long -> MetricDataType.Int64
+            is UByte -> MetricDataType.UInt8
+            is UShort -> MetricDataType.UInt16
+            is UInt -> MetricDataType.UInt32
+            is ULong -> MetricDataType.UInt64
+            is Float -> MetricDataType.Float
+            is Double -> MetricDataType.Double
+            is Boolean -> MetricDataType.Boolean
+            is String -> MetricDataType.String
+            is Date -> MetricDataType.DateTime
+            is Buffer -> MetricDataType.Bytes
+            is ByteArray -> MetricDataType.Bytes
+            else -> MetricDataType.String
+        }
+    }
+
     private fun encodeSparkplugBMessage(topic: String, value: TopicValue) : Buffer {
         val payload = SparkplugBPayload.SparkplugBPayloadBuilder(spbSequenceNumber.toLong())
             .setTimestamp(Date())
             .setUuid(UUID.randomUUID().toString())
             .createPayload()
-        val metric = Metric.MetricBuilder(
-            topic,
-            MetricDataType.String,  // TODO: handle different data types of value.value
-            value.valueAsString()
-        )
+        val type = metricDataTypeOf(value.value)
+        val value = if (type == MetricDataType.String) value.valueAsString() else value.value
+        val metric = Metric.MetricBuilder(topic, type, value)
         payload.addMetric(metric.createMetric())
         if (spbSequenceNumber++ == 255) spbSequenceNumber=0
         return Buffer.buffer(SparkplugBPayloadEncoder().getBytes(payload, false))

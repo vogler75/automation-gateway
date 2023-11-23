@@ -1,6 +1,7 @@
 package at.rocworks.gateway.core.logger
 
 import at.rocworks.gateway.core.data.DataPoint
+import at.rocworks.gateway.core.data.EventBus
 import at.rocworks.gateway.core.data.Topic
 import at.rocworks.gateway.core.data.TopicValue
 import at.rocworks.gateway.core.service.Common
@@ -30,20 +31,20 @@ import kotlin.math.roundToInt
 abstract class LoggerBase(config: JsonObject) : Component(config) {
     protected val id: String = config.getString("Id", "")
     protected val logger: Logger = ComponentLogger.getLogger(this::class.java.simpleName, id)
+    protected val eventBus = EventBus(logger)
 
     private val topics : List<Topic>
-
     private val services : List<Pair<Topic.SystemType, String>>
 
-    companion object {
-        const val defaultRetryWaitTime = 5000L
-    }
+    private val defaultRetryWaitTime = 5000L
 
     private val writeParameterQueueSizeDefault = 10000
     private val writeParameterQueueSize : Int
 
     private val writeParameterBlockSizeDefault = 2000
     protected val writeParameterBlockSize : Int
+
+    private val messageConsumers = mutableListOf<MessageConsumer<DataPoint>>()
 
     init {
         val writeParameters = config.getJsonObject("WriteParameters")
@@ -140,21 +141,21 @@ abstract class LoggerBase(config: JsonObject) : Component(config) {
         stopPromise.complete()
     }
 
-    private val messageConsumers = mutableListOf<MessageConsumer<DataPoint>>()
     private fun subscribeTopics() {
         val handler = ServiceHandler(vertx, logger)
+        fun onComplete(ok: Boolean, consumer: MessageConsumer<DataPoint>) {
+            if (ok) messageConsumers.add(consumer)
+        }
+        fun onMessage(topic: Topic, message: Message<DataPoint>) {
+            valueConsumerDataPoint(message.body())
+        }
         services.forEach { it ->
             handler.observeService(it.first.name, it.second) { service ->
                 logger.info("Service [${service.name}] changed status [${service.status}]")
                 if (service.status == Status.UP) {
                     topics
                         .filter { it.systemType.name == service.type && it.systemName == service.name }
-                        .forEach { topic ->
-                            messageConsumers.add(vertx.eventBus().consumer<DataPoint>(topic.topicName) {
-                                valueConsumerDataPoint(it.body())
-                            })
-                            subscribeTopic(ServiceHandler.endpointOf(service), topic)
-                        }
+                        .forEach { topic -> eventBus.requestSubscribeTopic(vertx, this.id, topic, ::onComplete, ::onMessage ) }
                 }
             }
         }
@@ -162,27 +163,7 @@ abstract class LoggerBase(config: JsonObject) : Component(config) {
 
     private fun unsubscribeTopics() {
         messageConsumers.forEach { it.unregister() }
-        topics.forEach { topic -> unsubscribeTopic("${topic.systemType}/${topic.systemName}", topic) }
-    }
-
-    private fun subscribeTopic(endpoint: String, topic: Topic) {
-        val request = JsonObject().put("ClientId", this.id).put("Topic", topic.encodeToJson())
-        if (endpoint!="") {
-            logger.fine("Subscribe to [${endpoint}] [$topic]")
-            vertx.eventBus().request<JsonObject>("${endpoint}/Subscribe", request) {
-                logger.finest { "Subscribe response [${it.succeeded()}] [${it.result()?.body()}]" }
-            }
-        }
-    }
-
-    private fun unsubscribeTopic(endpoint: String, topic: Topic) {
-        val request = JsonObject().put("ClientId", this.id).put("Topic", topic.encodeToJson())
-        if (endpoint!="") {
-            logger.fine("Unsubscribe from [${endpoint}] [$topic]")
-            vertx.eventBus().request<JsonObject>("${endpoint}/Unsubscribe", request) {
-                logger.finest { "Unsubscribe response [${it.succeeded()}] [${it.result()?.body()}]" }
-            }
-        }
+        eventBus.requestUnsubscribeTopics(vertx, this.id, topics) { _, _ -> }
     }
 
     abstract fun writeExecutor()
@@ -220,6 +201,7 @@ abstract class LoggerBase(config: JsonObject) : Component(config) {
             e.printStackTrace()
         }
     }
+
     private fun valueConsumerJsonObject(data: JsonObject) {
         valueCounterInput++
         try {
@@ -260,7 +242,7 @@ abstract class LoggerBase(config: JsonObject) : Component(config) {
             result.put("Input v/s", vsInput)
             result.put("Output v/s", vsOutput)
             result.put("Queue Size", writeValueQueue.size)
-            vertx.eventBus().publish(topic, result)
+            eventBus.publishJsonValue(vertx, topic, result)
         }
         t1 = t2
         valueCounterInput = 0

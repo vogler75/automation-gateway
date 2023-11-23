@@ -22,7 +22,13 @@
                             "items": { 
                                 "$ref": "#/definitions/GraphQLServer"
                             }
-                        }          
+                        },
+                        "OpcUa": {
+                            "type": "array",
+                            "items": { 
+                                "$ref": "#/definitions/OpcUaServer"
+                            }
+                        }               
                     }    
                 },
                 "Drivers": {                    
@@ -105,7 +111,6 @@
                 "LogLevel": { "$ref": "#/definitions/LogLevel" },
                 "WriteParameters": { "$ref": "#/definitions/LoggerWriteParameters" },
                 "Logging": {  "$ref": "#/definitions/Logging" },        
-
                 "Host": { "type": "string" },
                 "Port": { "type": "integer" },
                 "Ssl": { "type": "boolean" },     
@@ -132,7 +137,6 @@
                 "LogLevel": { "$ref": "#/definitions/LogLevel" },
                 "WriteParameters": { "$ref": "#/definitions/LoggerWriteParameters" },
                 "Logging": {  "$ref": "#/definitions/Logging" },                        
-
                 "Servers": { "type": "string" },
                 "TopicName": { "type": "string" },   
                 "KeyName": { "type": "string" },
@@ -169,7 +173,6 @@
                 "LogLevel": { "$ref": "#/definitions/LogLevel" },
                 "WriteParameters": { "$ref": "#/definitions/LoggerWriteParameters" },
                 "Logging": {  "$ref": "#/definitions/Logging" },   
-
                 "Url": { "type": "string","format": "uri" },
                 "Database": { "type": "string" },
                 "Username": { "type": "string" },
@@ -186,7 +189,6 @@
                 "LogLevel": { "$ref": "#/definitions/LogLevel" },
                 "WriteParameters": { "$ref": "#/definitions/LoggerWriteParameters" },
                 "Logging": {  "$ref": "#/definitions/Logging" },   
-
                 "Host": { "type": "string" },
                 "Port": { "type": "integer" },                        
                 "Username": { "type": "string" },
@@ -325,6 +327,44 @@
             ],
             "title": "Mqtt Server"
         },
+        "OpcUaServer": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "Id": { "type": "string" },
+                "Port": {
+                    "description": "Default: 4840",
+                    "type": "integer"
+                },
+                "Path": {
+                    "description": "Default: server",
+                    "type": "string"
+                },
+                "Enabled": {
+                    "type": "boolean"
+                },
+                "LogLevel": { "$ref": "#/definitions/LogLevel" },
+                "Topics": {
+                    "$ref": "#/definitions/OpcUaServerTopics"
+                }
+            }
+        }, 
+        "OpcUaServerTopics": {
+            "type": "array",
+            "items": {                                     
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "Topic": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "Topic"
+                ],
+                "title": "Topic"                    
+            }
+        },        
         "MqttClient": {
             "type": "object",
             "additionalProperties": false,

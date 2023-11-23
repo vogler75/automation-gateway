@@ -137,8 +137,9 @@ class GraphQLServer(config: JsonObject) : Component(config) {
         }
     }
 
-    override fun stop() {
+    override fun stop(stopPromise: Promise<Void>) {
         super.stop()
+        stopPromise.complete()
     }
 
     private fun fetchSchema(system: String, nodeIds: List<String>): Future<Boolean> {

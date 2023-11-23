@@ -1,5 +1,6 @@
 package at.rocworks.gateway.core.data
 
+import io.vertx.core.buffer.Buffer
 import io.vertx.core.json.JsonObject
 import java.time.Instant
 
@@ -16,9 +17,12 @@ data class TopicValue (
     fun hasNoValue() = value==null
 
     fun valueAsObject() = value
-    fun statusAsString() = statusCode.toString()
+    fun statusAsString() = statusCode
     fun valueAsString() = value?.toString() ?: ""
     fun valueAsDouble(): Double? = valueAsString().toDoubleOrNull()
+    fun valueAsBuffer() = Buffer.buffer(valueAsString())
+
+    fun isStatusGood() = statusCode == TopicStatus.GOOD
 
     fun serverTime() = serverTime
     fun sourceTime() = sourceTime

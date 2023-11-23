@@ -5,6 +5,7 @@ import at.rocworks.gateway.core.data.Topic
 import at.rocworks.gateway.core.data.TopicValue
 import at.rocworks.gateway.core.driver.DriverBase
 import at.rocworks.gateway.core.driver.MonitoredItem
+import at.rocworks.gateway.core.opcua.driver.OpcUaMonitoredItem
 import com.google.common.cache.CacheBuilder
 import com.google.common.cache.CacheLoader
 import com.google.common.cache.LoadingCache
@@ -45,6 +46,7 @@ import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.Callable
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.function.Predicate
 import kotlin.concurrent.thread
 
@@ -258,6 +260,7 @@ class OpcUaDriver(config: JsonObject) : DriverBase(config) {
     }
 
     override fun shutdown() {
+        writeValueStop.set(true)
         disconnect()
     }
 
@@ -441,34 +444,16 @@ class OpcUaDriver(config: JsonObject) : DriverBase(config) {
         }
     }
 
+    private fun writeValue(topic: Topic, value: (NodeId)->DataValue, promise: Promise<Boolean>) {
+        val nodeId = NodeId.parse(topic.node)
+        writeValueQueued(nodeId, value(nodeId)).onComplete(promise)
+    }
+
     override fun publishTopic(topic: Topic, value: Buffer): Future<Boolean> {
         val ret = Promise.promise<Boolean>()
         try {
-            fun dataValue(nodeId: NodeId) =
-                when (topic.format) {
-                    Topic.Format.Value ->
-                        DataValue(getVariantOfValue(value, nodeId), null, writeGetTime())
-                    Topic.Format.Json -> {
-                        logger.warning("Value format not yet implemented!") // TODO
-                        DataValue(Variant.NULL_VALUE, null, null)
-                    }
-                }
-
-            when (topic.topicType) {
-                Topic.TopicType.Node -> {
-                    val nodeId = NodeId.parse(topic.node)
-                    writeValueQueued(nodeId, dataValue(nodeId)).onComplete(ret)
-                }
-                Topic.TopicType.Path -> {
-                    pathNodeIdCache.get(topic.path).forEach {
-                        writeValueQueued(it.first, dataValue(it.first)).onComplete(ret)
-                    }
-                }
-                else -> {
-                    logger.warning("Item type [${topic.topicType}] not yet implemented!")
-                    ret.complete(false)
-                }
-            }
+            fun dataValue(nodeId: NodeId) = DataValue(getVariantOfValue(value, nodeId), null, writeGetTime())
+            writeValue(topic, ::dataValue, ret)
         } catch (e: NumberFormatException) {
             logger.warning("Not a valid number [${value}] for numeric tag [${topic}] value!")
             ret.complete(false)
@@ -478,11 +463,31 @@ class OpcUaDriver(config: JsonObject) : DriverBase(config) {
         return ret.future()
     }
 
+    override fun publishTopic(topic: Topic, value: TopicValue): Future<Boolean> {
+        val ret = Promise.promise<Boolean>()
+        try {
+            fun dataValue(nodeId: NodeId) = DataValue(
+                Variant(value.value),
+                null, //if (value.isStatusGood()) StatusCode.GOOD else StatusCode.BAD,
+                writeGetTime()
+            )
+            writeValue(topic, ::dataValue, ret)
+        } catch (e: NumberFormatException) {
+            logger.warning("Not a valid number [${value}] for numeric tag [${topic}] value!")
+            ret.complete(false)
+        } catch (e: Exception) {
+            ret.fail(e)
+        }
+        return ret.future()
+    }
+
+    private val writeValueStop = AtomicBoolean(false)
     private val writeValueQueue = ArrayBlockingQueue<Triple<NodeId, DataValue, Promise<Boolean>>>(writeParameterQueueSize)
 
     private val writeValueThread =
         thread {
-            while (true) {
+            writeValueStop.set(false)
+            while (!writeValueStop.get()) {
                 val nodeIds = ArrayList<NodeId>(writeParametersBlockSize)
                 val dataValues = ArrayList<DataValue>(writeParametersBlockSize)
                 val promises = ArrayList<Promise<Boolean>>(writeParametersBlockSize)
@@ -500,7 +505,7 @@ class OpcUaDriver(config: JsonObject) : DriverBase(config) {
                     try {
                         val results = client!!.writeValues(nodeIds, dataValues).get()
                         results.zip(promises).forEach {
-                            if (!it.first.isGood) logger.warning("Writing value was not good [${it.first.toString()}]")
+                            if (!it.first.isGood) logger.warning("Writing value was not good [${it.first}]")
                             it.second.complete(it.first.isGood)
                         }
                     } catch (e: Exception) {
@@ -768,8 +773,7 @@ class OpcUaDriver(config: JsonObject) : DriverBase(config) {
                 return
 
             try {
-                val message = DataPoint(topic, value)
-                vertx.eventBus().publish(topic.topicName, message)
+                eventBus.publishDataPoint(vertx, DataPoint(topic, value))
             } catch (e: Exception) {
                 val type = if (value.value != null) value.value::class.qualifiedName else "?"
                 logger.severe("Exception at topic: ${topic.path}, datatype: $type, value ${value.value}, exception: ${e.message} ")
@@ -930,7 +934,6 @@ class OpcUaDriver(config: JsonObject) : DriverBase(config) {
             is DataValue -> value.toString()
             else -> value
         }
-
         val statusCode = if (v.statusCode!=null) {
             val x = StatusCodes.lookup(v.statusCode!!.value)
             if (x.isPresent) x.get().first()

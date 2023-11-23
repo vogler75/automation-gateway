@@ -151,6 +151,7 @@ class ConfigServer(private val componentHandler: ComponentHandler, private val p
     | enum ComponentType {
     |   GraphQLServer
     |   MqttServer
+    |   OpcUaServer
     |   
     |   OpcUaDriver
     |   MqttDriver

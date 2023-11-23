@@ -1,14 +1,13 @@
 
-import at.rocworks.gateway.core.graphql.ConfigServer
 import at.rocworks.gateway.core.graphql.GraphQLServer
 import at.rocworks.gateway.core.mqtt.MqttDriver
 import at.rocworks.gateway.core.mqtt.MqttLogger
 import at.rocworks.gateway.core.mqtt.MqttServer
 import at.rocworks.gateway.core.opcua.KeyStoreLoader
 import at.rocworks.gateway.core.opcua.OpcUaDriver
+import at.rocworks.gateway.core.opcua.OpcUaServer
 import at.rocworks.gateway.core.service.Common
 import at.rocworks.gateway.core.service.Component
-import at.rocworks.gateway.core.service.ComponentHandler
 import at.rocworks.gateway.logger.influx.InfluxDBLogger
 import at.rocworks.gateway.logger.jdbc.JdbcLogger
 import at.rocworks.gateway.logger.kafka.KafkaLogger
@@ -29,6 +28,7 @@ object App {
             return when (type) {
                 Component.ComponentType.MqttServer -> MqttServer(config)
                 Component.ComponentType.GraphQLServer -> GraphQLServer(config)
+                Component.ComponentType.OpcUaServer -> OpcUaServer(config)
                 Component.ComponentType.OpcUaDriver -> OpcUaDriver(config)
                 Component.ComponentType.MqttDriver -> MqttDriver(config)
                 Component.ComponentType.MqttLogger -> MqttLogger(config)

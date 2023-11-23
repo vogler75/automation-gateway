@@ -9,6 +9,7 @@ import java.security.*;
 import java.security.cert.X509Certificate;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
+import java.util.Arrays;
 
 import org.eclipse.milo.opcua.stack.core.util.SelfSignedCertificateBuilder;
 import org.eclipse.milo.opcua.stack.core.util.SelfSignedCertificateGenerator;
@@ -29,17 +30,24 @@ public class KeyStoreLoader {
     private final Logger logger = Logger.getLogger(getClass().getSimpleName());
 
     private X509Certificate clientCertificate;
+    private X509Certificate[] clientCertificateChain;
+
     private KeyPair clientKeyPair;
 
     public static void init() throws Exception {
-        String dirName = System.getenv("GATEWAY_SECURITY_DIRECTORY");
-        if (dirName == null) dirName = "."; // System.getProperty("java.io.tmpdir");
-        Path securityTempDir = Paths.get(dirName, "security");
-        Files.createDirectories(securityTempDir);
-        if (!Files.exists(securityTempDir)) {
-            throw new Exception("Unable to create security dir: " + securityTempDir);
+        Path securityDir = getPkiDir();
+        Files.createDirectories(securityDir);
+        if (!Files.exists(securityDir)) {
+            throw new Exception("Unable to create security dir: " + securityDir);
         }
-        keyStoreLoader = new KeyStoreLoader().load(securityTempDir);
+        keyStoreLoader = new KeyStoreLoader().load(securityDir);
+    }
+
+    public static Path getPkiDir() {
+        String dirName = System.getenv("GATEWAY_SECURITY_DIRECTORY");
+        if (dirName == null) dirName = ".";
+        Path securityDir = Paths.get(dirName, "security");
+        return securityDir;
     }
 
     KeyStoreLoader load(Path baseDir) throws Exception {
@@ -47,7 +55,7 @@ public class KeyStoreLoader {
 
         Path serverKeyStore = baseDir.resolve("rocworks-gateway.pfx");
 
-        logger.info("Loading KeyStore at "+serverKeyStore);
+        logger.info("Loading Client KeyStore at " + serverKeyStore);
 
         if (!Files.exists(serverKeyStore)) {
             logger.info("Create new certificate...");
@@ -92,6 +100,11 @@ public class KeyStoreLoader {
         Key serverPrivateKey = keyStore.getKey(CLIENT_ALIAS, PASSWORD);
         if (serverPrivateKey instanceof PrivateKey) {
             clientCertificate = (X509Certificate) keyStore.getCertificate(CLIENT_ALIAS);
+
+            clientCertificateChain = Arrays.stream(keyStore.getCertificateChain(CLIENT_ALIAS))
+                    .map(X509Certificate.class::cast)
+                    .toArray(X509Certificate[]::new);
+
             PublicKey serverPublicKey = clientCertificate.getPublicKey();
             clientKeyPair = new KeyPair(serverPublicKey, (PrivateKey) serverPrivateKey);
         }
@@ -100,11 +113,15 @@ public class KeyStoreLoader {
         return this;
     }
 
-    X509Certificate getClientCertificate() {
+    public X509Certificate getClientCertificate() {
         return clientCertificate;
     }
 
-    KeyPair getClientKeyPair() {
+    public X509Certificate[] getClientCertificateChain() {
+        return clientCertificateChain;
+    }
+
+    public KeyPair getClientKeyPair() {
         return clientKeyPair;
     }
 }

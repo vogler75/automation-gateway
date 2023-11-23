@@ -1,4 +1,4 @@
-package at.rocworks.gateway.core.opcua
+package at.rocworks.gateway.core.opcua.driver
 
 import org.eclipse.milo.opcua.sdk.client.api.identity.AnonymousProvider
 import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy

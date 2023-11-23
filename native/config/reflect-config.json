@@ -51,13 +51,28 @@
   "name":"[Lorg.eclipse.milo.opcua.stack.core.serialization.UaStructure;"
 },
 {
+  "name":"[Lorg.eclipse.milo.opcua.stack.core.types.builtin.ExtensionObject;"
+},
+{
+  "name":"[Lorg.eclipse.milo.opcua.stack.core.types.builtin.LocalizedText;"
+},
+{
   "name":"[Lorg.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UByte;"
 },
 {
   "name":"[Lorg.eclipse.milo.opcua.stack.core.types.structured.BrowseDescription;"
 },
 {
+  "name":"[Lorg.eclipse.milo.opcua.stack.core.types.structured.BrowsePath;"
+},
+{
+  "name":"[Lorg.eclipse.milo.opcua.stack.core.types.structured.BrowsePathResult;"
+},
+{
   "name":"[Lorg.eclipse.milo.opcua.stack.core.types.structured.BrowseResult;"
+},
+{
+  "name":"[Lorg.eclipse.milo.opcua.stack.core.types.structured.ContentFilterElement;"
 },
 {
   "name":"[Lorg.eclipse.milo.opcua.stack.core.types.structured.EndpointDescription;"
@@ -78,7 +93,16 @@
   "name":"[Lorg.eclipse.milo.opcua.stack.core.types.structured.ReferenceDescription;"
 },
 {
+  "name":"[Lorg.eclipse.milo.opcua.stack.core.types.structured.RelativePathElement;"
+},
+{
   "name":"[Lorg.eclipse.milo.opcua.stack.core.types.structured.SignedSoftwareCertificate;"
+},
+{
+  "name":"[Lorg.eclipse.milo.opcua.stack.core.types.structured.SimpleAttributeOperand;"
+},
+{
+  "name":"[Lorg.eclipse.milo.opcua.stack.core.types.structured.TransferResult;"
 },
 {
   "name":"[Lorg.eclipse.milo.opcua.stack.core.types.structured.UserTokenPolicy;"
@@ -94,6 +118,11 @@
 },
 {
   "name":"[Z"
+},
+{
+  "name":"at.rocworks.gateway.core.data.Topic$Format",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true
 },
 {
   "name":"com.digitalpetri.netty.fsm.ChannelFsmFactory$1",
@@ -216,6 +245,14 @@
   "queryAllPublicConstructors":true
 },
 {
+  "name":"com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
   "name":"com.sun.org.apache.xerces.internal.jaxp.SAXParserFactoryImpl",
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
@@ -295,6 +332,10 @@
   "methods":[{"name":"channelActive","parameterTypes":["io.netty.channel.ChannelHandlerContext"] }, {"name":"channelInactive","parameterTypes":["io.netty.channel.ChannelHandlerContext"] }, {"name":"channelRead","parameterTypes":["io.netty.channel.ChannelHandlerContext","java.lang.Object"] }, {"name":"channelReadComplete","parameterTypes":["io.netty.channel.ChannelHandlerContext"] }, {"name":"channelRegistered","parameterTypes":["io.netty.channel.ChannelHandlerContext"] }, {"name":"channelUnregistered","parameterTypes":["io.netty.channel.ChannelHandlerContext"] }, {"name":"channelWritabilityChanged","parameterTypes":["io.netty.channel.ChannelHandlerContext"] }, {"name":"exceptionCaught","parameterTypes":["io.netty.channel.ChannelHandlerContext","java.lang.Throwable"] }, {"name":"userEventTriggered","parameterTypes":["io.netty.channel.ChannelHandlerContext","java.lang.Object"] }]
 },
 {
+  "name":"io.netty.channel.socket.nio.NioServerSocketChannel",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
   "name":"io.netty.channel.socket.nio.NioSocketChannel",
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
@@ -330,6 +371,14 @@
 },
 {
   "name":"io.netty.handler.codec.mqtt.MqttEncoder"
+},
+{
+  "name":"io.netty.handler.ipfilter.AbstractRemoteAddressFilter",
+  "methods":[{"name":"channelActive","parameterTypes":["io.netty.channel.ChannelHandlerContext"] }, {"name":"channelRegistered","parameterTypes":["io.netty.channel.ChannelHandlerContext"] }]
+},
+{
+  "name":"io.netty.handler.logging.LoggingHandler",
+  "methods":[{"name":"bind","parameterTypes":["io.netty.channel.ChannelHandlerContext","java.net.SocketAddress","io.netty.channel.ChannelPromise"] }, {"name":"channelActive","parameterTypes":["io.netty.channel.ChannelHandlerContext"] }, {"name":"channelInactive","parameterTypes":["io.netty.channel.ChannelHandlerContext"] }, {"name":"channelRead","parameterTypes":["io.netty.channel.ChannelHandlerContext","java.lang.Object"] }, {"name":"channelReadComplete","parameterTypes":["io.netty.channel.ChannelHandlerContext"] }, {"name":"channelRegistered","parameterTypes":["io.netty.channel.ChannelHandlerContext"] }, {"name":"channelUnregistered","parameterTypes":["io.netty.channel.ChannelHandlerContext"] }, {"name":"channelWritabilityChanged","parameterTypes":["io.netty.channel.ChannelHandlerContext"] }, {"name":"close","parameterTypes":["io.netty.channel.ChannelHandlerContext","io.netty.channel.ChannelPromise"] }, {"name":"connect","parameterTypes":["io.netty.channel.ChannelHandlerContext","java.net.SocketAddress","java.net.SocketAddress","io.netty.channel.ChannelPromise"] }, {"name":"deregister","parameterTypes":["io.netty.channel.ChannelHandlerContext","io.netty.channel.ChannelPromise"] }, {"name":"disconnect","parameterTypes":["io.netty.channel.ChannelHandlerContext","io.netty.channel.ChannelPromise"] }, {"name":"exceptionCaught","parameterTypes":["io.netty.channel.ChannelHandlerContext","java.lang.Throwable"] }, {"name":"flush","parameterTypes":["io.netty.channel.ChannelHandlerContext"] }, {"name":"userEventTriggered","parameterTypes":["io.netty.channel.ChannelHandlerContext","java.lang.Object"] }, {"name":"write","parameterTypes":["io.netty.channel.ChannelHandlerContext","java.lang.Object","io.netty.channel.ChannelPromise"] }]
 },
 {
   "name":"io.netty.handler.timeout.IdleStateHandler",
@@ -408,6 +457,10 @@
 {
   "name":"io.netty.util.internal.shaded.org.jctools.queues.MpscArrayQueueProducerLimitField",
   "fields":[{"name":"producerLimit"}]
+},
+{
+  "name":"io.vertx.core.eventbus.impl.EventBusImpl",
+  "fields":[{"name":"inboundInterceptors"}, {"name":"outboundInterceptors"}]
 },
 {
   "name":"io.vertx.core.http.impl.Http1xOrH2CHandler",
@@ -523,6 +576,10 @@
   "queryAllDeclaredMethods":true
 },
 {
+  "name":"java.lang.Object",
+  "queryAllDeclaredMethods":true
+},
+{
   "name":"java.lang.ProcessHandle",
   "methods":[{"name":"current","parameterTypes":[] }, {"name":"pid","parameterTypes":[] }]
 },
@@ -542,7 +599,7 @@
 },
 {
   "name":"java.lang.String",
-  "fields":[]
+  "fields":[{"name":"TYPE"}]
 },
 {
   "name":"java.lang.Thread",
@@ -559,6 +616,10 @@
 {
   "name":"java.lang.constant.ConstantDesc",
   "queryAllDeclaredMethods":true
+},
+{
+  "name":"java.lang.invoke.MethodHandles$Lookup",
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.Class","int"] }]
 },
 {
   "name":"java.lang.management.BufferPoolMXBean",
@@ -643,7 +704,7 @@
 },
 {
   "name":"java.nio.Bits",
-  "fields":[{"name":"UNALIGNED"}]
+  "fields":[{"name":"MAX_MEMORY"}, {"name":"UNALIGNED"}]
 },
 {
   "name":"java.nio.Buffer",
@@ -760,6 +821,10 @@
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
+  "name":"java.util.zip.Checksum",
+  "methods":[{"name":"update","parameterTypes":["java.nio.ByteBuffer"] }]
+},
+{
   "name":"javax.management.MBeanOperationInfo",
   "queryAllPublicMethods":true,
   "methods":[{"name":"getSignature","parameterTypes":[] }]
@@ -770,6 +835,10 @@
 },
 {
   "name":"javax.management.ObjectName"
+},
+{
+  "name":"javax.management.StandardEmitterMBean",
+  "methods":[{"name":"cacheMBeanInfo","parameterTypes":["javax.management.MBeanInfo"] }, {"name":"getCachedMBeanInfo","parameterTypes":[] }, {"name":"getMBeanInfo","parameterTypes":[] }]
 },
 {
   "name":"javax.management.openmbean.CompositeData"
@@ -803,6 +872,11 @@
 {
   "name":"jdk.management.jfr.FlightRecorderMXBean",
   "queryAllPublicMethods":true
+},
+{
+  "name":"jdk.management.jfr.FlightRecorderMXBeanImpl",
+  "queryAllPublicConstructors":true,
+  "methods":[{"name":"cacheMBeanInfo","parameterTypes":["javax.management.MBeanInfo"] }, {"name":"getCachedMBeanInfo","parameterTypes":[] }, {"name":"getMBeanInfo","parameterTypes":[] }, {"name":"getNotificationInfo","parameterTypes":[] }]
 },
 {
   "name":"jdk.management.jfr.RecordingInfo",
@@ -1209,6 +1283,22 @@
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
+  "name":"org.eclipse.milo.opcua.sdk.server.api.EventItem",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"org.eclipse.milo.opcua.sdk.server.api.MonitoredItem",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"org.eclipse.milo.opcua.sdk.server.items.BaseMonitoredItem",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"org.eclipse.milo.opcua.sdk.server.items.MonitoredEventItem",
+  "queryAllDeclaredMethods":true
+},
+{
   "name":"org.eclipse.milo.opcua.stack.client.transport.tcp.OpcClientTcpChannelInitializer"
 },
 {
@@ -1331,6 +1421,14 @@
   "methods":[{"name":"from","parameterTypes":["int"] }]
 },
 {
+  "name":"org.eclipse.milo.opcua.stack.core.types.enumerated.BrowseDirection",
+  "methods":[{"name":"from","parameterTypes":["int"] }]
+},
+{
+  "name":"org.eclipse.milo.opcua.stack.core.types.enumerated.FilterOperator",
+  "methods":[{"name":"from","parameterTypes":["int"] }]
+},
+{
   "name":"org.eclipse.milo.opcua.stack.core.types.enumerated.IdType",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true
@@ -1340,12 +1438,41 @@
   "methods":[{"name":"from","parameterTypes":["int"] }]
 },
 {
+  "name":"org.eclipse.milo.opcua.stack.core.types.enumerated.MonitoringMode",
+  "methods":[{"name":"from","parameterTypes":["int"] }]
+},
+{
   "name":"org.eclipse.milo.opcua.stack.core.types.enumerated.NodeClass",
+  "methods":[{"name":"from","parameterTypes":["int"] }]
+},
+{
+  "name":"org.eclipse.milo.opcua.stack.core.types.enumerated.SecurityTokenRequestType",
+  "methods":[{"name":"from","parameterTypes":["int"] }]
+},
+{
+  "name":"org.eclipse.milo.opcua.stack.core.types.enumerated.TimestampsToReturn",
   "methods":[{"name":"from","parameterTypes":["int"] }]
 },
 {
   "name":"org.eclipse.milo.opcua.stack.core.types.enumerated.UserTokenType",
   "methods":[{"name":"from","parameterTypes":["int"] }]
+},
+{
+  "name":"org.eclipse.milo.opcua.stack.server.transport.RateLimitingHandler"
+},
+{
+  "name":"org.eclipse.milo.opcua.stack.server.transport.tcp.OpcServerTcpChannelInitializer"
+},
+{
+  "name":"org.eclipse.milo.opcua.stack.server.transport.uasc.UascServerAsymmetricHandler",
+  "methods":[{"name":"channelInactive","parameterTypes":["io.netty.channel.ChannelHandlerContext"] }, {"name":"exceptionCaught","parameterTypes":["io.netty.channel.ChannelHandlerContext","java.lang.Throwable"] }]
+},
+{
+  "name":"org.eclipse.milo.opcua.stack.server.transport.uasc.UascServerHelloHandler",
+  "methods":[{"name":"channelActive","parameterTypes":["io.netty.channel.ChannelHandlerContext"] }, {"name":"exceptionCaught","parameterTypes":["io.netty.channel.ChannelHandlerContext","java.lang.Throwable"] }]
+},
+{
+  "name":"org.eclipse.milo.opcua.stack.server.transport.uasc.UascServerSymmetricHandler"
 },
 {
   "name":"org.influxdb.InfluxDBException$ErrorMessage",
@@ -1435,6 +1562,10 @@
 {
   "name":"sun.security.provider.JavaKeyStore$JKS",
   "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"sun.security.provider.NativePRNG",
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"<init>","parameterTypes":["java.security.SecureRandomParameters"] }]
 },
 {
   "name":"sun.security.provider.SHA",

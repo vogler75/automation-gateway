@@ -36,7 +36,7 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
     init {
         val polling = config.getJsonObject("Polling", JsonObject())
         pollingTime = polling.getLong("Time", 0)
-        pollingTimeout = polling.getLong("Timeout", pollingTime)
+        pollingTimeout = polling.getLong("Timeout", pollingTime - (pollingTime / 10))
         pollingOldNew = polling.getBoolean("OldNew", true)
         writeTimeout = config.getLong("WriteTimeout", 100)
         readTimeout = config.getLong("ReadTimeout", 100)
@@ -80,7 +80,11 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
                             }
                         }
                     } else {
-                        logger.severe("An error occurred: $throwable")
+                        if (throwable is java.util.concurrent.TimeoutException) {
+                            logger.info("Timeout occurred at pollingExecutor.")
+                        } else {
+                            logger.severe("An error occurred at pollingExecutor: $throwable")
+                        }
                     }
                 }
             }
@@ -114,7 +118,7 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
             val info = (if (it.metadata?.canRead() == true) "Read " else " ") +
                     (if (it.metadata?.canWrite() == true) "Write " else " ") +
                     if (it.metadata?.canSubscribe() == true) "Subscribe " else " "
-            logger.severe("This connection supports: $info")
+            logger.info("This connection supports: $info")
         }
     }
 
@@ -188,7 +192,7 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
                             }
                         }
                     } else {
-                        logger.severe("An error occurred: ${throwable.message}")
+                        logger.severe("An error occurred at plc subscription request: ${throwable.message}")
                         ret.complete(false)
                     }
                 }
@@ -214,8 +218,7 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
         logger.finest("Got value [${topic.topicName}] [$data]")
         try {
             val value = toValue(data)
-            val message = DataPoint(topic, value)
-            vertx.eventBus().publish(topic.topicName, message)
+            eventBus.publishDataPoint(vertx, DataPoint(topic, value))
         } catch (e: java.lang.Exception) {
             e.printStackTrace()
         }
@@ -260,14 +263,7 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
         try {
             when (topic.topicType) {
                 Topic.TopicType.Node -> {
-                    when (topic.format) {
-                        Topic.Format.Value -> {
-                            writeValueAsync(topic.node, value.toString()).onComplete(ret)
-                        }
-                        Topic.Format.Json -> {
-                            logger.warning("Value format not yet implemented!") // TODO
-                        }
-                    }
+                    writeValueAsync(topic.node, value.toString()).onComplete(ret)
                 }
                 else -> {
                     logger.warning("Item type [${topic.topicType}] not yet implemented!")
@@ -276,7 +272,25 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
         } catch (e: Exception) {
             ret.fail(e)
         }
-        return ret.future()    }
+        return ret.future()
+    }
+
+    override fun publishTopic(topic: Topic, value: TopicValue): Future<Boolean> {
+        val ret = Promise.promise<Boolean>()
+        try {
+            when (topic.topicType) {
+                Topic.TopicType.Node -> {
+                    if (value.hasValue()) writeValueAsync(topic.node, value.value!!).onComplete(ret)
+                }
+                else -> {
+                    logger.warning("Item type [${topic.topicType}] not yet implemented!")
+                }
+            }
+        } catch (e: Exception) {
+            ret.fail(e)
+        }
+        return ret.future()
+    }
 
     override fun readServerInfo(): JsonObject {
         TODO("Not yet implemented")

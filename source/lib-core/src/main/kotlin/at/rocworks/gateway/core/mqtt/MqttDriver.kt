@@ -47,7 +47,7 @@ class MqttDriver(config: JsonObject) : DriverBase(config) {
 
     private val format: PayloadFormat = when (val f = config.getString("Format", "JSON").uppercase()) {
         "RAW" -> PayloadFormat.Raw
-        "JSON" -> if (config.containsKey("JsonFormat")) PayloadFormat.CustomJson else PayloadFormat.DefaultJson
+        "JSON" -> if (config.containsKey("CustomJson")) PayloadFormat.CustomJson else PayloadFormat.DefaultJson
         "SPARKPLUGB" -> PayloadFormat.SparkplugB
         else -> {
             logger.severe("Unsupported format '$f'! Using RAW.")
@@ -55,7 +55,7 @@ class MqttDriver(config: JsonObject) : DriverBase(config) {
         }
     }
 
-    private val formatJson: JsonObject = config.getJsonObject("JsonFormat", JsonObject())
+    private val formatJson: JsonObject = config.getJsonObject("CustomJson", JsonObject())
 
     private val formatJsonValuePath: String = formatJson.getString("Value", "Value")
     private val formatJsonTimestampMsPath: String? = formatJson.getString("TimestampMs", null)

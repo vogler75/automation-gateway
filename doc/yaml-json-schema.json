@@ -383,7 +383,25 @@
                 "CleanSession": { "type": "boolean" },
                 "Qos": { "type": "integer" },
                 "Retained": { "type": "boolean" },
-                "Format": { "type": "string", "enum": ["Raw", "Json", "SparkplugB"]}
+                "Format": { "type": "string", "enum": ["Raw", "Json", "SparkplugB"]},
+                "CustomJson": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                        "Value": { 
+                            "type": "string",
+                            "description": "JSON-Path to value."
+                        },
+                        "TimestampMs": { 
+                            "type": "string",
+                            "description": "JSON-Path to timestamp in ms since epoch."
+                        },
+                        "TimestampIso": { 
+                            "type": "string" ,
+                            "description": "JSON-Path to timestamp in ISO 8601 format."
+                        }
+                    }
+                }
             },
             "required": [
                 "Id",

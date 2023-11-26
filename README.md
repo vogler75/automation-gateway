@@ -17,12 +17,13 @@ News and Blog posts can be found [here](https://www.rocworks.at/wordpress/?cat=3
 
 - [Build and Run](#build-and-run)
 - [Configuration](#configuration)
-- [OPC UA Client Configuration](#opc-ua-client-configuration)
-- [OPC UA Schema in GraphQL](#enable-opc-ua-schema-in-graphql)
+- [OPCUA Schema in GraphQL](#opcua-schema-in-graphql)
 - [Topic Mapping](#topic-mapping)
 - [Logger Configuration](#logger-configuration)
+- [OPCUA Driver](#opcua-driver)
+- [PLC4X Driver](#plc4x-driver)
+- [MQTT Driver](#mqtt-driver)
 - [Build Docker Image](#build-docker-image)
-- [Using PLC4X](#using-plc4x)
 - [Version History](#version-history)
 
 # Build and Run
@@ -80,31 +81,7 @@ Servers:
       GraphiQL: true
 ```
 
-## OPC UA Client Configuration
-See config directory for more example configurations.
-```
-Drivers:
-  OpcUa:
-  - Id: "unified"
-    Enabled: true
-    LogLevel: INFO
-    EndpointUrl:  "opc.tcp://desktop-9o6hthf:4890"
-    SecurityPolicy: Basic128Rsa15
-    SubscriptionSamplingInterval: 0
-    UsernameProvider:
-      Username: opcuauser
-      Password: password1
-    WriteParameters:
-      QueueSize: 1000
-      BlockSize: 100
-      WithTime: true
-    MonitoringParameters:
-      BufferSize: 10
-      SamplingInterval: 0.0
-      DiscardOldest: true
-```
-
-## OPC UA Schema in GraphQL
+## OPCUA Schema in GraphQL
 
 The GraphQL server can read the OPC UA object schema and convert it to a GraphQL schema. The starting NodeIds can be set to reduce the amount of browsed items. Browsing can take some while if the OPC UA server holds a huge structure of tags!
 ```
@@ -230,16 +207,31 @@ Every logger has an internal topic where the throughput is updated every second.
 Topic: logger/**logger-id**/metrics
 Value: {"Input v/s":20932,"Output v/s":20932}  # just an example
 
-## Build Docker Image
+## OPCUA Driver
+See config directory for more example configurations.
+```
+Drivers:
+  OpcUa:
+  - Id: "unified"
+    Enabled: true
+    LogLevel: INFO
+    EndpointUrl:  "opc.tcp://desktop-9o6hthf:4890"
+    SecurityPolicy: Basic128Rsa15
+    SubscriptionSamplingInterval: 0
+    UsernameProvider:
+      Username: opcuauser
+      Password: password1
+    WriteParameters:
+      QueueSize: 1000
+      BlockSize: 100
+      WithTime: true
+    MonitoringParameters:
+      BufferSize: 10
+      SamplingInterval: 0.0
+      DiscardOldest: true
+```
 
-You have to build the program before with gradle. Then you can use the shell script `docker/build.sh` to build a docker image.  
-`docker run --rm --name gateway -p 4000:4000 -p 1883:1883 -v $PWD/config.yaml:/app/config.yaml gateway`
-
-> C:\Workspace\automation-gateway\source> gradle build  
-> C:\Workspace\automation-gateway\docker> build.bat  
-> C:\Workspace\automation-gateway\docker\examples\hazelcast> docker compose up -d  
-
-## Using PLC4X
+## PLC4X Driver
 
 You the application app-plc4x to get values from various source supported by PLC4X. See config.yaml in each folder of the app. Because some PLC4X drivers/plc's do not support subscriptions we have added a simple polling options (currently only one polling time per connection). 
 
@@ -288,6 +280,33 @@ Example MQTT Topic:
 > plc/mod/node/holding-register:2:INT  
 > plc/mod/node:json/coil:1  
 > plc/mod/node/coil:1  
+
+## MQTT Driver
+
+MQTT Brokers can be connected with MQTT Driver. Withte the RAW Format the values are strings. JSON Format will be the Gateway's JSON format. If you add "CustomJson" to the config, then the JSON format can be customized. You can set JSON-Paths (without $.) to get the value out of a JSON. Currently only JSON objects are supported (not arrays).
+```
+Drivers:  
+  Mqtt:
+    - Id: "mqtt1"
+      LogLevel: INFO
+      Host: 192.168.1.3
+      Port: 1883
+      Format: Json
+      CustomJson: 
+          Value: "Value"
+          TimestampMs: "TimeMS"    
+          TimestampIso: "TimeISO"
+
+```
+
+## Build Docker Image
+
+You have to build the program before with gradle. Then you can use the shell script `docker/build.sh` to build a docker image.  
+`docker run --rm --name gateway -p 4000:4000 -p 1883:1883 -v $PWD/config.yaml:/app/config.yaml gateway`
+
+> C:\Workspace\automation-gateway\source> gradle build  
+> C:\Workspace\automation-gateway\docker> build.bat  
+> C:\Workspace\automation-gateway\docker\examples\hazelcast> docker compose up -d  
 
 # Version History
 - [1.24 Added OPC UA server](#124-added-opc-ua-server)

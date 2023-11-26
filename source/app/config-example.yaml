@@ -24,9 +24,8 @@ Servers:
       Enabled: true
       LogLevel: INFO
       Topics:
-        - Topic: mqtt/Hivemq/path/Austria/Sparkplug/#
-        - Topic: opc/Demo1/path/Objects/Variables/#
-        - Topic: opc/Demo2/path/Objects/Demo/#
+        - Topic: opc/demo1/path/Objects/Variables/#
+        - Topic: opc/demo2/path/Objects/Demo/#
 
   GraphQL:
     - Port: 4001

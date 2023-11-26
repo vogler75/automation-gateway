@@ -66,15 +66,19 @@ Servers:
       Host: 0.0.0.0
       LogLevel: INFO # ALL | INFO
       
+  OpcUa:
+    - Port: 4841
+      LogLevel: INFO
+      Topics:
+        - Topic: opc/demo1/path/#
+        - Topic: opc/demo2/path/#  
+
   GraphQL:
     - Id: GraphQL
       Port: 4000
-      Enabled: true
       LogLevel: INFO
       GraphiQL: true
 ```
-
-
 
 ## OPC UA Client Configuration
 See config directory for more example configurations.
@@ -377,14 +381,15 @@ Loggers:
 ## 1.21.2 Fixes and SparkplugB for Kafka & MQTT Logger
 Kafka and MQTT Logger can now publish SparkplugB message format. 
 
-## 1.21.1 Fixes and SparkplugB for MQTT Client
-There is now a Format option for the MQTT client. It can now read SparkplugB messages from topics. You can use now a logger to log values from a MQTT broker which are in SparkplugB message format. You can also write values from GraphQL or publish a value from the MQTT server to the MQTT client. If the format of the MQTT client is set to SparkplugB, it will publish a SparkplubB message.
+## 1.21.1 Fixes and SparkplugB for MQTT Driver
+There is now a Format option for the MQTT driver. It can now read SparkplugB messages from topics. You can use now a logger to log values from a MQTT broker which are in SparkplugB message format. You can also write values from GraphQL or publish a value from the MQTT server to the MQTT driver. If the format of the MQTT driver is set to SparkplugB, it will publish a SparkplubB message.
 ```
-MqttClient:
-  - Id: "mqttclient1"
-    Host: linux0.rocworks.local
-    Port: 1883    
-    Format: SparkplugB # RAW | JSON
+Driver:
+  Mqtt:
+    - Id: "mqttclient1"
+      Host: linux0.rocworks.local
+      Port: 1883    
+      Format: SparkplugB # RAW | JSON
 ```
 MQTT Publish Example:   
 * mqtt/mqttclient1/node:value/Enterprise/Test => Hallo World  

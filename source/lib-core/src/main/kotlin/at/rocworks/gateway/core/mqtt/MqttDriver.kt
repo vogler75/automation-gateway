@@ -13,6 +13,7 @@ import io.vertx.core.eventbus.Message
 import io.vertx.core.json.Json
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
+import io.vertx.kotlin.core.json.get
 import io.vertx.mqtt.MqttClient
 import io.vertx.mqtt.MqttClientOptions
 import io.vertx.mqtt.messages.MqttPublishMessage
@@ -21,6 +22,7 @@ import org.eclipse.tahu.message.SparkplugBPayloadEncoder
 import org.eclipse.tahu.message.model.Metric
 import org.eclipse.tahu.message.model.MetricDataType
 import org.eclipse.tahu.message.model.SparkplugBPayload
+import java.time.Instant
 import java.util.*
 
 class MqttDriver(config: JsonObject) : DriverBase(config) {
@@ -38,28 +40,46 @@ class MqttDriver(config: JsonObject) : DriverBase(config) {
     private val trustAll: Boolean = config.getBoolean("TrustAll", true)
     private val qos: Int = config.getInteger("Qos", 0)
     private val retained: Boolean = config.getBoolean("Retained", false)
-    private val format: String = config.getString("Format", "JSON")
+
+    enum class PayloadFormat {
+        Raw, DefaultJson, CustomJson, SparkplugB
+    }
+
+    private val format: PayloadFormat = when (val f = config.getString("Format", "JSON").uppercase()) {
+        "RAW" -> PayloadFormat.Raw
+        "JSON" -> if (config.containsKey("JsonFormat")) PayloadFormat.CustomJson else PayloadFormat.DefaultJson
+        "SPARKPLUGB" -> PayloadFormat.SparkplugB
+        else -> {
+            logger.severe("Unsupported format '$f'! Using RAW.")
+            PayloadFormat.Raw
+        }
+    }
+
+    private val formatJson: JsonObject = config.getJsonObject("JsonFormat", JsonObject())
+
+    private val formatJsonValuePath: String = formatJson.getString("Value", "Value")
+    private val formatJsonTimestampMsPath: String? = formatJson.getString("TimestampMs", null)
+    private val formatJsonTimestampIsoPath: String? = formatJson.getString("TimestampIso", null)
 
     private val maxMessageSizeKb = config.getInteger("MaxMessageSizeKb", 8) * 1024
 
     private val subscribedTopics = HashSet<Topic>() // Subscribed topic name can have wildcard
     private val receivedTopics = HashMap<String, List<Topic>>()
 
-    private val decodeMessage: (topic: Topic, topicReceived: String, message: Buffer) -> List<DataPoint> = when (format.uppercase()) {
-        "RAW" -> ::decodeValueMessage
-        "JSON" -> ::decodeJsonMessage
-        "SPARKPLUGB" -> ::decodeSparkplugMessage
-        else -> throw Exception("Unknown message format for decode!")
+    private val decodeMessage: (topic: Topic, topicReceived: String, message: Buffer) -> List<DataPoint> = when (format) {
+        PayloadFormat.Raw -> ::decodeValueMessage
+        PayloadFormat.DefaultJson -> ::decodeDefaultJsonMessage
+        PayloadFormat.CustomJson -> ::decodeCustomJsonMessage
+        PayloadFormat.SparkplugB -> ::decodeSparkplugMessage
     }
 
-    private val encodeMessage: (topic: String, value: TopicValue) -> Buffer = when (format.uppercase()) {
-        "RAW" -> ::encodeRawMessage
-        "JSON" -> ::encodeJsonMessage
-        "SPARKPLUGB" -> ::encodeSparkplugBMessage
-        else -> throw Exception("Unknown message format for encode!")
-    }
-
-    init {
+    private val encodeMessage: (topic: String, value: TopicValue) -> Buffer = when (format) {
+        PayloadFormat.Raw -> ::encodeRawMessage
+        PayloadFormat.DefaultJson -> ::encodeDefaultJsonMessage
+        PayloadFormat.CustomJson -> {
+            ::encodeCustomJsonMessage
+        }
+        PayloadFormat.SparkplugB -> ::encodeSparkplugBMessage
     }
 
     override fun getComponentId(): String {
@@ -172,7 +192,7 @@ class MqttDriver(config: JsonObject) : DriverBase(config) {
         return listOf(DataPoint(clone, TopicValue(payload)))
     }
 
-    private fun decodeJsonMessage(topic: Topic, topicReceived: String, payload: Buffer) : List<DataPoint> {
+    private fun decodeDefaultJsonMessage(topic: Topic, topicReceived: String, payload: Buffer) : List<DataPoint> {
         val clone = topic.copy(browsePath = topicReceived)
         return when (val json = Json.decodeValue(payload)) {
             is JsonObject -> {
@@ -186,6 +206,52 @@ class MqttDriver(config: JsonObject) : DriverBase(config) {
             else -> listOf(DataPoint(clone, TopicValue(json)))
         }
     }
+
+    private fun decodeCustomJsonMessage(
+        topic: Topic,
+        topicReceived: String,
+        payload: Buffer
+    ) : List<DataPoint> {
+        fun toDataPoint(json: JsonObject): DataPoint {
+            val clone = topic.copy(browsePath = topicReceived)
+            val value = getJsonValueByPath(json, formatJsonValuePath)
+            val tsPath = formatJsonTimestampMsPath ?: formatJsonTimestampIsoPath
+            val tsValue = if (tsPath==null) Instant.now() else {
+                when (val v = getJsonValueByPath(json, tsPath)) {
+                    is Number -> Instant.ofEpochMilli(v.toLong())
+                    is String -> Instant.parse(v)
+                    else -> Instant.now()
+                }
+            }
+            return DataPoint(clone, TopicValue(value, sourceTime = tsValue, serverTime = tsValue))
+        }
+
+        return when (val json = Json.decodeValue(payload)) {
+            is JsonArray -> json.filterIsInstance<JsonObject>().map { toDataPoint(it) }
+            is JsonObject -> listOf(toDataPoint(json))
+            else -> listOf()
+        }
+    }
+
+    private fun getJsonValueByPath(json: Any, jsonPath: String): Any? {
+        return try {
+            val parts = jsonPath.replace("[", ".").replace("]", "").split(".")
+            parts.fold(json) { current, item ->
+                when (current) {
+                    is JsonObject -> current.getValue(item) ?: return null
+                    is JsonArray -> current[item.toInt()]
+                    else -> {
+                        logger.warning("Invalid JSON Type! ${current.javaClass.name} [$jsonPath>>$json]")
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            println("Exception!")
+            logger.warning("Invalid JSON Format! Exception: $e [$jsonPath>>$json]")
+            null
+        }
+    }
+
 
     private fun decodeSparkplugMessage(topic: Topic, topicReceived: String, payload: Buffer) : List<DataPoint> {
         val decoder = SparkplugBPayloadDecoder()
@@ -259,9 +325,39 @@ class MqttDriver(config: JsonObject) : DriverBase(config) {
     @Suppress("UNUSED_PARAMETER")
     private fun encodeRawMessage(topic: String, value: TopicValue): Buffer =
         Buffer.buffer(value.valueAsString())
+
     @Suppress("UNUSED_PARAMETER")
-    private fun encodeJsonMessage(topic: String, value: TopicValue): Buffer =
+    private fun encodeDefaultJsonMessage(topic: String, value: TopicValue): Buffer =
         value.encodeToJson().toBuffer()
+
+    private fun encodeCustomJsonMessage(topic: String, value: TopicValue): Buffer {
+        val json = JsonObject()
+        setJsonValueByPath(json, formatJsonValuePath, value.value)
+        formatJsonTimestampMsPath?.let {
+            setJsonValueByPath(json, it, value.sourceTimeMs())
+        }
+        formatJsonTimestampIsoPath?.let {
+            setJsonValueByPath(json, it, value.sourceTimeAsISO())
+        }
+        return json.toBuffer()
+    }
+
+    private fun setJsonValueByPath(json: JsonObject, jsonPath: String, value: Any?) {
+        val parts = jsonPath.replace("[", ".[").replace("]", "").split(".")
+        parts.fold(json) { current, item ->
+            if (item == parts.last()) {
+                current.put(item, value)
+            }
+            else if (current.containsKey(item)) {
+                current[item]
+            }
+            else {
+                val next = JsonObject()
+                current.put(item, next)
+            }
+        }
+    }
+
 
     private var spbSequenceNumber = 0
 

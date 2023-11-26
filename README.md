@@ -296,7 +296,6 @@ Drivers:
           Value: "Value"
           TimestampMs: "TimeMS"    
           TimestampIso: "TimeISO"
-
 ```
 
 ## Build Docker Image
@@ -309,6 +308,7 @@ You have to build the program before with gradle. Then you can use the shell scr
 > C:\Workspace\automation-gateway\docker\examples\hazelcast> docker compose up -d  
 
 # Version History
+- [1.25 MQTT Driver Custom JSON Format](#125-mqtt-driver-custom-json-format)
 - [1.24 Added OPC UA server](#124-added-opc-ua-server)
 - [1.23 Upgrade to VertX 4.4.6](#123-upgrade-to-vertx-446)
 - [1.22 Config file changes](#122-config-file-changes)
@@ -338,6 +338,22 @@ You have to build the program before with gradle. Then you can use the shell scr
 - [1.6 Added GraphiQL (http://localhost:4000/graphiql/)](#16-added-graphiql-httplocalhost4000graphiql)
 - [1.5 OPC UA Schemas to GraphQL Schema Importer](#15-opc-ua-schemas-to-graphql-schema-importer)
 
+## 1.25 MQTT Driver Custom JSON Format
+With format JSON it is now possible to define the JSON-Path for the value and for the timestamp in milliseconds since epoch or ISO 8601. If CustomJson is not defined, then the JSON content is a defined JSON format of the Gateway. The format is used for reading and writing.  
+```
+Drivers:  
+  Mqtt:
+    - Id: "mqtt1"
+      LogLevel: INFO
+      Host: 192.168.1.3
+      Port: 1883
+      Format: Json
+      CustomJson: 
+          Value: "Value"
+          TimestampMs: "TimeMS"    
+          TimestampIso: "TimeISO"
+
+```
 ## 1.24 Added OPC UA server
 The Gateway now also has an integrated OPC UA server. You can define what kind of data from MQTT brokers, other OPC UA servers and from PLC4X devices you want to have in the integraded OPC UA server. Data will be mapped to structured nodes in the OPC UA server. It is also possible to change the values in the OPC UA server and the changed values will be written back to the source (MQTT broker, other OPC UA server, PLC4X connected device).  
 

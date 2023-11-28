@@ -22,7 +22,7 @@ abstract class Component(val config: JsonObject) : AbstractVerticle() {
         None,
         GraphQLServer, MqttServer, OpcUaServer,
         OpcUaDriver, MqttDriver, Plc4xDriver,
-        InfluxDBLogger, IoTDBLogger, JdbcLogger, KafkaLogger, MqttLogger
+        InfluxDBLogger, IoTDBLogger, JdbcLogger, KafkaLogger, MqttLogger, Neo4jLogger
     }
 
     fun getComponentType() : ComponentType = ComponentType.valueOf(this.javaClass.simpleName)

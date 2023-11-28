@@ -187,23 +187,25 @@ class MqttDriver(config: JsonObject) : DriverBase(config) {
         }
     }
 
+    private fun newTopicOf(topic: Topic, topicReceived: String) =
+        topic.copy(browsePath = topicReceived, node = topicReceived)
+
     private fun decodeValueMessage(topic: Topic, topicReceived: String, payload: Buffer) : List<DataPoint> {
-        val clone = topic.copy(browsePath = topicReceived)
-        return listOf(DataPoint(clone, TopicValue(payload)))
+        return listOf(DataPoint(newTopicOf(topic, topicReceived), TopicValue(payload)))
     }
 
     private fun decodeDefaultJsonMessage(topic: Topic, topicReceived: String, payload: Buffer) : List<DataPoint> {
-        val clone = topic.copy(browsePath = topicReceived)
+        val newTopic = newTopicOf(topic, topicReceived)
         return when (val json = Json.decodeValue(payload)) {
             is JsonObject -> {
-                listOf(DataPoint(clone, TopicValue.decodeFromJson(json)))
+                listOf(DataPoint(newTopic, TopicValue.decodeFromJson(json)))
             }
             is JsonArray -> {
                 json.filterIsInstance<JsonObject>().map {
-                    DataPoint(clone, TopicValue.decodeFromJson(it))
+                    DataPoint(newTopic, TopicValue.decodeFromJson(it))
                 }
             }
-            else -> listOf(DataPoint(clone, TopicValue(json)))
+            else -> listOf(DataPoint(newTopic, TopicValue(json)))
         }
     }
 
@@ -213,7 +215,6 @@ class MqttDriver(config: JsonObject) : DriverBase(config) {
         payload: Buffer
     ) : List<DataPoint> {
         fun toDataPoint(json: JsonObject): DataPoint {
-            val clone = topic.copy(browsePath = topicReceived)
             val value = getJsonValueByPath(json, formatJsonValuePath)
             val tsPath = formatJsonTimestampMsPath ?: formatJsonTimestampIsoPath
             val tsValue = if (tsPath==null) Instant.now() else {
@@ -223,7 +224,7 @@ class MqttDriver(config: JsonObject) : DriverBase(config) {
                     else -> Instant.now()
                 }
             }
-            return DataPoint(clone, TopicValue(value, sourceTime = tsValue, serverTime = tsValue))
+            return DataPoint(newTopicOf(topic, topicReceived), TopicValue(value, sourceTime = tsValue, serverTime = tsValue))
         }
 
         return when (val json = Json.decodeValue(payload)) {

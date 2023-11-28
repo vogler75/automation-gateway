@@ -34,7 +34,8 @@ class ComponentHandler(
                 Component.ComponentType.IoTDBLogger,
                 Component.ComponentType.JdbcLogger,
                 Component.ComponentType.KafkaLogger,
-                Component.ComponentType.MqttLogger -> Component.ComponentGroup.Logger
+                Component.ComponentType.MqttLogger,
+                Component.ComponentType.Neo4jLogger -> Component.ComponentGroup.Logger
                 Component.ComponentType.None -> Component.ComponentGroup.None
             }
     }

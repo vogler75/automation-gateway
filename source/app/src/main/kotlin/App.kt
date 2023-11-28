@@ -12,6 +12,7 @@ import at.rocworks.gateway.logger.influx.InfluxDBLogger
 import at.rocworks.gateway.logger.jdbc.JdbcLogger
 import at.rocworks.gateway.logger.kafka.KafkaLogger
 import at.rocworks.gateway.logger.iotdb.IoTDBLogger
+import at.rocworks.gateway.logger.neo4j.Neo4jLogger
 
 import io.vertx.core.Vertx
 import io.vertx.core.json.JsonObject
@@ -30,6 +31,7 @@ object App {
                 Component.ComponentType.IoTDBLogger    -> IoTDBLogger(config)
                 Component.ComponentType.KafkaLogger    -> KafkaLogger(config)
                 Component.ComponentType.JdbcLogger     -> JdbcLogger(config)
+                Component.ComponentType.Neo4jLogger    -> Neo4jLogger(config)
                 else -> {
                     logger.severe("Unknown component type [${type}]")
                     null

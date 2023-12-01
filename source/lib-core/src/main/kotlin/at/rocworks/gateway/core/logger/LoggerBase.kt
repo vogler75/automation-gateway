@@ -178,6 +178,7 @@ abstract class LoggerBase(config: JsonObject) : Component(config) {
 
     private fun valueConsumerDataPoint(data: DataPoint) {
         valueCounterInput++
+
         try {
             val topic = data.topic
             val value = data.value
@@ -242,11 +243,18 @@ abstract class LoggerBase(config: JsonObject) : Component(config) {
             result.put("Input v/s", vsInput)
             result.put("Output v/s", vsOutput)
             result.put("Queue Size", writeValueQueue.size)
+            getAdditionalMetrics().forEach {
+                result.put(it.key, it.value)
+            }
             eventBus.publishJsonValue(vertx, topic, result)
         }
         t1 = t2
         valueCounterInput = 0
         valueCounterOutput = 0
+    }
+
+    open fun getAdditionalMetrics(): JsonObject {
+        return JsonObject()
     }
 
     abstract fun queryExecutor(

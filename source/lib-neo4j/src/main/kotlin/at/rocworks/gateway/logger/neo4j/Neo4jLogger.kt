@@ -26,6 +26,8 @@ import org.neo4j.driver.Values.parameters
 
 import java.time.Duration
 import java.time.Instant
+import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.atomic.AtomicBoolean
 
 import kotlin.concurrent.thread
 
@@ -38,7 +40,10 @@ class Neo4jLogger(config: JsonObject) : LoggerBase(config) {
 
     private var session : Session? = null
 
-    private val opcUaBulkWriteNodesQuery = """
+    private val writePathStop = AtomicBoolean(false)
+    private val writePathQueue = LinkedBlockingQueue<Pair<Value, DataPoint>>()
+
+    private val opcuaWriteNodesQuery = """
             UNWIND ${"$"}nodes AS node
             MERGE (n:OpcUaNode {
               System : node.System,
@@ -53,7 +58,6 @@ class Neo4jLogger(config: JsonObject) : LoggerBase(config) {
             }  
             """.trimIndent()
 
-    private val mqttCheckValueQuery = "MATCH (n:MqttValue) WHERE (n.System=\$record.System AND n.NodeId=\$record.NodeId) RETURN ID(n)"
     private val mqttWriteValueQuery = """
             MERGE (n:MqttValue {
               Name: ${"$"}record.Name,
@@ -65,15 +69,23 @@ class Neo4jLogger(config: JsonObject) : LoggerBase(config) {
               Status : ${"$"}record.Status,
               DataType: ${"$"}record.DataType,
               ServerTime :${"$"}record.ServerTime,
-              SourceTime : ${"$"}record.SourceTime
-            }  
+              SourceTime : ${"$"}record.SourceTime              
+            } 
             RETURN ID(n)
             """.trimIndent()
+
+    init {
+    }
+
+    override fun getAdditionalMetrics(): JsonObject {
+        return JsonObject().put("Path Queue Size", writePathQueue.size)
+    }
 
     override fun start(startPromise: Promise<Void>) {
         super.start(startPromise)
         val session = driver.session()
         createMqttIndexes(session)
+
         val schemas = config.getJsonArray("Schemas", JsonArray()) ?: JsonArray()
         schemas.filterIsInstance<JsonObject>().map { systemConfig ->
             val system = systemConfig.getString("System")
@@ -227,6 +239,21 @@ class Neo4jLogger(config: JsonObject) : LoggerBase(config) {
         val promise = Promise.promise<Unit>()
         try {
             this.session = driver.session()
+
+            thread(start = true) {
+                logger.info("Path writer thread started with queue size [${writePathQueue.remainingCapacity()}]")
+                val session = driver.session()
+                writePathStop.set(false)
+                while (!writePathStop.get()) {
+                    var data = writePathQueue.poll(10, TimeUnit.MILLISECONDS)
+                    data?.let { (value, point) ->
+                        session.executeWrite { tx ->
+                            writeMqttValuePath(tx, value, point)
+                        }
+                    }
+                }
+            }
+
             promise.complete()
         } catch (e: Exception) {
             promise.fail(e.message)
@@ -236,6 +263,7 @@ class Neo4jLogger(config: JsonObject) : LoggerBase(config) {
 
     override fun close(): Future<Unit> {
         val promise = Promise.promise<Unit>()
+        writePathStop.set(true)
         driver.closeAsync().whenComplete { _, _ ->
             promise.complete()
         }
@@ -276,11 +304,11 @@ class Neo4jLogger(config: JsonObject) : LoggerBase(config) {
             )
         )
     }
-
+    
     private fun writeOpcUaNodes(opcUaRecords: MutableList<Map<String, Any?>>) {
         if (opcUaRecords.size > 0) { // Bulk Write Operation
             session?.executeWrite { tx ->
-                tx.run(opcUaBulkWriteNodesQuery, parameters("nodes", opcUaRecords))
+                tx.run(opcuaWriteNodesQuery, parameters("nodes", opcUaRecords))
             }
         }
     }
@@ -299,18 +327,21 @@ class Neo4jLogger(config: JsonObject) : LoggerBase(config) {
             "ServerTime" to point.value.serverTimeAsISO(),
             "SourceTime" to point.value.sourceTimeAsISO())
         session?.executeWrite { tx ->
-            val isNewValue = tx.run(mqttCheckValueQuery, parameters("record", record)).list().size == 0
-            val mqttValueId = tx.run(mqttWriteValueQuery, parameters("record", record)).single()[0]
-            if (isNewValue) writeMqttValuePath(tx, point, path, mqttValueId)
+            val result = tx.run(mqttWriteValueQuery, parameters("record", record))
+            val mqttValueId = result.single()[0]
+            val isNewValue = result.consume().counters().nodesCreated() > 0
+            if (isNewValue) {
+                writePathQueue.add(Pair(mqttValueId, point))
+            }
         }
     }
 
     private fun writeMqttValuePath(
         tx: TransactionContext,
-        point: DataPoint,
-        path: List<String>,
-        mqttValueId: Value
+        mqttValueId: Value,
+        point: DataPoint
     ) {
+        val path = point.topic.browsePath.split("/")
         val connectQuery =
             "MATCH (n1) WHERE ID(n1) = \$parentId \n" +
             "MATCH (n2) WHERE ID(n2) = \$folderId \n" +

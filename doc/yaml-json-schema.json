@@ -90,7 +90,13 @@
                             "items": {
                                 "$ref": "#/definitions/IoTDBLogger"
                             }
-                        }
+                        },
+                        "Neo4j": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/Neo4jLogger"
+                            }
+                        }                        
                     }
                 }
             },
@@ -196,7 +202,25 @@
                 "Database": { "type": "string" }
             },
             "required": ["Id", "Host", "Port", "Database"]
-        },             
+        },        
+        "Neo4jLogger": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {  
+                "Id": { "type": "string" },
+                "Enabled": { "type": "boolean" },
+                "LogLevel": { "$ref": "#/definitions/LogLevel" },
+                "WriteParameters": { "$ref": "#/definitions/LoggerWriteParameters" },
+                "Logging": {  "$ref": "#/definitions/Logging" },   
+                "Url": { "type": "string", "description": "Example: bolt://localhost:7687" },
+                "Username": { "type": "string" },
+                "Password": { "type": "string" },
+                "Schemas": {
+                    "$ref": "#/definitions/Schemas"
+                }                
+            },
+            "required": ["Id", "Url"]
+        },                  
         "KafkaPublisherConfigs": {
             "type": "object",
             "additionalProperties": true,
@@ -278,29 +302,7 @@
                     "type": "boolean"
                 },
                 "Schemas": {
-                    "type": "array",
-                    "items": {
-                        "type": "object",
-                        "additionalProperties": false,
-                        "properties": {
-                            "System": {
-                                "type": "string"
-                            },
-                            "FieldName": {
-                                "type": "string"
-                            },
-                            "RootNodes": {
-                                "type": "array",
-                                "items": {
-                                    "type": "string"
-                                }
-                            }
-                        },
-                        "required": [
-                            "System"
-                        ],
-                        "title": "Schema"
-                    }
+                    "$ref": "#/definitions/Schemas"
                 }
             },
             "required": [
@@ -611,6 +613,31 @@
                 "Time"
             ],
             "title": "Polling"
-        }        
+        },    
+        "Schemas": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "System": {
+                        "type": "string"
+                    },
+                    "FieldName": {
+                        "type": "string"
+                    },
+                    "RootNodes": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "required": [
+                    "System"
+                ],
+                "title": "Schema"
+            }            
+        }
     }
 }

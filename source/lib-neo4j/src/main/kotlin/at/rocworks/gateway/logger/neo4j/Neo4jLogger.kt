@@ -6,6 +6,7 @@ import at.rocworks.gateway.core.logger.LoggerBase
 import at.rocworks.gateway.core.service.ServiceHandler
 import io.vertx.core.Future
 import io.vertx.core.Promise
+import io.vertx.core.buffer.impl.BufferImpl
 import io.vertx.core.eventbus.DeliveryOptions
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
@@ -293,11 +294,10 @@ class Neo4jLogger(config: JsonObject) : LoggerBase(config) {
             "System" to point.topic.systemName,
             "NodeId" to point.topic.node,
             "Status" to point.value.statusAsString(),
-            "Value" to point.value.valueAsObject(),
+            "Value" to if (point.value.value is BufferImpl) point.value.valueAsString() else point.value.valueAsObject(),
             "DataType" to point.value.dataTypeName(),
             "ServerTime" to point.value.serverTimeAsISO(),
             "SourceTime" to point.value.sourceTimeAsISO())
-
         session?.executeWrite { tx ->
             val isNewValue = tx.run(mqttCheckValueQuery, parameters("record", record)).list().size == 0
             val mqttValueId = tx.run(mqttWriteValueQuery, parameters("record", record)).single()[0]
@@ -313,13 +313,13 @@ class Neo4jLogger(config: JsonObject) : LoggerBase(config) {
     ) {
         val connectQuery =
             "MATCH (n1) WHERE ID(n1) = \$parentId \n" +
-                    "MATCH (n2) WHERE ID(n2) = \$folderId \n" +
-                    "MERGE (n1)-[:HAS]->(n2)"
+            "MATCH (n2) WHERE ID(n2) = \$folderId \n" +
+            "MERGE (n1)-[:HAS]->(n2)"
 
         val (parentId, _) = (listOf(point.topic.systemType.toString(), point.topic.systemName) + path)
-            .dropLast(1) // remove the MqttValue
+            .dropLast(1) // remove the value node
             .fold(Pair(Values.NULL, "")) { pair, name ->
-                val path = pair.second + "/" + name
+                val path = if (pair.second.isNotEmpty()) pair.second + "/" + name else name
                 val folderId = tx.run(
                     "MERGE (n:MqttNode { System: \$System, Path: \$Path, Name: \$Name }) RETURN ID(n)",
                     parameters("System", point.topic.systemName, "Path", path, "Name", name)

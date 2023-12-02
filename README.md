@@ -308,6 +308,7 @@ You have to build the program before with gradle. Then you can use the shell scr
 > C:\Workspace\automation-gateway\docker\examples\hazelcast> docker compose up -d  
 
 # Version History
+- [1.26 Reactivated Neo4j Logger](#126-reactivated-neo4j-logger)
 - [1.25 MQTT Driver Custom JSON Format](#125-mqtt-driver-custom-json-format)
 - [1.24 Added OPC UA server](#124-added-opc-ua-server)
 - [1.23 Upgrade to VertX 4.4.6](#123-upgrade-to-vertx-446)
@@ -338,6 +339,31 @@ You have to build the program before with gradle. Then you can use the shell scr
 - [1.6 Added GraphiQL (http://localhost:4000/graphiql/)](#16-added-graphiql-httplocalhost4000graphiql)
 - [1.5 OPC UA Schemas to GraphQL Schema Importer](#15-opc-ua-schemas-to-graphql-schema-importer)
 
+
+## 1.26 Reactivated Neo4j Logger  
+Added Neo4j as an option to log values from MQTT or OPC UA to the graph database. Additionally the OPC UA node structure can also be replicated to the graph database. This will be done only once at the startup of the Automation Gateway. For MQTT the node structure will be built during runtime, as new topics are coming in, the structure will be created.
+
+```
+Loggers:
+  Neo4j:
+    - Id: neo4j
+      Enabled: true
+      Url: bolt://nuc1.rocworks.local:7687
+      Username: "neo4j"
+      Password: "neo4j"
+      Schemas:
+        - System: demo1
+          RootNodes:
+            - "ns=2;s=Variables"
+        - System: demo2
+          RootNodes:
+            - "ns=2;s=Demo"
+      Logging:
+        - Topic: mqtt/mqtt1/path/Original/#
+        - Topic: opc/demo1/path/Objects/Variables/#
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/#
+
+```
 ## 1.25 MQTT Driver Custom JSON Format
 With format JSON it is now possible to define the JSON-Path for the value and for the timestamp in milliseconds since epoch or ISO 8601. If CustomJson is not defined, then the JSON content is a defined JSON format of the Gateway. The format is used for reading and writing.  
 ```

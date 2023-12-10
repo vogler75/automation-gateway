@@ -1,0 +1,26 @@
+Servers:  
+  OpcUa:
+    - Port: 4841
+      Enabled: true
+      LogLevel: INFO
+      Topics:
+        - Topic: mqtt/mosquitto/path/testtopic/#
+        - Topic: mqtt/hivemq/path/testtopic/#
+   
+Drivers:  
+  Mqtt:
+    - Id: "mosquitto"
+      LogLevel: INFO
+      Enabled: true
+      Host: test.mosquitto.org
+      Port: 1883
+      Format: Raw
+      MaxMessageSizeKb: 65536
+
+    - Id: "hivemq"
+      LogLevel: INFO
+      Enabled: true
+      Host: broker.hivemq.com
+      Port: 1883
+      Format: Raw
+      MaxMessageSizeKb: 65536

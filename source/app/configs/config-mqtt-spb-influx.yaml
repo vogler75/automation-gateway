@@ -32,6 +32,4 @@ Loggers:
         QueueSize: 20000
         BlockSize: 10000
       Logging:
-        - Topic: opc/demo1/path/Objects/Variables/#
-        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/#
         - Topic: mqtt/MqttClient1/path/Austria/Sparkplug/#        

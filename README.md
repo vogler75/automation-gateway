@@ -10,6 +10,8 @@ Docker images can be found on [Docker Hub](https://hub.docker.com/r/rocworks/aut
 
 News and Blog posts can be found [here](https://www.rocworks.at/wordpress/?cat=39).  
 
+Here is a tutorial on [YouTube](https://youtu.be/1xL89R0NBsk?si=6rXNbYKleGygzCui).
+
 ![Gateway](doc/Automation-Gateway.png)
 ![Architecture](doc/Architecture-Overview.png)
 

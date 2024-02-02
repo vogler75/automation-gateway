@@ -331,6 +331,7 @@ class MqttDriver(config: JsonObject) : DriverBase(config) {
     private fun encodeDefaultJsonMessage(topic: String, value: TopicValue): Buffer =
         value.encodeToJson().toBuffer()
 
+    @Suppress("UNUSED_PARAMETER")
     private fun encodeCustomJsonMessage(topic: String, value: TopicValue): Buffer {
         val json = JsonObject()
         setJsonValueByPath(json, formatJsonValuePath, value.value)

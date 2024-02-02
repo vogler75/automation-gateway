@@ -349,13 +349,13 @@ class Neo4jLogger(config: JsonObject) : LoggerBase(config) {
         mqttValueId: Value,
         point: DataPoint
     ) {
-        val path = point.topic.browsePath.split("/")
+        val browsePath = point.topic.browsePath.split("/")
         val connectQuery =
             "MATCH (n1) WHERE ID(n1) = \$parentId \n" +
             "MATCH (n2) WHERE ID(n2) = \$folderId \n" +
             "MERGE (n1)-[:HAS]->(n2)"
 
-        val (parentId, _) = (listOf(point.topic.systemType.toString(), point.topic.systemName) + path)
+        val (parentId, _) = (listOf(point.topic.systemType.toString(), point.topic.systemName) + browsePath)
             .dropLast(1) // remove the value node
             .fold(Pair(Values.NULL, "")) { pair, name ->
                 val path = if (pair.second.isNotEmpty()) pair.second + "/" + name else name

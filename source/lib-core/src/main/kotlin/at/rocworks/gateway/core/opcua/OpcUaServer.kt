@@ -37,8 +37,8 @@ class OpcUaServer(config: JsonObject): Component(config) {
     val buildNumber = "1"
     val buildDate= ""
 
-    val bindAddresses = listOf("0.0.0.0")
-    val endpointAddresses = HostnameUtil.getHostnames(HostnameUtil.getHostname()).toList()
+    val bindAddresses:  List<String>
+    val endpointAddresses: List<String>
     val securityPolicies = listOf("None","Basic128Rsa15","Basic256","Basic256Sha256","Aes128_Sha256_RsaOaep","Aes256_Sha256_RsaPss")
 
     private var serverInstance : OpcUaServerInstance? = null
@@ -87,10 +87,17 @@ class OpcUaServer(config: JsonObject): Component(config) {
             ?.toList()
             ?:listOf()
 
+        bindAddresses = config.getJsonArray("BindAddresses")?.filterIsInstance<String>()
+            ?: listOf("0.0.0.0")
+
+        endpointAddresses = config.getJsonArray("EndpointAddresses")?.filterIsInstance<String>()
+            ?: HostnameUtil.getHostnames(HostnameUtil.getHostname()).toList()
+
         services = topics.map { Pair(it.systemType, it.systemName) }.distinct()
 
         logger.level = Level.parse(config.getString("LogLevel", "INFO"))
-        logger.info("Endpoints: ${endpointAddresses.joinToString(", ")}")
+        logger.info("BindAddresses: ${bindAddresses.joinToString(", ")}")
+        logger.info("EndpointAddresses: ${endpointAddresses.joinToString(", ")}")
     }
 
     override fun getComponentGroup(): ComponentGroup {

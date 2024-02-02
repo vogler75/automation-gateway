@@ -346,6 +346,20 @@
                     "type": "boolean"
                 },
                 "LogLevel": { "$ref": "#/definitions/LogLevel" },
+                "BindAddresses": {
+                    "description": "A list of bind hostnames or ip addresses.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },                
+                "EndpointAddresses": {
+                    "description": "A list of endpoint hostnames or ip addresses.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "Topics": {
                     "$ref": "#/definitions/OpcUaServerTopics"
                 }

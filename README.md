@@ -310,6 +310,7 @@ You have to build the program before with gradle. Then you can use the shell scr
 > C:\Workspace\automation-gateway\docker\examples\hazelcast> docker compose up -d  
 
 # Version History
+- [1.27 Add target option to MQTT Logger for UNS](#127-add-target-option-to-mqtt-logger)
 - [1.26 Reactivated Neo4j Logger](#126-reactivated-neo4j-logger)
 - [1.25 MQTT Driver Custom JSON Format](#125-mqtt-driver-custom-json-format)
 - [1.24 Added OPC UA server](#124-added-opc-ua-server)
@@ -341,6 +342,36 @@ You have to build the program before with gradle. Then you can use the shell scr
 - [1.6 Added GraphiQL (http://localhost:4000/graphiql/)](#16-added-graphiql-httplocalhost4000graphiql)
 - [1.5 OPC UA Schemas to GraphQL Schema Importer](#15-opc-ua-schemas-to-graphql-schema-importer)
 
+## 1.27 Add target option to MQTT Logger for UNS
+
+With the "Target" option at the Logging Topics, a transformation of the input topic to the target topic can now be done.  With that a Unified Namespace (UNS) can be created at the target MQTT broker, with incomding non UNS topic names.  
+
+If a wildcard is used at the source topic, like opc/home1/path/Objects/Mqtt/home/Original/Gas/#, then the browsed/resolved names can be added to the end of the target topic. Just add a wildcard "#" also at the end of the target topic. If there is no wildcard at the target, then all the resolved topics of the source are all written to the same target topic.
+```
+Loggers:
+  Mqtt:
+    - Id: "mqtt1"
+      Enabled: true
+      Host: 192.168.1.4
+      Port: 1883
+      Topic: demo
+      Format: JsonSimple
+      LogLevel: INFO
+      Retained: false
+      Logging:
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Boolean/Boolean_00
+          Target: uns/rocworks/site1/area1/line1/sim1/bool00
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Byte/#
+          Target: uns/rocworks/site1/area1/line1/sim2/#
+        - Topic: opc/home1/path/Objects/Mqtt/home/Original/Gas/#
+          Target: uns/rocworks/site1/area1/line1/gas/#
+        - Topic: opc/home1/path/Objects/Mqtt/home/Original/Meter_Input/#
+          Target: uns/rocworks/site1/area1/line1/meter/input/#
+        - Topic: opc/home1/path/Objects/Mqtt/home/Original/Meter_Output/#
+          Target: uns/rocworks/site1/area1/line1/meter/output/#
+        - Topic: opc/home1/path/Objects/Mqtt/home/Original/PV/#
+          Target: uns/rocworks/site1/area1/line1/pv/# 
+```
 
 ## 1.26 Reactivated Neo4j Logger  
 Added Neo4j as an option to log values from MQTT or OPC UA to the graph database. Additionally the OPC UA node structure can also be replicated to the graph database. This will be done only once at the startup of the Automation Gateway. For MQTT the node structure will be built during runtime, as new topics are coming in, the structure will be created.

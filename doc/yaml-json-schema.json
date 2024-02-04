@@ -471,7 +471,7 @@
                     "type": "integer"
                 },
                 "SubscriptionSamplingInterval": {
-                    "type": "integer"
+                    "type": "number"
                 },
                 "WriteSchemaToFile": {
                     "type": "boolean"
@@ -518,7 +518,7 @@
                     "type": "integer"
                 },
                 "SamplingInterval": {
-                    "type": "integer"
+                    "type": "number"
                 },
                 "DiscardOldest": {
                     "type": "boolean"

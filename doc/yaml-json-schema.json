@@ -249,6 +249,9 @@
                         "properties": {
                             "Topic": {
                                 "type": "string"
+                            },
+                            "Target": {
+                                "type": "string"
                             }
                         },
                         "required": [

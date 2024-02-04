@@ -32,6 +32,11 @@ class MqttLogger (config: JsonObject) : LoggerPublisher(config) {
     private var isConnected = false
     private var isEnabled = false
 
+    private val topicToTarget : Map<String, String> =
+        topicsWithConfig
+            .filter { it.second.getString("Target") != null }
+            .associate { it.first.topicName to it.second.getString("Target") }
+
     override fun open(): Future<Unit> {
         val promise = Promise.promise<Unit>()
 
@@ -90,7 +95,17 @@ class MqttLogger (config: JsonObject) : LoggerPublisher(config) {
     }
 
     override fun publish(point: DataPoint, payload: Buffer) {
-        val topic = if (this.topic.isEmpty()) {
+        val topic = if (topicToTarget.containsKey(point.topic.topicName)) {
+            val target = topicToTarget[point.topic.topicName]!!
+            if (target.endsWith("#") || target.endsWith("+")) {
+                if (point.topic.hasBrowsePath && point.topic.path.endsWith("#") || point.topic.path.endsWith("+")) {
+                    target.dropLast(1) + point.topic.browsePath.removePrefix(point.topic.path.dropLast(1))
+                } else {
+                    target.dropLast(1) + point.topic.node
+                }
+            }
+            else target
+        } else if (this.topic.isEmpty()) {
             if (point.topic.hasBrowsePath) {
                 point.topic.systemNameAndPath
             } else {

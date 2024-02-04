@@ -34,8 +34,8 @@ abstract class LoggerBase(config: JsonObject) : Component(config) {
     protected val logger: Logger = ComponentLogger.getLogger(this::class.java.simpleName, id)
     protected val eventBus = EventBus(logger)
 
+    protected val topicsWithConfig : List<Pair<Topic, JsonObject>>
     private val topics : List<Topic>
-    private val topicsWithConfig : List<Pair<Topic, JsonObject>>
     private val services : List<Pair<Topic.SystemType, String>>
 
     private val defaultRetryWaitTime = 5000L

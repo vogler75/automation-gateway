@@ -13,6 +13,7 @@ import io.vertx.core.Future
 import io.vertx.core.Promise
 import io.vertx.core.eventbus.Message
 import io.vertx.core.eventbus.MessageConsumer
+import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import io.vertx.servicediscovery.Status
 
@@ -34,6 +35,7 @@ abstract class LoggerBase(config: JsonObject) : Component(config) {
     protected val eventBus = EventBus(logger)
 
     private val topics : List<Topic>
+    private val topicsWithConfig : List<Pair<Topic, JsonObject>>
     private val services : List<Pair<Topic.SystemType, String>>
 
     private val defaultRetryWaitTime = 5000L
@@ -53,15 +55,16 @@ abstract class LoggerBase(config: JsonObject) : Component(config) {
 
         logger.level = Level.parse(config.getString("LogLevel", "INFO"))
 
-        topics = config
-            .getJsonArray("Logging")
-            ?.asSequence()
-            ?.filterIsInstance<JsonObject>()
-            ?.mapNotNull { it.getString("Topic") }
-            ?.map { Topic.parseTopic(it) }
-            ?.filter { it.format == Topic.Format.Json }
-            ?.toList()
-            ?:listOf()
+        topicsWithConfig = config
+            .getJsonArray("Logging", JsonArray())
+            .asSequence()
+            .filterIsInstance<JsonObject>()
+            .filter { it.getString("Topic") != null }
+            .map { Pair(Topic.parseTopic(it.getString("Topic")), it) }
+            .filter { it.first.format == Topic.Format.Json }
+            .toList()
+
+        topics = topicsWithConfig.map { it.first }
 
         services = topics.map { Pair(it.systemType, it.systemName) }.distinct()
 

@@ -74,7 +74,7 @@ class MqttLogger (config: JsonObject) : LoggerPublisher(config) {
         return promise.future()
     }
 
-    fun publish(topic: String, payload: Buffer) {
+    private fun publish(topic: String, payload: Buffer) {
         if (client!!.isConnected) {
             if (!this.isConnected) {
                 this.isConnected=true

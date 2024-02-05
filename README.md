@@ -1,6 +1,6 @@
 # Frankenstein Automation Gateway
 
-Connect one or more OPC UA servers or PLC4X devices to the gateway and access the data with a GraphQL or a MQTT client. The Gateway additionally offers functionality to log value changes from OPC UA, MQTT and PLC4X in a range of databases and platforms, including InfluxDB, IoTDB, Kafka, among others. Tested with up to 250000 value changes per second on comodity hardware.  
+Connect one or more OPC UA servers, PLC4X devices or MQTT brokers to the gateway and access the data with a GraphQL, a MQTT, or an OPC UA client. The Gateway additionally offers functionality to log value changes from OPC UA, MQTT and PLC4X in a range of databases and platforms, including InfluxDB, IoTDB, Kafka, among others. Tested with up to 250000 value changes per second on comodity hardware.  
 
 The Gateway passes values through, it does not store data internally. The MQTT Broker is not a fully complient MQTT Broker. It does not keep values in memory. If you subscribe to a virtual MQTT-Topic, which must follow certain rules, then it will connect to the tags in OPC UA or PLC4X and will pass the values to the client. If multiple clients subscribe to the same virtual topic, then only one subscription to the device is made and the Gateway will distribute the values to all the clients.  
 
@@ -310,7 +310,7 @@ You have to build the program before with gradle. Then you can use the shell scr
 > C:\Workspace\automation-gateway\docker\examples\hazelcast> docker compose up -d  
 
 # Version History
-- [1.27 Add target option to MQTT Logger for UNS](#127-add-target-option-to-mqtt-logger)
+- [1.27 Add target option to MQTT Logger for UNS](#127-add-target-option-to-mqtt-logger-for-uns)
 - [1.26 Reactivated Neo4j Logger](#126-reactivated-neo4j-logger)
 - [1.25 MQTT Driver Custom JSON Format](#125-mqtt-driver-custom-json-format)
 - [1.24 Added OPC UA server](#124-added-opc-ua-server)

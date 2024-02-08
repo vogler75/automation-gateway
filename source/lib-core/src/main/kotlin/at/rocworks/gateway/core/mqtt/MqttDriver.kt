@@ -259,7 +259,7 @@ class MqttDriver(config: JsonObject) : DriverBase(config) {
         val message = decoder.buildFromByteArray(payload.bytes, null)
 
         return message.metrics.map {
-            val clone = topic.copy(node = it.name, browsePath = topicReceived)
+            val clone = topic.copy(node = it.name, browsePath = topicReceived + "/metrics/" + it.name)
             DataPoint(clone, TopicValue(
                 value = it.value,
                 sourceTime = it.timestamp.toInstant(),

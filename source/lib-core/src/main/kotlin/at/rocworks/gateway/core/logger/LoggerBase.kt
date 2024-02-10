@@ -22,6 +22,7 @@ import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.Callable
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.logging.Level
 import java.util.logging.Logger
@@ -45,6 +46,8 @@ abstract class LoggerBase(config: JsonObject) : Component(config) {
 
     private val writeParameterBlockSizeDefault = 2000
     protected val writeParameterBlockSize : Int
+
+    private val writeQueuePollTimeout : Long = 10L
 
     private val messageConsumers = mutableListOf<MessageConsumer<DataPoint>>()
 
@@ -172,7 +175,7 @@ abstract class LoggerBase(config: JsonObject) : Component(config) {
     abstract fun writeExecutor()
 
     private val writeValueStop = AtomicBoolean(false)
-    protected val writeValueQueue = ArrayBlockingQueue<DataPoint>(writeParameterQueueSize)
+    private val writeValueQueue = ArrayBlockingQueue<DataPoint>(writeParameterQueueSize)
     private var writeValueQueueFull = false
     private var writeValueThread : Thread? = null
 
@@ -232,6 +235,9 @@ abstract class LoggerBase(config: JsonObject) : Component(config) {
             e.printStackTrace()
         }
     }
+
+    protected fun pollDatapointWait() : DataPoint? = writeValueQueue.poll(writeQueuePollTimeout, TimeUnit.MILLISECONDS)
+    protected fun pollDatapointNoWait() : DataPoint? = writeValueQueue.poll()
 
     private var t1: Instant = Instant.now()
     @Suppress("UNUSED_PARAMETER")

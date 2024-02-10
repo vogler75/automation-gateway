@@ -262,7 +262,7 @@ class Neo4jLogger(config: JsonObject) : LoggerBase(config) {
     override fun writeExecutor() {
         val opcNodes = mutableListOf<DataPoint>()
         val mqttNodes = mutableListOf<DataPoint>()
-        var point: DataPoint? = writeValueQueue.poll(10, TimeUnit.MILLISECONDS)
+        var point: DataPoint? = pollDatapointWait()
         while (point != null && opcNodes.size < writeParameterBlockSize && mqttNodes.size < writeParameterBlockSize) {
             logger.finest { "Write topic ${point?.topic}" }
             when (val systemType = point.topic.systemType) {
@@ -278,7 +278,7 @@ class Neo4jLogger(config: JsonObject) : LoggerBase(config) {
                     logger.warning("$systemType not supported!")
                 }
             }
-            point = writeValueQueue.poll()
+            point = pollDatapointNoWait()
         }
         if (opcNodes.isNotEmpty()) writeOpcNodes(opcNodes)
         if (mqttNodes.isNotEmpty()) writeMqttNodes(mqttNodes)

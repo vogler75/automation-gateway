@@ -200,10 +200,10 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
 
     private val batchPoints = mutableListOf<DataPoint>()
     private fun writeBatch(batch: PreparedStatement) {
-        var point: DataPoint? = writeValueQueue.poll(10, TimeUnit.MILLISECONDS)
+        var point: DataPoint? = pollDatapointWait()
         while (point != null && batchPoints.size < writeParameterBlockSize) {
             batchPoints.add(point)
-            point = writeValueQueue.poll()
+            point = pollDatapointNoWait()
         }
         if (batchPoints.size > 0) {
             batchPoints.forEach {

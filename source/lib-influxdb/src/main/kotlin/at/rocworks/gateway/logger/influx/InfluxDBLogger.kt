@@ -78,11 +78,11 @@ class InfluxDBLogger(config: JsonObject) : LoggerBase(config) {
 
     override fun writeExecutor() {
         val batch = BatchPoints.database(database).build()
-        var point = writeValueQueue.poll(10, TimeUnit.MILLISECONDS)
+        var point = pollDatapointWait()
         while (point != null && batch.points.size <= writeParameterBlockSize) {
             if (point.value.sourceTime().epochSecond > 0)
                 batch.point(influxPointOf(point))
-            point = writeValueQueue.poll()
+            point = pollDatapointNoWait()
         }
         if (batch.points.size > 0) {
             session.write(batch)

@@ -16,6 +16,8 @@ abstract class LoggerPublisher(config: JsonObject) : LoggerBase(config) {
     private fun getMessageFormat(): String = config.getString("Format", "JSON")
     private fun isBulkMessages(): Boolean = config.getBoolean("BulkMessages", false)
 
+    private val usedWriteExecutor : () -> Unit
+
     companion object {
         const val RAW = "RAW"
         const val JSON = "JSON"
@@ -42,6 +44,11 @@ abstract class LoggerPublisher(config: JsonObject) : LoggerBase(config) {
             SPARKPLUGB -> ::formatterSpbBulk
             else -> ::unknownBulkFormat
         }
+
+        usedWriteExecutor = when(isBulkMessages()) {
+            true -> ::writeExecutorBulk
+            false -> ::writeExecutorSolo
+        }
     }
 
     @Suppress("UNUSED_PARAMETER")
@@ -56,20 +63,20 @@ abstract class LoggerPublisher(config: JsonObject) : LoggerBase(config) {
 
     private fun writeExecutorSolo() {
         var counter = 0
-        var point: DataPoint? = writeValueQueue.poll(10, TimeUnit.MILLISECONDS)
+        var point: DataPoint? = pollDatapointWait()
         while (point != null) {
             publish(point, soloFormatter(point))
-            point = if (++counter < writeParameterBlockSize) writeValueQueue.poll() else null
+            point = if (++counter < writeParameterBlockSize) pollDatapointNoWait() else null
         }
     }
 
     private fun writeExecutorBulk() {
         var counter = 0
         val points = mutableListOf<DataPoint>()
-        var point: DataPoint? = writeValueQueue.poll(10, TimeUnit.MILLISECONDS)
+        var point: DataPoint? = pollDatapointWait()
         while (point != null) {
             points.add(point)
-            point = if (++counter < writeParameterBlockSize) writeValueQueue.poll() else null
+            point = if (++counter < writeParameterBlockSize) pollDatapointNoWait() else null
         }
         if (counter>0)
             publish(points, bulkFormatter(points))
@@ -77,10 +84,7 @@ abstract class LoggerPublisher(config: JsonObject) : LoggerBase(config) {
 
     override fun writeExecutor() {
         try {
-            when (isBulkMessages()) {
-                true -> writeExecutorBulk()
-                false -> writeExecutorSolo()
-            }
+            usedWriteExecutor()
         } catch (e: Exception) {
             e.printStackTrace()
         }

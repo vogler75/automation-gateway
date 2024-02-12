@@ -36,10 +36,10 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
     init {
         val polling = config.getJsonObject("Polling", JsonObject())
         pollingTime = polling.getLong("Time", 0)
-        pollingTimeout = polling.getLong("Timeout", pollingTime - (pollingTime / 10))
+        pollingTimeout = polling.getLong("Timeout", pollingTime - (pollingTime / 20))
         pollingOldNew = polling.getBoolean("OldNew", true)
-        writeTimeout = config.getLong("WriteTimeout", 100)
-        readTimeout = config.getLong("ReadTimeout", 100)
+        writeTimeout = config.getLong("WriteTimeout", 250)
+        readTimeout = config.getLong("ReadTimeout", 250)
         retryWaitTime = config.getLong("RetryWaitTime", 5000)
     }
 
@@ -58,20 +58,21 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
         if (isConnected() && pollingTopics.isNotEmpty()) {
             if (pollingRequestId > pollingResponseId) {
                 logger.warning("Polling request id [${pollingRequestId}] is still pending (response id [${pollingResponseId})].")
-            } else {
-                val localRequestId = ++pollingRequestId
-                val builder: PlcReadRequest.Builder = plc!!.readRequestBuilder()
-                pollingTopics.forEach {
-                    builder.addItem(it.key.topicName, it.key.node)
-                }
-                logger.finest { "Poll request [${localRequestId}] for [${pollingTopics.size}] items..." }
+            }
+            val localRequestId = ++pollingRequestId
+            val builder: PlcReadRequest.Builder = plc!!.readRequestBuilder()
+            pollingTopics.forEach {
+                builder.addItem(it.key.topicName, it.key.node)
+            }
+            logger.finest { "Poll request [${localRequestId}] for [${pollingTopics.size}] items..." }
+            try {
                 val request = builder.build()
                 val response = request.execute()
                 response.orTimeout(pollingTimeout, TimeUnit.MILLISECONDS)
                 response.whenComplete { readResponse, throwable ->
                     ++pollingResponseId
                     if (readResponse != null) {
-                        logger.finest {"Poll response [${readResponse.asPlcValue}]" }
+                        logger.finest { "Poll response [${readResponse.asPlcValue}]" }
                         pollingTopics.forEach { topic ->
                             val value = readResponse.getPlcValue(topic.key.topicName)
                             if (!pollingOldNew || value.toString() != topic.value.toString()) { // TODO: String Compare?
@@ -87,6 +88,9 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
                         }
                     }
                 }
+            } catch (e: Exception) {
+                ++pollingResponseId
+                logger.severe("An exception occurred at pollingExecutor: $e")
             }
         }
     }

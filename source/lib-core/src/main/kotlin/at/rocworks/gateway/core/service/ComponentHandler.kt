@@ -35,7 +35,8 @@ class ComponentHandler(
                 Component.ComponentType.JdbcLogger,
                 Component.ComponentType.KafkaLogger,
                 Component.ComponentType.MqttLogger,
-                Component.ComponentType.Neo4jLogger -> Component.ComponentGroup.Logger
+                Component.ComponentType.Neo4jLogger,
+                Component.ComponentType.DuckDBLogger -> Component.ComponentGroup.Logger
                 Component.ComponentType.None -> Component.ComponentGroup.None
             }
     }

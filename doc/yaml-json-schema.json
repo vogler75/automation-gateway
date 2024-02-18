@@ -96,7 +96,13 @@
                             "items": {
                                 "$ref": "#/definitions/Neo4jLogger"
                             }
-                        }                        
+                        },
+                        "DuckDB": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/DuckDBLogger"
+                            }
+                        }    
                     }
                 }
             },
@@ -117,9 +123,9 @@
                 "LogLevel": { "$ref": "#/definitions/LogLevel" },
                 "WriteParameters": { "$ref": "#/definitions/LoggerWriteParameters" },
                 "Logging": {  "$ref": "#/definitions/Logging" },        
-                "Host": { "type": "string" },
-                "Port": { "type": "integer" },
-                "Ssl": { "type": "boolean" },     
+                "Host": { "type": "string", "default": "localhost" },
+                "Port": { "type": "integer", "default": 1883 },
+                "Ssl": { "type": "boolean", "default": false },     
                 "TrustAll": { "type": "boolean" },     
                 "Username": { "type": "string" },
                 "Password": { "type": "string" },                                      
@@ -143,7 +149,7 @@
                 "LogLevel": { "$ref": "#/definitions/LogLevel" },
                 "WriteParameters": { "$ref": "#/definitions/LoggerWriteParameters" },
                 "Logging": {  "$ref": "#/definitions/Logging" },                        
-                "Servers": { "type": "string" },
+                "Servers": { "type": "string", "default": "localhost:9092" },
                 "TopicName": { "type": "string" },   
                 "KeyName": { "type": "string" },
                 "Format": { "type": "string", "enum": ["Raw", "Json", "JsonSimple", "SparkplugB"]},
@@ -160,8 +166,7 @@
                 "LogLevel": { "$ref": "#/definitions/LogLevel" },
                 "WriteParameters": { "$ref": "#/definitions/LoggerWriteParameters" },
                 "Logging": {  "$ref": "#/definitions/Logging" },   
-
-                "Url": { "type": "string" },
+                "Url": { "type": "string", "default": "jdbc:postgresql://localhost:5432/gateway" },
                 "Username": { "type": "string" },
                 "Password": { "type": "string" },
                 "SqlTableName": { "type": "string"},
@@ -212,7 +217,7 @@
                 "LogLevel": { "$ref": "#/definitions/LogLevel" },
                 "WriteParameters": { "$ref": "#/definitions/LoggerWriteParameters" },
                 "Logging": {  "$ref": "#/definitions/Logging" },   
-                "Url": { "type": "string", "description": "Example: bolt://localhost:7687" },
+                "Url": { "type": "string", "default": "bolt://localhost:7687" },
                 "Username": { "type": "string" },
                 "Password": { "type": "string" },
                 "Schemas": {
@@ -220,7 +225,20 @@
                 }                
             },
             "required": ["Id", "Url"]
-        },                  
+        },
+        "DuckDBLogger": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {  
+                "Id": { "type": "string" },
+                "Enabled": { "type": "boolean" },
+                "LogLevel": { "$ref": "#/definitions/LogLevel" },
+                "WriteParameters": { "$ref": "#/definitions/LoggerWriteParameters" },
+                "Logging": {  "$ref": "#/definitions/Logging" },   
+                "Url": { "type": "string", "default": "jdbc:duckdb:" }
+            },
+            "required": ["Id"]
+        },              
         "KafkaPublisherConfigs": {
             "type": "object",
             "additionalProperties": true,

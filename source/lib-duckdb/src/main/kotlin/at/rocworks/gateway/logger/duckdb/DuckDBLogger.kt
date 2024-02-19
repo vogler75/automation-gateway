@@ -176,6 +176,30 @@ class DuckDBLogger(config: JsonObject) : LoggerBase(config) {
         }
     }
 
+    override fun sqlExecutor(sql: String, result: (Boolean, List<List<Any>>?) -> Unit) {
+        val connection = this.connection
+        if (connection != null)
+        {
+            try {
+                connection.prepareStatement(sql).use { stmt ->
+                    val data = mutableListOf<List<Any>>()
+                    val rs = stmt.executeQuery()
+                    val range = 1..rs.metaData.columnCount
+                    data.add(range.map { rs.metaData.getColumnName(it) })
+                    while (rs.next()) {
+                        data.add(range.map { rs.getObject(it) })
+                    }
+                    result(true, data)
+                }
+            } catch (e: SQLException) {
+                logger.severe("Error executing query [${e.message}]")
+                result(true, listOf(listOf(e.message ?: "Unknown error")))
+            }
+        } else {
+            result(true, listOf(listOf("No connection")))
+        }
+    }
+
     override fun getComponentGroup(): ComponentGroup {
         return ComponentGroup.Logger
     }

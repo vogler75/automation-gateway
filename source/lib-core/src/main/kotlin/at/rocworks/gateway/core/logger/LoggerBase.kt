@@ -8,7 +8,6 @@ import at.rocworks.gateway.core.service.Common
 import at.rocworks.gateway.core.service.Component
 import at.rocworks.gateway.core.service.ComponentLogger
 import at.rocworks.gateway.core.service.ServiceHandler
-
 import io.vertx.core.Future
 import io.vertx.core.Promise
 import io.vertx.core.eventbus.Message
@@ -16,8 +15,6 @@ import io.vertx.core.eventbus.MessageConsumer
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import io.vertx.servicediscovery.Status
-
-import java.lang.IllegalStateException
 import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.ArrayBlockingQueue
@@ -26,9 +23,9 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.logging.Level
 import java.util.logging.Logger
-
 import kotlin.concurrent.thread
 import kotlin.math.roundToInt
+
 
 abstract class LoggerBase(config: JsonObject) : Component(config) {
     protected val id: String = config.getString("Id", "")
@@ -118,6 +115,8 @@ abstract class LoggerBase(config: JsonObject) : Component(config) {
     }
 
     private var busConsumerQueryHistory: MessageConsumer<JsonObject>? = null
+    private var busConsumerExecuteSQL: MessageConsumer<JsonObject>? = null
+
     private var periodicMetricCalculator: Long = 0
 
     private fun writerThread() = thread(start = true) {
@@ -131,7 +130,10 @@ abstract class LoggerBase(config: JsonObject) : Component(config) {
     override fun start(startPromise: Promise<Void>) {
         super.start()
         vertx.executeBlocking(Callable { connect(startPromise) })
+
         busConsumerQueryHistory = vertx.eventBus().consumer("${Common.BUS_ROOT_URI_LOG}/$id/QueryHistory", ::queryHandler)
+        busConsumerExecuteSQL = vertx.eventBus().consumer("${Common.BUS_ROOT_URI_LOG}/$id/ExecuteSQL", ::executeSqlHandler)
+
         periodicMetricCalculator = vertx.setPeriodic(1000, ::metricCalculator)
         writeValueThread = writerThread()
         subscribeTopics()
@@ -266,13 +268,16 @@ abstract class LoggerBase(config: JsonObject) : Component(config) {
         return JsonObject()
     }
 
-    abstract fun queryExecutor(
+    open fun queryExecutor(
         system: String,
         nodeId: String,
         fromTimeMS: Long,
         toTimeMS: Long,
         result: (Boolean, List<List<Any>>?) -> Unit // [[sourcetime, servertime, value, statuscode]]
-    )
+    ) {
+        logger.warning("Function queryExecutor not implemented!")
+        result(false, null)
+    }
 
     private fun queryHandler(message: Message<JsonObject>) {
         val request = message.body()
@@ -280,7 +285,28 @@ abstract class LoggerBase(config: JsonObject) : Component(config) {
         val nodeId = request.getString("NodeId")
         val t1 = request.getLong("T1") // ms
         val t2 = request.getLong("T2") // ms
+        val timing1 = Instant.now()
         queryExecutor(system, nodeId, t1, t2) { ok, result ->
+            val timing2 = Instant.now()
+            logger.info("Query [${system}/${nodeId}] executed in [${Duration.between(timing1, timing2).toMillis()}] ms")
+            val response = JsonObject().put("Ok", ok)
+            if (ok) response.put("Result", result)
+            message.reply(response)
+        }
+    }
+
+    open fun sqlExecutor(sql: String, result: (Boolean, List<List<Any>>?) -> Unit) {
+        result(true, listOf(listOf<Any>("Not implemented")))
+    }
+
+    private fun executeSqlHandler(message: Message<JsonObject>) {
+        val request = message.body()
+        val sql = request.getString("SQL")
+        val timing1 = Instant.now()
+
+        sqlExecutor(sql) { ok, result ->
+            val timing2 = Instant.now()
+            logger.info("SQL [${sql}] executed in [${Duration.between(timing1, timing2).toMillis()}] ms")
             val response = JsonObject().put("Ok", ok)
             if (ok) response.put("Result", result)
             message.reply(response)

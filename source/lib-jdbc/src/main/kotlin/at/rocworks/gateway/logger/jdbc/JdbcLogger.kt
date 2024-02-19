@@ -6,7 +6,6 @@ import io.vertx.core.Future
 import io.vertx.core.Promise
 import io.vertx.core.json.JsonObject
 import java.sql.*
-import java.util.concurrent.TimeUnit
 
 
 class JdbcLogger(config: JsonObject) : LoggerBase(config) {
@@ -114,18 +113,17 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
     // --------------------------------------------------------------------------------------------------------------
 
     @Volatile
-    private var connection: Connection? = null
+    private var writeConnection: Connection? = null
+    private var readConnection: Connection? = null
 
     override fun open(): Future<Unit> {
         val promise = Promise.promise<Unit>()
         try {
             logger.info("Open connection...")
+            this.readConnection = getConnection()
+            getConnection().let { connection ->
+                this.writeConnection = connection
 
-            (if (username=="" && password=="")
-                DriverManager.getConnection(url)
-            else
-                DriverManager.getConnection(url, username, password)
-            ).let { connection ->
                 connection.autoCommit = false
 
                 // Insert SQL
@@ -159,7 +157,6 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
                     }
                 }
 
-                this.connection = connection
                 promise.complete()
                 logger.info("Open connection done [${connection.metaData.databaseProductName}] [${connection.metaData.databaseProductVersion}]")
             }
@@ -170,19 +167,21 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
         return promise.future()
     }
 
+    private fun getConnection(): Connection = (if (username == "" && password == "")
+        DriverManager.getConnection(url)
+    else
+        DriverManager.getConnection(url, username, password))
+
     override fun close(): Future<Unit> {
         val promise = Promise.promise<Unit>()
-        connection?.let {
-            if (!it.isClosed) {
-                it.close()
-            }
-        }
+        readConnection?.let { if (!it.isClosed) it.close() }
+        writeConnection?.let { if (!it.isClosed) it.close() }
         promise.complete()
         return promise.future()
     }
 
     override fun writeExecutor() {
-        val connection = this.connection
+        val connection = this.writeConnection
         if (connection != null) {
             if (!connection.isClosed) {
                 try {
@@ -236,7 +235,7 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
         toTimeMS: Long,
         result: (Boolean, List<List<Any>>?) -> Unit
     ) {
-        val connection = this.connection
+        val connection = this.readConnection
         if (connection != null)
         {
             try {
@@ -271,6 +270,30 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
             }
         } else {
             result(false, null)
+        }
+    }
+
+    override fun sqlExecutor(sql: String, result: (Boolean, List<List<Any>>?) -> Unit) {
+        val connection = this.readConnection
+        if (connection != null)
+        {
+            try {
+                connection.prepareStatement(sql).use { stmt ->
+                    val data = mutableListOf<List<Any>>()
+                    val rs = stmt.executeQuery()
+                    val range = 1..rs.metaData.columnCount
+                    data.add(range.map { rs.metaData.getColumnName(it) })
+                    while (rs.next()) {
+                        data.add(range.map { rs.getObject(it) })
+                    }
+                    result(true, data)
+                }
+            } catch (e: SQLException) {
+                logger.severe("Error executing query [${e.message}]")
+                result(true, listOf(listOf(e.message ?: "Unknown error")))
+            }
+        } else {
+            result(true, listOf(listOf("No connection")))
         }
     }
 

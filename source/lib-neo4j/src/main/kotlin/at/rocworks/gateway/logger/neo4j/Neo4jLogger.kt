@@ -379,16 +379,6 @@ class Neo4jLogger(config: JsonObject) : LoggerBase(config) {
         )
     }
 
-    override fun queryExecutor(
-        system: String,
-        nodeId: String,
-        fromTimeMS: Long,
-        toTimeMS: Long,
-        result: (Boolean, List<List<Any>>?) -> Unit
-    ) {
-        TODO("Not yet implemented")
-    }
-
     override fun getComponentGroup(): ComponentGroup {
         return ComponentGroup.Logger
     }

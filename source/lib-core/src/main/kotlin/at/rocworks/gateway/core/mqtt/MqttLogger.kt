@@ -121,16 +121,6 @@ class MqttLogger (config: JsonObject) : LoggerPublisher(config) {
         publish(this.topic, payload)
     }
 
-    override fun queryExecutor(
-        system: String,
-        nodeId: String,
-        fromTimeMS: Long,
-        toTimeMS: Long,
-        result: (Boolean, List<List<Any>>?) -> Unit
-    ) {
-        TODO("Not yet implemented")
-    }
-
     override fun getComponentGroup(): ComponentGroup {
         return ComponentGroup.Logger
     }

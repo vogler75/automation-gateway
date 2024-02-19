@@ -274,6 +274,9 @@ class GraphQLServer(config: JsonObject) : Component(config) {
             |   BrowseNode(Type: Type, System: String, NodeId: ID, Filter: String): [Node]
             |   FindNodes(Type: Type, System: String, NodeId: ID, Filter: String): [Node]
             |   
+            |   QueryHistory(Log: ID, System: String, NodeId: ID!, StartTime: String, EndTime: String, LastSeconds: Int): [Value]
+            |   ExecuteLogSQL(Log: ID, SQL: String): [[String]]
+            |   
             |   ${if (withSystems) "Systems: Systems" else ""}
             | }
             | 
@@ -331,6 +334,8 @@ class GraphQLServer(config: JsonObject) : Component(config) {
                     .dataFetcher("NodeValues", getNodeValues())
                     .dataFetcher("BrowseNode", getBrowseNode())
                     .dataFetcher("FindNodes", getFindNodes())
+                    .dataFetcher("QueryHistory", getValueHistory())
+                    .dataFetcher("ExecuteLogSQL", getExecuteLogSQL())
             )
             .type(
                 TypeRuntimeWiring.newTypeWiring("Mutation")
@@ -852,7 +857,7 @@ class GraphQLServer(config: JsonObject) : Component(config) {
                 vertx.eventBus()
                     .request<JsonObject>("${Common.BUS_ROOT_URI_LOG}/$log/QueryHistory", request) { message ->
                         val list =  message.result()?.body()?.getJsonArray("Result") ?: JsonArray()
-                        logger.info("Query response [${message.succeeded()}] size [${list.size()}]")
+                        logger.fine { "Query response [${message.succeeded()}] size [${list.size()}]" }
                         val result = list.filterIsInstance<JsonArray>().map {
                             val item = HashMap<String, Any?>()
                             item["System"] = system
@@ -867,6 +872,26 @@ class GraphQLServer(config: JsonObject) : Component(config) {
                         promise.complete(result)
                     }
             }
+            promise
+        }
+    }
+
+    private fun getExecuteLogSQL(): DataFetcher<CompletableFuture<List<List<Any?>>>> {
+        return DataFetcher<CompletableFuture<List<List<Any?>>>> { env ->
+            val promise = CompletableFuture<List<List<Any?>>>()
+            val log: String = getEnvArgument(env,"Log") ?: "default"
+            val sql: String = getEnvArgument(env,"SQL") ?: "SELECT 1"
+
+            val request = JsonObject()
+            request.put("SQL", sql)
+
+            vertx.eventBus()
+                .request<JsonObject>("${Common.BUS_ROOT_URI_LOG}/$log/ExecuteSQL", request) { message ->
+                    val list =  message.result()?.body()?.getJsonArray("Result") ?: JsonArray()
+                    logger.fine { "SQL response [${message.succeeded()}] size [${list.size()}]" }
+                    val result = list.filterIsInstance<JsonArray>().map { it.toList() }
+                    promise.complete(result)
+                }
             promise
         }
     }

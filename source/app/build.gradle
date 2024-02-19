@@ -3,7 +3,7 @@ plugins {
 }
 
 project.ext {
-    vertxVersion = "4.4.6"
+    vertxVersion = "4.5.1"
 }
 
 dependencies {

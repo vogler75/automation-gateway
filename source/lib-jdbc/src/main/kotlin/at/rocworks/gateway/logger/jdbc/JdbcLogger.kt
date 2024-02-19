@@ -23,8 +23,8 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
         (
             sys character varying(30) NOT NULL,
             nodeid character varying(30) NOT NULL,
-            sourcetime timestamp without time zone NOT NULL,
-            servertime timestamp without time zone NOT NULL,
+            sourcetime timestamp with time zone NOT NULL,
+            servertime timestamp with time zone NOT NULL,
             numericvalue numeric,
             stringvalue text,
             status character varying(30) ,
@@ -240,7 +240,7 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
         if (connection != null)
         {
             try {
-                connection.prepareStatement(sqlQueryStatement) .use { stmt ->
+                connection.prepareStatement(sqlQueryStatement).use { stmt ->
                     val data = mutableListOf<List<Any>>()
                     stmt.setString(1, system)
                     stmt.setString(2, nodeId)

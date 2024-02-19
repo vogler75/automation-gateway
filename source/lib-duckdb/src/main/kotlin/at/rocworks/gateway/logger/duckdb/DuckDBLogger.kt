@@ -7,9 +7,7 @@ import io.vertx.core.Promise
 import io.vertx.core.json.JsonObject
 import org.duckdb.DuckDBConnection
 import java.sql.*
-import java.time.LocalDateTime
-import java.time.ZoneId
-import java.time.ZoneOffset
+import java.time.*
 
 class DuckDBLogger(config: JsonObject) : LoggerBase(config) {
     private val url = config.getString("Url", "jdbc:duckdb:")
@@ -22,13 +20,19 @@ class DuckDBLogger(config: JsonObject) : LoggerBase(config) {
             sys varchar not null,
             nodeid varchar not null,
             browsepath varchar not null,
-            sourcetime timestamptz not null,
-            servertime timestamptz,
+            sourcetime timestamp with time zone not null,
+            servertime timestamp with time zone not null,
             numericvalue double,
             stringvalue text,
             status varchar
         );
     """.trimIndent())
+
+    private val sqlQueryStatement = config.getString("SqlQueryStatement", """
+        SELECT epoch_ms(sourcetime), epoch_ms(servertime), numericvalue, stringvalue, status
+         FROM $sqlTableName 
+         WHERE sys = ? AND nodeid = ? AND sourcetime >= ?::timestamptz AND sourcetime <= ?::timestamptz
+        """.trimIndent())
 
     private var connection: DuckDBConnection? = null
 
@@ -133,7 +137,43 @@ class DuckDBLogger(config: JsonObject) : LoggerBase(config) {
         toTimeMS: Long,
         result: (Boolean, List<List<Any>>?) -> Unit
     ) {
-        TODO("Not yet implemented")
+        val connection = this.connection
+        if (connection != null)
+        {
+            try {
+                connection.prepareStatement(sqlQueryStatement).use { stmt ->
+                    val data = mutableListOf<List<Any>>()
+                    stmt.setString(1, system)
+                    stmt.setString(2, nodeId)
+                    stmt.setTimestamp(3, Timestamp(fromTimeMS))
+                    stmt.setTimestamp(4, Timestamp(toTimeMS))
+                    val rs = stmt.executeQuery()
+                    while (rs.next()) {
+                        // sourcetime, servertime, numericvalue, stringvalue, status
+                        val value = if (rs.getObject(3) != null) {
+                            rs.getDouble(3)
+                        } else {
+                            rs.getString(4)
+                        }
+                        //println(rs.getTimestamp(1).toString() + " = " + rs.getTimestamp(1).toInstant().toString())
+                        data.add(
+                            listOf(
+                                Instant.ofEpochMilli(rs.getLong(1)), // sourcetime
+                                Instant.ofEpochMilli(rs.getLong(2)), // servertime
+                                value, // value
+                                rs.getString(5)  // status
+                            )
+                        )
+                    }
+                    result(true, data)
+                }
+            } catch (e: SQLException) {
+                logger.severe("Error executing query [${e.message}]")
+                result(false, null)
+            }
+        } else {
+            result(false, null)
+        }
     }
 
     override fun getComponentGroup(): ComponentGroup {

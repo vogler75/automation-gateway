@@ -271,7 +271,7 @@ abstract class LoggerBase(config: JsonObject) : Component(config) {
         nodeId: String,
         fromTimeMS: Long,
         toTimeMS: Long,
-        result: (Boolean, List<List<Any>>?) -> Unit // [[sourcetime, servertime, value, statuscode, system]]
+        result: (Boolean, List<List<Any>>?) -> Unit // [[sourcetime, servertime, value, statuscode]]
     )
 
     private fun queryHandler(message: Message<JsonObject>) {

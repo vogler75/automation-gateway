@@ -1,0 +1,29 @@
+Servers:
+  OpcUa:
+    - Port: 4841
+      Enabled: true
+      LogLevel: INFO
+      Topics:
+        - Topic: mqtt/input/path/spBv1.0/#
+
+Drivers:
+  Mqtt:
+    - Id: "input"
+      Enabled: true
+      LogLevel: ALL
+      Host: 192.168.1.4
+      Port: 1883
+      Ssl: false
+      Format: SparkplugB
+
+Loggers:
+  Mqtt:
+    - Id: "output"
+      Enabled: true
+      Host: 192.168.1.4
+      Port: 1883
+      Topic: json
+      Format: Raw
+      LogLevel: INFO
+      Logging:
+        - Topic: mqtt/input/path/spBv1.0/#

@@ -38,7 +38,7 @@ class OpcUaServer(config: JsonObject): Component(config) {
     val buildDate= ""
 
     val bindAddresses:  List<String>
-    val endpointAddresses: List<String>
+    var endpointAddresses: List<String> = listOf()
     val securityPolicies = listOf("None","Basic128Rsa15","Basic256","Basic256Sha256","Aes128_Sha256_RsaOaep","Aes256_Sha256_RsaPss")
 
     private var serverInstance : OpcUaServerInstance? = null
@@ -90,14 +90,10 @@ class OpcUaServer(config: JsonObject): Component(config) {
         bindAddresses = config.getJsonArray("BindAddresses")?.filterIsInstance<String>()
             ?: listOf("0.0.0.0")
 
-        endpointAddresses = config.getJsonArray("EndpointAddresses")?.filterIsInstance<String>()
-            ?: HostnameUtil.getHostnames(HostnameUtil.getHostname()).toList()
-
         services = topics.map { Pair(it.systemType, it.systemName) }.distinct()
 
         logger.level = Level.parse(config.getString("LogLevel", "INFO"))
         logger.info("BindAddresses: ${bindAddresses.joinToString(", ")}")
-        logger.info("EndpointAddresses: ${endpointAddresses.joinToString(", ")}")
     }
 
     override fun getComponentGroup(): ComponentGroup {
@@ -115,7 +111,15 @@ class OpcUaServer(config: JsonObject): Component(config) {
     override fun start(startPromise: Promise<Void>) {
         super.start()
         thread {
+            // we must do this in a thread because getHostnames takes some time, and we don't want to block the verticle
+            endpointAddresses = config.getJsonArray("EndpointAddresses")?.filterIsInstance<String>()
+                ?: HostnameUtil.getHostnames(HostnameUtil.getHostname()).toList()
+            logger.info("EndpointAddresses: ${endpointAddresses.joinToString(", ")}")
+
+            // start the writer thread
             writeValueThread = writerThread()
+
+            // start the server instance
             serverInstance = OpcUaServerInstance(this).also {
                 it.startup()
                 subscribeTopics()

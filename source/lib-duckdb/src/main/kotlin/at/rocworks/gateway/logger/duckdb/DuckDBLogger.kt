@@ -37,7 +37,6 @@ class DuckDBLogger(config: JsonObject) : LoggerBase(config) {
 
     override fun start(startPromise: Promise<Void>) {
         super.start(startPromise)
-        logger.info("Start")
     }
 
     override fun open(): Future<Unit> {
@@ -57,8 +56,8 @@ class DuckDBLogger(config: JsonObject) : LoggerBase(config) {
                         }
                     }
                 }
+                promise.complete()
             }
-            promise.complete()
         } catch (e: SQLException) {
             e.printStackTrace()
             promise.fail(e)

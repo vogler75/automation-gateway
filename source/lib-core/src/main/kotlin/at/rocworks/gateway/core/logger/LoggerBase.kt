@@ -285,14 +285,17 @@ abstract class LoggerBase(config: JsonObject) : Component(config) {
         val nodeId = request.getString("NodeId")
         val t1 = request.getLong("T1") // ms
         val t2 = request.getLong("T2") // ms
-        val timing1 = Instant.now()
-        queryExecutor(system, nodeId, t1, t2) { ok, result ->
-            val timing2 = Instant.now()
-            logger.info("Query [${system}/${nodeId}] executed in [${Duration.between(timing1, timing2).toMillis()}] ms")
-            val response = JsonObject().put("Ok", ok)
-            if (ok) response.put("Result", result)
-            message.reply(response)
-        }
+
+        vertx.executeBlocking(Callable {
+            val timing1 = Instant.now()
+            queryExecutor(system, nodeId, t1, t2) { ok, result ->
+                val timing2 = Instant.now()
+                logger.info("Query [${system}/${nodeId}] executed in [${Duration.between(timing1, timing2).toMillis()}] ms")
+                val response = JsonObject().put("Ok", ok)
+                if (ok) response.put("Result", result)
+                message.reply(response)
+            }
+        })
     }
 
     open fun sqlExecutor(sql: String, result: (Boolean, List<List<Any>>?) -> Unit) {
@@ -302,14 +305,15 @@ abstract class LoggerBase(config: JsonObject) : Component(config) {
     private fun executeSqlHandler(message: Message<JsonObject>) {
         val request = message.body()
         val sql = request.getString("SQL")
-        val timing1 = Instant.now()
-
-        sqlExecutor(sql) { ok, result ->
-            val timing2 = Instant.now()
-            logger.info("SQL [${sql}] executed in [${Duration.between(timing1, timing2).toMillis()}] ms")
-            val response = JsonObject().put("Ok", ok)
-            if (ok) response.put("Result", result)
-            message.reply(response)
-        }
+        vertx.executeBlocking(Callable {
+            val timing1 = Instant.now()
+            sqlExecutor(sql) { ok, result ->
+                val timing2 = Instant.now()
+                logger.info("SQL [${sql}] executed in [${Duration.between(timing1, timing2).toMillis()}] ms")
+                val response = JsonObject().put("Ok", ok)
+                if (ok) response.put("Result", result)
+                message.reply(response)
+            }
+        })
     }
 }

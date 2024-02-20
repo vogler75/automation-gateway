@@ -274,7 +274,7 @@ class GraphQLServer(config: JsonObject) : Component(config) {
             |   BrowseNode(Type: Type, System: String, NodeId: ID, Filter: String): [Node]
             |   FindNodes(Type: Type, System: String, NodeId: ID, Filter: String): [Node]
             |   
-            |   QueryHistory(Log: ID, System: String, NodeId: ID!, StartTime: String, EndTime: String, LastSeconds: Int): [Value]
+            |   QueryHistory(Log: ID, System: String, NodeId: ID!, From: String, To: String, LastSeconds: Int): [Value]
             |   ExecuteLogSQL(Log: ID, SQL: String): [[String]]
             |   
             |   ${if (withSystems) "Systems: Systems" else ""}

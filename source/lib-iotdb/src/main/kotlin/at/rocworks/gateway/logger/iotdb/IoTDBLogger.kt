@@ -1,36 +1,42 @@
 package at.rocworks.gateway.logger.iotdb
 
 import at.rocworks.gateway.core.data.DataPoint
+import at.rocworks.gateway.core.data.Topic
+import at.rocworks.gateway.core.data.TopicStatus
 import at.rocworks.gateway.core.logger.LoggerBase
 import io.vertx.core.Future
 import io.vertx.core.Promise
-
+import io.vertx.core.buffer.impl.BufferImpl
 import io.vertx.core.json.JsonObject
-import java.util.concurrent.TimeUnit
-
 import org.apache.iotdb.session.Session
 import org.apache.iotdb.tsfile.file.metadata.enums.TSDataType
+import java.sql.SQLException
+import java.time.Instant
 import java.util.*
-import kotlin.collections.LinkedHashMap
+
 
 class IoTDBLogger(config: JsonObject) : LoggerBase(config) {
     private val host = config.getString("Host", "localhost")
     private val port = config.getInteger("Port", 6667)
-    private val username = config.getString("Username", "")
-    private val password = config.getString("Password", "")
-    private val database = config.getString("Database", "root.test")
+    private val username = config.getString("Username", "root")
+    private val password = config.getString("Password", "root")
+    private val database = config.getString("Database", "root.gateway")
 
     private val unhandledTypes = mutableListOf<String>()
 
-    private val session: Session = if (username == null || username == "")
-        Session(host, port)
-    else
-        Session(host, port, username, password)
+    private val writeSession = getSession()
+    private val readSession = getSession()
+
+    private fun getSession() = if (username == null || username == "")
+            Session(host, port)
+        else
+            Session(host, port, username, password)
 
     override fun open(): Future<Unit> {
         val promise = Promise.promise<Unit>()
         try {
-            session.open()
+            readSession.open()
+            writeSession.open()
             logger.info("IoTDB connected.")
             promise.complete()
         } catch (e: Exception) {
@@ -42,10 +48,23 @@ class IoTDBLogger(config: JsonObject) : LoggerBase(config) {
 
     override fun close(): Future<Unit> {
         val promise = Promise.promise<Unit>()
-        session.close()
+        readSession.close()
+        writeSession.close()
         promise.complete()
         return promise.future()
     }
+
+    private fun nodeToPath(path: String) = path.replace("[/;:= ]".toRegex(), "")
+
+    private fun getPath(point: DataPoint) =
+        point.topic.systemName + "." +
+        when (point.topic.systemType) {
+            Topic.SystemType.Opc -> (if (point.topic.hasBrowsePath) point.topic.browsePath.replace("/", ".") else "node") + "." + nodeToPath(point.topic.node)
+            Topic.SystemType.Mqtt -> nodeToPath(point.topic.browsePath.replace("/", "."))
+            Topic.SystemType.Plc -> "node."+nodeToPath(point.topic.node)
+            Topic.SystemType.Sys -> TODO()
+            Topic.SystemType.Unknown -> TODO()
+        }
 
     override fun writeExecutor() {
         val deviceIds = mutableListOf<String>()
@@ -71,6 +90,7 @@ class IoTDBLogger(config: JsonObject) : LoggerBase(config) {
                         val map = value.entries.associate { item -> item.key.toString() to item.value }
                         TSDataType.TEXT to JsonObject(map).toString()
                     }
+                    is BufferImpl -> TSDataType.TEXT to value.toString()
                     else -> {
                         val type=value.javaClass.canonicalName
                         val hash=type+"::"+point.topic.hashCode()
@@ -89,20 +109,15 @@ class IoTDBLogger(config: JsonObject) : LoggerBase(config) {
         fun addValue(point: DataPoint) {
             try {
                 val time = point.value.sourceTime().toEpochMilli()
-                val (path, name) = if (point.topic.hasBrowsePath) {
-                    val input = point.topic.systemNameAndPath.replace("/", ".")
-                    input.substringBeforeLast(delimiter = '.') to input.substringAfterLast(delimiter = '.')
-                } else {
-                    point.topic.node to "value"
-                }
+                val path = getPath(point)
 
                 val (dataType, value) = getDataTypeAndValue(point)
                 if (dataType != null && value != null) {
                     deviceIds.add("${database}.${path}")
                     times.add(time)
-                    measurementList.add(listOf(name))
-                    typesList.add(listOf(dataType))
-                    valuesList.add(listOf(value))
+                    measurementList.add(listOf("value", "status", "servertime"))
+                    typesList.add(listOf(dataType, TSDataType.TEXT, TSDataType.TEXT))
+                    valuesList.add(listOf(value, point.value.statusAsString(), point.value.serverTimeAsISO()))
                 }
             } catch (e: Exception) {
                 logger.severe(e.message)
@@ -116,11 +131,43 @@ class IoTDBLogger(config: JsonObject) : LoggerBase(config) {
         }
         if (deviceIds.size > 0) {
             try {
-                session.insertRecords(deviceIds, times, measurementList, typesList, valuesList)
+                writeSession.insertRecords(deviceIds, times, measurementList, typesList, valuesList)
                 valueCounterOutput += deviceIds.size
             } catch (e: Exception) {
                 logger.severe("Error writing records [${e.message}]")
             }
+        }
+    }
+
+    override fun queryExecutor(
+        system: String,
+        nodeId: String,
+        fromTimeMS: Long,
+        toTimeMS: Long,
+        result: (Boolean, List<List<Any>>?) -> Unit // [[source time, server time, value, status code]]
+    ) {
+        val path = "$database.$system.**.${nodeToPath(nodeId)}"
+        val paths = listOf("$path.servertime", "$path.value", "$path.status")
+        try {
+            readSession.executeRawDataQuery(paths, fromTimeMS, toTimeMS).use { dataSet ->
+                val data = mutableListOf<List<Any>>()
+                dataSet.fetchSize = 1024
+                while (dataSet.hasNext()) {
+                    val row = dataSet.next()
+                    data.add(
+                        listOf(
+                            Instant.ofEpochMilli(row.timestamp), // source time
+                            Instant.parse(row.fields[0].toString()), // server time
+                            row.fields[1].toString(), // value
+                            row.fields[2].toString() // status
+                        )
+                    )
+                }
+                result(true, data)
+            }
+        } catch (e: SQLException) {
+            logger.severe("Error executing query [${e.message}]")
+            result(false, null)
         }
     }
 

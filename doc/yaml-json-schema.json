@@ -200,11 +200,11 @@
                 "LogLevel": { "$ref": "#/definitions/LogLevel" },
                 "WriteParameters": { "$ref": "#/definitions/LoggerWriteParameters" },
                 "Logging": {  "$ref": "#/definitions/Logging" },   
-                "Host": { "type": "string" },
-                "Port": { "type": "integer" },                        
-                "Username": { "type": "string" },
-                "Password": { "type": "string" },
-                "Database": { "type": "string" }
+                "Host": { "type": "string", "default": "localhost" },
+                "Port": { "type": "integer", "default": 6667 },
+                "Username": { "type": "string", "default": "root" },
+                "Password": { "type": "string", "default": "root" },
+                "Database": { "type": "string", "default": "root.gateway" }
             },
             "required": ["Id", "Host", "Port", "Database"]
         },        
@@ -235,7 +235,8 @@
                 "LogLevel": { "$ref": "#/definitions/LogLevel" },
                 "WriteParameters": { "$ref": "#/definitions/LoggerWriteParameters" },
                 "Logging": {  "$ref": "#/definitions/Logging" },   
-                "Url": { "type": "string", "default": "jdbc:duckdb:" }
+                "Url": { "type": "string", "default": "jdbc:duckdb:" },
+                "SqlTableName": { "type": "string" }
             },
             "required": ["Id"]
         },              

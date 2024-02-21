@@ -10,7 +10,7 @@ Drivers:
   Mqtt:
     - Id: "input"
       Enabled: true
-      LogLevel: ALL
+      LogLevel: INFO
       Host: 192.168.1.4
       Port: 1883
       Ssl: false

@@ -135,7 +135,7 @@ class DuckDBLogger(config: JsonObject) : LoggerBase(config) {
         nodeId: String,
         fromTimeMS: Long,
         toTimeMS: Long,
-        result: (Boolean, List<List<Any>>?) -> Unit
+        result: (Boolean, List<List<Any?>>?) -> Unit
     ) {
         val connection = this.connection
         if (connection != null)
@@ -176,7 +176,7 @@ class DuckDBLogger(config: JsonObject) : LoggerBase(config) {
         }
     }
 
-    override fun sqlExecutor(sql: String, result: (Boolean, List<List<Any>>?) -> Unit) {
+    override fun sqlExecutor(sql: String, result: (Boolean, List<List<Any?>>) -> Unit) {
         val connection = this.connection
         if (connection != null)
         {
@@ -187,7 +187,9 @@ class DuckDBLogger(config: JsonObject) : LoggerBase(config) {
                     val range = 1..rs.metaData.columnCount
                     data.add(range.map { rs.metaData.getColumnName(it) })
                     while (rs.next()) {
-                        data.add(range.map { rs.getObject(it) })
+                        data.add(range.map { index ->
+                            rs.getObject(index)
+                        })
                     }
                     result(true, data)
                 }

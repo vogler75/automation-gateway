@@ -144,7 +144,7 @@ class IoTDBLogger(config: JsonObject) : LoggerBase(config) {
         nodeId: String,
         fromTimeMS: Long,
         toTimeMS: Long,
-        result: (Boolean, List<List<Any>>?) -> Unit // [[source time, server time, value, status code]]
+        result: (Boolean, List<List<Any?>>?) -> Unit // [[source time, server time, value, status code]]
     ) {
         val path = "$database.$system.**.${nodeToPath(nodeId)}"
         val paths = listOf("$path.servertime", "$path.value", "$path.status")

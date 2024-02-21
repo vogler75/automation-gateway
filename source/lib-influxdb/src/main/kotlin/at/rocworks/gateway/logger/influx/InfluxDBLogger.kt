@@ -95,7 +95,7 @@ class InfluxDBLogger(config: JsonObject) : LoggerBase(config) {
         nodeId: String,
         fromTimeMS: Long,
         toTimeMS: Long,
-        result: (Boolean, List<List<Any>>?) -> Unit
+        result: (Boolean, List<List<Any?>>?) -> Unit
     ) {
         val fromTimeNano = fromTimeMS * 1_000_000
         val toTimeNano = toTimeMS * 1_000_000

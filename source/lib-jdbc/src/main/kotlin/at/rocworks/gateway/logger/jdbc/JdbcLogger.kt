@@ -6,6 +6,7 @@ import io.vertx.core.Future
 import io.vertx.core.Promise
 import io.vertx.core.json.JsonObject
 import java.sql.*
+import java.time.OffsetDateTime
 
 
 class JdbcLogger(config: JsonObject) : LoggerBase(config) {
@@ -76,6 +77,20 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
         ) CLUSTERED INTO 4 SHARDS PARTITIONED BY ("sourcetime_month");   
     """.trimIndent())
 
+    private val sqlCreateTableHSQL = listOf("""
+        CREATE TABLE IF NOT EXISTS $sqlTableName
+        (
+            sys varchar(30) NOT NULL,
+            nodeid varchar(30) NOT NULL,
+            sourcetime timestamp with time zone NOT NULL,
+            servertime timestamp with time zone NOT NULL,
+            numericvalue numeric,
+            stringvalue longvarchar,
+            status varchar(30) ,
+            CONSTRAINT ${sqlTableName}_pk PRIMARY KEY (sys, nodeid, sourcetime)
+        );
+    """.trimIndent())
+
     // --------------------------------------------------------------------------------------------------------------
 
     private var sqlInsertStatement = config.getString("SqlInsertStatement", "")
@@ -102,6 +117,11 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
          ON CONFLICT DO NOTHING
         """.trimIndent()
 
+    private val sqlInsertStatementHSQL = """
+        INSERT INTO $sqlTableName (sys, nodeid, sourcetime, servertime, numericvalue, stringvalue, status)
+        VALUES (?, ?, ?, ?, ?, ?, ?)        
+        """.trimIndent()
+
     // --------------------------------------------------------------------------------------------------------------
 
     private val sqlQueryStatement = config.getString("SqlQueryStatement", """
@@ -120,11 +140,15 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
         val promise = Promise.promise<Unit>()
         try {
             logger.info("Open connection...")
-            this.readConnection = getConnection()
             getConnection().let { connection ->
+                logger.info("Database product name [${connection.metaData.databaseProductName}]")
+                connection.autoCommit = false
+
+                // Set write connection
                 this.writeConnection = connection
 
-                connection.autoCommit = false
+                // Create a  read Connection
+                this.readConnection = getConnection()
 
                 // Insert SQL
                 sqlInsertStatement = when (connection.metaData.databaseProductName) {
@@ -132,6 +156,7 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
                     "Crate" -> sqlInsertStatementCrate
                     "PostgreSQL" -> sqlInsertStatementPostgreSQL
                     "Microsoft SQL Server" -> sqlInsertStatementMsSQL
+                    "HSQL Database Engine" -> sqlInsertStatementHSQL
                     else -> sqlInsertStatement
                 }
 
@@ -145,6 +170,7 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
                     "Crate" -> sqlCreateTableCrate
                     "PostgreSQL" -> sqlCreateTablePostgreSQL
                     "Microsoft SQL Server" -> sqlCreateTableMsSQL
+                    "HSQL Database Engine" -> sqlCreateTableHSQL
                     else -> listOf<String>()
                 }.forEach { sql ->
                     connection.createStatement().use { statement ->
@@ -233,7 +259,7 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
         nodeId: String,
         fromTimeMS: Long,
         toTimeMS: Long,
-        result: (Boolean, List<List<Any>>?) -> Unit
+        result: (Boolean, List<List<Any?>>?) -> Unit
     ) {
         val connection = this.readConnection
         if (connection != null)
@@ -247,7 +273,7 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
                     stmt.setTimestamp(4, Timestamp(toTimeMS))
                     val rs = stmt.executeQuery()
                     while (rs.next()) {
-                        // sourcetime, servertime, numericvalue, stringvalue, status
+                        // source time, server time, numeric value, string value, status
                         val value = if (rs.getObject(3) != null) {
                             rs.getDouble(3)
                         } else {
@@ -273,18 +299,25 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
         }
     }
 
-    override fun sqlExecutor(sql: String, result: (Boolean, List<List<Any>>?) -> Unit) {
+    override fun sqlExecutor(sql: String, result: (Boolean, List<List<Any?>>) -> Unit) {
         val connection = this.readConnection
         if (connection != null)
         {
             try {
                 connection.prepareStatement(sql).use { stmt ->
-                    val data = mutableListOf<List<Any>>()
+                    val data = mutableListOf<List<Any?>>()
                     val rs = stmt.executeQuery()
                     val range = 1..rs.metaData.columnCount
                     data.add(range.map { rs.metaData.getColumnName(it) })
                     while (rs.next()) {
-                        data.add(range.map { rs.getObject(it) })
+                        data.add(range.map { index ->
+                            val value = rs.getObject(index)
+                            if (value == null) null
+                            else when (value) {
+                                is OffsetDateTime -> value.toString()
+                                else -> value
+                            }
+                        })
                     }
                     result(true, data)
                 }

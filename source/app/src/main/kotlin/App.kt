@@ -27,7 +27,7 @@ object App {
                 Component.ComponentType.KafkaLogger    -> KafkaLogger(config)
                 Component.ComponentType.JdbcLogger     -> JdbcLogger(config)
                 Component.ComponentType.Neo4jLogger    -> Neo4jLogger(config)
-//                Component.ComponentType.DuckDBLogger   -> DuckDBLogger(config) // it's huge, include it only when needed
+                //Component.ComponentType.DuckDBLogger   -> DuckDBLogger(config) // it's huge, include it only when needed
                 else -> {
                     logger.severe("Unknown component type [${type}]")
                     null

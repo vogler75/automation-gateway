@@ -21,7 +21,9 @@ dependencies {
     implementation "io.vertx:vertx-config-yaml:$vertxVersion"
     implementation "io.vertx:vertx-service-discovery:$vertxVersion"
 
-    runtimeOnly group: 'org.postgresql', name: 'postgresql', version: '42.2.27'
+    runtimeOnly group: 'org.postgresql', name: 'postgresql', version: '42.7.1'
+    runtimeOnly group: 'org.hsqldb', name: 'hsqldb', version: '2.7.2'
+
     //runtimeOnly group: 'mysql', name: 'mysql-connector-java', version: '8.0.28'
     //runtimeOnly group: 'io.crate', name: 'crate-jdbc', version: '2.6.0'
     //runtimeOnly group: 'com.microsoft.sqlserver', name: 'mssql-jdbc', version: '10.2.0.jre11'

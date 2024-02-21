@@ -277,7 +277,7 @@ abstract class LoggerBase(config: JsonObject) : Component(config) {
         nodeId: String,
         fromTimeMS: Long,
         toTimeMS: Long,
-        result: (Boolean, List<List<Any>>?) -> Unit // [[sourcetime, servertime, value, statuscode]]
+        result: (Boolean, List<List<Any?>>?) -> Unit // [[sourcetime, servertime, value, statuscode]]
     ) {
         logger.warning("Function queryExecutor not implemented!")
         result(false, null)
@@ -302,8 +302,8 @@ abstract class LoggerBase(config: JsonObject) : Component(config) {
         })
     }
 
-    open fun sqlExecutor(sql: String, result: (Boolean, List<List<Any>>?) -> Unit) {
-        result(true, listOf(listOf<Any>("Not implemented")))
+    open fun sqlExecutor(sql: String, result: (Boolean, List<List<Any?>>) -> Unit) {
+        result(true, listOf(listOf<Any?>("Not implemented")))
     }
 
     private fun sqlHandler(message: Message<JsonObject>) {

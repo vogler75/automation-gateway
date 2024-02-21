@@ -1,0 +1,35 @@
+Servers:
+  OpcUa:
+    - Id: opc
+      Topics:
+        - Topic: mqtt/spb/path/spBv1.0/#
+        - Topic: mqtt/home/path/Original/#
+
+Drivers:
+  Mqtt:
+    - Id: spb
+      LogLevel: FINE
+      Host: 192.168.1.4
+      Port: 1883
+      Format: SparkplugB
+
+    - Id: "home"
+      Enabled: true
+      LogLevel: INFO
+      Host: 192.168.1.4
+      Port: 1883
+      Format: Json
+      CustomJson:
+        Value: "Value"
+        TimestampMs: "TimeMS"
+        TimestampIso: "TimeISO"
+
+Loggers:
+  Mqtt:
+    - Id: test
+      LogLevel: FINE
+      Host: 192.168.1.4
+      Port: 1883
+      Format: Raw
+      Logging:
+        - Topic: mqtt/spb/path/spBv1.0/#

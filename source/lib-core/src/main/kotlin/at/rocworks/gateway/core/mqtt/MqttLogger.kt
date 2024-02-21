@@ -95,6 +95,7 @@ class MqttLogger (config: JsonObject) : LoggerPublisher(config) {
     }
 
     override fun publish(point: DataPoint, payload: Buffer) {
+        logger.fine { "Publish to Topic: ${point.topic}" }
         val topic = if (topicToTarget.containsKey(point.topic.topicName)) {
             val target = topicToTarget[point.topic.topicName]!!
             if (target.endsWith("#") || target.endsWith("+")) {

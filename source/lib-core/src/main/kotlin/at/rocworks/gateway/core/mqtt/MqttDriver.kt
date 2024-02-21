@@ -76,9 +76,7 @@ class MqttDriver(config: JsonObject) : DriverBase(config) {
     private val encodeMessage: (topic: String, value: TopicValue) -> Buffer = when (format) {
         PayloadFormat.Raw -> ::encodeRawMessage
         PayloadFormat.DefaultJson -> ::encodeDefaultJsonMessage
-        PayloadFormat.CustomJson -> {
-            ::encodeCustomJsonMessage
-        }
+        PayloadFormat.CustomJson -> ::encodeCustomJsonMessage
         PayloadFormat.SparkplugB -> ::encodeSparkplugBMessage
     }
 
@@ -188,7 +186,7 @@ class MqttDriver(config: JsonObject) : DriverBase(config) {
     }
 
     private fun newTopicOf(topic: Topic, topicReceived: String) =
-        topic.copy(browsePath = topicReceived, node = topicReceived)
+        topic.copy(browsePath = topicReceived, node = "")
 
     private fun decodeValueMessage(topic: Topic, topicReceived: String, payload: Buffer) : List<DataPoint> {
         return listOf(DataPoint(newTopicOf(topic, topicReceived), TopicValue(payload)))
@@ -247,7 +245,6 @@ class MqttDriver(config: JsonObject) : DriverBase(config) {
                 }
             }
         } catch (e: Exception) {
-            println("Exception!")
             logger.warning("Invalid JSON Format! Exception: $e [$jsonPath>>$json]")
             null
         }
@@ -257,13 +254,12 @@ class MqttDriver(config: JsonObject) : DriverBase(config) {
     private fun decodeSparkplugMessage(topic: Topic, topicReceived: String, payload: Buffer) : List<DataPoint> {
         val decoder = SparkplugBPayloadDecoder()
         val message = decoder.buildFromByteArray(payload.bytes, null)
-
         return message.metrics.map {
-            val clone = topic.copy(node = it.name, browsePath = topicReceived + "/metrics/" + it.name)
+            val clone = topic.copy(node = it.name, browsePath = topicReceived)
             DataPoint(clone, TopicValue(
                 value = it.value,
-                sourceTime = it.timestamp.toInstant(),
-                serverTime = it.timestamp.toInstant()
+                sourceTime = it.timestamp?.toInstant() ?: Instant.now(),
+                serverTime = it.timestamp?.toInstant() ?: Instant.now()
             ))
         }
     }
@@ -276,6 +272,7 @@ class MqttDriver(config: JsonObject) : DriverBase(config) {
 
             fun publish(topic: Topic) {
                 try {
+                    logger.fine { "Consume Topic: [$topic] Received Topic: [$receivedTopic]" }
                     val dataPoints = decodeMessage(topic, receivedTopic, receivedPayload)
                     dataPoints.forEach { dataPoint ->
                         eventBus.publishDataPoint(vertx, dataPoint)
@@ -296,6 +293,7 @@ class MqttDriver(config: JsonObject) : DriverBase(config) {
     }
 
     override fun publishTopic(topic: Topic, value: Buffer): Future<Boolean> {
+        logger.fine { "Publish Topic: [${topic}]" }
         val promise = Promise.promise<Boolean>()
         val message = encodeMessage(topic.node, TopicValue(value.toString()))
         client?.publish(topic.browsePath, message, MqttQoS.valueOf(qos), false, retained)?.onComplete {
@@ -306,6 +304,7 @@ class MqttDriver(config: JsonObject) : DriverBase(config) {
     }
 
     override fun publishTopic(topic: Topic, value: TopicValue): Future<Boolean> {
+        logger.fine { "Publish Topic: [${topic}]" }
         val promise = Promise.promise<Boolean>()
         val message = encodeMessage(topic.node, value)
         client?.publish(topic.browsePath, message, MqttQoS.valueOf(qos), false, retained)?.onComplete {

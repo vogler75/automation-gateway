@@ -2,7 +2,6 @@ package at.rocworks.gateway.logger.iotdb
 
 import at.rocworks.gateway.core.data.DataPoint
 import at.rocworks.gateway.core.data.Topic
-import at.rocworks.gateway.core.data.TopicStatus
 import at.rocworks.gateway.core.logger.LoggerBase
 import io.vertx.core.Future
 import io.vertx.core.Promise
@@ -59,9 +58,9 @@ class IoTDBLogger(config: JsonObject) : LoggerBase(config) {
     private fun getPath(point: DataPoint) =
         point.topic.systemName + "." +
         when (point.topic.systemType) {
-            Topic.SystemType.Opc -> (if (point.topic.hasBrowsePath) point.topic.browsePath.replace("/", ".") else "node") + "." + nodeToPath(point.topic.node)
+            Topic.SystemType.Opc -> (if (point.topic.hasBrowsePath) point.topic.browsePath.replace("/", ".") else "node") + "." + nodeToPath(point.topic.topicNode)
             Topic.SystemType.Mqtt -> nodeToPath(point.topic.browsePath.replace("/", "."))
-            Topic.SystemType.Plc -> "node."+nodeToPath(point.topic.node)
+            Topic.SystemType.Plc -> "node."+nodeToPath(point.topic.topicNode)
             Topic.SystemType.Sys -> TODO()
             Topic.SystemType.Unknown -> TODO()
         }

@@ -7,22 +7,18 @@ import at.rocworks.gateway.core.data.TopicValue
 import at.rocworks.gateway.core.opcua.OpcUaServer
 import at.rocworks.gateway.core.service.ComponentLogger
 import io.vertx.core.buffer.impl.BufferImpl
-import io.vertx.core.json.JsonObject
 import org.eclipse.milo.opcua.sdk.core.AccessLevel
-import org.eclipse.milo.opcua.sdk.core.DataTypeTree.DataType
 import org.eclipse.milo.opcua.sdk.core.Reference
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer as MiloOpcUaServer
 import org.eclipse.milo.opcua.sdk.server.api.AddressSpaceComposite
 import org.eclipse.milo.opcua.sdk.server.nodes.UaFolderNode
 import org.eclipse.milo.opcua.sdk.server.nodes.UaNode
 import org.eclipse.milo.opcua.sdk.server.nodes.UaVariableNode
-import org.eclipse.milo.opcua.stack.core.AttributeId
 import org.eclipse.milo.opcua.stack.core.BuiltinDataType
 import org.eclipse.milo.opcua.stack.core.Identifiers
 import org.eclipse.milo.opcua.stack.core.types.builtin.*
 import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UShort
 import java.time.Instant
-import javax.xml.datatype.DatatypeConstants
 
 
 class OpcUaGatewayNodes(
@@ -96,13 +92,13 @@ class OpcUaGatewayNodes(
                 topic.systemType.toString(),
                 topic.systemName,
                 "Nodes",
-                topic.node
+                topic.topicNode
             )
 
             Topic.TopicType.Path -> listOf(
                 topic.systemType.toString(),
                 topic.systemName
-            ) + topic.browsePath.split("/") + listOf(topic.node).filter { it != "" }
+            ) + topic.browsePath.split("/") + listOf(topic.topicNode).filter { it != "" }
 
             Topic.TopicType.Unknown -> TODO()
         }

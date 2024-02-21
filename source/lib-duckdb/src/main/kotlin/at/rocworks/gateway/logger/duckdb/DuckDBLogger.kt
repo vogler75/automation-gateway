@@ -109,7 +109,7 @@ class DuckDBLogger(config: JsonObject) : LoggerBase(config) {
                     //println(it.topic.encodeToJson().toString())
                     appender.beginRow()
                     appender.append(it.topic.systemName)
-                    appender.append(it.topic.node)
+                    appender.append(it.topic.topicNode)
                     appender.append(it.topic.browsePath)
                     appender.appendLocalDateTime(LocalDateTime.ofInstant(it.value.sourceTime, ZoneOffset.UTC))
                     appender.appendLocalDateTime(LocalDateTime.ofInstant(it.value.serverTime, ZoneOffset.UTC))

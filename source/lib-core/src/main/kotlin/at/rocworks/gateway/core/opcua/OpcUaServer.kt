@@ -83,7 +83,7 @@ class OpcUaServer(config: JsonObject): Component(config) {
             ?.filterIsInstance<JsonObject>()
             ?.mapNotNull { it.getString("Topic") }
             ?.map { Topic.parseTopic(it) }
-            ?.filter { it.format == Topic.Format.Json }
+            ?.filter { it.dataFormat == Topic.Format.Json }
             ?.toList()
             ?:listOf()
 

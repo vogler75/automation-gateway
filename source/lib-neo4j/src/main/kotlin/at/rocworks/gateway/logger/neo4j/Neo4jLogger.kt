@@ -18,7 +18,6 @@ import java.util.concurrent.TimeUnit
 import kotlin.Any
 import kotlin.Boolean
 import kotlin.Exception
-import kotlin.Long
 import kotlin.String
 import kotlin.Unit
 
@@ -287,7 +286,7 @@ class Neo4jLogger(config: JsonObject) : LoggerBase(config) {
     private fun writeOpcNodes(dataPoints: List<DataPoint>) {
         val records = dataPoints.map { point ->
             mapOf("System" to point.topic.systemName,
-                "NodeId" to point.topic.node,
+                "NodeId" to point.topic.topicNode,
                 "Status" to point.value.statusAsString(),
                 "Value" to point.value.valueAsObject(),
                 "DataType" to point.value.dataTypeName(),
@@ -318,10 +317,10 @@ class Neo4jLogger(config: JsonObject) : LoggerBase(config) {
 
     private fun writeMqttNodes(dataPoints: List<DataPoint>) {
         val records = dataPoints.map { point ->
-            val name = point.topic.node.split("/").last()
+            val name = point.topic.topicNode.split("/").last()
             mapOf("Name" to name,
                 "System" to point.topic.systemName,
-                "NodeId" to point.topic.node,
+                "NodeId" to point.topic.topicNode,
                 "Status" to point.value.statusAsString(),
                 "Value" to if (point.value.value is BufferImpl) point.value.valueAsString() else point.value.valueAsObject(),
                 "DataType" to point.value.dataTypeName(),

@@ -144,11 +144,11 @@ class MqttDriver(config: JsonObject) : DriverBase(config) {
         else {
             logger.fine { "Subscribe to [${topics.size}] topics" }
             topics.forEach { topic ->
-                logger.fine { "Subscribe topic [${topic.topicName}] node [${topic.node}]" }
-                client?.subscribe(topic.node, qos)
-                registry.addMonitoredItem(MqttMonitoredItem(topic.node), topic)
+                logger.fine { "Subscribe topic [${topic.topicName}] node [${topic.topicPath}]" }
+                client?.subscribe(topic.topicPath, qos)
+                registry.addMonitoredItem(MqttMonitoredItem(topic.topicPath), topic)
                 subscribedTopics.add(topic)
-                resetReceivedTopics(topic.node)
+                resetReceivedTopics(topic.topicPath)
             }
             promise.complete(true)
         }
@@ -164,7 +164,7 @@ class MqttDriver(config: JsonObject) : DriverBase(config) {
 
         items.map { (it as MqttMonitoredItem).item }
             .filter { node ->
-                subscribedTopics.none { it.node == node }
+                subscribedTopics.none { it.topicPath == node }
             }
             .forEach { node ->
                 logger.info("Unsubscribe node [${node}]")
@@ -186,7 +186,7 @@ class MqttDriver(config: JsonObject) : DriverBase(config) {
     }
 
     private fun newTopicOf(topic: Topic, topicReceived: String) =
-        topic.copy(browsePath = topicReceived, node = "")
+        topic.copy(browsePath = topicReceived)
 
     private fun decodeValueMessage(topic: Topic, topicReceived: String, payload: Buffer) : List<DataPoint> {
         return listOf(DataPoint(newTopicOf(topic, topicReceived), TopicValue(payload)))
@@ -255,7 +255,7 @@ class MqttDriver(config: JsonObject) : DriverBase(config) {
         val decoder = SparkplugBPayloadDecoder()
         val message = decoder.buildFromByteArray(payload.bytes, null)
         return message.metrics.map {
-            val clone = topic.copy(node = it.name, browsePath = topicReceived)
+            val clone = topic.copy(topicNode = it.name, browsePath = topicReceived)
             DataPoint(clone, TopicValue(
                 value = it.value,
                 sourceTime = it.timestamp?.toInstant() ?: Instant.now(),
@@ -283,7 +283,7 @@ class MqttDriver(config: JsonObject) : DriverBase(config) {
             }
 
             receivedTopics[receivedTopic]?.forEach(::publish) ?: run {
-                val topics = subscribedTopics.filter { compareTopic(receivedTopic, it.node) }
+                val topics = subscribedTopics.filter { compareTopic(receivedTopic, it.topicPath) }
                 receivedTopics[receivedTopic] = topics
                 topics.forEach(::publish)
             }
@@ -295,7 +295,7 @@ class MqttDriver(config: JsonObject) : DriverBase(config) {
     override fun publishTopic(topic: Topic, value: Buffer): Future<Boolean> {
         logger.fine { "Publish Topic: [${topic}]" }
         val promise = Promise.promise<Boolean>()
-        val message = encodeMessage(topic.node, TopicValue(value.toString()))
+        val message = encodeMessage(topic.topicNode, TopicValue(value.toString()))
         client?.publish(topic.browsePath, message, MqttQoS.valueOf(qos), false, retained)?.onComplete {
             promise.complete(true)
         }
@@ -306,7 +306,7 @@ class MqttDriver(config: JsonObject) : DriverBase(config) {
     override fun publishTopic(topic: Topic, value: TopicValue): Future<Boolean> {
         logger.fine { "Publish Topic: [${topic}]" }
         val promise = Promise.promise<Boolean>()
-        val message = encodeMessage(topic.node, value)
+        val message = encodeMessage(topic.topicNode, value)
         client?.publish(topic.browsePath, message, MqttQoS.valueOf(qos), false, retained)?.onComplete {
             promise.complete(true)
         }

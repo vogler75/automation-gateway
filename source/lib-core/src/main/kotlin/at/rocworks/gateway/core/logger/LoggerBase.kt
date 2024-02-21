@@ -61,7 +61,7 @@ abstract class LoggerBase(config: JsonObject) : Component(config) {
             .filterIsInstance<JsonObject>()
             .filter { it.getString("Topic") != null }
             .map { Pair(Topic.parseTopic(it.getString("Topic")), it) }
-            .filter { it.first.format == Topic.Format.Json }
+            .filter { it.first.dataFormat == Topic.Format.Json }
             .toList()
 
         topics = topicsWithConfig.map { it.first }

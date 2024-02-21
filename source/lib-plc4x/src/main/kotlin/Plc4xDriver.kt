@@ -62,7 +62,7 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
             val localRequestId = ++pollingRequestId
             val builder: PlcReadRequest.Builder = plc!!.readRequestBuilder()
             pollingTopics.forEach {
-                builder.addItem(it.key.topicName, it.key.node)
+                builder.addItem(it.key.topicName, it.key.topicNode)
             }
             logger.finest { "Poll request [${localRequestId}] for [${pollingTopics.size}] items..." }
             try {
@@ -182,7 +182,7 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
             else -> {
                 val builder: PlcSubscriptionRequest.Builder = plc!!.subscriptionRequestBuilder()
                 topics.forEach {
-                    builder.addEventField("value", it.node)
+                    builder.addEventField("value", it.topicNode)
                 }
                 val request = builder.build()
 
@@ -267,7 +267,7 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
         try {
             when (topic.topicType) {
                 Topic.TopicType.Node -> {
-                    writeValueAsync(topic.node, value.toString()).onComplete(ret)
+                    writeValueAsync(topic.topicNode, value.toString()).onComplete(ret)
                 }
                 else -> {
                     logger.warning("Item type [${topic.topicType}] not yet implemented!")
@@ -284,7 +284,7 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
         try {
             when (topic.topicType) {
                 Topic.TopicType.Node -> {
-                    if (value.hasValue()) writeValueAsync(topic.node, value.value!!).onComplete(ret)
+                    if (value.hasValue()) writeValueAsync(topic.topicNode, value.value!!).onComplete(ret)
                 }
                 else -> {
                     logger.warning("Item type [${topic.topicType}] not yet implemented!")

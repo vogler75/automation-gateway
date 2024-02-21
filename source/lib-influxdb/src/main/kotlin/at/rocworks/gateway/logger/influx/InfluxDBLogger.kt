@@ -61,7 +61,7 @@ class InfluxDBLogger(config: JsonObject) : LoggerBase(config) {
         val point = Point.measurement(dp.topic.systemName) // TODO: configurable measurement name
             .time(dp.value.sourceTime().toEpochMilli(), TimeUnit.MILLISECONDS)
             .tag("tag", dp.topic.browsePath)
-            .tag("address", dp.topic.node)
+            .tag("address", dp.topic.topicNode)
             .tag("status", dp.value.statusAsString())
 
         val numeric: Double? = dp.value.valueAsDouble()

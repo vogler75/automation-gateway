@@ -233,7 +233,7 @@ class MqttServerEndpoint(
         try {
             logger.finest { "Publish [${value.topic.topicNameAndPath}]" }
             if (endpoint.isConnected) {
-                when (topic.format) {
+                when (topic.dataFormat) {
                     Topic.Format.Json -> {
                         val payload = Buffer.buffer(value.encodeToJson().toString())
                         endpoint.publish(value.topic.topicNameAndPath, payload, qos, false /*isDup*/, false /* isRetain */)
@@ -283,7 +283,7 @@ class MqttServerEndpoint(
             val topic = Topic.parseTopic(message.topicName())
             when (topic.systemType) {
                 Topic.SystemType.Mqtt, Topic.SystemType.Opc, Topic.SystemType.Plc -> {
-                    when (topic.format) {
+                    when (topic.dataFormat) {
                         Topic.Format.Value -> {
                             val value = message.payload()
                             eventBus.requestPublishTopicBuffer(vertx, topic, value)

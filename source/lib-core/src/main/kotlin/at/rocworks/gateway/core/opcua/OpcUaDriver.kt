@@ -445,7 +445,7 @@ class OpcUaDriver(config: JsonObject) : DriverBase(config) {
     }
 
     private fun writeValue(topic: Topic, value: (NodeId)->DataValue, promise: Promise<Boolean>) {
-        val nodeId = NodeId.parse(topic.node)
+        val nodeId = NodeId.parse(topic.topicNode)
         writeValueQueued(nodeId, value(nodeId)).onComplete(promise)
     }
 
@@ -638,7 +638,7 @@ class OpcUaDriver(config: JsonObject) : DriverBase(config) {
         if (topics.isEmpty()) ret.complete(true)
         else {
             logger.fine { "Subscribe nodes [${ topics.size}] sampling interval [${monitoringParametersSamplingInterval}]" }
-            val nodeIds = topics.map { NodeId.parseOrNull(it.node) }.toList()
+            val nodeIds = topics.map { NodeId.parseOrNull(it.topicNode) }.toList()
             val requests = ArrayList<MonitoredItemCreateRequest>()
 
             val dataChangeFilter = ExtensionObject.encode(client!!.staticSerializationContext, DataChangeFilter(
@@ -707,17 +707,17 @@ class OpcUaDriver(config: JsonObject) : DriverBase(config) {
                 try {
                     val resolvedTopics = mutableListOf<Topic>()
                     topics.forEach { topic ->
-                        logger.fine { "Subscribe path [${topic.path}]" }
-                        val resolvedNodeIds = pathNodeIdCache.get(topic.path)
+                        logger.fine { "Subscribe path [${topic.topicPath}]" }
+                        val resolvedNodeIds = pathNodeIdCache.get(topic.topicPath)
                         resolvedTopics.addAll(resolvedNodeIds.map {
                             Topic(
                                 topicName = topic.topicName,
                                 systemType = topic.systemType,
                                 topicType = topic.topicType, // Topic.TopicType.Node,
                                 systemName = topic.systemName,
-                                path = topic.path,
-                                node = it.first.toParseableString(),
-                                format = topic.format,
+                                topicPath = topic.topicPath,
+                                topicNode = it.first.toParseableString(),
+                                dataFormat = topic.dataFormat,
                                 browsePath = it.second
                             )
                         })
@@ -776,7 +776,7 @@ class OpcUaDriver(config: JsonObject) : DriverBase(config) {
                 eventBus.publishDataPoint(vertx, DataPoint(topic, value))
             } catch (e: Exception) {
                 val type = if (value.value != null) value.value::class.qualifiedName else "?"
-                logger.severe("Exception at topic: ${topic.path}, datatype: $type, value ${value.value}, exception: ${e.message} ")
+                logger.severe("Exception at topic: ${topic.topicPath}, datatype: $type, value ${value.value}, exception: ${e.message} ")
             }
         } catch (e: Exception) {
             e.printStackTrace()

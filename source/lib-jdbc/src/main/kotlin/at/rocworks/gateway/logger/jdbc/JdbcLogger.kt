@@ -233,7 +233,7 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
         if (batchPoints.size > 0) {
             batchPoints.forEach {
                 batch.setString(1, it.topic.systemName)
-                batch.setString(2, it.topic.node)
+                batch.setString(2, it.topic.topicNode)
                 batch.setTimestamp(3, Timestamp.from(it.value.sourceTime()))
                 batch.setTimestamp(4, Timestamp.from(it.value.serverTime()))
                 val doubleValue = it.value.valueAsDouble()

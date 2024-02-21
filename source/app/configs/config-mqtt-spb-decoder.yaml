@@ -1,6 +1,6 @@
 Servers:
   OpcUa:
-    - Port: 4841
+    - Port: 4840
       Enabled: true
       LogLevel: INFO
       Topics:
@@ -10,7 +10,7 @@ Drivers:
   Mqtt:
     - Id: "input"
       Enabled: true
-      LogLevel: INFO
+      LogLevel: FINE
       Host: 192.168.1.4
       Port: 1883
       Ssl: false

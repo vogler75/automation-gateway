@@ -14,7 +14,7 @@ class EventBus(val logger: Logger) {
         topic: Topic,
         data: Buffer
     ) {
-        val target = topic.copy(format=Topic.Format.Value)
+        val target = topic.copy(dataFormat=Topic.Format.Value)
         val address = "${target.systemType.name}/${target.systemName}/Publish"
 
         val request = JsonObject()

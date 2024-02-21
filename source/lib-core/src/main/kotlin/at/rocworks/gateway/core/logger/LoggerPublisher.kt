@@ -9,7 +9,6 @@ import org.eclipse.tahu.message.model.Metric
 import org.eclipse.tahu.message.model.MetricDataType
 import org.eclipse.tahu.message.model.SparkplugBPayload
 import java.util.*
-import java.util.concurrent.TimeUnit
 import kotlin.collections.LinkedHashMap
 
 abstract class LoggerPublisher(config: JsonObject) : LoggerBase(config) {
@@ -114,7 +113,7 @@ abstract class LoggerPublisher(config: JsonObject) : LoggerBase(config) {
     // Format JsonSimple
     private fun formatterJsonSimpleSoloObject(point: DataPoint): JsonObject {
         val payload = JsonObject()
-        payload.put("nodeId", point.topic.node)
+        payload.put("nodeId", point.topic.topicNode)
         payload.put("systemName", point.topic.systemName)
         payload.put("topicName", point.topic.topicName)
         payload.put("browsePath", point.topic.browsePath)

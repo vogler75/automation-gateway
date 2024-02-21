@@ -378,8 +378,4 @@ class Neo4jLogger(config: JsonObject) : LoggerBase(config) {
             parameters("parentId", parentId, "folderId", mqttValueId)
         )
     }
-
-    override fun getComponentGroup(): ComponentGroup {
-        return ComponentGroup.Logger
-    }
 }

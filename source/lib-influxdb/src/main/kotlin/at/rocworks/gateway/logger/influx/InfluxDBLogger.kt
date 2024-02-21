@@ -124,8 +124,4 @@ class InfluxDBLogger(config: JsonObject) : LoggerBase(config) {
             result(false, null)
         }
     }
-
-    override fun getComponentGroup(): ComponentGroup {
-        return ComponentGroup.Logger
-    }
 }

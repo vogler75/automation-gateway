@@ -120,8 +120,4 @@ class MqttLogger (config: JsonObject) : LoggerPublisher(config) {
     override fun publish(points: List<DataPoint>, payload: Buffer) {
         publish(this.topic, payload)
     }
-
-    override fun getComponentGroup(): ComponentGroup {
-        return ComponentGroup.Logger
-    }
 }

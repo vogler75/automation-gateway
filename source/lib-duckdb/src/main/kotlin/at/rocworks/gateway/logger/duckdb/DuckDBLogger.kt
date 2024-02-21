@@ -199,8 +199,4 @@ class DuckDBLogger(config: JsonObject) : LoggerBase(config) {
             result(true, listOf(listOf("No connection")))
         }
     }
-
-    override fun getComponentGroup(): ComponentGroup {
-        return ComponentGroup.Logger
-    }
 }

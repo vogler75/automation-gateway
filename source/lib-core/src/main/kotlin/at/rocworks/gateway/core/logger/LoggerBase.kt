@@ -79,6 +79,10 @@ abstract class LoggerBase(config: JsonObject) : Component(config) {
         return this.config
     }
 
+    final override fun getComponentGroup(): ComponentGroup {
+        return ComponentGroup.Logger
+    }
+
     abstract fun open(): Future<Unit>
     abstract fun close(): Future<Unit>
 

@@ -68,8 +68,4 @@ class KafkaLogger(config: JsonObject) : LoggerPublisher(config) {
             valueCounterOutput+=points.size
         }
     }
-
-    override fun getComponentGroup(): ComponentGroup {
-        return ComponentGroup.Logger
-    }
 }

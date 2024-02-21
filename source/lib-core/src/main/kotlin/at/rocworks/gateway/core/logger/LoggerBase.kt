@@ -294,7 +294,7 @@ abstract class LoggerBase(config: JsonObject) : Component(config) {
             val timing1 = Instant.now()
             queryExecutor(system, nodeId, t1, t2) { ok, result ->
                 val timing2 = Instant.now()
-                logger.info("Query [${system}/${nodeId}] executed in [${Duration.between(timing1, timing2).toMillis()}] ms")
+                logger.fine { "Query [${system}/${nodeId}] executed in [${Duration.between(timing1, timing2).toMillis()}] ms" }
                 val response = JsonObject().put("Ok", ok)
                 if (ok) response.put("Result", result)
                 message.reply(response)
@@ -313,7 +313,7 @@ abstract class LoggerBase(config: JsonObject) : Component(config) {
             val timing1 = Instant.now()
             sqlExecutor(sql) { ok, result ->
                 val timing2 = Instant.now()
-                logger.info("SQL [${sql}] executed in [${Duration.between(timing1, timing2).toMillis()}] ms")
+                logger.fine("SQL [${sql}] executed in [${Duration.between(timing1, timing2).toMillis()}] ms")
                 val response = JsonObject().put("Ok", ok)
                 if (ok) response.put("Result", result)
                 message.reply(response)

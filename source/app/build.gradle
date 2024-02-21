@@ -14,7 +14,7 @@ dependencies {
     implementation project(':lib-kafka')
     implementation project(':lib-iotdb')
     implementation project(':lib-neo4j')
-    implementation project(':lib-duckdb')
+    //implementation project(':lib-duckdb') // it's huge, include it only when needed
 
     implementation "io.vertx:vertx-core:$vertxVersion"
     implementation "io.vertx:vertx-lang-kotlin:$vertxVersion"
@@ -22,7 +22,6 @@ dependencies {
     implementation "io.vertx:vertx-service-discovery:$vertxVersion"
 
     runtimeOnly group: 'org.postgresql', name: 'postgresql', version: '42.2.27'
-    runtimeOnly group: 'org.duckdb', name: 'duckdb_jdbc', version: '0.10.0'
     //runtimeOnly group: 'mysql', name: 'mysql-connector-java', version: '8.0.28'
     //runtimeOnly group: 'io.crate', name: 'crate-jdbc', version: '2.6.0'
     //runtimeOnly group: 'com.microsoft.sqlserver', name: 'mssql-jdbc', version: '10.2.0.jre11'

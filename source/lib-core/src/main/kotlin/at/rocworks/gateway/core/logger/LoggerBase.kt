@@ -136,7 +136,7 @@ abstract class LoggerBase(config: JsonObject) : Component(config) {
         vertx.executeBlocking(Callable { connect(startPromise) })
 
         busConsumerQueryHistory = vertx.eventBus().consumer("${Common.BUS_ROOT_URI_LOG}/$id/QueryHistory", ::queryHandler)
-        busConsumerExecuteSQL = vertx.eventBus().consumer("${Common.BUS_ROOT_URI_LOG}/$id/ExecuteSQL", ::executeSqlHandler)
+        busConsumerExecuteSQL = vertx.eventBus().consumer("${Common.BUS_ROOT_URI_LOG}/$id/ExecuteSQL", ::sqlHandler)
 
         periodicMetricCalculator = vertx.setPeriodic(1000, ::metricCalculator)
         writeValueThread = writerThread()
@@ -306,7 +306,7 @@ abstract class LoggerBase(config: JsonObject) : Component(config) {
         result(true, listOf(listOf<Any>("Not implemented")))
     }
 
-    private fun executeSqlHandler(message: Message<JsonObject>) {
+    private fun sqlHandler(message: Message<JsonObject>) {
         val request = message.body()
         val sql = request.getString("SQL")
         vertx.executeBlocking(Callable {

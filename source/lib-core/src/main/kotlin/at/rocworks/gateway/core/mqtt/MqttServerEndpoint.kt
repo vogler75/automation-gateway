@@ -206,7 +206,6 @@ class MqttServerEndpoint(
                 this.topicConsumer[topic.topicName] = consumer
                 ret.complete(true)
             } else {
-                println("Nak")
                 ret.complete(false)
             }
         }

@@ -265,16 +265,16 @@ class MqttDriver(config: JsonObject) : DriverBase(config) {
     }
 
     private fun valueConsumer(message: MqttPublishMessage) {
-        logger.finest { "Got value [${message.topicName()}] [${message.payload()}]" }
         try {
             val receivedTopic = message.topicName()
             val receivedPayload = message.payload()
 
             fun publish(topic: Topic) {
                 try {
-                    logger.fine { "Consume Topic: [$topic] Received Topic: [$receivedTopic]" }
+                    logger.fine { "Consume External: $topic Received Topic: [$receivedTopic]" }
                     val dataPoints = decodeMessage(topic, receivedTopic, receivedPayload)
                     dataPoints.forEach { dataPoint ->
+                        logger.fine { "Produce Internal: ${dataPoint.topic}"}
                         eventBus.publishDataPoint(vertx, dataPoint)
                     }
                 } catch (e: Exception) {
@@ -293,7 +293,7 @@ class MqttDriver(config: JsonObject) : DriverBase(config) {
     }
 
     override fun publishTopic(topic: Topic, value: Buffer): Future<Boolean> {
-        logger.fine { "Publish Topic: [${topic}]" }
+        logger.fine { "Produce External: $topic" }
         val promise = Promise.promise<Boolean>()
         val message = encodeMessage(topic.topicNode, TopicValue(value.toString()))
         client?.publish(topic.browsePath, message, MqttQoS.valueOf(qos), false, retained)?.onComplete {
@@ -304,7 +304,7 @@ class MqttDriver(config: JsonObject) : DriverBase(config) {
     }
 
     override fun publishTopic(topic: Topic, value: TopicValue): Future<Boolean> {
-        logger.fine { "Publish Topic: [${topic}]" }
+        logger.fine { "Produce External: $topic" }
         val promise = Promise.promise<Boolean>()
         val message = encodeMessage(topic.topicNode, value)
         client?.publish(topic.browsePath, message, MqttQoS.valueOf(qos), false, retained)?.onComplete {

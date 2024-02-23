@@ -243,7 +243,7 @@ class MqttServerEndpoint(
                     }
                 }
             } else {
-                logger.warning("Publish topic [${topic}] to client [${endpoint.clientIdentifier()}] which is not connected anymore!")
+                logger.warning("Topic [${topic}] to client [${endpoint.clientIdentifier()}] which is not connected anymore!")
             }
         } catch (e: Exception) {
             e.printStackTrace()
@@ -269,7 +269,7 @@ class MqttServerEndpoint(
                     else -> logger.warning("Got unhandled class of instance [${value.javaClass.simpleName}]")
                 }
             } else {
-                logger.warning("Publish topic [${topic}] to client [${endpoint.clientIdentifier()}] which is not connected anymore!")
+                logger.warning("Topic [${topic}] to client [${endpoint.clientIdentifier()}] which is not connected anymore!")
             }
         } catch (e: Exception) {
             e.printStackTrace()

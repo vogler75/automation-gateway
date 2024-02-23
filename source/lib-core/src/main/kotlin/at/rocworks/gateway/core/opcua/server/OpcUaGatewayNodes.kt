@@ -98,7 +98,7 @@ class OpcUaGatewayNodes(
             Topic.TopicType.Path -> listOf(
                 topic.systemType.toString(),
                 topic.systemName
-            ) + topic.browsePath.split("/") + listOf(topic.topicNode).filter { it != "" }
+            ) + topic.browsePath.split("/") // + listOf(topic.topicNode).filter { it != "" }
 
             Topic.TopicType.Unknown -> TODO()
         }

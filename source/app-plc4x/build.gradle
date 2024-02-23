@@ -14,6 +14,7 @@ dependencies {
     implementation project(':lib-jdbc')
     implementation project(':lib-kafka')
     implementation project(':lib-iotdb')
+    implementation project(':lib-neo4j')
 
     implementation "io.vertx:vertx-core:$vertxVersion"
     implementation "io.vertx:vertx-lang-kotlin:$vertxVersion"
@@ -25,7 +26,9 @@ dependencies {
     runtimeOnly group: 'org.apache.plc4x', name: 'plc4j-driver-modbus', version: '0.9.0'
     runtimeOnly group: 'org.apache.plc4x', name: 'plc4j-driver-simulated', version: '0.9.0'
     
-    //runtimeOnly group: 'org.postgresql', name: 'postgresql', version: '42.2.27'
+    runtimeOnly group: 'org.postgresql', name: 'postgresql', version: '42.2.27'
+    runtimeOnly group: 'org.hsqldb', name: 'hsqldb', version: '2.7.2'
+
     //runtimeOnly group: 'mysql', name: 'mysql-connector-java', version: '8.0.28'
     //runtimeOnly group: 'io.crate', name: 'crate-jdbc', version: '2.6.0'
     //runtimeOnly group: 'com.microsoft.sqlserver', name: 'mssql-jdbc', version: '10.2.0.jre11'

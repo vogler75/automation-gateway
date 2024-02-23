@@ -189,6 +189,8 @@ abstract class LoggerBase(config: JsonObject) : Component(config) {
     @Volatile var valueCounterOutput : Int = 0
 
     private fun valueConsumerDataPoint(data: DataPoint) {
+        logger.fine("Consume Internal: ${data.topic}")
+
         valueCounterInput++
 
         try {

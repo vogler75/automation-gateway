@@ -62,7 +62,10 @@ class MqttLogger (config: JsonObject) : LoggerPublisher(config) {
 
         client!!.connect(port, host) {
             logger.info("Mqtt client connect [${it.succeeded()}] [${it.cause() ?: ""}]")
-            if (it.succeeded()) promise.complete()
+            if (it.succeeded()) {
+                logger.fine { "Connected to MQTT broker." }
+                promise.complete()
+            }
             else promise.fail("Connect failed!")
         } ?: promise.fail("Client is null!")
 
@@ -83,7 +86,6 @@ class MqttLogger (config: JsonObject) : LoggerPublisher(config) {
         if (client!!.isConnected) {
             if (!this.isConnected) {
                 this.isConnected=true
-                logger.fine { "Connected to MQTT broker." }
             }
             client!!.publish(topic, payload, MqttQoS.valueOf(qos), false, retained)
         } else {
@@ -95,7 +97,7 @@ class MqttLogger (config: JsonObject) : LoggerPublisher(config) {
     }
 
     override fun publish(point: DataPoint, payload: Buffer) {
-        logger.fine { "Publish to Topic: ${point.topic}" }
+        logger.fine { "Produce External: ${point.topic}" }
         val topic = if (topicToTarget.containsKey(point.topic.topicName)) {
             val target = topicToTarget[point.topic.topicName]!!
             if (target.endsWith("#") || target.endsWith("+")) {

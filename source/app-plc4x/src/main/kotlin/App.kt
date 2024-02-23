@@ -1,10 +1,4 @@
-import at.rocworks.gateway.core.graphql.GraphQLServer
-import at.rocworks.gateway.core.mqtt.MqttDriver
-import at.rocworks.gateway.core.mqtt.MqttLogger
-import at.rocworks.gateway.core.mqtt.MqttServer
 import at.rocworks.gateway.core.opcua.KeyStoreLoader
-import at.rocworks.gateway.core.opcua.OpcUaDriver
-import at.rocworks.gateway.core.opcua.OpcUaServer
 import at.rocworks.gateway.core.service.Common
 import at.rocworks.gateway.core.service.Component
 
@@ -12,6 +6,7 @@ import at.rocworks.gateway.logger.influx.InfluxDBLogger
 import at.rocworks.gateway.logger.iotdb.IoTDBLogger
 import at.rocworks.gateway.logger.jdbc.JdbcLogger
 import at.rocworks.gateway.logger.kafka.KafkaLogger
+import at.rocworks.gateway.logger.neo4j.Neo4jLogger
 
 import kotlin.Throws
 import kotlin.jvm.JvmStatic
@@ -36,6 +31,7 @@ object App {
                 Component.ComponentType.KafkaLogger    -> KafkaLogger(config)
                 Component.ComponentType.JdbcLogger     -> JdbcLogger(config)
                 Component.ComponentType.Plc4xDriver    -> Plc4xDriver(config)
+                Component.ComponentType.Neo4jLogger    -> Neo4jLogger(config)
                 else -> {
                     logger.severe("Unknown component type [${type}]")
                     null

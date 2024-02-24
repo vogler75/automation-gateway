@@ -26,6 +26,7 @@ import org.neo4j.driver.Values.parameters
 
 import java.time.Duration
 import java.time.Instant
+import java.time.ZoneId
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -47,7 +48,6 @@ class Neo4jLogger(config: JsonObject) : LoggerBase(config) {
     private val opcWriteNodesQuery = """
             UNWIND ${"$"}records AS record
             MERGE (n:OpcUaNode {
-              Name: record.Name,
               System : record.System,
               NodeId : record.NodeId
             }) 
@@ -290,11 +290,10 @@ class Neo4jLogger(config: JsonObject) : LoggerBase(config) {
 
     private fun writeOpcNodes(dataPoints: List<DataPoint>) {
         val records = dataPoints.map { point ->
-            mapOf("Name" to point.topic.browsePath.getMetric(),
-                "System" to point.topic.systemName,
+            mapOf("System" to point.topic.systemName,
                 "NodeId" to point.topic.topicNode,
                 "Status" to point.value.statusAsString(),
-                "Value" to point.value.valueAsObject(),
+                "Value" to point.value.valueAsString(), // TODO: convert types to native ones
                 "DataType" to point.value.dataTypeName(),
                 "ServerTime" to point.value.serverTimeAsISO(),
                 "SourceTime" to point.value.sourceTimeAsISO()

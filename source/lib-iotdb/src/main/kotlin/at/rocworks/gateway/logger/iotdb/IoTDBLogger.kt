@@ -53,14 +53,15 @@ class IoTDBLogger(config: JsonObject) : LoggerBase(config) {
         return promise.future()
     }
 
-    private fun nodeToPath(path: String) = path.replace("[/;:= ]".toRegex(), "")
+    private fun nameToPath(path: String) = path.replace("[/;:.= ]".toRegex(), "_")
+    private fun namesToPath(path: List<String>) = path.joinToString(".") { nameToPath(it) }
 
     private fun getPath(point: DataPoint) =
         point.topic.systemName + "." +
         when (point.topic.systemType) {
-            Topic.SystemType.Opc -> (if (point.topic.hasBrowsePath) point.topic.browsePath.toString(".") else "node") + "." + nodeToPath(point.topic.topicNode)
-            Topic.SystemType.Mqtt -> nodeToPath(point.topic.browsePath.toString("."))
-            Topic.SystemType.Plc -> "node."+nodeToPath(point.topic.topicNode)
+            Topic.SystemType.Opc -> (if (point.topic.hasBrowsePath) namesToPath(point.topic.browsePath.toList()) else "node") + "." + nameToPath(point.topic.topicNode)
+            Topic.SystemType.Mqtt -> namesToPath(point.topic.browsePath.toList())
+            Topic.SystemType.Plc -> "node."+nameToPath(point.topic.topicNode)
             Topic.SystemType.Sys -> TODO()
             Topic.SystemType.Unknown -> TODO()
         }
@@ -145,7 +146,7 @@ class IoTDBLogger(config: JsonObject) : LoggerBase(config) {
         toTimeMS: Long,
         result: (Boolean, List<List<Any?>>?) -> Unit // [[source time, server time, value, status code]]
     ) {
-        val path = "$database.$system.**.${nodeToPath(nodeId)}"
+        val path = "$database.$system.**.${nameToPath(nodeId)}"
         val paths = listOf("$path.servertime", "$path.value", "$path.status")
         try {
             readSession.executeRawDataQuery(paths, fromTimeMS, toTimeMS).use { dataSet ->

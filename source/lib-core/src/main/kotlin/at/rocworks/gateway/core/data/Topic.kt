@@ -1,6 +1,22 @@
 package at.rocworks.gateway.core.data
 
+import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
+
+class BrowsePath (
+    private val items: List<String>
+) {
+    constructor(browsePath: String) : this(Topic.splitAddress(browsePath))
+
+    constructor(browsePath: String, additionalItem: String) : this(Topic.splitAddress(browsePath) + additionalItem)
+    override fun toString() = items.joinToString("/")
+    fun toString(separator: CharSequence) = items.joinToString(separator)
+    fun isEmpty() = items.isEmpty()
+
+    fun toList() = items
+
+    fun getMetric(): String = items.last()
+}
 
 data class Topic (
     val topicName: String, // <SystemType> / <SystemName> / <Node|Path> ...
@@ -10,7 +26,7 @@ data class Topic (
     val topicPath: String,
     val topicNode: String,
     val dataFormat: Format = Format.Json,
-    val browsePath: String = ""
+    val browsePath: BrowsePath = BrowsePath(emptyList())
 ) {
     enum class SystemType {
         Unknown,
@@ -37,7 +53,7 @@ data class Topic (
         get() = splitAddress(this.topicName)
 
     val hasBrowsePath: Boolean
-        get() = !browsePath.isNullOrEmpty()
+        get() = !browsePath.isEmpty()
 
     val topicNameAndPath : String
         get() = if (topicType == TopicType.Path && hasBrowsePath) {
@@ -45,7 +61,7 @@ data class Topic (
         } else topicName
 
     val systemNameAndPath: String
-        get() = "$systemName/${browsePath.ifEmpty { topicNode }}"
+        get() = "$systemName/${if (browsePath.isEmpty()) topicNode else browsePath.toString()}"
 
     fun encodeToJson() = encodeToJson(this)
 
@@ -165,7 +181,7 @@ data class Topic (
                 .put(TOPIC_PATH, topic.topicPath)
                 .put(TOPIC_NODE, topic.topicNode)
                 .put(DATA_FORMAT, topic.dataFormat)
-                .put(BROWSE_PATH, topic.browsePath)
+                .put(BROWSE_PATH, topic.browsePath.toList())
         }
 
         fun decodeFromJson(json: JsonObject): Topic {
@@ -177,7 +193,7 @@ data class Topic (
                 topicPath = json.getString(TOPIC_PATH, ""),
                 topicNode = json.getString(TOPIC_NODE, ""),
                 dataFormat = Format.valueOf(json.getString(DATA_FORMAT, Format.Value.name)),
-                browsePath = json.getString(BROWSE_PATH, "")
+                browsePath = BrowsePath(json.getJsonArray(BROWSE_PATH, JsonArray()).map { it.toString() }.toList())
             )
         }
     }

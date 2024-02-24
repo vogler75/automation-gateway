@@ -348,7 +348,7 @@ class Neo4jLogger(config: JsonObject) : LoggerBase(config) {
         mqttValueId: Value,
         point: DataPoint
     ) {
-        val browsePath = point.topic.browsePath.split("/")
+        val browsePath = point.topic.browsePath.toList()
         val connectQuery =
             "MATCH (n1) WHERE ID(n1) = \$parentId \n" +
             "MATCH (n2) WHERE ID(n2) = \$folderId \n" +

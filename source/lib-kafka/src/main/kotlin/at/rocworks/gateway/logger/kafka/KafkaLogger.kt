@@ -55,7 +55,7 @@ class KafkaLogger(config: JsonObject) : LoggerPublisher(config) {
 
     override fun publish(point: DataPoint, payload: Buffer) {
         val topic = topicName?:point.topic.systemName
-        val key = keyName?:point.topic.browsePath
+        val key = keyName?:point.topic.browsePath.toString()
         val record = KafkaProducerRecord.create<String, String>(topic, key, payload.toString())
         producer?.write(record)?.onComplete {
             valueCounterOutput++

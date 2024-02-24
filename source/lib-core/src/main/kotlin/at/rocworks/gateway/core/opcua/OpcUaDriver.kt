@@ -1,5 +1,6 @@
 package at.rocworks.gateway.core.opcua
 
+import at.rocworks.gateway.core.data.BrowsePath
 import at.rocworks.gateway.core.data.DataPoint
 import at.rocworks.gateway.core.data.Topic
 import at.rocworks.gateway.core.data.TopicValue
@@ -718,7 +719,7 @@ class OpcUaDriver(config: JsonObject) : DriverBase(config) {
                                 topicPath = topic.topicPath,
                                 topicNode = it.first.toParseableString(),
                                 dataFormat = topic.dataFormat,
-                                browsePath = it.second
+                                browsePath = BrowsePath(it.second)
                             )
                         })
                     }

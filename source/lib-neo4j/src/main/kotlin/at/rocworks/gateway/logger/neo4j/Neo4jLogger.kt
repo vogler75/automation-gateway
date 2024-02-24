@@ -47,6 +47,7 @@ class Neo4jLogger(config: JsonObject) : LoggerBase(config) {
     private val opcWriteNodesQuery = """
             UNWIND ${"$"}records AS record
             MERGE (n:OpcUaNode {
+              Name: record.Name,
               System : record.System,
               NodeId : record.NodeId
             }) 
@@ -57,6 +58,7 @@ class Neo4jLogger(config: JsonObject) : LoggerBase(config) {
               ServerTime : record.ServerTime,
               SourceTime : record.SourceTime
             }  
+            RETURN ID(n)
             """.trimIndent()
 
     private val mqttWriteValuesQuery = """
@@ -86,7 +88,7 @@ class Neo4jLogger(config: JsonObject) : LoggerBase(config) {
     override fun start(startPromise: Promise<Void>) {
         super.start(startPromise)
         val session = driver.session()
-        createMqttIndexes(session)
+        createIndexes(session)
 
         val schemas = config.getJsonArray("Schemas", JsonArray()) ?: JsonArray()
         schemas.filterIsInstance<JsonObject>().map { systemConfig ->
@@ -126,7 +128,7 @@ class Neo4jLogger(config: JsonObject) : LoggerBase(config) {
         return promise.future()
     }
 
-    private fun createMqttIndexes(session: Session) {
+    private fun createIndexes(session: Session) {
         session.run("""
             CREATE INDEX IF NOT EXISTS
             FOR (n:MqttNode)
@@ -137,18 +139,17 @@ class Neo4jLogger(config: JsonObject) : LoggerBase(config) {
             FOR (n:MqttValue)
             ON (n.System, n.NodeId)
             """.trimIndent())
-
+        session.run("""
+            CREATE INDEX IF NOT EXISTS
+            FOR (n:OpcUaNode)
+            ON (n.System, n.NodeId)
+            """.trimIndent())
     }
 
     private fun writeSchemaToDb(session: Session, system: String, schema: JsonArray) {
         try {
             logger.info("Write schema to graph database...")
             val tStart = Instant.now()
-            session.run("""
-                CREATE INDEX IF NOT EXISTS
-                FOR (n:OpcUaNode)
-                ON (n.System, n.NodeId)
-                """.trimIndent())
 
             // Create and get system
             val systemId = session.run("MERGE (s:OpcUaSystem { DisplayName: \$DisplayName }) RETURN ID(s)",
@@ -279,13 +280,18 @@ class Neo4jLogger(config: JsonObject) : LoggerBase(config) {
             }
             point = pollDatapointNoWait()
         }
-        if (opcNodes.isNotEmpty()) writeOpcNodes(opcNodes)
-        if (mqttNodes.isNotEmpty()) writeMqttNodes(mqttNodes)
+        try {
+            if (opcNodes.isNotEmpty()) writeOpcNodes(opcNodes)
+            if (mqttNodes.isNotEmpty()) writeMqttNodes(mqttNodes)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     private fun writeOpcNodes(dataPoints: List<DataPoint>) {
         val records = dataPoints.map { point ->
-            mapOf("System" to point.topic.systemName,
+            mapOf("Name" to point.topic.browsePath.getMetric(),
+                "System" to point.topic.systemName,
                 "NodeId" to point.topic.topicNode,
                 "Status" to point.value.statusAsString(),
                 "Value" to point.value.valueAsObject(),
@@ -295,7 +301,8 @@ class Neo4jLogger(config: JsonObject) : LoggerBase(config) {
             )
         }
         session?.executeWrite { tx ->
-            tx.run(opcWriteNodesQuery, parameters("records", records))
+            val result = tx.run(opcWriteNodesQuery, parameters("records", records))
+            val results = result.list()
         }
     }
 
@@ -317,7 +324,7 @@ class Neo4jLogger(config: JsonObject) : LoggerBase(config) {
 
     private fun writeMqttNodes(dataPoints: List<DataPoint>) {
         val records = dataPoints.map { point ->
-            val name = point.topic.topicNode.split("/").last()
+            val name = point.topic.browsePath.getMetric()
             mapOf("Name" to name,
                 "System" to point.topic.systemName,
                 "NodeId" to point.topic.topicNode,

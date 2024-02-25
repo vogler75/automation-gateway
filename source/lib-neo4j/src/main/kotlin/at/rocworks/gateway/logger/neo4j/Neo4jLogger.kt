@@ -300,7 +300,7 @@ class Neo4jLogger(config: JsonObject) : LoggerBase(config) {
         }
         session?.executeWrite { tx ->
             val result = tx.run(opcWriteNodesQuery, parameters("records", records))
-            val results = result.list()
+            result.list() // we have to call this, otherwise an error will happen
         }
     }
 

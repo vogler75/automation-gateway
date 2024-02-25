@@ -1,6 +1,7 @@
 package at.rocworks.gateway.logger.kafka
 
 import at.rocworks.gateway.core.data.DataPoint
+import at.rocworks.gateway.core.data.Topic
 import at.rocworks.gateway.core.logger.LoggerPublisher
 import io.vertx.core.Future
 import io.vertx.core.Promise
@@ -51,19 +52,19 @@ class KafkaLogger(config: JsonObject) : LoggerPublisher(config) {
         return promise.future()
     }
 
-    override fun publish(point: DataPoint, payload: Buffer) {
-        val topic = topicName?:point.topic.systemName
-        val key = keyName?:point.topic.getBrowsePathOrNode().toString()
-        val record = KafkaProducerRecord.create<String, String>(topic, key, payload.toString())
+    override fun publish(topic: Topic, payload: Buffer) {
+        val destination = topicName?:topic.systemName
+        val key = keyName?:topic.getBrowsePathOrNode().toString()
+        val record = KafkaProducerRecord.create<String, String>(destination, key, payload.toString())
         producer?.write(record)?.onComplete {
             valueCounterOutput++
         }
     }
 
-    override fun publish(points: List<DataPoint>, payload: Buffer) {
+    override fun publish(topics: List<Topic>, payload: Buffer) {
         val record = KafkaProducerRecord.create<String, String>(topicName, payload.toString())
         producer?.write(record)?.onComplete {
-            valueCounterOutput+=points.size
+            valueCounterOutput+=topics.size
         }
     }
 }

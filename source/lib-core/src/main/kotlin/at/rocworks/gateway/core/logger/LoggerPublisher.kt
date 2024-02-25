@@ -1,6 +1,8 @@
 package at.rocworks.gateway.core.logger
 
+import at.rocworks.gateway.core.data.BrowsePath
 import at.rocworks.gateway.core.data.DataPoint
+import at.rocworks.gateway.core.data.Topic
 import io.vertx.core.buffer.Buffer
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
@@ -24,9 +26,9 @@ abstract class LoggerPublisher(config: JsonObject) : LoggerBase(config) {
         const val SPARKPLUGB = "SPARKPLUGB"
     }
 
-    private val soloFormatter: (DataPoint) -> Buffer
+    private val soloFormatter: (DataPoint) -> Unit
 
-    private val bulkFormatter: (List<DataPoint>) -> Buffer
+    private val bulkFormatter: (List<DataPoint>) -> Unit
 
     init {
         soloFormatter = when (getMessageFormat().uppercase()) {
@@ -51,20 +53,23 @@ abstract class LoggerPublisher(config: JsonObject) : LoggerBase(config) {
     }
 
     @Suppress("UNUSED_PARAMETER")
-    private fun unknownSoloFormat(points: DataPoint): Nothing
-    = throw Exception("Unknown message format!")
-    @Suppress("UNUSED_PARAMETER")
-    private fun unknownBulkFormat(points: List<DataPoint>): Nothing
-        = throw Exception("Unknown bulk message format!")
+    private fun unknownSoloFormat(points: DataPoint) {
+        throw Exception("Unknown message format!")
+    }
 
-    abstract fun publish(point: DataPoint, payload: Buffer)
-    abstract fun publish(points: List<DataPoint>, payload: Buffer)
+    @Suppress("UNUSED_PARAMETER")
+    private fun unknownBulkFormat(points: List<DataPoint>) {
+        throw Exception("Unknown bulk message format!")
+    }
+
+    abstract fun publish(topic: Topic, payload: Buffer)
+    abstract fun publish(topics: List<Topic>, payload: Buffer)
 
     private fun writeExecutorSolo() {
         var counter = 0
         var point: DataPoint? = pollDatapointWait()
         while (point != null) {
-            publish(point, soloFormatter(point))
+            soloFormatter(point)
             point = if (++counter < writeParameterBlockSize) pollDatapointNoWait() else null
         }
     }
@@ -78,7 +83,7 @@ abstract class LoggerPublisher(config: JsonObject) : LoggerBase(config) {
             point = if (++counter < writeParameterBlockSize) pollDatapointNoWait() else null
         }
         if (counter>0)
-            publish(points, bulkFormatter(points))
+            bulkFormatter(points)
     }
 
     override fun writeExecutor() {
@@ -90,24 +95,29 @@ abstract class LoggerPublisher(config: JsonObject) : LoggerBase(config) {
     }
 
     // Format Raw
-    private fun formatterRawSolo(point: DataPoint): Buffer = Buffer.buffer(point.value.value.toString())
+    private fun formatterRawSolo(point: DataPoint) {
+        val buffer = Buffer.buffer(point.value.value.toString())
+        publish(point.topic, buffer)
+    }
 
     // Format Json
-    private fun formatterJsonSolo(point: DataPoint): Buffer {
+    private fun formatterJsonSolo(point: DataPoint) {
         val result = JsonObject()
         result.put("Topic", point.topic.encodeToJson())
         result.put("Value", point.value.encodeToJson())
-        return result.toBuffer()
+        val buffer = result.toBuffer()
+        publish(point.topic, buffer)
     }
 
-    private fun formatterJsonBulk(points: List<DataPoint>): Buffer {
+    private fun formatterJsonBulk(points: List<DataPoint>) {
         val result = points.map { point ->
             val item = JsonObject()
             item.put("Topic", point.topic.encodeToJson())
             item.put("Value", point.value.encodeToJson())
             item
         }
-        return JsonArray(result).toBuffer()
+        val buffer = JsonArray(result).toBuffer()
+        publish(points.map { it.topic }, buffer)
     }
 
     // Format JsonSimple
@@ -128,37 +138,43 @@ abstract class LoggerPublisher(config: JsonObject) : LoggerBase(config) {
         return payload
     }
 
-    private fun formatterJsonSimpleSolo(point: DataPoint): Buffer {
-        return formatterJsonSimpleSoloObject(point).toBuffer()
+    private fun formatterJsonSimpleSolo(point: DataPoint) {
+        val buffer = formatterJsonSimpleSoloObject(point).toBuffer()
+        publish(point.topic, buffer)
     }
 
-    private fun formatterJsonSimpleBulk(points: List<DataPoint>): Buffer {
+    private fun formatterJsonSimpleBulk(points: List<DataPoint>) {
         val result = points.map { point ->
             formatterJsonSimpleSoloObject(point)
         }
-        return JsonArray(result).toBuffer()
+        val buffer = JsonArray(result).toBuffer()
+        publish(points.map { it.topic }, buffer)
     }
 
     // Format SparkplugB
     private var spbSeq = 0
-    private fun formatterSpbSolo(point: DataPoint): Buffer {
+    private fun formatterSpbSolo(point: DataPoint) {
         val payload = SparkplugBPayload.SparkplugBPayloadBuilder(spbSeq.toLong())
             .setTimestamp(Date())
             .setUuid(UUID.randomUUID().toString())
             .createPayload()
         formatterSpbMetric(point)?.let { payload.addMetric(it) }
         if (spbSeq++ == 255) spbSeq=0
-        return Buffer.buffer(SparkplugBPayloadEncoder().getBytes(payload, false))
+        val buffer = Buffer.buffer(SparkplugBPayloadEncoder().getBytes(payload, false))
+        publish(point.topic.copy(browsePath = BrowsePath(point.topic.getBrowsePathOrNode().toList().dropLast(1))), buffer)
     }
 
-    private fun formatterSpbBulk(points: List<DataPoint>): Buffer {
+    private fun formatterSpbBulk(points: List<DataPoint>) {
         val payload = SparkplugBPayload.SparkplugBPayloadBuilder(spbSeq.toLong())
             .setTimestamp(Date())
             .setUuid(UUID.randomUUID().toString())
             .createPayload()
         points.forEach { point -> formatterSpbMetric(point)?.let { payload.addMetric(it) } }
         if (spbSeq++ == 255) spbSeq=0
-        return Buffer.buffer(SparkplugBPayloadEncoder().getBytes(payload, false))
+        val buffer = Buffer.buffer(SparkplugBPayloadEncoder().getBytes(payload, false))
+        publish(points.map { point ->
+            point.topic.copy(browsePath = BrowsePath(point.topic.getBrowsePathOrNode().toList().dropLast(1)))
+        }, buffer)
     }
 
     private fun formatterSpbMetric(point: DataPoint): Metric? {

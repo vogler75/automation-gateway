@@ -1,6 +1,6 @@
 package at.rocworks.gateway.core.mqtt
 
-import at.rocworks.gateway.core.data.DataPoint
+import at.rocworks.gateway.core.data.Topic
 import at.rocworks.gateway.core.logger.LoggerPublisher
 import io.netty.handler.codec.mqtt.MqttQoS
 import io.vertx.core.Future
@@ -96,27 +96,27 @@ class MqttLogger (config: JsonObject) : LoggerPublisher(config) {
         }
     }
 
-    override fun publish(point: DataPoint, payload: Buffer) {
-        logger.fine { "Produce External: ${point.topic}" }
-        val topic = if (topicToTarget.containsKey(point.topic.topicName)) {
-            val target = topicToTarget[point.topic.topicName]!!
+    override fun publish(topic: Topic, payload: Buffer) {
+        logger.fine { "Produce External: $topic" }
+        val targetTopic = if (topicToTarget.containsKey(topic.topicName)) {
+            val target = topicToTarget[topic.topicName]!!
             if (target.endsWith("#") || target.endsWith("+")) {
-                if (point.topic.hasBrowsePath && point.topic.topicPath.endsWith("#") || point.topic.topicPath.endsWith("+")) {
-                    target.dropLast(1) + point.topic.getBrowsePathOrNode().toString().removePrefix(point.topic.topicPath.dropLast(1))
+                if (topic.hasBrowsePath && topic.topicPath.endsWith("#") || topic.topicPath.endsWith("+")) {
+                    target.dropLast(1) + topic.getBrowsePathOrNode().toString().removePrefix(topic.topicPath.dropLast(1))
                 } else {
-                    target.dropLast(1) + point.topic.topicNode
+                    target.dropLast(1) + topic.topicNode
                 }
             }
             else target
         } else if (this.baseTopic.isEmpty()) {
-            point.topic.systemName + "/" + point.topic.getBrowsePathOrNode()
+            topic.systemName + "/" + topic.getBrowsePathOrNode()
         } else {
-            this.baseTopic + "/" + point.topic.systemName + "/" + point.topic.getBrowsePathOrNode()
+            this.baseTopic + "/" + topic.systemName + "/" + topic.getBrowsePathOrNode()
         }
-        publish(topic, payload)
+        publish(targetTopic, payload)
     }
 
-    override fun publish(points: List<DataPoint>, payload: Buffer) {
+    override fun publish(topics: List<Topic>, payload: Buffer) {
         publish(this.baseTopic, payload)
     }
 }

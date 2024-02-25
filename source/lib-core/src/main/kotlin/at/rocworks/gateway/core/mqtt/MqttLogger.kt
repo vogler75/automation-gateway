@@ -26,7 +26,7 @@ class MqttLogger (config: JsonObject) : LoggerPublisher(config) {
     private val trustAll: Boolean = configMqtt.getBoolean("TrustAll", true)
     private val qos: Int = configMqtt.getInteger("Qos", 0)
     private val retained: Boolean = configMqtt.getBoolean("Retained", false)
-    private val topic: String = configMqtt.getString("Topic", "")
+    private val baseTopic: String = configMqtt.getString("Topic", "")
     private val maxMessageSizeKb = configMqtt.getInteger("MaxMessageSizeKb", 8) * 1024
 
     private var isConnected = false
@@ -108,15 +108,15 @@ class MqttLogger (config: JsonObject) : LoggerPublisher(config) {
                 }
             }
             else target
-        } else if (this.topic.isEmpty()) {
+        } else if (this.baseTopic.isEmpty()) {
             point.topic.systemName + "/" + point.topic.getBrowsePathOrNode()
         } else {
-            this.topic + "/" + point.topic.systemName + "/" + point.topic.getBrowsePathOrNode()
+            this.baseTopic + "/" + point.topic.systemName + "/" + point.topic.getBrowsePathOrNode()
         }
         publish(topic, payload)
     }
 
     override fun publish(points: List<DataPoint>, payload: Buffer) {
-        publish(this.topic, payload)
+        publish(this.baseTopic, payload)
     }
 }

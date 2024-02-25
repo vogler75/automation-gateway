@@ -27,7 +27,7 @@ Drivers:
   Mqtt:
     - Id: "mqtt_json_driver"
       Enabled: true
-      LogLevel: FINE
+      LogLevel: INFO
       Host: linux0.rocworks.local
       Port: 1883
       Format: Json
@@ -38,7 +38,7 @@ Drivers:
 
     - Id: "mqtt_spb_driver"
       Enabled: true
-      LogLevel: FINE
+      LogLevel: INFO
       Host: linux0.rocworks.local
       Port: 1883
       Format: SparkplugB
@@ -63,7 +63,7 @@ Loggers:
   Mqtt:
     - Id: "spb_logger"
       Enabled: true
-      LogLevel: FINE
+      LogLevel: INFO
       Host: linux0.rocworks.local
       Port: 1883
       Topic: spb_logger
@@ -75,9 +75,20 @@ Loggers:
         - Topic: mqtt/mqtt_json_driver/path/json_input/#
         - Topic: plc/modbus_driver/node/holding-register:1:INT
 
+    - Id: "spb_logger_bulk"
+      Enabled: true
+      LogLevel: INFO
+      Host: linux0.rocworks.local
+      Port: 1883
+      Topic: spb_logger_bulk
+      Format: SparkplugB
+      BulkMessages: true
+      Logging:
+        - Topic: opc/opcua_driver/path/Objects/Demo/SimulationMass/SimulationMass_Float/#
+
     - Id: "mqtt_logger"
       Enabled: true
-      LogLevel: FINE
+      LogLevel: INFO
       Host: linux0.rocworks.local
       Port: 1883
       Topic: mqtt_logger
@@ -88,6 +99,7 @@ Loggers:
         - Topic: opc/opcua_driver/path/Objects/Demo/Scalar/Scalar_Static/Scalar_Static_Float
         - Topic: opc/opcua_driver/path/Objects/Demo/Scalar/Scalar_Static/Scalar_Static_String
         - Topic: opc/opcua_driver/path/Objects/Demo/SimulationMass/SimulationMass_Float/#
+          Target: mqtt_logger/opcua_driver/Target/#
         - Topic: mqtt/mqtt_json_driver/path/json_input/#
         - Topic: mqtt/mqtt_spb_driver/path/spb_logger/#
         - Topic: mqtt/mqtt_spb_driver/path/spBv1.0/#

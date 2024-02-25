@@ -1,0 +1,150 @@
+Servers:
+  Mqtt:
+    - Enabled: true
+      LogLevel: INFO
+      Port: 1884
+      Host: 0.0.0.0
+      MaxMessageSizeKb: 8192
+
+  OpcUa:
+    - Enabled: true
+      Port: 4841
+      LogLevel: INFO
+      Topics:
+        - Topic: opc/opcua_driver/path/Objects/Demo/Scalar/Scalar_Static/Scalar_Static_Float
+        - Topic: opc/opcua_driver/path/Objects/Demo/Scalar/Scalar_Static/Scalar_Static_String
+        - Topic: mqtt/mqtt_json/path/json/#
+        - Topic: mqtt/mqtt_spb/path/spBv1.0/#
+        - Topic: plc/modbus_driver/node/holding-register:1:INT
+
+  GraphQL:
+    - Port: 4001
+      Enabled: true
+      LogLevel: INFO
+
+Drivers:
+  Mqtt:
+    - Id: "mqtt_json"
+      Enabled: true
+      LogLevel: FINE
+      Host: linux0.rocworks.local
+      Port: 1883
+      Format: Json
+      CustomJson:
+        Value: "Value"
+        TimestampMs: "TimeMS"
+        TimestampIso: "TimeISO"
+
+    - Id: "mqtt_spb"
+      Enabled: true
+      LogLevel: FINE
+      Host: linux0.rocworks.local
+      Port: 1883
+      Format: SparkplugB
+
+  OpcUa:
+    - Id: "opcua_driver"
+      Enabled: true
+      LogLevel: INFO
+      EndpointUrl: "opc.tcp://192.168.1.4:62541"
+      UpdateEndpointUrl: true
+      SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#None
+
+  Plc4x:
+    - Id: "modbus_driver"
+      Enabled: true
+      LogLevel: INFO
+      Polling:
+        Time: 500
+      Url: "modbus://localhost:502"
+
+Loggers:
+  Mqtt:
+    - Id: "spb_logger"
+      Enabled: true
+      LogLevel: FINE
+      Host: linux0.rocworks.local
+      Port: 1883
+      Topic: spBv1.0
+      Format: SparkplugB
+      Logging:
+        - Topic: opc/opcua_driver/path/Objects/Demo/Scalar/Scalar_Static/Scalar_Static_Float
+        - Topic: opc/opcua_driver/path/Objects/Demo/Scalar/Scalar_Static/Scalar_Static_String
+        - Topic: mqtt/mqtt_json/path/json/#
+        - Topic: plc/modbus_driver/node/holding-register:1:INT
+
+    - Id: "mqtt_logger"
+      Enabled: true
+      LogLevel: FINE
+      Host: linux0.rocworks.local
+      Port: 1883
+      Topic: logger
+      Format: Json
+      BulkMessages: false
+      MaxMessageSizeKb: 1024
+      Logging:
+        - Topic: opc/opcua_driver/path/Objects/Demo/Scalar/Scalar_Static/Scalar_Static_Float
+        - Topic: opc/opcua_driver/path/Objects/Demo/Scalar/Scalar_Static/Scalar_Static_String
+        - Topic: mqtt/mqtt_json/path/json/#
+        - Topic: mqtt/mqtt_spb/path/spBv1.0/#
+        - Topic: plc/modbus_driver/node/holding-register:1:INT
+
+  Kafka:
+    - Id: "kafka_logger"
+      Enabled: true
+      LogLevel: INFO
+      Servers: linux0.rocworks.local:9092
+      Configs:
+        batch.size: 25000
+        enable.auto.commit: true
+        auto.commit.interval.ms: 1000
+      TopicName: gateway
+      Format: Json
+      Logging:
+        - Topic: opc/opcua_driver/path/Objects/Demo/Scalar/Scalar_Static/Scalar_Static_Float
+        - Topic: opc/opcua_driver/path/Objects/Demo/Scalar/Scalar_Static/Scalar_Static_String
+        - Topic: mqtt/mqtt_json/path/json/#
+        - Topic: mqtt/mqtt_spb/path/spBv1.0/#
+        - Topic: plc/modbus_driver/node/holding-register:1:INT
+
+  InfluxDB:
+    - Id: "influxdb_logger"
+      Enabled: false
+      Url: http://linux0.rocworks.local:8086
+      Database: gateway
+      Logging:
+        - Topic: opc/opcua_driver/path/Objects/Demo/Scalar/Scalar_Static/Scalar_Static_Float
+        - Topic: opc/opcua_driver/path/Objects/Demo/Scalar/Scalar_Static/Scalar_Static_String
+        - Topic: mqtt/mqtt_json/path/json/#
+        - Topic: mqtt/mqtt_spb/path/spBv1.0/#
+        - Topic: plc/modbus_driver/node/holding-register:1:INT
+
+  IoTDB:
+    - Id: "iotdb_logger"
+      Enabled: false
+      Host: linux0.rocworks.local
+      Port: 6667
+      Database: root.gateway
+      Username: "root"
+      Password: "root"
+      Logging:
+        - Topic: opc/opcua_driver/path/Objects/Demo/Scalar/Scalar_Static/Scalar_Static_Float
+        - Topic: opc/opcua_driver/path/Objects/Demo/Scalar/Scalar_Static/Scalar_Static_String
+        - Topic: mqtt/mqtt_json/path/json/#
+        - Topic: mqtt/mqtt_spb/path/spBv1.0/#
+        - Topic: plc/modbus_driver/node/holding-register:1:INT
+
+  Neo4j:
+    - Id: "neo4j_logger"
+      Enabled: false
+      Url: bolt://linux0.rocworks.local:7687
+      Username: "neo4j"
+      Password: "manager123$"
+      Schemas:
+        - System: opcua_driver
+      Logging:
+        - Topic: opc/opcua_driver/path/Objects/Demo/Scalar/Scalar_Static/Scalar_Static_Float
+        - Topic: opc/opcua_driver/path/Objects/Demo/Scalar/Scalar_Static/Scalar_Static_String
+        - Topic: mqtt/mqtt_json/path/json/#
+        - Topic: mqtt/mqtt_spb/path/spBv1.0/#
+        - Topic: plc/modbus_driver/node/holding-register:1:INT

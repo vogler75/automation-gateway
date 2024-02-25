@@ -15,7 +15,7 @@ class BrowsePath (
 
     fun toList() = items
 
-    fun getMetric(): String = items.last()
+    fun getLast(): String = if (items.isNotEmpty()) items.last() else ""
 }
 
 data class Topic (
@@ -62,6 +62,13 @@ data class Topic (
 
     val systemNameAndPath: String
         get() = "$systemName/${if (browsePath.isEmpty()) topicNode else browsePath.toString()}"
+
+    val metricName: String
+        get() = when (topicType) {
+            TopicType.Path -> browsePath.getLast()
+            TopicType.Node -> topicNode
+            TopicType.Unknown -> ""
+        }
 
     fun encodeToJson() = encodeToJson(this)
 

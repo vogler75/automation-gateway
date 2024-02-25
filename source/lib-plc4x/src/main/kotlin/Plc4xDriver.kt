@@ -349,7 +349,6 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
 
     override fun writeHandler(message: Message<JsonObject>) {
         val node = message.body().getValue("NodeId")
-        logger.info("writeHandler [${node}]")
         when {
             plc?.metadata?.canWrite() == false -> {
                 message.reply(JsonObject().put("Ok", false).put("Error", "Write not supported!"))

@@ -167,7 +167,7 @@ abstract class LoggerPublisher(config: JsonObject) : LoggerBase(config) {
                 if (point.value.value is LinkedHashMap<*, *>) {
                     val map = point.value.value.entries.associate { item -> item.key.toString() to item.value }
                     return Metric.MetricBuilder(
-                        point.topic.browsePath.getMetric(),
+                        point.topic.metricName,
                         MetricDataType.String,
                         JsonObject(map).toString()
                     )
@@ -188,7 +188,7 @@ abstract class LoggerPublisher(config: JsonObject) : LoggerBase(config) {
                         else -> MetricDataType.Unknown to null
                     }
                     if (type != MetricDataType.Unknown) {
-                        return Metric.MetricBuilder(point.topic.browsePath.getMetric(), type, value)
+                        return Metric.MetricBuilder(point.topic.metricName, type, value)
                             .timestamp(Date(point.value.sourceTime.toEpochMilli()))
                             .createMetric()
                     } else {

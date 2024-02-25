@@ -296,7 +296,7 @@ class MqttDriver(config: JsonObject) : DriverBase(config) {
     override fun publishTopic(topic: Topic, value: Buffer): Future<Boolean> {
         logger.fine { "Produce External: $topic" }
         val promise = Promise.promise<Boolean>()
-        val (path, message) = encodeMessage(topic.browsePath, TopicValue(value.toString()))
+        val (path, message) = encodeMessage(topic.getBrowsePath(), TopicValue(value.toString()))
         client?.publish(path.toString(), message, MqttQoS.valueOf(qos), false, retained)?.onComplete {
             promise.complete(true)
         }
@@ -307,7 +307,7 @@ class MqttDriver(config: JsonObject) : DriverBase(config) {
     override fun publishTopic(topic: Topic, value: TopicValue): Future<Boolean> {
         logger.fine { "Produce External: $topic" }
         val promise = Promise.promise<Boolean>()
-        val (path, message) = encodeMessage(topic.browsePath, value)
+        val (path, message) = encodeMessage(topic.getBrowsePath(), value)
         client?.publish(path.toString(), message, MqttQoS.valueOf(qos), false, retained)?.onComplete {
             promise.complete(true)
         }
@@ -391,6 +391,7 @@ class MqttDriver(config: JsonObject) : DriverBase(config) {
         val metric = Metric.MetricBuilder(path.getLast(), type, data)
         payload.addMetric(metric.createMetric())
         if (spbSequenceNumber++ == 255) spbSequenceNumber=0
+        println("encodeSparkplugBMessage: $path")
         return BrowsePath(path.toList().dropLast(1)) to Buffer.buffer(SparkplugBPayloadEncoder().getBytes(payload, false))
     }
 

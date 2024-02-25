@@ -26,7 +26,6 @@ import org.neo4j.driver.Values.parameters
 
 import java.time.Duration
 import java.time.Instant
-import java.time.ZoneId
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -323,7 +322,7 @@ class Neo4jLogger(config: JsonObject) : LoggerBase(config) {
 
     private fun writeMqttNodes(dataPoints: List<DataPoint>) {
         val records = dataPoints.map { point ->
-            val name = point.topic.metricName
+            val name = point.topic.getMetricName()
             mapOf("Name" to name,
                 "System" to point.topic.systemName,
                 "NodeId" to point.topic.topicNode,
@@ -354,7 +353,7 @@ class Neo4jLogger(config: JsonObject) : LoggerBase(config) {
         mqttValueId: Value,
         point: DataPoint
     ) {
-        val browsePath = point.topic.browsePath.toList()
+        val browsePath = point.topic.getBrowsePath().toList()
         val connectQuery =
             "MATCH (n1) WHERE ID(n1) = \$parentId \n" +
             "MATCH (n2) WHERE ID(n2) = \$folderId \n" +

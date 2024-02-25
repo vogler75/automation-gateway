@@ -26,7 +26,7 @@ data class Topic (
     val topicPath: String,
     val topicNode: String,
     val dataFormat: Format = Format.Json,
-    val browsePath: BrowsePath = BrowsePath(emptyList())
+    private val browsePath: BrowsePath = BrowsePath(emptyList())
 ) {
     enum class SystemType {
         Unknown,
@@ -55,20 +55,24 @@ data class Topic (
     val hasBrowsePath: Boolean
         get() = !browsePath.isEmpty()
 
-    val topicNameAndPath : String
-        get() = if (topicType == TopicType.Path && hasBrowsePath) {
-            topicItems.slice(0..2).joinToString("/") + "/$browsePath"
-        } else topicName
+//    val topicNameAndPath : String
+//        get() = if (topicType == TopicType.Path) {
+//            topicItems.slice(0..2).joinToString("/") + "/$browsePath"
+//        } else topicName
 
-    val systemNameAndPath: String
-        get() = "$systemName/${if (browsePath.isEmpty()) topicNode else browsePath.toString()}"
+    fun getFQN() = "${systemType}/${systemName}/${topicType}/${getBrowsePath()}"
 
-    val metricName: String
-        get() = when (topicType) {
-            TopicType.Path -> browsePath.getLast()
-            TopicType.Node -> topicNode
-            TopicType.Unknown -> ""
-        }
+    fun getMetricName() = when (topicType) {
+        TopicType.Path -> browsePath.getLast()
+        TopicType.Node -> topicNode
+        TopicType.Unknown -> ""
+    }
+
+    fun getBrowsePath() = when (topicType) {
+        TopicType.Path -> browsePath
+        TopicType.Node -> BrowsePath(listOf(topicNode))
+        TopicType.Unknown -> BrowsePath(emptyList())
+    }
 
     fun encodeToJson() = encodeToJson(this)
 

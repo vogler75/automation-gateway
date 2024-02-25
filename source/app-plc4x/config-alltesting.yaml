@@ -2,7 +2,7 @@ Servers:
   Mqtt:
     - Enabled: true
       LogLevel: INFO
-      Port: 1884
+      Port: 1883
       Host: 0.0.0.0
       MaxMessageSizeKb: 8192
 
@@ -13,8 +13,8 @@ Servers:
       Topics:
         - Topic: opc/opcua_driver/path/Objects/Demo/Scalar/Scalar_Static/Scalar_Static_Float
         - Topic: opc/opcua_driver/path/Objects/Demo/Scalar/Scalar_Static/Scalar_Static_String
-        - Topic: mqtt/mqtt_json/path/json/#
-        - Topic: mqtt/mqtt_spb/path/spBv1.0/#
+        - Topic: mqtt/mqtt_json_driver/path/json/#
+        - Topic: mqtt/mqtt_spb_driver/path/spBv1.0/#
         - Topic: plc/modbus_driver/node/holding-register:1:INT
 
   GraphQL:
@@ -24,7 +24,7 @@ Servers:
 
 Drivers:
   Mqtt:
-    - Id: "mqtt_json"
+    - Id: "mqtt_json_driver"
       Enabled: true
       LogLevel: FINE
       Host: linux0.rocworks.local
@@ -35,7 +35,7 @@ Drivers:
         TimestampMs: "TimeMS"
         TimestampIso: "TimeISO"
 
-    - Id: "mqtt_spb"
+    - Id: "mqtt_spb_driver"
       Enabled: true
       LogLevel: FINE
       Host: linux0.rocworks.local
@@ -65,12 +65,12 @@ Loggers:
       LogLevel: FINE
       Host: linux0.rocworks.local
       Port: 1883
-      Topic: spBv1.0
+      Topic: spb_logger
       Format: SparkplugB
       Logging:
         - Topic: opc/opcua_driver/path/Objects/Demo/Scalar/Scalar_Static/Scalar_Static_Float
         - Topic: opc/opcua_driver/path/Objects/Demo/Scalar/Scalar_Static/Scalar_Static_String
-        - Topic: mqtt/mqtt_json/path/json/#
+        - Topic: mqtt/mqtt_json_driver/path/json_input/#
         - Topic: plc/modbus_driver/node/holding-register:1:INT
 
     - Id: "mqtt_logger"
@@ -78,15 +78,16 @@ Loggers:
       LogLevel: FINE
       Host: linux0.rocworks.local
       Port: 1883
-      Topic: logger
+      Topic: mqtt_logger
       Format: Json
       BulkMessages: false
       MaxMessageSizeKb: 1024
       Logging:
         - Topic: opc/opcua_driver/path/Objects/Demo/Scalar/Scalar_Static/Scalar_Static_Float
         - Topic: opc/opcua_driver/path/Objects/Demo/Scalar/Scalar_Static/Scalar_Static_String
-        - Topic: mqtt/mqtt_json/path/json/#
-        - Topic: mqtt/mqtt_spb/path/spBv1.0/#
+        - Topic: mqtt/mqtt_json_driver/path/json_input/#
+        - Topic: mqtt/mqtt_spb_driver/path/spb_logger/#
+        - Topic: mqtt/mqtt_spb_driver/path/spBv1.0/#
         - Topic: plc/modbus_driver/node/holding-register:1:INT
 
   Kafka:
@@ -103,8 +104,9 @@ Loggers:
       Logging:
         - Topic: opc/opcua_driver/path/Objects/Demo/Scalar/Scalar_Static/Scalar_Static_Float
         - Topic: opc/opcua_driver/path/Objects/Demo/Scalar/Scalar_Static/Scalar_Static_String
-        - Topic: mqtt/mqtt_json/path/json/#
-        - Topic: mqtt/mqtt_spb/path/spBv1.0/#
+        - Topic: mqtt/mqtt_json_driver/path/json_input/#
+        - Topic: mqtt/mqtt_spb_driver/path/spb_logger/#
+        - Topic: mqtt/mqtt_spb_driver/path/spBv1.0/#
         - Topic: plc/modbus_driver/node/holding-register:1:INT
 
   InfluxDB:
@@ -115,8 +117,9 @@ Loggers:
       Logging:
         - Topic: opc/opcua_driver/path/Objects/Demo/Scalar/Scalar_Static/Scalar_Static_Float
         - Topic: opc/opcua_driver/path/Objects/Demo/Scalar/Scalar_Static/Scalar_Static_String
-        - Topic: mqtt/mqtt_json/path/json/#
-        - Topic: mqtt/mqtt_spb/path/spBv1.0/#
+        - Topic: mqtt/mqtt_json_driver/path/json_input/#
+        - Topic: mqtt/mqtt_spb_driver/path/spb_logger/#
+        - Topic: mqtt/mqtt_spb_driver/path/spBv1.0/#
         - Topic: plc/modbus_driver/node/holding-register:1:INT
 
   IoTDB:
@@ -130,8 +133,9 @@ Loggers:
       Logging:
         - Topic: opc/opcua_driver/path/Objects/Demo/Scalar/Scalar_Static/Scalar_Static_Float
         - Topic: opc/opcua_driver/path/Objects/Demo/Scalar/Scalar_Static/Scalar_Static_String
-        - Topic: mqtt/mqtt_json/path/json/#
-        - Topic: mqtt/mqtt_spb/path/spBv1.0/#
+        - Topic: mqtt/mqtt_json_driver/path/json_input/#
+        - Topic: mqtt/mqtt_spb_driver/path/spb_logger/#
+        - Topic: mqtt/mqtt_spb_driver/path/spBv1.0/#
         - Topic: plc/modbus_driver/node/holding-register:1:INT
 
   Neo4j:
@@ -145,6 +149,7 @@ Loggers:
       Logging:
         - Topic: opc/opcua_driver/path/Objects/Demo/Scalar/Scalar_Static/Scalar_Static_Float
         - Topic: opc/opcua_driver/path/Objects/Demo/Scalar/Scalar_Static/Scalar_Static_String
-        - Topic: mqtt/mqtt_json/path/json/#
-        - Topic: mqtt/mqtt_spb/path/spBv1.0/#
+        - Topic: mqtt/mqtt_json_driver/path/json_input/#
+        - Topic: mqtt/mqtt_spb_driver/path/spb_logger/#
+        - Topic: mqtt/mqtt_spb_driver/path/spBv1.0/#
         - Topic: plc/modbus_driver/node/holding-register:1:INT

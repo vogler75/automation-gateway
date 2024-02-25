@@ -116,7 +116,7 @@ abstract class LoggerPublisher(config: JsonObject) : LoggerBase(config) {
         payload.put("nodeId", point.topic.topicNode)
         payload.put("systemName", point.topic.systemName)
         payload.put("topicName", point.topic.topicName)
-        payload.put("browsePath", point.topic.browsePath)
+        payload.put("browsePath", point.topic.getBrowsePath())
         payload.put("sourceTime", point.value.sourceTimeAsISO())
         payload.put("serverTime", point.value.serverTimeAsISO())
         payload.put("sourceTimeMs", point.value.sourceTimeMs())
@@ -167,7 +167,7 @@ abstract class LoggerPublisher(config: JsonObject) : LoggerBase(config) {
                 if (point.value.value is LinkedHashMap<*, *>) {
                     val map = point.value.value.entries.associate { item -> item.key.toString() to item.value }
                     return Metric.MetricBuilder(
-                        point.topic.metricName,
+                        point.topic.getMetricName(),
                         MetricDataType.String,
                         JsonObject(map).toString()
                     )
@@ -188,11 +188,11 @@ abstract class LoggerPublisher(config: JsonObject) : LoggerBase(config) {
                         else -> MetricDataType.Unknown to null
                     }
                     if (type != MetricDataType.Unknown) {
-                        return Metric.MetricBuilder(point.topic.metricName, type, value)
+                        return Metric.MetricBuilder(point.topic.getMetricName(), type, value)
                             .timestamp(Date(point.value.sourceTime.toEpochMilli()))
                             .createMetric()
                     } else {
-                        logger.warning("Unhandled datatype ${point.value.dataTypeName()} for ${point.topic.browsePath}! value: ${point.value.value}")
+                        logger.warning("Unhandled datatype ${point.value.dataTypeName()} for ${point.topic.getBrowsePath()}! value: ${point.value.value}")
                     }
                 }
             }

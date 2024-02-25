@@ -230,18 +230,17 @@ class MqttServerEndpoint(
 
     private fun valueConsumerDataPoint(topic: Topic, qos: MqttQoS, value: DataPoint) {
         try {
-            logger.finest { "Publish [${value.topic.topicNameAndPath}]" }
             if (endpoint.isConnected) {
-                when (topic.dataFormat) {
+                val payload = when (topic.dataFormat) {
                     Topic.Format.Json -> {
-                        val payload = Buffer.buffer(value.encodeToJson().toString())
-                        endpoint.publish(value.topic.topicNameAndPath, payload, qos, false /*isDup*/, false /* isRetain */)
+                        Buffer.buffer(value.encodeToJson().toString())
                     }
                     Topic.Format.Value -> {
-                        val payload = Buffer.buffer(value.value.valueAsString())
-                        endpoint.publish(value.topic.topicNameAndPath, payload, qos, false /*isDup*/, false /* isRetain */)
+                        Buffer.buffer(value.value.valueAsString())
                     }
                 }
+                logger.finest { "Publish [${value.topic.getFQN()}]" }
+                endpoint.publish(value.topic.getFQN(), payload, qos, false /*isDup*/, false /* isRetain */)
             } else {
                 logger.warning("Topic [${topic}] to client [${endpoint.clientIdentifier()}] which is not connected anymore!")
             }

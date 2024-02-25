@@ -102,20 +102,16 @@ class MqttLogger (config: JsonObject) : LoggerPublisher(config) {
             val target = topicToTarget[point.topic.topicName]!!
             if (target.endsWith("#") || target.endsWith("+")) {
                 if (point.topic.hasBrowsePath && point.topic.topicPath.endsWith("#") || point.topic.topicPath.endsWith("+")) {
-                    target.dropLast(1) + point.topic.browsePath.toString().removePrefix(point.topic.topicPath.dropLast(1))
+                    target.dropLast(1) + point.topic.getBrowsePath().toString().removePrefix(point.topic.topicPath.dropLast(1))
                 } else {
                     target.dropLast(1) + point.topic.topicNode
                 }
             }
             else target
         } else if (this.topic.isEmpty()) {
-            if (point.topic.hasBrowsePath) {
-                point.topic.systemNameAndPath
-            } else {
-                point.topic.topicNode
-            }
+            point.topic.systemName + "/" + point.topic.getBrowsePath()
         } else {
-            this.topic + "/" + (if (point.topic.hasBrowsePath) point.topic.browsePath else point.topic.topicNode)
+            this.topic + "/" + point.topic.systemName + "/" + point.topic.getBrowsePath()
         }
         publish(topic, payload)
     }

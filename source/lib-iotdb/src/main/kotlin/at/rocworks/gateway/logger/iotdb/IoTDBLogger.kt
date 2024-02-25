@@ -53,7 +53,7 @@ class IoTDBLogger(config: JsonObject) : LoggerBase(config) {
         return promise.future()
     }
 
-    private fun nameToPath(path: String) = path.replace("[/;:.= ]".toRegex(), "_")
+    private fun nameToPath(path: String) =  path.replace(Regex("[/;:\\.\\-= ]"), "_")
     private fun namesToPath(path: List<String>) = path.joinToString(".") { nameToPath(it) }
 
     private fun getPath(point: DataPoint) =

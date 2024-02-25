@@ -13,6 +13,7 @@ Servers:
       Topics:
         - Topic: opc/opcua_driver/path/Objects/Demo/Scalar/Scalar_Static/Scalar_Static_Float
         - Topic: opc/opcua_driver/path/Objects/Demo/Scalar/Scalar_Static/Scalar_Static_String
+        - Topic: opc/opcua_driver/path/Objects/Demo/SimulationMass/SimulationMass_Float/#
         - Topic: mqtt/mqtt_json_driver/path/json/#
         - Topic: mqtt/mqtt_spb_driver/path/spBv1.0/#
         - Topic: plc/modbus_driver/node/holding-register:1:INT
@@ -70,6 +71,7 @@ Loggers:
       Logging:
         - Topic: opc/opcua_driver/path/Objects/Demo/Scalar/Scalar_Static/Scalar_Static_Float
         - Topic: opc/opcua_driver/path/Objects/Demo/Scalar/Scalar_Static/Scalar_Static_String
+        - Topic: opc/opcua_driver/path/Objects/Demo/SimulationMass/SimulationMass_Float/#
         - Topic: mqtt/mqtt_json_driver/path/json_input/#
         - Topic: plc/modbus_driver/node/holding-register:1:INT
 
@@ -85,6 +87,7 @@ Loggers:
       Logging:
         - Topic: opc/opcua_driver/path/Objects/Demo/Scalar/Scalar_Static/Scalar_Static_Float
         - Topic: opc/opcua_driver/path/Objects/Demo/Scalar/Scalar_Static/Scalar_Static_String
+        - Topic: opc/opcua_driver/path/Objects/Demo/SimulationMass/SimulationMass_Float/#
         - Topic: mqtt/mqtt_json_driver/path/json_input/#
         - Topic: mqtt/mqtt_spb_driver/path/spb_logger/#
         - Topic: mqtt/mqtt_spb_driver/path/spBv1.0/#
@@ -104,6 +107,7 @@ Loggers:
       Logging:
         - Topic: opc/opcua_driver/path/Objects/Demo/Scalar/Scalar_Static/Scalar_Static_Float
         - Topic: opc/opcua_driver/path/Objects/Demo/Scalar/Scalar_Static/Scalar_Static_String
+        - Topic: opc/opcua_driver/path/Objects/Demo/SimulationMass/SimulationMass_Float/#
         - Topic: mqtt/mqtt_json_driver/path/json_input/#
         - Topic: mqtt/mqtt_spb_driver/path/spb_logger/#
         - Topic: mqtt/mqtt_spb_driver/path/spBv1.0/#
@@ -111,12 +115,13 @@ Loggers:
 
   InfluxDB:
     - Id: "influxdb_logger"
-      Enabled: false
+      Enabled: true
       Url: http://linux0.rocworks.local:8086
       Database: gateway
       Logging:
         - Topic: opc/opcua_driver/path/Objects/Demo/Scalar/Scalar_Static/Scalar_Static_Float
         - Topic: opc/opcua_driver/path/Objects/Demo/Scalar/Scalar_Static/Scalar_Static_String
+        - Topic: opc/opcua_driver/path/Objects/Demo/SimulationMass/SimulationMass_Float/#
         - Topic: mqtt/mqtt_json_driver/path/json_input/#
         - Topic: mqtt/mqtt_spb_driver/path/spb_logger/#
         - Topic: mqtt/mqtt_spb_driver/path/spBv1.0/#
@@ -124,7 +129,7 @@ Loggers:
 
   IoTDB:
     - Id: "iotdb_logger"
-      Enabled: false
+      Enabled: true
       Host: linux0.rocworks.local
       Port: 6667
       Database: root.gateway
@@ -133,6 +138,7 @@ Loggers:
       Logging:
         - Topic: opc/opcua_driver/path/Objects/Demo/Scalar/Scalar_Static/Scalar_Static_Float
         - Topic: opc/opcua_driver/path/Objects/Demo/Scalar/Scalar_Static/Scalar_Static_String
+        - Topic: opc/opcua_driver/path/Objects/Demo/SimulationMass/SimulationMass_Float/#
         - Topic: mqtt/mqtt_json_driver/path/json_input/#
         - Topic: mqtt/mqtt_spb_driver/path/spb_logger/#
         - Topic: mqtt/mqtt_spb_driver/path/spBv1.0/#
@@ -140,7 +146,7 @@ Loggers:
 
   Neo4j:
     - Id: "neo4j_logger"
-      Enabled: false
+      Enabled: true
       Url: bolt://linux0.rocworks.local:7687
       Username: "neo4j"
       Password: "manager123$"
@@ -149,6 +155,7 @@ Loggers:
       Logging:
         - Topic: opc/opcua_driver/path/Objects/Demo/Scalar/Scalar_Static/Scalar_Static_Float
         - Topic: opc/opcua_driver/path/Objects/Demo/Scalar/Scalar_Static/Scalar_Static_String
+        - Topic: opc/opcua_driver/path/Objects/Demo/SimulationMass/SimulationMass_Float/#
         - Topic: mqtt/mqtt_json_driver/path/json_input/#
         - Topic: mqtt/mqtt_spb_driver/path/spb_logger/#
         - Topic: mqtt/mqtt_spb_driver/path/spBv1.0/#

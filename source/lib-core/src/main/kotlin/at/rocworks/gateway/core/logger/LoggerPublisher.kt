@@ -26,23 +26,23 @@ abstract class LoggerPublisher(config: JsonObject) : LoggerBase(config) {
         const val SPARKPLUGB = "SPARKPLUGB"
     }
 
-    private val soloFormatter: (DataPoint) -> Unit
+    private val soloPublisher: (DataPoint) -> Unit
 
-    private val bulkFormatter: (List<DataPoint>) -> Unit
+    private val bulkPublisher: (List<DataPoint>) -> Unit
 
     init {
-        soloFormatter = when (getMessageFormat().uppercase()) {
-            RAW -> ::formatterRawSolo
-            JSON -> ::formatterJsonSolo
-            JSONSIMPLE -> ::formatterJsonSimpleSolo
-            SPARKPLUGB -> ::formatterSpbSolo
+        soloPublisher = when (getMessageFormat().uppercase()) {
+            RAW -> ::publishRawSolo
+            JSON -> ::publishJsonDefaultSolo
+            JSONSIMPLE -> ::publishJsonSimpleSolo
+            SPARKPLUGB -> ::publishSpbSolo
             else -> ::unknownSoloFormat
         }
 
-        bulkFormatter = when (getMessageFormat().uppercase()) {
-            JSON -> ::formatterJsonBulk
-            JSONSIMPLE -> ::formatterJsonSimpleBulk
-            SPARKPLUGB -> ::formatterSpbBulk
+        bulkPublisher = when (getMessageFormat().uppercase()) {
+            JSON -> ::publishJsonDefaultBulk
+            JSONSIMPLE -> ::publishJsonSimpleBulk
+            SPARKPLUGB -> ::publishSpbBulk
             else -> ::unknownBulkFormat
         }
 
@@ -69,7 +69,7 @@ abstract class LoggerPublisher(config: JsonObject) : LoggerBase(config) {
         var counter = 0
         var point: DataPoint? = pollDatapointWait()
         while (point != null) {
-            soloFormatter(point)
+            soloPublisher(point)
             point = if (++counter < writeParameterBlockSize) pollDatapointNoWait() else null
         }
     }
@@ -83,7 +83,7 @@ abstract class LoggerPublisher(config: JsonObject) : LoggerBase(config) {
             point = if (++counter < writeParameterBlockSize) pollDatapointNoWait() else null
         }
         if (counter>0)
-            bulkFormatter(points)
+            bulkPublisher(points)
     }
 
     override fun writeExecutor() {
@@ -95,13 +95,13 @@ abstract class LoggerPublisher(config: JsonObject) : LoggerBase(config) {
     }
 
     // Format Raw
-    private fun formatterRawSolo(point: DataPoint) {
+    private fun publishRawSolo(point: DataPoint) {
         val buffer = Buffer.buffer(point.value.value.toString())
         publish(point.topic, buffer)
     }
 
     // Format Json
-    private fun formatterJsonSolo(point: DataPoint) {
+    private fun publishJsonDefaultSolo(point: DataPoint) {
         val result = JsonObject()
         result.put("Topic", point.topic.encodeToJson())
         result.put("Value", point.value.encodeToJson())
@@ -109,7 +109,7 @@ abstract class LoggerPublisher(config: JsonObject) : LoggerBase(config) {
         publish(point.topic, buffer)
     }
 
-    private fun formatterJsonBulk(points: List<DataPoint>) {
+    private fun publishJsonDefaultBulk(points: List<DataPoint>) {
         val result = points.map { point ->
             val item = JsonObject()
             item.put("Topic", point.topic.encodeToJson())
@@ -138,12 +138,12 @@ abstract class LoggerPublisher(config: JsonObject) : LoggerBase(config) {
         return payload
     }
 
-    private fun formatterJsonSimpleSolo(point: DataPoint) {
+    private fun publishJsonSimpleSolo(point: DataPoint) {
         val buffer = formatterJsonSimpleSoloObject(point).toBuffer()
         publish(point.topic, buffer)
     }
 
-    private fun formatterJsonSimpleBulk(points: List<DataPoint>) {
+    private fun publishJsonSimpleBulk(points: List<DataPoint>) {
         val result = points.map { point ->
             formatterJsonSimpleSoloObject(point)
         }
@@ -153,7 +153,7 @@ abstract class LoggerPublisher(config: JsonObject) : LoggerBase(config) {
 
     // Format SparkplugB
     private var spbSeq = 0
-    private fun formatterSpbSolo(point: DataPoint) {
+    private fun publishSpbSolo(point: DataPoint) {
         val payload = SparkplugBPayload.SparkplugBPayloadBuilder(spbSeq.toLong())
             .setTimestamp(Date())
             .setUuid(UUID.randomUUID().toString())
@@ -164,7 +164,7 @@ abstract class LoggerPublisher(config: JsonObject) : LoggerBase(config) {
         publish(point.topic.copy(browsePath = BrowsePath(point.topic.getBrowsePathOrNode().toList().dropLast(1))), buffer)
     }
 
-    private fun formatterSpbBulk(points: List<DataPoint>) {
+    private fun publishSpbBulk(points: List<DataPoint>) {
         val payload = SparkplugBPayload.SparkplugBPayloadBuilder(spbSeq.toLong())
             .setTimestamp(Date())
             .setUuid(UUID.randomUUID().toString())

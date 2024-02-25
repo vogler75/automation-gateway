@@ -323,7 +323,7 @@ class Neo4jLogger(config: JsonObject) : LoggerBase(config) {
 
     private fun writeMqttNodes(dataPoints: List<DataPoint>) {
         val records = dataPoints.map { point ->
-            val name = point.topic.browsePath.getMetric()
+            val name = point.topic.metricName
             mapOf("Name" to name,
                 "System" to point.topic.systemName,
                 "NodeId" to point.topic.topicNode,

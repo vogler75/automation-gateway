@@ -10,8 +10,6 @@ import io.vertx.core.json.JsonObject
 import io.vertx.kafka.client.producer.KafkaProducer
 import io.vertx.kafka.client.producer.KafkaProducerRecord
 
-import java.util.concurrent.TimeUnit
-
 class KafkaLogger(config: JsonObject) : LoggerPublisher(config) {
     private val servers = config.getString("Servers", "localhost:9092")
     private val configs = config.getJsonObject("Configs")
@@ -55,7 +53,7 @@ class KafkaLogger(config: JsonObject) : LoggerPublisher(config) {
 
     override fun publish(point: DataPoint, payload: Buffer) {
         val topic = topicName?:point.topic.systemName
-        val key = keyName?:point.topic.getBrowsePath().toString()
+        val key = keyName?:point.topic.getBrowsePathOrNode().toString()
         val record = KafkaProducerRecord.create<String, String>(topic, key, payload.toString())
         producer?.write(record)?.onComplete {
             valueCounterOutput++

@@ -116,7 +116,7 @@ abstract class LoggerPublisher(config: JsonObject) : LoggerBase(config) {
         payload.put("nodeId", point.topic.topicNode)
         payload.put("systemName", point.topic.systemName)
         payload.put("topicName", point.topic.topicName)
-        payload.put("browsePath", point.topic.getBrowsePath())
+        payload.put("browsePath", point.topic.getBrowsePathOrNode())
         payload.put("sourceTime", point.value.sourceTimeAsISO())
         payload.put("serverTime", point.value.serverTimeAsISO())
         payload.put("sourceTimeMs", point.value.sourceTimeMs())
@@ -192,7 +192,7 @@ abstract class LoggerPublisher(config: JsonObject) : LoggerBase(config) {
                             .timestamp(Date(point.value.sourceTime.toEpochMilli()))
                             .createMetric()
                     } else {
-                        logger.warning("Unhandled datatype ${point.value.dataTypeName()} for ${point.topic.getBrowsePath()}! value: ${point.value.value}")
+                        logger.warning("Unhandled datatype ${point.value.dataTypeName()} for ${point.topic.getBrowsePathOrNode()}! value: ${point.value.value}")
                     }
                 }
             }

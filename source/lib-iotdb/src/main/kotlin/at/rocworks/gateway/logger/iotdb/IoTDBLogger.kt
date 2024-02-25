@@ -59,8 +59,8 @@ class IoTDBLogger(config: JsonObject) : LoggerBase(config) {
     private fun getPath(point: DataPoint) =
         point.topic.systemName + "." +
         when (point.topic.systemType) {
-            Topic.SystemType.Opc -> namesToPath(point.topic.getBrowsePath().toList()) + "." + nameToPath(point.topic.topicNode)
-            Topic.SystemType.Mqtt -> namesToPath(point.topic.getBrowsePath().toList())
+            Topic.SystemType.Opc -> namesToPath(point.topic.getBrowsePathOrNode().toList()) + "." + nameToPath(point.topic.topicNode)
+            Topic.SystemType.Mqtt -> namesToPath(point.topic.getBrowsePathOrNode().toList())
             Topic.SystemType.Plc -> "node."+nameToPath(point.topic.topicNode)
             Topic.SystemType.Sys -> TODO()
             Topic.SystemType.Unknown -> TODO()

@@ -55,12 +55,8 @@ data class Topic (
     val hasBrowsePath: Boolean
         get() = !browsePath.isEmpty()
 
-//    val topicNameAndPath : String
-//        get() = if (topicType == TopicType.Path) {
-//            topicItems.slice(0..2).joinToString("/") + "/$browsePath"
-//        } else topicName
-
-    fun getFQN() = "${systemType}/${systemName}/${topicType}/${getBrowsePath()}"
+    fun getFQN() = "${systemType}/${systemName}/${topicType}/${getBrowsePathOrNode()}"
+    //fun getFQN() = topicItems.slice(0..2).joinToString("/") + "/" + getBrowsePathOrNode()
 
     fun getMetricName() = when (topicType) {
         TopicType.Path -> browsePath.getLast()
@@ -68,7 +64,7 @@ data class Topic (
         TopicType.Unknown -> ""
     }
 
-    fun getBrowsePath() = when (topicType) {
+    fun getBrowsePathOrNode() = when (topicType) {
         TopicType.Path -> browsePath
         TopicType.Node -> BrowsePath(listOf(topicNode))
         TopicType.Unknown -> BrowsePath(emptyList())

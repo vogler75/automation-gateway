@@ -10,14 +10,19 @@ import at.rocworks.gateway.logger.neo4j.Neo4jLogger
 //import at.rocworks.gateway.logger.duckdb.DuckDBLogger // it's huge, include it only when needed
 
 import io.vertx.core.Vertx
+import io.vertx.core.VertxOptions
 import io.vertx.core.json.JsonObject
+import java.util.concurrent.TimeUnit
 import java.util.logging.Logger
 
 object App {
     @Throws(Exception::class)
     @JvmStatic
     fun main(args: Array<String>) {
-        val vertx = Vertx.vertx()
+        val options = VertxOptions()
+        options.setWarningExceptionTime(2)
+        options.setWarningExceptionTimeUnit(TimeUnit.SECONDS)
+        val vertx = Vertx.vertx(options)
         val logger = Logger.getLogger(javaClass.simpleName)
 
         fun factory(type: Component.ComponentType, config: JsonObject): Component? {

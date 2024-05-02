@@ -881,7 +881,7 @@ class OpcUaDriver(config: JsonObject) : DriverBase(config) {
         val resolvedNodeIds = mutableListOf<Pair<NodeId, String>>()
         val items = Topic.splitAddress(path)
         logger.finest { "Browse address [$path] [${items.joinToString("|")}]" }
-        fun find(node: String, itemIdx: Int, path: String) {
+        fun find(node: String, itemIdx: Int, path: String): Int {
             val item = items[itemIdx]
             logger.finest { "Find $node | $item ($itemIdx) | $path" }
             val nodeId = NodeId.parseOrNull(node)
@@ -893,15 +893,26 @@ class OpcUaDriver(config: JsonObject) : DriverBase(config) {
                     .filter { item == "#" || item == "+" || item == it.getString("BrowseName", "") }
                 logger.finest { "- Found: ${result.joinToString { it.getString("BrowseName") }}" }
                 val nextIdx = if (item != "#" && itemIdx + 1 < items.size) itemIdx + 1 else itemIdx
-                result.forEach {
+                return result.sumOf {
                     val childNodeId = NodeId.parseOrNull(it.getString("NodeId"))
-                    val browsePath = path+"/"+it.getString("BrowseName")
+                    val browsePath = path + "/" + it.getString("BrowseName")
                     if (childNodeId != null) when (it.getString("NodeClass")) {
-                        "Variable" -> resolvedNodeIds.add(Pair(childNodeId, browsePath))
-                        "Object" -> find(it.getString("NodeId", ""), nextIdx, browsePath)
-                    }
+                        "Variable" -> {
+                            val count = find(it.getString("NodeId", ""), nextIdx, browsePath)
+                            if (count > 0) count
+                            else {
+                                resolvedNodeIds.add(Pair(childNodeId, browsePath))
+                                1
+                            }
+                        }
+                        "Object" -> {
+                            find(it.getString("NodeId", ""), nextIdx, browsePath)
+                        }
+                        else -> 0
+                    } else 0
                 }
             }
+            else return 0
         }
         val tStart = Instant.now()
         val start = getRootNodeIdOfName(items.first())

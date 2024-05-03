@@ -126,7 +126,7 @@ abstract class LoggerPublisher(config: JsonObject) : LoggerBase(config) {
         payload.put("nodeId", point.topic.topicNode)
         payload.put("systemName", point.topic.systemName)
         payload.put("topicName", point.topic.topicName)
-        payload.put("browsePath", point.topic.getBrowsePathOrNode())
+        payload.put("browsePath", point.topic.getBrowsePathOrNode().toString())
         payload.put("sourceTime", point.value.sourceTimeAsISO())
         payload.put("serverTime", point.value.serverTimeAsISO())
         payload.put("sourceTimeMs", point.value.sourceTimeMs())

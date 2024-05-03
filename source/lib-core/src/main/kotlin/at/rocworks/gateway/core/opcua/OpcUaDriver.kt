@@ -847,7 +847,7 @@ class OpcUaDriver(config: JsonObject) : DriverBase(config) {
 
             try {
                 val browseResult = client!!.browse(browse).get()
-                if (browseResult.statusCode.isGood && browseResult.references != null) {
+                if (browseResult.references != null) {
                     addResult(browseResult.references.asList())
                     var continuationPoint = browseResult.continuationPoint
                     while (continuationPoint != null && continuationPoint.isNotNull) {
@@ -855,8 +855,6 @@ class OpcUaDriver(config: JsonObject) : DriverBase(config) {
                         addResult(nextResult.references.asList())
                         continuationPoint = nextResult.continuationPoint
                     }
-                } else {
-                    logger.severe("Browsing nodeId [${startNodeId}] failed [${browseResult.statusCode.toString()}]")
                 }
             } catch (e: InterruptedException) {
                 logger.severe("Browsing nodeId [${startNodeId}] exception: [${e.message}]")

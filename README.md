@@ -310,6 +310,8 @@ You have to build the program before with gradle. Then you can use the shell scr
 > C:\Workspace\automation-gateway\docker\examples\hazelcast> docker compose up -d  
 
 # Version History
+- [1.29 Extended OPC UA Browsing](#129-extended-opc-ua-browsing)
+- [1.28 Various changes and code rework](#128-various-changes-and-code-rework)
 - [1.27 Add target option to MQTT Logger for UNS](#127-add-target-option-to-mqtt-logger-for-uns)
 - [1.26 Reactivated Neo4j Logger](#126-reactivated-neo4j-logger)
 - [1.25 MQTT Driver Custom JSON Format](#125-mqtt-driver-custom-json-format)
@@ -341,6 +343,21 @@ You have to build the program before with gradle. Then you can use the shell scr
 - [1.7 DDS Driver (subscribe and publish)](#17-dds-driver-subscribe-and-publish)
 - [1.6 Added GraphiQL (http://localhost:4000/graphiql/)](#16-added-graphiql-httplocalhost4000graphiql)
 - [1.5 OPC UA Schemas to GraphQL Schema Importer](#15-opc-ua-schemas-to-graphql-schema-importer)
+
+## 1.29 Extended OPC UA Browsing 
+
+Nodes of type Variable will now be browsed. Before browsing stopped, when it reached a node of type Variable. But some OPC UA servers, like the one from SIEMENS PLCs, are using a Variable node type for User-Defined-Datatypes or Structs. 
+
+## 1.28 Various changes and code rework
+
+- Upgrade to PLC4X 0.9
+- Upgrade to Vertx 4.5.1
+- Added Duckdb Logger
+- Added HSQLDB Support for JDBC Logger
+- Added ExecuteSQL GraphQL function 
+- IoTDB Logger improvements
+- Rework of SparkplugB messages
+- Rework of BrowsePath in messages
 
 ## 1.27 Add target option to MQTT Logger for UNS
 

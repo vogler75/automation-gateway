@@ -1,0 +1,25 @@
+plugins {
+    id 'gateway.kotlin-library-conventions'
+}
+
+project.ext {
+    vertxVersion = "4.5.1"
+}
+
+repositories {
+    mavenLocal()
+    maven {
+        url = uri('https://repo.maven.apache.org/maven2/')
+    }
+}
+
+dependencies {
+    api project(':lib-core')
+
+    implementation "io.vertx:vertx-core:$vertxVersion"
+    implementation "io.vertx:vertx-lang-kotlin:$vertxVersion"
+    implementation "io.vertx:vertx-config-yaml:$vertxVersion"
+    implementation "io.vertx:vertx-service-discovery:$vertxVersion"
+    implementation 'org.opensearch.client:opensearch-java:2.10.1'
+    implementation "org.opensearch.client:opensearch-rest-client:2.13.0"
+}

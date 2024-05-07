@@ -14,6 +14,7 @@ dependencies {
     implementation project(':lib-kafka')
     implementation project(':lib-iotdb')
     implementation project(':lib-neo4j')
+    implementation project(':lib-opensearch')
     //implementation project(':lib-duckdb') // it's huge, include it only when needed
 
     implementation "io.vertx:vertx-core:$vertxVersion"

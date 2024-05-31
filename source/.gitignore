@@ -9,3 +9,6 @@ security
 
 # Add Gradle Wrappe Exception
 !gradle/wrapper/gradle-wrapper.jar
+
+# Bin Folder
+bin

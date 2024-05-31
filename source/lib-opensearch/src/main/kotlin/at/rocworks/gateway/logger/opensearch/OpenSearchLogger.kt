@@ -104,6 +104,7 @@ class OpenSearchLogger(config: JsonObject) : LoggerBase(config) {
         var point = pollDatapointWait()
         while (point != null && bulkOperations.size <= writeParameterBlockSize) {
             if (point.value.sourceTime().epochSecond > 0) {
+                val value = point.value.valueAsDouble()
                 val data = IndexData(
                     point.topic.topicName,
                     point.topic.systemType,
@@ -113,7 +114,7 @@ class OpenSearchLogger(config: JsonObject) : LoggerBase(config) {
                     point.topic.topicNode,
                     point.topic.getBrowsePathOrNode().toString(),
                     point.value.valueAsString(),
-                    point.value.valueAsDouble(),
+                    if (value == null || value.isNaN()) null else value,
                     point.value.statusCode,
                     point.value.sourceTime.toEpochMilli(),
                     point.value.serverTime.toEpochMilli()

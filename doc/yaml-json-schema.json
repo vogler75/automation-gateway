@@ -102,6 +102,12 @@
                             "items": {
                                 "$ref": "#/definitions/DuckDBLogger"
                             }
+                        },
+                        "OpenSearch": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/OpenSearchLogger"
+                            }
                         }    
                     }
                 }
@@ -207,7 +213,7 @@
                 "Database": { "type": "string", "default": "root.gateway" }
             },
             "required": ["Id", "Host", "Port", "Database"]
-        },        
+        },
         "Neo4jLogger": {
             "type": "object",
             "additionalProperties": false,
@@ -239,7 +245,24 @@
                 "SqlTableName": { "type": "string" }
             },
             "required": ["Id"]
-        },              
+        },
+        "OpenSearchLogger": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {  
+                "Id": { "type": "string" },
+                "Enabled": { "type": "boolean" },
+                "LogLevel": { "$ref": "#/definitions/LogLevel" },
+                "WriteParameters": { "$ref": "#/definitions/LoggerWriteParameters" },
+                "Logging": {  "$ref": "#/definitions/Logging" },   
+                "Host": { "type": "string", "default": "localhost" },
+                "Port": { "type": "integer", "default": 9200 },
+                "Username": { "type": "string", "default": "" },
+                "Password": { "type": "string", "default": "" },
+                "Index": { "type": "string", "default": "gateway" }
+            },
+            "required": ["Id", "Host", "Port", "Index"]
+        },            
         "KafkaPublisherConfigs": {
             "type": "object",
             "additionalProperties": true,

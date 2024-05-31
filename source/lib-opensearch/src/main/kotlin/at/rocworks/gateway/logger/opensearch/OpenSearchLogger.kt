@@ -5,6 +5,7 @@ import at.rocworks.gateway.core.logger.LoggerBase
 import io.vertx.core.Future
 import io.vertx.core.Promise
 import io.vertx.core.json.JsonObject
+import java.time.YearMonth
 import org.apache.http.HttpHost
 import org.apache.http.auth.AuthScope
 import org.apache.http.auth.UsernamePasswordCredentials
@@ -17,8 +18,9 @@ import org.opensearch.client.opensearch.core.bulk.BulkOperation
 import org.opensearch.client.opensearch.core.bulk.IndexOperation
 import org.opensearch.client.transport.OpenSearchTransport
 import org.opensearch.client.transport.rest_client.RestClientTransport
+import java.time.format.DateTimeFormatter
 
-/*
+/* Create an index template "<index name>" with index pattern "<index name>-*" with the following JSON index mapping
 {
   "properties": {
     "topicName": {
@@ -38,6 +40,9 @@ import org.opensearch.client.transport.rest_client.RestClientTransport
     },
     "topicNode": {
       "type": "text"
+    },
+    "browsePath": {
+        "type": "text"
     },
     "valueAsString": {
       "type": "text"
@@ -66,6 +71,7 @@ class OpenSearchLogger(config: JsonObject) : LoggerBase(config) {
         val topicType: Topic.TopicType,
         val topicPath: String,
         val topicNode: String,
+        val browsePath: String,
         val valueAsString: String,
         val valueAsNumber: Double?,
         val statusCode: String,
@@ -75,7 +81,9 @@ class OpenSearchLogger(config: JsonObject) : LoggerBase(config) {
 
     private val host = config.getString("Host", "http://localhost")
     private val port = config.getInteger("Port", 9200)
-    private val index = config.getString("Index", "Gateway")
+    private val index = config.getString("Index", "gateway")
+    private val username = config.getString("Username", "")
+    private val password = config.getString("Password", "")
 
     private val httpHost = HttpHost(host, port)
     private val credentialsProvider = BasicCredentialsProvider()
@@ -96,7 +104,7 @@ class OpenSearchLogger(config: JsonObject) : LoggerBase(config) {
             //Only for demo purposes. Don't specify your credentials in code.
             credentialsProvider.setCredentials(
                 AuthScope(httpHost),
-                UsernamePasswordCredentials("admin", "admin")
+                UsernamePasswordCredentials(username, password)
             )
             logger.info("OpenSearch connected.")
             result.complete()
@@ -115,6 +123,7 @@ class OpenSearchLogger(config: JsonObject) : LoggerBase(config) {
     }
 
     override fun writeExecutor() {
+        val indexCurrent = index+"-"+YearMonth.now().format(DateTimeFormatter.ofPattern("yyyy-MM"))
         val bulkOperations : MutableList<BulkOperation> = mutableListOf()
         var point = pollDatapointWait()
         while (point != null && bulkOperations.size <= writeParameterBlockSize) {
@@ -126,25 +135,37 @@ class OpenSearchLogger(config: JsonObject) : LoggerBase(config) {
                     point.topic.topicType,
                     point.topic.topicPath,
                     point.topic.topicNode,
+                    point.topic.getBrowsePathOrNode().toString(),
                     point.value.valueAsString(),
                     point.value.valueAsDouble(),
                     point.value.statusCode,
                     point.value.sourceTime.toEpochMilli(),
                     point.value.serverTime.toEpochMilli()
                 )
-                val indexOperation = IndexOperation.Builder<IndexData>().index(index).document(data).build()
+                val indexOperation = IndexOperation.Builder<IndexData>().index(indexCurrent).document(data).build()
                 bulkOperations.add(BulkOperation.Builder().index(indexOperation).build())
             }
             point = pollDatapointNoWait()
         }
         if (bulkOperations.size > 0) {
-            val result = client.bulk(BulkRequest.Builder().operations(bulkOperations).build())
-            if (result.errors()) {
-                logger.severe("Bulk had errors")
-                for (item in result.items()) {
-                    if (item.error() != null) {
-                        logger.severe(item.error()!!.reason())
+            var doit = 1
+            while (doit > 0) {
+                try {
+                    val result = client.bulk(BulkRequest.Builder().operations(bulkOperations).build())
+                    if (result.errors()) {
+                        logger.severe("Bulk had errors")
+                        for (item in result.items()) {
+                            if (item.error() != null) {
+                                logger.severe(item.error()!!.reason())
+                            }
+                        }
                     }
+                    if (doit > 1) logger.info("Write exception gone.")
+                    doit = 0
+                } catch (e: Exception) {
+                    if (doit == 1) logger.severe("Write exception: $e")
+                    doit ++
+                    Thread.sleep(1000)
                 }
             }
         }

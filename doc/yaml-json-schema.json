@@ -421,6 +421,7 @@
                 "CleanSession": { "type": "boolean" },
                 "Qos": { "type": "integer" },
                 "Retained": { "type": "boolean" },
+                "ReconnectInterval": { "type": "integer", "default": 5000, "description": "Reconnect Interval (ms)" },
                 "Format": { "type": "string", "enum": ["Raw", "Json", "SparkplugB"]},
                 "CustomJson": {
                     "type": "object",

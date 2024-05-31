@@ -1,0 +1,20 @@
+Servers:
+  OpcUa:
+    - Port: 4841
+      Enabled: true
+      LogLevel: INFO
+      Topics:
+        - Topic: mqtt/home/path/Original/#
+
+Drivers:
+  Mqtt:
+    - Id: "home"
+      Enabled: true
+      LogLevel: INFO
+      Host: linux0
+      Port: 1883
+      Format: Json
+      CustomJson:
+        Value: "Value"
+        TimestampMs: "TimeMS"
+        TimestampIso: "TimeISO"

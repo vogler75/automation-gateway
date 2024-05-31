@@ -60,7 +60,7 @@ class InfluxDBLogger(config: JsonObject) : LoggerBase(config) {
     private fun influxPointOf(dp: DataPoint): Point {
         val point = Point.measurement(dp.topic.systemName) // TODO: configurable measurement name
             .time(dp.value.sourceTime().toEpochMilli(), TimeUnit.MILLISECONDS)
-            .tag("tag", dp.topic.getBrowsePathOrNode().toString())
+            .tag("tag", dp.topic.getBrowsePathOrNode().toString()) // TODO: add topicName, topicType, topicNode, ...
             .tag("address", dp.topic.topicNode)
             .tag("status", dp.value.statusAsString())
 

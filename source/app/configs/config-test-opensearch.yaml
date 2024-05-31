@@ -1,0 +1,23 @@
+Drivers:
+  Mqtt:
+    - Id: "home"
+      Enabled: true
+      LogLevel: INFO
+      Host: scada
+      Port: 1883
+      Format: Json
+      CustomJson:
+        Value: "Value"
+        TimestampMs: "TimeMS"
+        TimestampIso: "TimeISO"
+
+Loggers:
+  OpenSearch:
+    - Id: Search1
+      Enabled: true
+      LogLevel: INFO
+      Host: linux0
+      Port: 9200
+      Index: gateway
+      Logging:
+        - Topic: mqtt/home/path/Original/#

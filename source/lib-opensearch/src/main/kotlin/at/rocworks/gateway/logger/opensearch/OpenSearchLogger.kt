@@ -20,45 +20,21 @@ import org.opensearch.client.transport.OpenSearchTransport
 import org.opensearch.client.transport.rest_client.RestClientTransport
 import java.time.format.DateTimeFormatter
 
-/* Create an index template "<index name>" with index pattern "<index name>-*" with the following JSON index mapping
+/* Create an index template "<index name>" with an index pattern "<index name>-*" with the following JSON index mapping
 {
   "properties": {
-    "topicName": {
-      "type": "text"
-    },
-    "systemType": {
-      "type": "text"
-    },
-    "systemName": {
-      "type": "text"
-    },
-    "topicType": {
-      "type": "text"
-    },
-    "topicPath": {
-      "type": "text"
-    },
-    "topicNode": {
-      "type": "text"
-    },
-    "browsePath": {
-        "type": "text"
-    },
-    "valueAsString": {
-      "type": "text"
-    },
-    "valueAsNumber": {
-      "type": "double"
-    },
-    "statusCode": {
-      "type": "text"
-    },
-    "sourceTime": {
-      "type": "date"
-    },
-    "serverTime": {
-      "type": "date"
-    }
+    "topicName": { "type": "text" },
+    "systemType": { "type": "text" },
+    "systemName": { "type": "text" },
+    "topicType": { "type": "text" },
+    "topicPath": { "type": "text" },
+    "topicNode": { "type": "text" },
+    "browsePath": { "type": "text" },
+    "valueAsString": { "type": "text" },
+    "valueAsNumber": { "type": "double" },
+    "statusCode": { "type": "text" },
+    "sourceTime": { "type": "date" },
+    "serverTime": { "type": "date" }
   }
 }
  */

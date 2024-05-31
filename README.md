@@ -310,6 +310,7 @@ You have to build the program before with gradle. Then you can use the shell scr
 > C:\Workspace\automation-gateway\docker\examples\hazelcast> docker compose up -d  
 
 # Version History
+- [1.30 OpenSearch Logger](#130-opensearch-logger)
 - [1.29 Extended OPC UA Browsing](#129-extended-opc-ua-browsing)
 - [1.28 Various changes and code rework](#128-various-changes-and-code-rework)
 - [1.27 Add target option to MQTT Logger for UNS](#127-add-target-option-to-mqtt-logger-for-uns)
@@ -343,6 +344,44 @@ You have to build the program before with gradle. Then you can use the shell scr
 - [1.7 DDS Driver (subscribe and publish)](#17-dds-driver-subscribe-and-publish)
 - [1.6 Added GraphiQL (http://localhost:4000/graphiql/)](#16-added-graphiql-httplocalhost4000graphiql)
 - [1.5 OPC UA Schemas to GraphQL Schema Importer](#15-opc-ua-schemas-to-graphql-schema-importer)
+
+## 1.30 OpenSearch Logger
+
+Logger for OpenSearch / Elasticsearch. 
+
+You must create an index *template* \<index name\> with an index *pattern* "\<index name\>-*" with the following JSON index mapping:
+```
+{
+  "properties": {
+    "topicName": { "type": "text" },
+    "systemType": { "type": "text" },
+    "systemName": { "type": "text" },
+    "topicType": { "type": "text" },
+    "topicPath": { "type": "text" },
+    "topicNode": { "type": "text" },
+    "browsePath": { "type": "text" },
+    "valueAsString": { "type": "text" },
+    "valueAsNumber": { "type": "double" },
+    "statusCode": { "type": "text" },
+    "sourceTime": { "type": "date" },
+    "serverTime": { "type": "date" }
+  }
+}
+```
+
+Example configuration:
+```
+Loggers:
+  OpenSearch:
+    - Id: Search1
+      Enabled: true
+      LogLevel: INFO
+      Host: linux0
+      Port: 9200
+      Index: gateway
+      Logging:
+        - Topic: mqtt/home/path/Original/#
+```
 
 ## 1.29 Extended OPC UA Browsing 
 

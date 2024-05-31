@@ -41,6 +41,7 @@ class MqttDriver(config: JsonObject) : DriverBase(config) {
     private val trustAll: Boolean = config.getBoolean("TrustAll", true)
     private val qos: Int = config.getInteger("Qos", 0)
     private val retained: Boolean = config.getBoolean("Retained", false)
+    private val reconnectInterval: Long = config.getLong("ReconnectInterval", 5000) // ms
 
     enum class PayloadFormat {
         Raw, DefaultJson, CustomJson, SparkplugB
@@ -100,25 +101,38 @@ class MqttDriver(config: JsonObject) : DriverBase(config) {
         options.setSsl(ssl)
         options.setTrustAll(trustAll)
         options.setMaxMessageSize(maxMessageSizeKb)
+        options.reconnectInterval=reconnectInterval // ms
 
         client = MqttClient.create(vertx, options)
-        client?.publishHandler(::valueConsumer)
+
+        client?.exceptionHandler { e: Throwable ->
+            logger.warning("Exception: $e")
+        };
+
         client?.closeHandler {
             logger.severe("Connection closed.")
+            connectMqttClient();
         }
-        client?.exceptionHandler {
-            logger.severe("Exception $it")
-        }
+
+        client?.publishHandler(::valueConsumer)
+
+        connectMqttClient()
+        promise.complete()
+
+        return promise.future()
+    }
+
+    private fun connectMqttClient() {
         client?.connect(port, host) {
             logger.info("Mqtt client connect [${it.succeeded()}] [${it.cause()}]")
             if (it.succeeded()) {
                 resubscribe()
-                promise.complete()
+            } else {
+                vertx.setTimer(reconnectInterval) {
+                    connectMqttClient();
+                }
             }
-            else promise.fail("Connect failed!")
-        } ?: promise.fail("Client is null!")
-
-        return promise.future()
+        }
     }
 
     override fun disconnect(): Future<Boolean> {

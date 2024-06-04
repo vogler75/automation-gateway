@@ -1,0 +1,13 @@
+repositories {
+    mavenLocal()
+    maven {
+        credentials {
+            username = "$github_user"
+            password = "$github_token"
+        }
+        url = uri('https://maven.pkg.github.com/eclipse-zenoh/zenoh-java')
+    }
+    maven {
+        url = uri('https://repo.maven.apache.org/maven2/')
+    }
+}

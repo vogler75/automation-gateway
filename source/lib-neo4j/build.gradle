@@ -6,13 +6,6 @@ project.ext {
     vertxVersion = "4.5.1"
 }
 
-repositories {
-    mavenLocal()
-    maven {
-        url = uri('https://repo.maven.apache.org/maven2/')
-    }
-}
-
 dependencies {
     api project(':lib-core')
 

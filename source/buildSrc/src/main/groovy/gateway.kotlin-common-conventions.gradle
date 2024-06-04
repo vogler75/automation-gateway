@@ -7,11 +7,6 @@ plugins {
     id 'org.jetbrains.kotlin.jvm'
 }
 
-repositories {
-    // Use JCenter for resolving dependencies.
-    mavenCentral()
-}
-
 dependencies {
     constraints {
         // Define dependency versions as constraints

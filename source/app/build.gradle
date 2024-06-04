@@ -6,6 +6,20 @@ project.ext {
     vertxVersion = "4.5.1"
 }
 
+repositories {
+    mavenLocal()
+    maven {
+        credentials {
+            username = "$github_user"
+            password = "$github_token"
+        }
+        url = uri('https://maven.pkg.github.com/eclipse-zenoh/zenoh-java')
+    }
+    maven {
+        url = uri('https://repo.maven.apache.org/maven2/')
+    }
+}
+
 dependencies {
     implementation project(':lib-core')
 
@@ -28,6 +42,8 @@ dependencies {
     //runtimeOnly group: 'mysql', name: 'mysql-connector-java', version: '8.0.28'
     //runtimeOnly group: 'io.crate', name: 'crate-jdbc', version: '2.6.0'
     //runtimeOnly group: 'com.microsoft.sqlserver', name: 'mssql-jdbc', version: '10.2.0.jre11'
+
+    implementation "io.zenoh:zenoh-kotlin-jvm:0.11.0"
 }
 
 application {

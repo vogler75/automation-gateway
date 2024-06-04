@@ -2,10 +2,6 @@ plugins {
     id 'gateway.kotlin-library-conventions'
 }
 
-project.ext {
-    vertxVersion = "4.5.1"
-}
-
 dependencies {
     api project(':lib-core')
 

@@ -10,5 +10,5 @@ dependencies {
     implementation "io.vertx:vertx-config-yaml:$vertxVersion"
     implementation "io.vertx:vertx-service-discovery:$vertxVersion"
 
-    implementation 'org.apache.iotdb:iotdb-session:1.3.0'
+    implementation "io.zenoh:zenoh-kotlin-jvm:0.11.0"
 }

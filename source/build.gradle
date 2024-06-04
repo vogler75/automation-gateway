@@ -1,3 +1,7 @@
+ext {
+  vertxVersion = "4.5.1"
+}
+
 repositories {
     mavenLocal()
     maven {

@@ -2,10 +2,6 @@ plugins {
     id 'gateway.kotlin-application-conventions'
 }
 
-project.ext {
-    vertxVersion = "4.5.1"
-}
-
 dependencies {
     implementation project(':lib-core')
     implementation project(':lib-plc4x')

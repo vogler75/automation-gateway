@@ -2,24 +2,6 @@ plugins {
     id 'gateway.kotlin-application-conventions'
 }
 
-project.ext {
-    vertxVersion = "4.5.1"
-}
-
-repositories {
-    mavenLocal()
-    maven {
-        credentials {
-            username = "$github_user"
-            password = "$github_token"
-        }
-        url = uri('https://maven.pkg.github.com/eclipse-zenoh/zenoh-java')
-    }
-    maven {
-        url = uri('https://repo.maven.apache.org/maven2/')
-    }
-}
-
 dependencies {
     implementation project(':lib-core')
 

@@ -1,0 +1,18 @@
+Drivers:
+  OpcUa:
+    - Id: "oa"
+      Enabled: true
+      LogLevel: INFO
+      EndpointUrl: "opc.tcp://localhost:4840"
+      UpdateEndpointUrl: true
+      SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#None
+      SubscriptionSamplingInterval: 0
+
+Loggers:
+  Zenoh:
+    - Id: Zenoh1
+      Enabled: true
+      Format: JsonSimple
+      Key: WinccOA1
+      Logging:
+        - Topic: opc/oa/path/Objects/Home-Automation-Float/#

@@ -108,7 +108,13 @@
                             "items": {
                                 "$ref": "#/definitions/OpenSearchLogger"
                             }
-                        }    
+                        },
+                        "Zenoh": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/ZenohLogger"
+                            }
+                        }  
                     }
                 }
             },
@@ -262,7 +268,20 @@
                 "Index": { "type": "string", "default": "gateway" }
             },
             "required": ["Id", "Host", "Port", "Index"]
-        },            
+        },
+        "ZenohLogger": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {  
+                "Id": { "type": "string" },
+                "Enabled": { "type": "boolean" },
+                "LogLevel": { "$ref": "#/definitions/LogLevel" },
+                "WriteParameters": { "$ref": "#/definitions/LoggerWriteParameters" },
+                "Logging": {  "$ref": "#/definitions/Logging" },   
+                "Key": { "type": "string", "default": "gateway" }
+            },
+            "required": ["Id"]
+        },          
         "KafkaPublisherConfigs": {
             "type": "object",
             "additionalProperties": true,

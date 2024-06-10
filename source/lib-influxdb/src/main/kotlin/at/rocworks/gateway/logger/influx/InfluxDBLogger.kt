@@ -15,12 +15,10 @@ import org.influxdb.dto.*
 
 
 class InfluxDBLogger(config: JsonObject) : LoggerBase(config) {
-    private val configJdbc = config.getJsonObject("InfluxDB", config)
-
-    private val url = configJdbc.getString("Url", "")
-    private val username = configJdbc.getString("Username", "")
-    private val password = configJdbc.getString("Password", "")
-    private val database = configJdbc.getString("Database", "test")
+    private val url = config.getString("Url", "")
+    private val username = config.getString("Username", "")
+    private val password = config.getString("Password", "")
+    private val database = config.getString("Database", "test")
 
     private val session: InfluxDB = if (username == null || username == "")
         InfluxDBFactory.connect(url)

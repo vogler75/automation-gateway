@@ -2,6 +2,18 @@
 
 Connect one or more OPC UA servers, PLC4X devices or MQTT brokers to the gateway and access the data with a GraphQL, a MQTT, or an OPC UA client. The Gateway additionally offers functionality to log value changes from OPC UA, MQTT and PLC4X in a range of databases and platforms, including InfluxDB, IoTDB, Kafka, among others. Tested with up to 250000 value changes per second on comodity hardware.  
 
+Available logger sinks:  
+* InfluxDB
+* QuestDB
+* IoTDB
+* Neo4J
+* DuckDB
+* Kafka
+* Zenoh
+* MQTT
+* JDBC (PostgreSQL, MySQL, SQL Server...)
+* OpenSearch (ElasticSearch)
+
 The Gateway passes values through, it does not store data internally. The MQTT Broker is not a fully complient MQTT Broker. It does not keep values in memory. If you subscribe to a virtual MQTT-Topic, which must follow certain rules, then it will connect to the tags in OPC UA or PLC4X and will pass the values to the client. If multiple clients subscribe to the same virtual topic, then only one subscription to the device is made and the Gateway will distribute the values to all the clients.  
 
 The Gateway also has an integrated OPC UA server. You can define what kind of data from MQTT brokers, other OPC UA servers and from PLC4X devices you want to have in the integraded OPC UA server. 
@@ -344,6 +356,28 @@ You have to build the program before with gradle. Then you can use the shell scr
 - [1.7 DDS Driver (subscribe and publish)](#17-dds-driver-subscribe-and-publish)
 - [1.6 Added GraphiQL (http://localhost:4000/graphiql/)](#16-added-graphiql-httplocalhost4000graphiql)
 - [1.5 OPC UA Schemas to GraphQL Schema Importer](#15-opc-ua-schemas-to-graphql-schema-importer)
+
+## 1.31 Zenoh & QuestDB Logger
+
+Added loggers for Zenoh and QuestDB.
+
+For **Zenoh** only the default configuration settings are currently available. Zenoh is also commented out in the "App", because Zenoh uses native libs and the size of the libs is high. Also the native libs maybe hinder the compilation of a native executable with GraalVM (not tested). If you need Zenoh, then go to the App.kt and remove the comments from the Zenoh related lines.
+
+For **QuestDB** you should pre-create your table:
+```
+CREATE TABLE <tablename> (
+    time timestamp,
+    system symbol,
+    address symbol,
+    value double,
+    text varchar
+) TIMESTAMP(time) PARTITION BY DAY;
+
+ALTER TABLE <tablename> DEDUP ENABLE UPSERT KEYS(time, system, address)
+
+ALTER TABLE <tablename> ALTER COLUMN address ADD INDEX;
+
+```
 
 ## 1.30 OpenSearch Logger
 

@@ -23,7 +23,7 @@ data class TopicValue (
         is Number -> value.toDouble()
         else -> valueAsString().toDoubleOrNull()
     }
-    fun stringValue(): String = if (value is String) value else ""
+    fun stringValue(): String = if (value is String || value is Buffer) value.toString() else ""
 
     fun isStatusGood() = statusCode == TopicStatus.GOOD
 

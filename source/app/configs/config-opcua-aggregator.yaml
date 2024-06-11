@@ -1,0 +1,23 @@
+Drivers:
+  OpcUa:
+    - Id: "demo1"
+      Enabled: true
+      LogLevel: INFO
+      EndpointUrl: "opc.tcp://scada.rocworks.local:62541"
+      UpdateEndpointUrl: true
+      SecurityPolicy: None
+
+    - Id: "demo2"
+      Enabled: true
+      LogLevel: INFO
+      EndpointUrl: "opc.tcp://scada.rocworks.local:62542"
+      UpdateEndpointUrl: true
+      SecurityPolicy: None
+
+Servers:
+  OpcUa:
+    - Id: opc
+      Port: 4841
+      Topics:
+        - Topic: opc/demo1/path/Objects/Demo/SimulationMass/#
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/#

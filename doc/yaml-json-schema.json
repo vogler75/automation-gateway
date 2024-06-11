@@ -114,7 +114,13 @@
                             "items": {
                                 "$ref": "#/definitions/ZenohLogger"
                             }
-                        }  
+                        },
+                        "QuestDB": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/QuestDBLogger"
+                            }
+                        }                          
                     }
                 }
             },
@@ -281,7 +287,22 @@
                 "Key": { "type": "string", "default": "gateway" }
             },
             "required": ["Id"]
-        },          
+        },   
+        "QuestDBLogger": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {  
+                "Id": { "type": "string" },
+                "Enabled": { "type": "boolean" },
+                "LogLevel": { "$ref": "#/definitions/LogLevel" },
+                "WriteParameters": { "$ref": "#/definitions/LoggerWriteParameters" },
+                "Logging": {  "$ref": "#/definitions/Logging" },   
+                "Config": { "type": "string", "default": "http::addr=localhost:9000;" },
+                "Table": { "type": "string", "default": "gateway"},
+                "AutoFlush": { "type": "boolean", "default": true}
+            },
+            "required": ["Id"]
+        },               
         "KafkaPublisherConfigs": {
             "type": "object",
             "additionalProperties": true,

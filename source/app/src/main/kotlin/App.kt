@@ -8,6 +8,7 @@ import at.rocworks.gateway.logger.kafka.KafkaLogger
 import at.rocworks.gateway.logger.iotdb.IoTDBLogger
 import at.rocworks.gateway.logger.neo4j.Neo4jLogger
 import at.rocworks.gateway.logger.opensearch.OpenSearchLogger
+import at.rocworks.gateway.logger.questdb.QuestDBLogger
 import at.rocworks.gateway.logger.zenoh.ZenohLogger
 //import at.rocworks.gateway.logger.duckdb.DuckDBLogger // it's huge, include it only when needed
 
@@ -35,6 +36,7 @@ object App {
                 Component.ComponentType.JdbcLogger       -> JdbcLogger(config)
                 Component.ComponentType.Neo4jLogger      -> Neo4jLogger(config)
                 Component.ComponentType.OpenSearchLogger -> OpenSearchLogger(config)
+                Component.ComponentType.QuestDBLogger    -> QuestDBLogger(config)
                 Component.ComponentType.ZenohLogger      -> ZenohLogger(config)
                 //Component.ComponentType.DuckDBLogger   -> DuckDBLogger(config) // it's huge, include it only when needed
                 else -> {

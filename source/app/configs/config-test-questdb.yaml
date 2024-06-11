@@ -1,0 +1,90 @@
+Drivers:
+  Mqtt:
+    - Id: "home"
+      Enabled: true
+      LogLevel: INFO
+      Host: scada.rocworks.local
+      Port: 1883
+      Format: Json
+      CustomJson:
+        Value: "Value"
+        TimestampMs: "TimeMS"
+        TimestampIso: "TimeISO"
+
+  OpcUa:
+    - Id: "demo1"
+      Enabled: true
+      LogLevel: INFO
+      EndpointUrl: "opc.tcp://scada.rocworks.local:62541"
+      UpdateEndpointUrl: true
+      SecurityPolicy: None
+
+    - Id: "demo2"
+      Enabled: true
+      LogLevel: INFO
+      EndpointUrl: "opc.tcp://scada.rocworks.local:62542"
+      UpdateEndpointUrl: true
+      SecurityPolicy: None
+
+Loggers:
+  QuestDB:
+    - Id: Qdb0
+      Enabled: true
+      Config: http::addr=nuc1.rocworks.local:9001;
+      Table: home1
+      Logging:
+        - Topic: mqtt/home/path/Original/#
+
+    - Id: Qdb1
+      Enabled: true
+      Config: http::addr=nuc1.rocworks.local:9001;
+      Table: demo1
+      Logging:
+        - Topic: opc/demo1/path/Objects/Demo/SimulationMass/SimulationMass_Boolean/#
+        - Topic: opc/demo1/path/Objects/Demo/SimulationMass/SimulationMass_Byte/#
+        - Topic: opc/demo1/path/Objects/Demo/SimulationMass/SimulationMass_Double/#
+        - Topic: opc/demo1/path/Objects/Demo/SimulationMass/SimulationMass_Float/#
+        - Topic: opc/demo1/path/Objects/Demo/SimulationMass/SimulationMass_Int16/#
+        - Topic: opc/demo1/path/Objects/Demo/SimulationMass/SimulationMass_Int32/#
+        - Topic: opc/demo1/path/Objects/Demo/SimulationMass/SimulationMass_Int64/#
+        - Topic: opc/demo1/path/Objects/Demo/SimulationMass/SimulationMass_SByte/#
+        - Topic: opc/demo1/path/Objects/Demo/SimulationMass/SimulationMass_UInt16/#
+        - Topic: opc/demo1/path/Objects/Demo/SimulationMass/SimulationMass_UInt32/#
+
+        - Topic: opc/demo1/path/Objects/Demo/SimulationMass/SimulationMass_Duration/#
+        - Topic: opc/demo1/path/Objects/Demo/SimulationMass/SimulationMass_DateTime/##
+        - Topic: opc/demo1/path/Objects/Demo/SimulationMass/SimulationMass_String/#
+        - Topic: opc/demo1/path/Objects/Demo/SimulationMass/SimulationMass_ByteString/#
+        - Topic: opc/demo1/path/Objects/Demo/SimulationMass/SimulationMass_UtcTime/#
+        - Topic: opc/demo1/path/Objects/Demo/SimulationMass/SimulationMass_Guid/#
+        - Topic: opc/demo1/path/Objects/Demo/SimulationMass/SimulationMass_LocaleId/#
+        - Topic: opc/demo1/path/Objects/Demo/SimulationMass/SimulationMass_LocalizedText/#
+        - Topic: opc/demo1/path/Objects/Demo/SimulationMass/SimulationMass_NodeId/#
+        - Topic: opc/demo1/path/Objects/Demo/SimulationMass/SimulationMass_XmlElement/#
+
+    - Id: Qdb2
+      Enabled: true
+      Config: http::addr=nuc1.rocworks.local:9001;
+      Table: demo2
+      Logging:
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Boolean/#
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Byte/#
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Double/#
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Float/#
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Int16/#
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Int32/#
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Int64/#
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_SByte/#
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_UInt16/#
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_UInt32/#
+
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Duration/#
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_DateTime/#
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_String/#
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_ByteString/#
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_UtcTime/#
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Guid/#
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_LocaleId/#
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_LocalizedText/#
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_NodeId/#
+        - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_XmlElement/#

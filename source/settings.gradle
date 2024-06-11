@@ -11,7 +11,8 @@ include('lib-core',
         'lib-neo4j',
         'lib-duckdb',
         'lib-opensearch',
-        'lib-zenoh')
+        'lib-zenoh',
+        'lib-questdb')
 
 dependencyResolutionManagement {
     repositories {

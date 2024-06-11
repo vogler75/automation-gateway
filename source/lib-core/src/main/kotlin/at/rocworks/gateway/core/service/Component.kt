@@ -30,7 +30,8 @@ abstract class Component(val config: JsonObject) : AbstractVerticle() {
         Neo4jLogger,
         DuckDBLogger,
         OpenSearchLogger,
-        ZenohLogger
+        ZenohLogger,
+        QuestDBLogger
     }
 
     fun getComponentType() : ComponentType = ComponentType.valueOf(this.javaClass.simpleName)

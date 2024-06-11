@@ -19,8 +19,11 @@ data class TopicValue (
     fun valueAsObject() = value
     fun statusAsString() = statusCode
     fun valueAsString() = value?.toString() ?: ""
-    fun valueAsDouble(): Double? = valueAsString().toDoubleOrNull()
-    fun valueAsBuffer() = Buffer.buffer(valueAsString())
+    fun valueAsDouble(): Double? = when (value) {
+        is Number -> value.toDouble()
+        else -> valueAsString().toDoubleOrNull()
+    }
+    fun stringValue(): String = if (value is String) value else ""
 
     fun isStatusGood() = statusCode == TopicStatus.GOOD
 

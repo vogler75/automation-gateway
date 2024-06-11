@@ -11,6 +11,7 @@ dependencies {
     implementation project(':lib-iotdb')
     implementation project(':lib-neo4j')
     implementation project(':lib-opensearch')
+    implementation project(':lib-questdb')
     implementation project(':lib-zenoh')
     //implementation project(':lib-duckdb') // it's huge, include it only when needed
 

@@ -322,6 +322,7 @@ You have to build the program before with gradle. Then you can use the shell scr
 > C:\Workspace\automation-gateway\docker\examples\hazelcast> docker compose up -d  
 
 # Version History
+- [1.32 Zenoh Logger](#132-zenoh-logger)
 - [1.31 QuestDB Logger](#131-questdb-logger)
 - [1.30 OpenSearch Logger](#130-opensearch-logger)
 - [1.29 Extended OPC UA Browsing](#129-extended-opc-ua-browsing)
@@ -358,27 +359,18 @@ You have to build the program before with gradle. Then you can use the shell scr
 - [1.6 Added GraphiQL (http://localhost:4000/graphiql/)](#16-added-graphiql-httplocalhost4000graphiql)
 - [1.5 OPC UA Schemas to GraphQL Schema Importer](#15-opc-ua-schemas-to-graphql-schema-importer)
 
-## 1.31 Zenoh & QuestDB Logger
+## 1.32 Zenoh Logger
 
-Added loggers for Zenoh and QuestDB.
+Added logger for Zenoh.
 
 For **Zenoh** only the default configuration settings are currently available. Zenoh is also commented out in the "App", because Zenoh uses native libs and the size of the libs is high. Also the native libs maybe hinder the compilation of a native executable with GraalVM (not tested). If you need Zenoh, then go to the App.kt and remove the comments from the Zenoh related lines.
-
-For **QuestDB** you should pre-create your table:
+You need to set the following variables in ~/.gradle/gradle.properties, because the current Zenoh Java libs are not yet available at maven and must be fetched from github.
 ```
-CREATE TABLE <tablename> (
-    time timestamp,
-    system symbol,
-    address symbol,
-    value double,
-    text varchar
-) TIMESTAMP(time) PARTITION BY DAY;
-
-ALTER TABLE <tablename> DEDUP ENABLE UPSERT KEYS(time, system, address)
-
-ALTER TABLE <tablename> ALTER COLUMN address ADD INDEX;
-
+github_user=xxx
+github_token=xxx
 ```
+Also comment in the github maven repository for Zenoh in the settings.gradle file in the source directory
+
 ## 1.31 QuestDB Logger
 
 Logger for QuestDB.

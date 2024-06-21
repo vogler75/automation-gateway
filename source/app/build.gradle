@@ -12,7 +12,7 @@ dependencies {
     implementation project(':lib-neo4j')
     implementation project(':lib-opensearch')
     implementation project(':lib-questdb')
-    implementation project(':lib-zenoh')
+    //implementation project(':lib-zenoh') // include only if you need it
     //implementation project(':lib-duckdb') // it's huge, include it only when needed
 
     implementation "io.vertx:vertx-core:$vertxVersion"
@@ -27,7 +27,7 @@ dependencies {
     //runtimeOnly group: 'io.crate', name: 'crate-jdbc', version: '2.6.0'
     //runtimeOnly group: 'com.microsoft.sqlserver', name: 'mssql-jdbc', version: '10.2.0.jre11'
 
-    implementation "io.zenoh:zenoh-kotlin-jvm:0.11.0"
+    //implementation "io.zenoh:zenoh-kotlin-jvm:0.11.0"
 }
 
 application {

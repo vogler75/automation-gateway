@@ -1,6 +1,6 @@
 # Frankenstein Automation Gateway
 
-Connect one or more OPC UA servers, PLC4X devices or MQTT brokers to the gateway and access the data with a GraphQL, a MQTT, or an OPC UA client. The Gateway additionally offers functionality to log value changes from OPC UA, MQTT and PLC4X in a range of databases and platforms, including InfluxDB, IoTDB, Kafka, among others. Tested with up to 250000 value changes per second on comodity hardware.  
+Connect one or more OPC UA servers, PLC4X devices or MQTT brokers to the gateway and access the data with a GraphQL, a MQTT, or an OPC UA client. The Gateway additionally offers functionality to log value changes from OPC UA, MQTT and PLC4X in a range of databases and platforms, including QuestDB, InfluxDB, Kafka, among others. Tested with up to 250000 value changes per second on comodity hardware.  
 
 Available logger sinks:  
 * InfluxDB
@@ -322,6 +322,7 @@ You have to build the program before with gradle. Then you can use the shell scr
 > C:\Workspace\automation-gateway\docker\examples\hazelcast> docker compose up -d  
 
 # Version History
+- [1.31 QuestDB Logger](#131-questdb-logger)
 - [1.30 OpenSearch Logger](#130-opensearch-logger)
 - [1.29 Extended OPC UA Browsing](#129-extended-opc-ua-browsing)
 - [1.28 Various changes and code rework](#128-various-changes-and-code-rework)
@@ -377,6 +378,35 @@ ALTER TABLE <tablename> DEDUP ENABLE UPSERT KEYS(time, system, address)
 
 ALTER TABLE <tablename> ALTER COLUMN address ADD INDEX;
 
+```
+## 1.31 QuestDB Logger
+
+Logger for QuestDB.
+
+You should create the logging table before you start the logger.
+```
+CREATE TABLE gateway (
+    time timestamp,
+    system symbol,
+    address symbol,
+    value double,
+    text varchar
+) TIMESTAMP(time) PARTITION BY MONTH;
+ALTER TABLE events DEDUP ENABLE UPSERT KEYS(time, system, address)
+ALTER TABLE events ALTER COLUMN system ADD INDEX;
+ALTER TABLE events ALTER COLUMN address ADD INDEX;
+```
+
+Example configuration:
+```
+Loggers:
+  QuestDB:
+    - Id: Qdb0
+      Enabled: true
+      Config: http::addr=nuc1.rocworks.local:9001;
+      Table: home1
+      Logging:
+        - Topic: mqtt/home/path/Original/#
 ```
 
 ## 1.30 OpenSearch Logger

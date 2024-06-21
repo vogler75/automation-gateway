@@ -12,7 +12,7 @@ dependencies {
     implementation project(':lib-neo4j')
     implementation project(':lib-opensearch')
     implementation project(':lib-questdb')
-    //implementation project(':lib-zenoh') // include only if you need it
+    implementation project(':lib-zenoh') // include only if you need it
     //implementation project(':lib-duckdb') // it's huge, include it only when needed
 
     implementation "io.vertx:vertx-core:$vertxVersion"

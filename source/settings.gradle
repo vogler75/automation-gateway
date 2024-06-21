@@ -10,20 +10,20 @@ include('lib-core',
         'lib-iotdb',
         'lib-neo4j',
         'lib-duckdb',
-//        'lib-zenoh',
+        'lib-zenoh',
         'lib-opensearch',
         'lib-questdb')
 
 dependencyResolutionManagement {
     repositories {
         mavenLocal()
-        // maven { // inlcude this if you build with Zenoh
-        //     credentials {
-        //         username = "$github_user"
-        //         password = "$github_token"
-        //     }
-        //     url = uri('https://maven.pkg.github.com/eclipse-zenoh/zenoh-java')
-        // }
+         maven { // inlcude this if you build with Zenoh
+             credentials {
+                 username = "$github_user"
+                 password = "$github_token"
+             }
+             url = uri('https://maven.pkg.github.com/eclipse-zenoh/zenoh-java')
+         }
         maven {
             url = uri('https://repo.maven.apache.org/maven2/')
         }

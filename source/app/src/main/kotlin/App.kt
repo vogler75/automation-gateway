@@ -9,7 +9,7 @@ import at.rocworks.gateway.logger.iotdb.IoTDBLogger
 import at.rocworks.gateway.logger.neo4j.Neo4jLogger
 import at.rocworks.gateway.logger.opensearch.OpenSearchLogger
 import at.rocworks.gateway.logger.questdb.QuestDBLogger
-//import at.rocworks.gateway.logger.zenoh.ZenohLogger // include only if you build with Zenoh
+import at.rocworks.gateway.logger.zenoh.ZenohLogger // include only if you build with Zenoh
 //import at.rocworks.gateway.logger.duckdb.DuckDBLogger // it's huge, include it only when needed
 
 import io.vertx.core.Vertx
@@ -37,7 +37,7 @@ object App {
                 Component.ComponentType.Neo4jLogger      -> Neo4jLogger(config)
                 Component.ComponentType.OpenSearchLogger -> OpenSearchLogger(config)
                 Component.ComponentType.QuestDBLogger    -> QuestDBLogger(config)
-                //Component.ComponentType.ZenohLogger      -> ZenohLogger(config) // include only if you build with Zenoh
+                Component.ComponentType.ZenohLogger      -> ZenohLogger(config) // include only if you build with Zenoh
                 //Component.ComponentType.DuckDBLogger     -> DuckDBLogger(config) // it's huge, include it only when needed
                 else -> {
                     logger.severe("Unknown component type [${type}]")

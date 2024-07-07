@@ -220,7 +220,7 @@ abstract class DriverBase(config: JsonObject) : Component(config) {
         if (topics.isNotEmpty()) {
             logger.info("Resubscribe [${topics.size}] topics")
             topics.forEach(registry::delTopic)
-            subscribeTopics(topics)
+            subscribeTopics(topics.map { it.topicName }.toSet().map { Topic.parseTopic(it) })
         }
     }
 

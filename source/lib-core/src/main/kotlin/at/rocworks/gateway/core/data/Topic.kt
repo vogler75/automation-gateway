@@ -18,13 +18,25 @@ class BrowsePath (
     fun getLast(): String = if (items.isNotEmpty()) items.last() else ""
 }
 
+/*
+ Example Topics:
+
+ Topic(topicName=opc/s7/node/ns=3;s="DB1"."A01"."State", systemType=Opc, systemName=s7, topicType=Node, topicPath=, topicNode=ns=3;s="DB1"."A01"."State", dataFormat=Json, browsePath=)
+
+ Topic(topicName=opc/demo1/path/Objects/Dynamic/#, systemType=Opc, systemName=demo1, topicType=Path, topicPath=Objects/Dynamic/#, topicNode=ns=2;s=Dynamic/RandomInt32, dataFormat=Json, browsePath=Objects/Dynamic/RandomInt32)
+
+ Topic(topicName=mqtt/home/path/Original/PV/Hoymiles1/Inverter/GridFrequency, systemType=Mqtt, systemName=home, topicType=Path, topicPath=Original/PV/Hoymiles1/Inverter/GridFrequency, topicNode=, dataFormat=Json, browsePath=Original/PV/Hoymiles1/Inverter/GridFrequency)
+
+ Topic(topicName=mqtt/home/path/Original/Govee/#, systemType=Mqtt, systemName=home, topicType=Path, topicPath=Original/Govee/#, topicNode=, dataFormat=Json, browsePath=Original/Govee/GVH5075_12DB/Temperature)
+ */
+
 data class Topic (
     val topicName: String, // <SystemType> / <SystemName> / <Node|Path> ...
     val systemType: SystemType,
     val systemName: String,
     val topicType: TopicType,
-    val topicPath: String,
-    val topicNode: String,
+    val topicPath: String, // path with potentially wildcards
+    val topicNode: String, // given node or a resolved address
     val dataFormat: Format = Format.Json,
     private val browsePath: BrowsePath = BrowsePath(emptyList())
 ) {

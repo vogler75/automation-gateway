@@ -87,7 +87,6 @@ class OpcUaGatewayNodes(
     }
 
     private fun addVariableFolder(topic: Topic): Pair<String, NodeId>? {
-        println(topic)
         val parts = when (topic.topicType) {
             Topic.TopicType.Node -> listOf(
                 topic.systemType.toString(),

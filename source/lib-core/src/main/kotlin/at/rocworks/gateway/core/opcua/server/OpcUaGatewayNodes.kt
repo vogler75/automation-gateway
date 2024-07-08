@@ -51,7 +51,7 @@ class OpcUaGatewayNodes(
     private val variableNodesTS = mutableMapOf<String, DateTime?>()
 
     fun setDataPoint(data: DataPoint)  {
-        val id = Integer.toHexString(data.topic.encodeToJson().toString().hashCode())
+        val id = data.topic.getFQN() //Integer.toHexString(data.topic.hashCode())
         val value = getDataValue(data.value)
         val node = variableNodesID[id]
         if (node != null) {
@@ -87,6 +87,7 @@ class OpcUaGatewayNodes(
     }
 
     private fun addVariableFolder(topic: Topic): Pair<String, NodeId>? {
+        println(topic)
         val parts = when (topic.topicType) {
             Topic.TopicType.Node -> listOf(
                 topic.systemType.toString(),

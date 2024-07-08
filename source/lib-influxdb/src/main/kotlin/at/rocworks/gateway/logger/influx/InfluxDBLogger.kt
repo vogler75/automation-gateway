@@ -83,8 +83,12 @@ class InfluxDBLogger(config: JsonObject) : LoggerBase(config) {
             point = pollDatapointNoWait()
         }
         if (batch.points.size > 0) {
-            session.write(batch)
-            valueCounterOutput+=batch.points.size
+            try {
+                session.write(batch)
+                valueCounterOutput+=batch.points.size
+            } catch (e: Exception) {
+                logger.severe("Error writing batch [${e.message}]")
+            }
         }
     }
 

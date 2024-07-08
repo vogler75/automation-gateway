@@ -6,15 +6,12 @@ import io.vertx.core.json.JsonObject
 class BrowsePath (
     private val items: List<String>
 ) {
-    constructor(browsePath: String) : this(Topic.splitAddress(browsePath))
-
-    constructor(browsePath: String, additionalItem: String) : this(Topic.splitAddress(browsePath) + additionalItem)
+    constructor(browsePath: String) : this(Topic.splitTopic(browsePath))
+    constructor(browsePath: String, additionalItem: String) : this(Topic.splitTopic(browsePath) + additionalItem)
     override fun toString() = items.joinToString("/")
     fun toString(separator: CharSequence) = items.joinToString(separator)
     fun isEmpty() = items.isEmpty()
-
     fun toList() = items
-
     fun getLast(): String = if (items.isNotEmpty()) items.last() else ""
 }
 
@@ -62,7 +59,7 @@ data class Topic (
     fun isValid() = systemType != SystemType.Unknown && topicType != TopicType.Unknown
 
     private val topicItems : List<String>
-        get() = splitAddress(this.topicName)
+        get() = splitTopic(this.topicName)
 
     val hasBrowsePath: Boolean
         get() = !browsePath.isEmpty()
@@ -85,7 +82,7 @@ data class Topic (
     fun encodeToJson() = encodeToJson(this)
 
     companion object {
-        fun splitAddress(address: String)
+        fun splitTopic(address: String)
             = address.split(Regex("""(?<!\\)/""")).map { it.replace("\\/", "/") }
 
         fun parseTopic(topic: String): Topic {

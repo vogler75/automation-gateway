@@ -877,7 +877,7 @@ class OpcUaDriver(config: JsonObject) : DriverBase(config) {
 
     private fun browsePath(path: String): List<Pair<NodeId, String>> {
         val resolvedNodeIds = mutableListOf<Pair<NodeId, String>>()
-        val items = Topic.splitAddress(path)
+        val items = Topic.splitTopic(path)
         logger.finest { "Browse address [$path] [${items.joinToString("|")}]" }
         fun find(node: String, itemIdx: Int, path: String): Int {
             val item = items[itemIdx]

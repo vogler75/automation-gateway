@@ -384,9 +384,9 @@ CREATE TABLE gateway (
     value double,
     text varchar
 ) TIMESTAMP(time) PARTITION BY MONTH;
-ALTER TABLE events DEDUP ENABLE UPSERT KEYS(time, system, address)
-ALTER TABLE events ALTER COLUMN system ADD INDEX;
-ALTER TABLE events ALTER COLUMN address ADD INDEX;
+ALTER TABLE gateway DEDUP ENABLE UPSERT KEYS(time, system, address)
+ALTER TABLE gateway ALTER COLUMN system ADD INDEX;
+ALTER TABLE gateway ALTER COLUMN address ADD INDEX;
 ```
 
 Example configuration:

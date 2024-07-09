@@ -560,9 +560,9 @@
                 "SubscriptionSamplingInterval": {
                     "type": "number"
                 },
-                "SubscriptionChunkSize": {
+                "MaxMonitoredItemsPerCall": {
                     "type": "number",
-                    "description": "Subscribe in chunks if value > 0"
+                    "description": "Maximum amount of monitored items per call."
                 },                
                 "WriteSchemaToFile": {
                     "type": "boolean"

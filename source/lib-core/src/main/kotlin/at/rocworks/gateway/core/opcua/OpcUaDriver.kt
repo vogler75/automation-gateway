@@ -65,7 +65,7 @@ class OpcUaDriver(config: JsonObject) : DriverBase(config) {
     private val connectTimeout: Int = config.getInteger("ConnectTimeout", 5000)
     private val keepAliveFailuresAllowed: Int = config.getInteger("KeepAliveFailuresAllowed", 0)
     private val subscriptionSamplingInterval: Double = config.getDouble("SubscriptionSamplingInterval", 0.0)
-    private val subscriptionChunkSize: Int = config.getInteger("SubscriptionChunkSize", 0)
+    private val maxMonitoredItemsPerCall: Int = config.getInteger("MaxMonitoredItemsPerCall", 0)
 
     private val monitoringParametersBufferSize : UInteger
     private val monitoringParametersBufferSizeDef = 100
@@ -681,7 +681,7 @@ class OpcUaDriver(config: JsonObject) : DriverBase(config) {
                 }
 
             // process the subscriptions in chunks
-            val chunks = (if (subscriptionChunkSize>0) requests.chunked(subscriptionChunkSize) else listOf(requests)).iterator()
+            val chunks = (if (maxMonitoredItemsPerCall>0) requests.chunked(maxMonitoredItemsPerCall) else listOf(requests)).iterator()
             fun subscribeChunks() {
                 if (chunks.hasNext()) {
                     val chunk = chunks.next()
@@ -927,7 +927,7 @@ class OpcUaDriver(config: JsonObject) : DriverBase(config) {
         val duration = Duration.between(tStart, Instant.now())
         val seconds = duration.seconds + duration.nano/1_000_000_000.0
         if (seconds > 0.100)
-            logger.warning("Browsing childs took long time: [${path}] took [${seconds}]s for [${resolvedNodeIds.size}")
+            logger.warning("Browsing childs took long time: [${path}] took [${seconds}]s for [${resolvedNodeIds.size}]")
         return resolvedNodeIds
     }
 

@@ -640,7 +640,7 @@ class OpcUaDriver(config: JsonObject) : DriverBase(config) {
         if (topics.isEmpty()) ret.complete(true)
         else {
             logger.fine { "Subscribe nodes [${ topics.size}] sampling interval [${monitoringParametersSamplingInterval}]" }
-            val nodeIds = topics.map { NodeId.parseOrNull(it.topicNode) }.toList()
+            val nodeIds = topics.associateBy { NodeId.parseOrNull(it.topicNode) } //
             val requests = ArrayList<MonitoredItemCreateRequest>()
 
             val dataChangeFilter = ExtensionObject.encode(client!!.staticSerializationContext, DataChangeFilter(
@@ -649,34 +649,34 @@ class OpcUaDriver(config: JsonObject) : DriverBase(config) {
                 0.0
             ));
 
-            nodeIds.forEach { nodeId ->
+            nodeIds.forEach { entry ->
                 val clientHandle = subscription!!.nextClientHandle()
-                requests.add(
-                    MonitoredItemCreateRequest(
-                        ReadValueId(nodeId, AttributeId.Value.uid(),null, QualifiedName.NULL_VALUE),
-                        MonitoringMode.Reporting,
-                        MonitoringParameters(
-                            clientHandle,
-                            monitoringParametersSamplingInterval,
-                            dataChangeFilter,
-                            monitoringParametersBufferSize,
-                            monitoringParametersDiscardOldest
-                        )
+                val request = MonitoredItemCreateRequest(
+                    ReadValueId(entry.key, AttributeId.Value.uid(),null, QualifiedName.NULL_VALUE),
+                    MonitoringMode.Reporting,
+                    MonitoringParameters(
+                        clientHandle,
+                        monitoringParametersSamplingInterval,
+                        dataChangeFilter,
+                        monitoringParametersBufferSize,
+                        monitoringParametersDiscardOldest
                     )
                 )
+                requests.add(request)
             }
 
             // when creating items in MonitoringMode.Reporting this callback is where each item needs to have its
             // value/event consumer hooked up. The alternative is to create the item in sampling mode, hook up the
             // consumer after the creation call completes, and then change the mode for all items to reporting.
             val onItemCreated =
-                UaSubscription.ItemCreationCallback { item: UaMonitoredItem, nr: Int ->
-                    val topic = topics[nr]
-                    if (item.statusCode.isGood)
+                UaSubscription.ItemCreationCallback { item: UaMonitoredItem, _: Int ->
+                    val topic = nodeIds[item.readValueId.nodeId]
+                    if (item.statusCode.isGood && topic != null) {
                         registry.addMonitoredItem(OpcUaMonitoredItem(item), topic)
-                    item.setValueConsumer { data: DataValue ->
-                        //println("callback: id="+ item.monitoredItemId+ " : size=" +topics.size + " : "+ item.clientHandle.toInt() + " : " + item.readValueId.nodeId.toParseableString() + " : " + data.value.toString())
-                        valueConsumer(topic, data)
+                        item.setValueConsumer { data: DataValue ->
+                            //println("callback: id="+ item.monitoredItemId+ " : size=" +topics.size + " : "+ item.clientHandle.toInt() + " : " + item.readValueId.nodeId.toParseableString() + " : " + data.value.toString())
+                            valueConsumer(topic, data)
+                        }
                     }
                 }
 

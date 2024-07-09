@@ -918,7 +918,7 @@ class OpcUaDriver(config: JsonObject) : DriverBase(config) {
         val duration = Duration.between(tStart, Instant.now())
         val seconds = duration.seconds + duration.nano/1_000_000_000.0
         if (seconds > 0.100)
-            logger.warning("Browsing childs took long time: [${path}] took [${seconds}]s")
+            logger.warning("Browsing childs took long time: [${path}] took [${seconds}]s for [${resolvedNodeIds.size}")
         return resolvedNodeIds
     }
 

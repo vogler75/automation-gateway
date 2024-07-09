@@ -1,0 +1,79 @@
+# OPC UA + MQTT Logging to InfluxDB and QuestDB
+
+Drivers:
+  OpcUa:
+    - Id: "demo1"
+      Enabled: true
+      LogLevel: INFO
+      EndpointUrl: "opc.tcp://192.168.1.4:62540/server"
+      UpdateEndpointUrl: true
+      SecurityPolicy: None
+
+    - Id: "demo2"
+      Enabled: true
+      LogLevel: INFO
+      EndpointUrl: "opc.tcp://192.168.1.4:62541"
+      UpdateEndpointUrl: true
+      SecurityPolicy: None
+      SubscriptionSamplingInterval: 0.0
+
+    - Id: "demo3"
+      Enabled: true
+      LogLevel: INFO
+      EndpointUrl: "opc.tcp://192.168.1.4:62542"
+      UpdateEndpointUrl: true
+      SecurityPolicy: None
+      SubscriptionSamplingInterval: 0.0
+
+    - Id: "s7"
+      Enabled: true
+      LogLevel: INFO
+      EndpointUrl: "opc.tcp://192.168.1.99:4840"
+      UpdateEndpointUrl: true
+      SecurityPolicy: None
+
+  Mqtt:
+    - Id: "home"
+      Enabled: true
+      LogLevel: INFO
+      Host: 192.168.1.4
+      Port: 1883
+      Format: Json
+      CustomJson:
+        Value: "Value"
+        TimestampMs: "TimeMS"
+        TimestampIso: "TimeISO"
+
+Servers:
+  Mqtt:
+    - Port: 1883
+      Host: 0.0.0.0
+      LogLevel: INFO # ALL | INFO
+
+Loggers:
+  InfluxDB:
+    - Id: influxdb1
+      Enabled: true
+      Url: http://scada:8086
+      Database: test
+      Logging:
+        - Topic: opc/s7/path/Objects/PLC_1/DataBlocksGlobal/DB5/#
+        - Topic: opc/demo1/path/Objects/Dynamic/#
+        - Topic: opc/demo2/path/Objects/Demo/Simulation/#
+        - Topic: mqtt/home/path/Original/Govee/#
+        - Topic: mqtt/home/path/Original/Meter_Input/#
+
+  QuestDB:
+    - Id: questdb1
+      Enabled: true
+      Config: http::addr=localhost:9000;
+      Table: frankenstein
+      Logging:
+        - Topic: opc/s7/path/Objects/PLC_1/DataBlocksGlobal/DB5/#
+        - Topic: opc/demo1/path/Objects/Dynamic/#
+        - Topic: opc/demo2/path/Objects/Demo/Simulation/#
+        - Topic: mqtt/home/path/Original/Govee/#
+        - Topic: mqtt/home/path/Original/Meter_Input/#
+
+        #- Topic: opc/demo2/path/Objects/Demo/SimulationMass/#
+        #- Topic: opc/demo3/path/Objects/Demo/SimulationMass/#

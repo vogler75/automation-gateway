@@ -1,0 +1,50 @@
+# OPC UA + MQTT Logging to MQTT
+
+Drivers:
+  OpcUa:
+    - Id: "demo1"
+      Enabled: true
+      LogLevel: INFO
+      EndpointUrl: "opc.tcp://192.168.1.4:62540/server"
+      UpdateEndpointUrl: true
+      SecurityPolicy: None
+
+    - Id: "demo2"
+      Enabled: true
+      LogLevel: INFO
+      WriteSchemaToFile: false
+      EndpointUrl: "opc.tcp://192.168.1.4:62541"
+      UpdateEndpointUrl: true
+      SecurityPolicy: None
+
+    - Id: "s7"
+      Enabled: true
+      LogLevel: INFO
+      EndpointUrl: "opc.tcp://192.168.1.99:4840"
+      UpdateEndpointUrl: true
+      SecurityPolicy: None
+
+  Mqtt:
+    - Id: "home"
+      Enabled: true
+      LogLevel: INFO
+      Host: 192.168.1.4
+      Port: 1883
+      Format: Json
+      CustomJson:
+        Value: "Value"
+        TimestampMs: "TimeMS"
+        TimestampIso: "TimeISO"
+
+Loggers:
+  Mqtt:
+    - Id: mqtt1
+      Enabled: true
+      Host: linux0.rocworks.local
+      #Format: SparkplugB
+      Logging:
+        - Topic: opc/s7/path/Objects/PLC_1/DataBlocksGlobal/DB5/#
+        - Topic: opc/demo1/path/Objects/Dynamic/#
+        - Topic: opc/demo2/path/Objects/Demo/Simulation/#
+        - Topic: mqtt/home/path/Original/Govee/#
+        - Topic: mqtt/home/path/Original/Meter_Input/#

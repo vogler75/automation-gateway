@@ -65,6 +65,7 @@ class OpcUaDriver(config: JsonObject) : DriverBase(config) {
     private val connectTimeout: Int = config.getInteger("ConnectTimeout", 5000)
     private val keepAliveFailuresAllowed: Int = config.getInteger("KeepAliveFailuresAllowed", 0)
     private val subscriptionSamplingInterval: Double = config.getDouble("SubscriptionSamplingInterval", 0.0)
+    private val subscriptionChunkSize: Int = config.getInteger("SubscriptionChunkSize", 0)
 
     private val monitoringParametersBufferSize : UInteger
     private val monitoringParametersBufferSizeDef = 100
@@ -679,23 +680,31 @@ class OpcUaDriver(config: JsonObject) : DriverBase(config) {
                     }
                 }
 
-            subscription!!
-                .createMonitoredItems(TimestampsToReturn.Both, requests, onItemCreated)
-                .thenAccept { monitoredItems: List<UaMonitoredItem> ->
-                    try {
-                        for (item in monitoredItems) {
-                            if (item.statusCode.isGood) {
-                                logger.finest { "Monitored item created for nodeId ${item.readValueId.nodeId}" }
-                            } else {
-                                logger.warning("Failed to create item for nodeId ${item.readValueId.nodeId} (status=${item.statusCode})")
+            // process the subscriptions in chunks
+            val chunks = (if (subscriptionChunkSize>0) requests.chunked(subscriptionChunkSize) else listOf(requests)).iterator()
+            fun subscribeChunks() {
+                if (chunks.hasNext()) {
+                    val chunk = chunks.next()
+                    subscription!!
+                        .createMonitoredItems(TimestampsToReturn.Both, chunk, onItemCreated)
+                        .thenAccept { monitoredItems: List<UaMonitoredItem> ->
+                            try {
+                                for (item in monitoredItems) {
+                                    if (item.statusCode.isGood) {
+                                        logger.finest { "Monitored item created for nodeId ${item.readValueId.nodeId}" }
+                                    } else {
+                                        logger.warning("Failed to create item for nodeId ${item.readValueId.nodeId} (status=${item.statusCode})")
+                                    }
+                                }
+                                subscribeChunks()
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                                ret.fail(e)
                             }
                         }
-                        ret.complete(true)
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                        ret.fail(e)
-                    }
-                }
+                } else ret.complete(true)
+            }
+            subscribeChunks()
         }
         return ret.future()
     }

@@ -560,6 +560,10 @@
                 "SubscriptionSamplingInterval": {
                     "type": "number"
                 },
+                "SubscriptionChunkSize": {
+                    "type": "number",
+                    "description": "Subscribe in chunks if value > 0"
+                },                
                 "WriteSchemaToFile": {
                     "type": "boolean"
                 },

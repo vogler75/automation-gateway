@@ -29,7 +29,6 @@ class MqttLogger (config: JsonObject) : LoggerPublisher(config) {
     private val baseTopic: String = configMqtt.getString("Topic", "")
     private val maxMessageSizeKb = configMqtt.getInteger("MaxMessageSizeKb", 8) * 1024
 
-    private var isConnected = false
     private var isEnabled = false
 
     private val topicToTarget : Map<String, String> =
@@ -83,17 +82,8 @@ class MqttLogger (config: JsonObject) : LoggerPublisher(config) {
     }
 
     private fun publish(topic: String, payload: Buffer) {
-        if (client!!.isConnected) {
-            if (!this.isConnected) {
-                this.isConnected=true
-            }
-            client!!.publish(topic, payload, MqttQoS.valueOf(qos), false, retained)
-        } else {
-            if (this.isConnected) {
-                this.isConnected=false
-                logger.fine { "Disconnected from MQTT broker." }
-            }
-        }
+        println("$topic: $payload")
+        client!!.publish(topic, payload, MqttQoS.valueOf(qos), false, retained)
     }
 
     override fun publish(topic: Topic, payload: Buffer) {

@@ -287,7 +287,7 @@
                 "Password": { "type": "string", "default": "" },
                 "Index": { "type": "string", "default": "gateway" }
             },
-            "required": ["Id", "Host", "Port", "Index"]
+            "required": ["Id", "Host", "Index"]
         }, 
         "QuestDBLogger": {
             "type": "object",

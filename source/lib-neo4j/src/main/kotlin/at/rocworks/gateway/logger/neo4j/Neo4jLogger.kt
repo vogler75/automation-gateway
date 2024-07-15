@@ -280,8 +280,9 @@ class Neo4jLogger(config: JsonObject) : LoggerBase(config) {
         try {
             if (opcNodes.isNotEmpty()) writeOpcNodes(opcNodes)
             if (mqttNodes.isNotEmpty()) writeMqttNodes(mqttNodes)
+            commitDatapointBlock()
         } catch (e: Exception) {
-            e.printStackTrace()
+            logger.severe("Error writing batch [${e.message}]")
         }
     }
 

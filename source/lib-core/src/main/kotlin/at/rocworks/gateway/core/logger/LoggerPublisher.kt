@@ -66,15 +66,25 @@ abstract class LoggerPublisher(config: JsonObject) : LoggerBase(config) {
     abstract fun publish(topics: List<Topic>, payload: Buffer)
 
     private fun writeExecutorSolo() {
-        pollDatapointBlock(soloPublisher)
+        try {
+            pollDatapointBlock(soloPublisher)
+            commitDatapointBlock()
+        } catch (e: Exception) {
+            logger.severe("Error writing batch [${e.message}]")
+        }
     }
 
     private fun writeExecutorBulk() {
         val points = mutableListOf<DataPoint>()
-        val size = pollDatapointBlock { point ->
-            points.add(point)
+        val size = pollDatapointBlock(points::add)
+        if (size>0) {
+            try {
+                bulkPublisher(points)
+                commitDatapointBlock()
+            } catch (e: Exception) {
+                logger.severe("Error writing batch [${e.message}]")
+            }
         }
-        if (size>0) bulkPublisher(points)
     }
 
     override fun writeExecutor() {

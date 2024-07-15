@@ -247,17 +247,29 @@ abstract class LoggerBase(config: JsonObject) : Component(config) {
     private fun pollDatapointWait() : DataPoint? = writeValueQueue.poll(writeQueuePollTimeout, TimeUnit.MILLISECONDS)
     private fun pollDatapointNoWait() : DataPoint? = writeValueQueue.poll()
 
+    private val datapointBlock = arrayListOf<DataPoint>()
+
     protected fun pollDatapointBlock(execute: (DataPoint)->Unit): Int {
-        var size = 0
-        var point: DataPoint? = pollDatapointWait()
-        while (point != null) {
-            if (point.value.sourceTime.epochSecond > 0) {
-                size++
-                execute(point)
+        if (datapointBlock.isNotEmpty()) {
+            Thread.sleep(1000)
+            logger.warning("Repeat last data block...")
+            datapointBlock.forEach(execute)
+            return datapointBlock.size
+        } else {
+            var point: DataPoint? = pollDatapointWait()
+            while (point != null) {
+                if (point.value.sourceTime.epochSecond > 0) {
+                    datapointBlock.add(point)
+                    execute(point)
+                }
+                point = if (datapointBlock.size < writeParameterBlockSize) pollDatapointNoWait() else null
             }
-            point = if (size < writeParameterBlockSize) pollDatapointNoWait() else null
+            return datapointBlock.size
         }
-        return size
+    }
+
+    protected fun commitDatapointBlock() {
+        datapointBlock.clear()
     }
 
     private var t1: Instant = Instant.now()

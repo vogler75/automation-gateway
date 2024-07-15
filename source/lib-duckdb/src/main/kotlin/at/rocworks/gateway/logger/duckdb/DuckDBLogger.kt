@@ -1,6 +1,5 @@
 package at.rocworks.gateway.logger.duckdb
 
-import at.rocworks.gateway.core.data.DataPoint
 import at.rocworks.gateway.core.logger.LoggerBase
 import io.vertx.core.Future
 import io.vertx.core.Promise
@@ -85,6 +84,7 @@ class DuckDBLogger(config: JsonObject) : LoggerBase(config) {
             if (!connection.isClosed) {
                 try {
                     writeBatch(connection)
+                    commitDatapointBlock()
                 } catch (e: Exception) {
                     logger.severe("Error writing batch [${e.message}]")
                 }

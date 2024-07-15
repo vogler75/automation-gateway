@@ -60,8 +60,13 @@ class QuestDBLogger(config: JsonObject) : LoggerBase(config) {
                 ?.at(point.value.sourceTime)
         }
         if (size > 0) {
-            if (!autoFlush) sender?.flush()
-            valueCounterOutput+=size
+            try {
+                if (!autoFlush) sender?.flush()
+                commitDatapointBlock()
+                valueCounterOutput+=size
+            } catch (e: Exception) {
+                logger.severe("Error writing batch [${e.message}]")
+            }
         }
     }
 }

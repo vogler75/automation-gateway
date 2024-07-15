@@ -131,9 +131,10 @@ class IoTDBLogger(config: JsonObject) : LoggerBase(config) {
         if (deviceIds.size > 0) {
             try {
                 writeSession.insertRecords(deviceIds, times, measurementList, typesList, valuesList)
+                commitDatapointBlock()
                 valueCounterOutput += deviceIds.size
             } catch (e: Exception) {
-                logger.severe("Error writing records [${e.message}]")
+                logger.severe("Error writing batch [${e.message}]")
             }
         }
     }

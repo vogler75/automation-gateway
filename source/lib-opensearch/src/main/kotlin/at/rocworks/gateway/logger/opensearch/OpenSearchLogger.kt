@@ -122,25 +122,19 @@ class OpenSearchLogger(config: JsonObject) : LoggerBase(config) {
             bulkOperations.add(BulkOperation.Builder().index(indexOperation).build())
         }
         if (bulkOperations.size > 0) {
-            var doit = 1
-            while (doit > 0) {
-                try {
-                    val result = client.bulk(BulkRequest.Builder().operations(bulkOperations).build())
-                    if (result.errors()) {
-                        logger.severe("Bulk had errors")
-                        for (item in result.items()) {
-                            if (item.error() != null) {
-                                logger.severe(item.error()!!.reason())
-                            }
+            try {
+                val result = client.bulk(BulkRequest.Builder().operations(bulkOperations).build())
+                if (result.errors()) {
+                    logger.severe("Bulk had some errors")
+                    for (item in result.items()) {
+                        if (item.error() != null) {
+                            logger.severe(item.error()!!.reason())
                         }
                     }
-                    if (doit > 1) logger.info("Write exception gone.")
-                    doit = 0
-                } catch (e: Exception) {
-                    if (doit == 1) logger.severe("Write exception: $e")
-                    doit ++
-                    Thread.sleep(1000)
                 }
+                commitDatapointBlock()
+            } catch (e: Exception) {
+                logger.severe("Error writing batch [${e.message}]")
             }
         }
     }

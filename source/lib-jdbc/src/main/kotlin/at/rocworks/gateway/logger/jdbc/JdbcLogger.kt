@@ -1,6 +1,5 @@
 package at.rocworks.gateway.logger.jdbc
 
-import at.rocworks.gateway.core.data.DataPoint
 import at.rocworks.gateway.core.logger.LoggerBase
 import io.vertx.core.Future
 import io.vertx.core.Promise
@@ -212,6 +211,7 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
             if (!connection.isClosed) {
                 try {
                     connection.prepareStatement(sqlInsertStatement).use(::writeBatch)
+                    commitDatapointBlock()
                 } catch (e: Exception) {
                     logger.severe("Error writing batch [${e.message}]")
                 }

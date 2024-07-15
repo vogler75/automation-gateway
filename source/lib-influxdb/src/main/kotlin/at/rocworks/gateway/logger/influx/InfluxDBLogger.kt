@@ -82,6 +82,7 @@ class InfluxDBLogger(config: JsonObject) : LoggerBase(config) {
         if (batch.points.size > 0) {
             try {
                 session.write(batch)
+                commitDatapointBlock()
                 valueCounterOutput+=batch.points.size
             } catch (e: Exception) {
                 logger.severe("Error writing batch [${e.message}]")

@@ -101,28 +101,25 @@ class OpenSearchLogger(config: JsonObject) : LoggerBase(config) {
     override fun writeExecutor() {
         val indexCurrent = index+"-"+YearMonth.now().format(DateTimeFormatter.ofPattern("yyyy-MM"))
         val bulkOperations : MutableList<BulkOperation> = mutableListOf()
-        var point = pollDatapointWait()
-        while (point != null && bulkOperations.size <= writeParameterBlockSize) {
-            if (point.value.sourceTime().epochSecond > 0) {
-                val value = point.value.valueAsDouble()
-                val data = IndexData(
-                    point.topic.topicName,
-                    point.topic.systemType,
-                    point.topic.systemName,
-                    point.topic.topicType,
-                    point.topic.topicPath,
-                    point.topic.topicNode,
-                    point.topic.getBrowsePathOrNode().toString(),
-                    point.value.valueAsString(),
-                    if (value == null || value.isNaN()) null else value,
-                    point.value.statusCode,
-                    point.value.sourceTime.toEpochMilli(),
-                    point.value.serverTime.toEpochMilli()
-                )
-                val indexOperation = IndexOperation.Builder<IndexData>().index(indexCurrent).document(data).build()
-                bulkOperations.add(BulkOperation.Builder().index(indexOperation).build())
-            }
-            point = pollDatapointNoWait()
+
+        pollDatapointBlock { point ->
+            val value = point.value.valueAsDouble()
+            val data = IndexData(
+                point.topic.topicName,
+                point.topic.systemType,
+                point.topic.systemName,
+                point.topic.topicType,
+                point.topic.topicPath,
+                point.topic.topicNode,
+                point.topic.getBrowsePathOrNode().toString(),
+                point.value.valueAsString(),
+                if (value == null || value.isNaN()) null else value,
+                point.value.statusCode,
+                point.value.sourceTime.toEpochMilli(),
+                point.value.serverTime.toEpochMilli()
+            )
+            val indexOperation = IndexOperation.Builder<IndexData>().index(indexCurrent).document(data).build()
+            bulkOperations.add(BulkOperation.Builder().index(indexOperation).build())
         }
         if (bulkOperations.size > 0) {
             var doit = 1

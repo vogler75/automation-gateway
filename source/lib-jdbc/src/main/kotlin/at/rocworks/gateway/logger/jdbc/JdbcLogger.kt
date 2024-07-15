@@ -223,34 +223,27 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
         }
     }
 
-    private val batchPoints = mutableListOf<DataPoint>()
     private fun writeBatch(batch: PreparedStatement) {
-        var point: DataPoint? = pollDatapointWait()
-        while (point != null && batchPoints.size < writeParameterBlockSize) {
-            batchPoints.add(point)
-            point = pollDatapointNoWait()
-        }
-        if (batchPoints.size > 0) {
-            batchPoints.forEach {
-                batch.setString(1, it.topic.systemName)
-                batch.setString(2, it.topic.topicNode)
-                batch.setTimestamp(3, Timestamp.from(it.value.sourceTime()))
-                batch.setTimestamp(4, Timestamp.from(it.value.serverTime()))
-                val doubleValue = it.value.valueAsDouble()
-                if (doubleValue != null && !doubleValue.isNaN()) {
-                    batch.setDouble(5, doubleValue)
-                    batch.setNull(6, Types.VARCHAR)
-                } else {
-                    batch.setNull(5, Types.DOUBLE)
-                    batch.setString(6, it.value.valueAsString())
-                }
-                batch.setString(7, it.value.statusAsString())
-                batch.addBatch()
+        val size = pollDatapointBlock {
+            batch.setString(1, it.topic.systemName)
+            batch.setString(2, it.topic.topicNode)
+            batch.setTimestamp(3, Timestamp.from(it.value.sourceTime()))
+            batch.setTimestamp(4, Timestamp.from(it.value.serverTime()))
+            val doubleValue = it.value.valueAsDouble()
+            if (doubleValue != null && !doubleValue.isNaN()) {
+                batch.setDouble(5, doubleValue)
+                batch.setNull(6, Types.VARCHAR)
+            } else {
+                batch.setNull(5, Types.DOUBLE)
+                batch.setString(6, it.value.valueAsString())
             }
+            batch.setString(7, it.value.statusAsString())
+            batch.addBatch()
+        }
+        if (size > 0) {
             batch.executeBatch()
             batch.connection.commit()
-            valueCounterOutput+=batchPoints.size
-            batchPoints.clear()
+            valueCounterOutput+=size
         }
     }
 

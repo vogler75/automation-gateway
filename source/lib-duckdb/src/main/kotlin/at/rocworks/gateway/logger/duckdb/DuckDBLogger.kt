@@ -96,37 +96,26 @@ class DuckDBLogger(config: JsonObject) : LoggerBase(config) {
         }
     }
 
-    private val batchPoints = mutableListOf<DataPoint>()
     private fun writeBatch(connection: DuckDBConnection) {
-        var point: DataPoint? = pollDatapointWait()
-        while (point != null && batchPoints.size < writeParameterBlockSize) {
-            batchPoints.add(point)
-            point = pollDatapointNoWait()
-        }
-        if (batchPoints.size > 0) {
-            connection.createAppender(DuckDBConnection.DEFAULT_SCHEMA, sqlTableName).use { appender ->
-                batchPoints.forEach {
-                    //println(it.topic.encodeToJson().toString())
-                    appender.beginRow()
-                    appender.append(it.topic.systemName)
-                    appender.append(it.topic.topicNode)
-                    appender.append(it.topic.getBrowsePathOrNode().toString())
-                    appender.appendLocalDateTime(LocalDateTime.ofInstant(it.value.sourceTime, ZoneOffset.UTC))
-                    appender.appendLocalDateTime(LocalDateTime.ofInstant(it.value.serverTime, ZoneOffset.UTC))
-                    val doubleValue = it.value.valueAsDouble()
-                    if (doubleValue != null && !doubleValue.isNaN()) {
-                        appender.append(doubleValue)
-                        appender.append(null)
-                    } else {
-                        appender.append(null)
-                        appender.append(it.value.valueAsString())
-                    }
-                    appender.append(it.value.statusAsString())
-                    appender.endRow()
+        connection.createAppender(DuckDBConnection.DEFAULT_SCHEMA, sqlTableName).use { appender ->
+            valueCounterOutput += pollDatapointBlock {
+                appender.beginRow()
+                appender.append(it.topic.systemName)
+                appender.append(it.topic.topicNode)
+                appender.append(it.topic.getBrowsePathOrNode().toString())
+                appender.appendLocalDateTime(LocalDateTime.ofInstant(it.value.sourceTime, ZoneOffset.UTC))
+                appender.appendLocalDateTime(LocalDateTime.ofInstant(it.value.serverTime, ZoneOffset.UTC))
+                val doubleValue = it.value.valueAsDouble()
+                if (doubleValue != null && !doubleValue.isNaN()) {
+                    appender.append(doubleValue)
+                    appender.append(null)
+                } else {
+                    appender.append(null)
+                    appender.append(it.value.valueAsString())
                 }
+                appender.append(it.value.statusAsString())
+                appender.endRow()
             }
-            valueCounterOutput+=batchPoints.size
-            batchPoints.clear()
         }
     }
 

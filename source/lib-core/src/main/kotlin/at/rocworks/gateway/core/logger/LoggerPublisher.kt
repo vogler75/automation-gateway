@@ -66,24 +66,15 @@ abstract class LoggerPublisher(config: JsonObject) : LoggerBase(config) {
     abstract fun publish(topics: List<Topic>, payload: Buffer)
 
     private fun writeExecutorSolo() {
-        var counter = 0
-        var point: DataPoint? = pollDatapointWait()
-        while (point != null) {
-            soloPublisher(point)
-            point = if (++counter < writeParameterBlockSize) pollDatapointNoWait() else null
-        }
+        pollDatapointBlock(soloPublisher)
     }
 
     private fun writeExecutorBulk() {
-        var counter = 0
         val points = mutableListOf<DataPoint>()
-        var point: DataPoint? = pollDatapointWait()
-        while (point != null) {
+        val size = pollDatapointBlock { point ->
             points.add(point)
-            point = if (++counter < writeParameterBlockSize) pollDatapointNoWait() else null
         }
-        if (counter>0)
-            bulkPublisher(points)
+        if (size>0) bulkPublisher(points)
     }
 
     override fun writeExecutor() {

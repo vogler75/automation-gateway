@@ -124,11 +124,10 @@ class IoTDBLogger(config: JsonObject) : LoggerBase(config) {
             }
         }
 
-        var point: DataPoint? = pollDatapointWait()
-        while (point != null && deviceIds.size <= writeParameterBlockSize) {
-            addValue(point)
-            point = pollDatapointNoWait()
+        pollDatapointBlock {
+            addValue(it)
         }
+
         if (deviceIds.size > 0) {
             try {
                 writeSession.insertRecords(deviceIds, times, measurementList, typesList, valuesList)

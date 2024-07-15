@@ -47,28 +47,21 @@ class QuestDBLogger(config: JsonObject) : LoggerBase(config) {
 
 
     override fun writeExecutor() {
-        var batchSize = 0
-        var point = pollDatapointWait()
-        while (point != null && batchSize <= writeParameterBlockSize) {
-            if (point.value.sourceTime().epochSecond > 0) {
-                batchSize++
-                val address = point.topic.getBrowsePathOrNode().toString()
-                val value = point.value.valueAsDouble() ?: Double.NaN
-                val text = point.value.stringValue()
-                sender?.table(table)
-                    ?.symbol("system", point.topic.systemName)
-                    ?.symbol("address", address)
-                    ?.symbol("status", point.value.statusCode)
-                    ?.doubleColumn("value", value)
-                    ?.stringColumn("text", text)
-                    ?.at(point.value.sourceTime)
-            }
-            point = pollDatapointNoWait()
+        val size = pollDatapointBlock { point ->
+            val address = point.topic.getBrowsePathOrNode().toString()
+            val value = point.value.valueAsDouble() ?: Double.NaN
+            val text = point.value.stringValue()
+            sender?.table(table)
+                ?.symbol("system", point.topic.systemName)
+                ?.symbol("address", address)
+                ?.symbol("status", point.value.statusCode)
+                ?.doubleColumn("value", value)
+                ?.stringColumn("text", text)
+                ?.at(point.value.sourceTime)
         }
-        if (batchSize > 0) {
+        if (size > 0) {
             if (!autoFlush) sender?.flush()
-            valueCounterOutput+=batchSize
+            valueCounterOutput+=size
         }
     }
-
 }

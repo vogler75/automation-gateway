@@ -244,8 +244,21 @@ abstract class LoggerBase(config: JsonObject) : Component(config) {
         }
     }
 
-    protected fun pollDatapointWait() : DataPoint? = writeValueQueue.poll(writeQueuePollTimeout, TimeUnit.MILLISECONDS)
-    protected fun pollDatapointNoWait() : DataPoint? = writeValueQueue.poll()
+    private fun pollDatapointWait() : DataPoint? = writeValueQueue.poll(writeQueuePollTimeout, TimeUnit.MILLISECONDS)
+    private fun pollDatapointNoWait() : DataPoint? = writeValueQueue.poll()
+
+    protected fun pollDatapointBlock(execute: (DataPoint)->Unit): Int {
+        var size = 0
+        var point: DataPoint? = pollDatapointWait()
+        while (point != null) {
+            if (point.value.sourceTime.epochSecond > 0) {
+                size++
+                execute(point)
+            }
+            point = if (size < writeParameterBlockSize) pollDatapointNoWait() else null
+        }
+        return size
+    }
 
     private var t1: Instant = Instant.now()
     @Suppress("UNUSED_PARAMETER")

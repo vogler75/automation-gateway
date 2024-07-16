@@ -17,13 +17,6 @@ include('lib-core',
 dependencyResolutionManagement {
     repositories {
         mavenLocal()
-        // maven { // inlcude this if you build with Zenoh
-        //     credentials {
-        //         username = "$github_user"
-        //         password = "$github_token"
-        //     }
-        //     url = uri('https://maven.pkg.github.com/eclipse-zenoh/zenoh-java')
-        // }
         maven {
             url = uri('https://repo.maven.apache.org/maven2/')
         }

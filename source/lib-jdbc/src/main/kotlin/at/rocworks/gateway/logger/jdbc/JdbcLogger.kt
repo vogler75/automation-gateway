@@ -9,19 +9,20 @@ import java.time.OffsetDateTime
 
 
 class JdbcLogger(config: JsonObject) : LoggerBase(config) {
-    private val url = config.getString("Url", "jdbc:postgresql://localhost:5432/scada")
+    private val url = config.getString("Url", "jdbc:postgresql://localhost:5432/postgres")
     private val username = config.getString("Username", "")
     private val password = config.getString("Password", "")
 
-    private val sqlTableName = config.getString("SqlTableName", "events")
+    private val sqlTableName = config.getString("SqlTableName", "frankenstein")
 
     // --------------------------------------------------------------------------------------------------------------
 
     private val sqlCreateTablePostgreSQL = listOf("""
         CREATE TABLE IF NOT EXISTS $sqlTableName
         (
-            sys character varying(30) NOT NULL,
-            nodeid character varying(30) NOT NULL,
+            sys character varying(1000) NOT NULL,
+            nodeid character varying(1000) NOT NULL,
+            address text NULL,
             sourcetime timestamp with time zone NOT NULL,
             servertime timestamp with time zone NOT NULL,
             numericvalue numeric,
@@ -35,8 +36,9 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
     private val sqlCreateTableMySQL = listOf("""
         CREATE TABLE IF NOT EXISTS $sqlTableName
         (
-            sys varchar(30) NOT NULL,
-            nodeid varchar(30) NOT NULL,
+            sys varchar(1000) NOT NULL,
+            nodeid varchar(1000) NOT NULL,
+            address text,
             sourcetime timestamp(6) NOT NULL,
             servertime timestamp(6) NOT NULL,
             numericvalue double,
@@ -50,8 +52,9 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
     private val sqlCreateTableMsSQL = listOf("""
         CREATE TABLE $sqlTableName
         (
-            sys character varying(30) NOT NULL,
-            nodeid character varying(30) NOT NULL,
+            sys character varying(1000) NOT NULL,
+            nodeid character varying(1000) NOT NULL,
+            address varchar(MAX),
             sourcetime datetime2 NOT NULL,
             servertime datetime2 NOT NULL,
             numericvalue real,
@@ -65,7 +68,8 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
     private val sqlCreateTableCrate = listOf("""
         CREATE TABLE IF NOT EXISTS $sqlTableName (
           "sys" TEXT, 
-          "nodeid" TEXT,          
+          "nodeid" TEXT,      
+          "address" TEXT,
           "sourcetime" TIMESTAMP WITH TIME ZONE,
           "servertime" TIMESTAMP WITH TIME ZONE,
           "sourcetime_month" TIMESTAMP WITH TIME ZONE GENERATED ALWAYS AS date_trunc('month', "sourcetime"),
@@ -81,6 +85,7 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
         (
             sys varchar(30) NOT NULL,
             nodeid varchar(30) NOT NULL,
+            address longvarchar,
             sourcetime timestamp with time zone NOT NULL,
             servertime timestamp with time zone NOT NULL,
             numericvalue numeric,
@@ -95,30 +100,30 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
     private var sqlInsertStatement = config.getString("SqlInsertStatement", "")
 
     private val sqlInsertStatementPostgreSQL =  """
-        INSERT INTO $sqlTableName (sys, nodeid, sourcetime, servertime, numericvalue, stringvalue, status)
-         VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO $sqlTableName (sys, nodeid, address, sourcetime, servertime, numericvalue, stringvalue, status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT DO NOTHING 
         """.trimIndent()
 
     private val sqlInsertStatementMySQL = """
-        INSERT IGNORE INTO $sqlTableName (sys, nodeid, sourcetime, servertime, numericvalue, stringvalue, status)
-        VALUES (?, ?, ?, ?, ?, ?, ?)        
+        INSERT IGNORE INTO $sqlTableName (sys, address, nodeid, sourcetime, servertime, numericvalue, stringvalue, status)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)        
         """.trimIndent()
 
     private val sqlInsertStatementMsSQL = """
-        INSERT INTO $sqlTableName (sys, nodeid, sourcetime, servertime, numericvalue, stringvalue, status)
-        VALUES (?, ?, ?, ?, ?, ?, ?)        
+        INSERT INTO $sqlTableName (sys, nodeid, address, sourcetime, servertime, numericvalue, stringvalue, status)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)        
         """.trimIndent()
 
     private val sqlInsertStatementCrate =  """
-        INSERT INTO $sqlTableName (sys, nodeid, sourcetime, servertime, numericvalue, stringvalue, status)
-         VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO $sqlTableName (sys, nodeid, address, sourcetime, servertime, numericvalue, stringvalue, status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT DO NOTHING
         """.trimIndent()
 
     private val sqlInsertStatementHSQL = """
-        INSERT INTO $sqlTableName (sys, nodeid, sourcetime, servertime, numericvalue, stringvalue, status)
-        VALUES (?, ?, ?, ?, ?, ?, ?)        
+        INSERT INTO $sqlTableName (sys, nodeid, address, sourcetime, servertime, numericvalue, stringvalue, status)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)        
         """.trimIndent()
 
     // --------------------------------------------------------------------------------------------------------------
@@ -216,6 +221,7 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
                     logger.severe("Error writing batch [${e.message}]")
                 }
             } else {
+                Thread.sleep(1000)
                 reconnect()
             }
         } else {
@@ -227,17 +233,18 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
         val size = pollDatapointBlock {
             batch.setString(1, it.topic.systemName)
             batch.setString(2, it.topic.topicNode)
-            batch.setTimestamp(3, Timestamp.from(it.value.sourceTime()))
-            batch.setTimestamp(4, Timestamp.from(it.value.serverTime()))
+            batch.setString(3, it.topic.getBrowsePathOrNode().toString())
+            batch.setTimestamp(4, Timestamp.from(it.value.sourceTime()))
+            batch.setTimestamp(5, Timestamp.from(it.value.serverTime()))
             val doubleValue = it.value.valueAsDouble()
             if (doubleValue != null && !doubleValue.isNaN()) {
-                batch.setDouble(5, doubleValue)
-                batch.setNull(6, Types.VARCHAR)
+                batch.setDouble(6, doubleValue)
+                batch.setNull(7, Types.VARCHAR)
             } else {
-                batch.setNull(5, Types.DOUBLE)
-                batch.setString(6, it.value.valueAsString())
+                batch.setNull(6, Types.DOUBLE)
+                batch.setString(7, it.value.valueAsString())
             }
-            batch.setString(7, it.value.statusAsString())
+            batch.setString(8, it.value.statusAsString())
             batch.addBatch()
         }
         if (size > 0) {

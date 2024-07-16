@@ -1,11 +1,12 @@
 package at.rocworks.gateway.core.data
 
 import io.vertx.core.json.JsonObject
+import java.io.Serializable
 
-data class DataPoint(
+data class DataPoint (
     val topic: Topic,
     val value: TopicValue
-) {
+) : Serializable {
     fun encodeToJson(): JsonObject = JsonObject()
         .put("topic", topic.encodeToJson())
         .put("value", value.encodeToJson())

@@ -82,8 +82,8 @@ class MqttLogger (config: JsonObject) : LoggerPublisher(config) {
     }
 
     private fun publish(topic: String, payload: Buffer) {
-        println("$topic: $payload")
         client!!.publish(topic, payload, MqttQoS.valueOf(qos), false, retained)
+        valueCounterOutput+=1
     }
 
     override fun publish(topic: Topic, payload: Buffer) {

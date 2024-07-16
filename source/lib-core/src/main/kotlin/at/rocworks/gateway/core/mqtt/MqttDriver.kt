@@ -405,7 +405,6 @@ class MqttDriver(config: JsonObject) : DriverBase(config) {
         val metric = Metric.MetricBuilder(path.getLast(), type, data)
         payload.addMetric(metric.createMetric())
         if (spbSequenceNumber++ == 255) spbSequenceNumber=0
-        println("encodeSparkplugBMessage: $path")
         return BrowsePath(path.toList().dropLast(1)) to Buffer.buffer(SparkplugBPayloadEncoder().getBytes(payload, false))
     }
 

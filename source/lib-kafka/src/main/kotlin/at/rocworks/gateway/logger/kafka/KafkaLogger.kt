@@ -58,6 +58,8 @@ class KafkaLogger(config: JsonObject) : LoggerPublisher(config) {
         val record = KafkaProducerRecord.create<String, String>(destination, key, payload.toString())
         producer?.write(record)?.onComplete {
             valueCounterOutput++
+        }?.onFailure {
+            logger.severe("Error writing record [${it.message}]")
         }
     }
 
@@ -65,6 +67,8 @@ class KafkaLogger(config: JsonObject) : LoggerPublisher(config) {
         val record = KafkaProducerRecord.create<String, String>(topicName, payload.toString())
         producer?.write(record)?.onComplete {
             valueCounterOutput+=topics.size
+        }?.onFailure {
+            logger.severe("Error writing record [${it.message}]")
         }
     }
 }

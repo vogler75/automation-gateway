@@ -7,9 +7,7 @@ Available logger sinks:
 * QuestDB
 * IoTDB
 * Neo4J
-* DuckDB
 * Kafka
-* Zenoh
 * MQTT
 * JDBC (PostgreSQL, MySQL, SQL Server...)
 * OpenSearch (ElasticSearch)
@@ -322,6 +320,7 @@ You have to build the program before with gradle. Then you can use the shell scr
 > C:\Workspace\automation-gateway\docker\examples\hazelcast> docker compose up -d  
 
 # Version History
+- [1.33 Removed Zenoh & DuckDB](#133-removed-zenoh--duckdb)
 - [1.32 Zenoh Logger](#132-zenoh-logger)
 - [1.31 QuestDB Logger](#131-questdb-logger)
 - [1.30 OpenSearch Logger](#130-opensearch-logger)
@@ -358,6 +357,10 @@ You have to build the program before with gradle. Then you can use the shell scr
 - [1.7 DDS Driver (subscribe and publish)](#17-dds-driver-subscribe-and-publish)
 - [1.6 Added GraphiQL (http://localhost:4000/graphiql/)](#16-added-graphiql-httplocalhost4000graphiql)
 - [1.5 OPC UA Schemas to GraphQL Schema Importer](#15-opc-ua-schemas-to-graphql-schema-importer)
+
+## 1.33 Removed Zenoh & DuckDB
+
+We have removed Zenoh and DuckDB from the main branch for maintenance purposes.  
 
 ## 1.32 Zenoh Logger
 

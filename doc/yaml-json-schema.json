@@ -361,8 +361,6 @@
                 }
             },
             "required": [
-                "BlockSize",
-                "QueueSize"
             ],
             "title": "LoggerWriteParameters"
         },        
@@ -616,9 +614,6 @@
                 }
             },
             "required": [
-                "BufferSize",
-                "DiscardOldest",
-                "SamplingInterval"
             ],
             "title": "MonitoringParameters"
         },

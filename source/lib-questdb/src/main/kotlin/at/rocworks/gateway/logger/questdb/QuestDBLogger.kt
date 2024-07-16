@@ -21,7 +21,7 @@ CREATE TABLE gateway (
 class QuestDBLogger(config: JsonObject) : LoggerBase(config) {
     private val url = config.getString("Config", "http::addr=localhost:9000;")
     private val table = config.getString("Table", "gateway")
-    private val autoFlush = config.getBoolean("AutoFlush", true)
+    private val autoFlush = config.getBoolean("AutoFlush", false)
 
     private var sender : Sender? = null
 
@@ -45,28 +45,37 @@ class QuestDBLogger(config: JsonObject) : LoggerBase(config) {
         return promise.future()
     }
 
-
     override fun writeExecutor() {
-        val size = pollDatapointBlock { point ->
-            val address = point.topic.getBrowsePathOrNode().toString()
-            val value = point.value.valueAsDouble() ?: Double.NaN
-            val text = point.value.stringValue()
-            sender?.table(table)
-                ?.symbol("system", point.topic.systemName)
-                ?.symbol("address", address)
-                ?.symbol("status", point.value.statusCode)
-                ?.doubleColumn("value", value)
-                ?.stringColumn("text", text)
-                ?.at(point.value.sourceTime)
+        if (sender==null) {
+            Thread.sleep(1000)
         }
-        if (size > 0) {
-            try {
-                if (!autoFlush) sender?.flush()
-                commitDatapointBlock()
-                valueCounterOutput+=size
-            } catch (e: Exception) {
-                logger.severe("Error writing batch [${e.message}]")
+        else
+        try {
+            val size = pollDatapointBlock { point ->
+                val address = point.topic.getBrowsePathOrNode().toString()
+                val value = point.value.valueAsDouble() ?: Double.NaN
+                val text = point.value.stringValue()
+                sender?.table(table)
+                    ?.symbol("system", point.topic.systemName)
+                    ?.symbol("address", address)
+                    ?.symbol("status", point.value.statusCode)
+                    ?.doubleColumn("value", value)
+                    ?.stringColumn("text", text)
+                    ?.at(point.value.sourceTime)
             }
+            if (size > 0) {
+                try {
+                    if (!autoFlush) sender?.flush()
+                    commitDatapointBlock() // with autoFlush==true it is possible to lose values if the connection gets broken!!
+                    valueCounterOutput += size
+                } catch (e: Exception) {
+                    logger.severe("Error writing batch [${e.message}]")
+                    e.printStackTrace()
+                }
+            }
+        } catch (e: Exception) {
+            logger.severe("Error writing batch [${e.message}]")
+            e.printStackTrace()
         }
     }
 }

@@ -133,6 +133,7 @@ class OpenSearchLogger(config: JsonObject) : LoggerBase(config) {
                     }
                 }
                 commitDatapointBlock()
+                valueCounterOutput+=bulkOperations.size
             } catch (e: Exception) {
                 logger.severe("Error writing batch [${e.message}]")
             }

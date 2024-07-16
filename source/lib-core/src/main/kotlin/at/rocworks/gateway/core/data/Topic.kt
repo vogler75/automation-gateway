@@ -2,10 +2,11 @@ package at.rocworks.gateway.core.data
 
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
+import java.io.Serializable
 
 class BrowsePath (
     private val items: List<String>
-) {
+) : Serializable {
     constructor(browsePath: String) : this(Topic.splitTopic(browsePath))
     constructor(browsePath: String, additionalItem: String) : this(Topic.splitTopic(browsePath) + additionalItem)
     override fun toString() = items.joinToString("/")
@@ -36,7 +37,7 @@ data class Topic (
     val topicNode: String, // given node or a resolved address
     val dataFormat: Format = Format.Json,
     private val browsePath: BrowsePath = BrowsePath(emptyList())
-) {
+) : Serializable {
     enum class SystemType {
         Unknown,
         Sys,

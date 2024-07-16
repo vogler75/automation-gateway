@@ -17,9 +17,7 @@ import io.vertx.core.json.JsonObject
 import io.vertx.servicediscovery.Status
 import java.time.Duration
 import java.time.Instant
-import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.Callable
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.logging.Level
 import java.util.logging.Logger
@@ -46,14 +44,20 @@ abstract class LoggerBase(config: JsonObject) : Component(config) {
 
     private val writeQueuePollTimeout : Long = 10L
 
+    private val writeQueue : ILoggerQueue
+
     private val messageConsumers = mutableListOf<MessageConsumer<DataPoint>>()
 
     init {
+        logger.level = Level.parse(config.getString("LogLevel", "INFO"))
+
         val writeParameters = config.getJsonObject("WriteParameters")
         writeParameterQueueSize = writeParameters?.getInteger("QueueSize", writeParameterQueueSizeDefault) ?: writeParameterQueueSizeDefault
         writeParameterBlockSize = writeParameters?.getInteger("BlockSize", writeParameterBlockSizeDefault) ?: writeParameterBlockSizeDefault
+        logger.info("QueueSize [$writeParameterQueueSize] BlockSize [$writeParameterBlockSize]")
 
-        logger.level = Level.parse(config.getString("LogLevel", "INFO"))
+        //writeQueue = LoggerQueueMemory(logger, writeParameterQueueSize, writeParameterBlockSize, writeQueuePollTimeout)
+        writeQueue = LoggerQueueDisk(id, logger, writeParameterQueueSize, writeParameterBlockSize, writeQueuePollTimeout)
 
         topicsWithConfig = config
             .getJsonArray("Logging", JsonArray())
@@ -107,8 +111,8 @@ abstract class LoggerBase(config: JsonObject) : Component(config) {
     @Volatile
     private var reconnectOngoing = false
     protected fun reconnect() {
-        logger.info("Reconnect...")
         if (!reconnectOngoing) {
+            logger.info("Reconnect...")
             reconnectOngoing = true
             val promise = Promise.promise<Void>()
             promise.future().onComplete {
@@ -124,7 +128,7 @@ abstract class LoggerBase(config: JsonObject) : Component(config) {
     private var periodicMetricCalculator: Long = 0
 
     private fun writerThread() = thread(start = true) {
-        logger.info("Writer thread with queue size [${writeValueQueue.remainingCapacity()}]")
+        logger.info("Writer thread with queue size [${writeQueue.getCapacity()}]")
         writeValueStop.set(false)
         while (!writeValueStop.get()) {
             writeExecutor()
@@ -181,8 +185,6 @@ abstract class LoggerBase(config: JsonObject) : Component(config) {
     abstract fun writeExecutor()
 
     private val writeValueStop = AtomicBoolean(false)
-    private val writeValueQueue = ArrayBlockingQueue<DataPoint>(writeParameterQueueSize)
-    private var writeValueQueueFull = false
     private var writeValueThread : Thread? = null
 
     private var valueCounterInput : Int = 0
@@ -197,21 +199,8 @@ abstract class LoggerBase(config: JsonObject) : Component(config) {
             val topic = data.topic
             val value = data.value
             if (value.hasNoValue()) return
-
             logger.finest { "Got value $topic $value" }
-
-            try {
-                writeValueQueue.add(data)
-                if (writeValueQueueFull) {
-                    writeValueQueueFull = false
-                    logger.warning("Logger write queue not full anymore. [${writeValueQueue.size}]")
-                }
-            } catch (e: IllegalStateException) {
-                if (!writeValueQueueFull) {
-                    writeValueQueueFull = true
-                    logger.warning("Logger write queue is full! [${writeParameterQueueSize}]")
-                }
-            }
+            writeQueue.add(data)
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -223,54 +212,17 @@ abstract class LoggerBase(config: JsonObject) : Component(config) {
             val topic = Topic.decodeFromJson(data.getJsonObject("Topic"))
             val value = TopicValue.decodeFromJson(data.getJsonObject("Value"))
             if (!value.hasValue()) return
-
             logger.finest { "Got value $topic $value" }
-
             val measurement = DataPoint(topic, value)
-            try {
-                writeValueQueue.add(measurement)
-                if (writeValueQueueFull) {
-                    writeValueQueueFull = false
-                    logger.warning("Logger write queue not full anymore. [${writeValueQueue.size}]")
-                }
-            } catch (e: IllegalStateException) {
-                if (!writeValueQueueFull) {
-                    writeValueQueueFull = true
-                    logger.warning("Logger write queue is full! [${writeParameterQueueSize}]")
-                }
-            }
+            writeQueue.add(measurement)
         } catch (e: Exception) {
             e.printStackTrace()
         }
     }
 
-    private fun pollDatapointWait() : DataPoint? = writeValueQueue.poll(writeQueuePollTimeout, TimeUnit.MILLISECONDS)
-    private fun pollDatapointNoWait() : DataPoint? = writeValueQueue.poll()
+    protected fun pollDatapointBlock(execute: (DataPoint)->Unit): Int = writeQueue.pollBlock(execute)
 
-    private val datapointBlock = arrayListOf<DataPoint>()
-
-    protected fun pollDatapointBlock(execute: (DataPoint)->Unit): Int {
-        if (datapointBlock.isNotEmpty()) {
-            Thread.sleep(1000)
-            logger.warning("Repeat last data block...")
-            datapointBlock.forEach(execute)
-            return datapointBlock.size
-        } else {
-            var point: DataPoint? = pollDatapointWait()
-            while (point != null) {
-                if (point.value.sourceTime.epochSecond > 0) {
-                    datapointBlock.add(point)
-                    execute(point)
-                }
-                point = if (datapointBlock.size < writeParameterBlockSize) pollDatapointNoWait() else null
-            }
-            return datapointBlock.size
-        }
-    }
-
-    protected fun commitDatapointBlock() {
-        datapointBlock.clear()
-    }
+    protected fun commitDatapointBlock() = writeQueue.pollCommit()
 
     private var t1: Instant = Instant.now()
     @Suppress("UNUSED_PARAMETER")
@@ -284,7 +236,7 @@ abstract class LoggerBase(config: JsonObject) : Component(config) {
             val result = JsonObject()
             result.put("Input v/s", vsInput)
             result.put("Output v/s", vsOutput)
-            result.put("Queue Size", writeValueQueue.size)
+            result.put("Queue Size", writeQueue.getSize())
             getAdditionalMetrics().forEach {
                 result.put(it.key, it.value)
             }

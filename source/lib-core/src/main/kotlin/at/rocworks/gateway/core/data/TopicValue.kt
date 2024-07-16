@@ -2,6 +2,7 @@ package at.rocworks.gateway.core.data
 
 import io.vertx.core.buffer.Buffer
 import io.vertx.core.json.JsonObject
+import java.io.Serializable
 import java.time.Instant
 
 data class TopicValue (
@@ -11,7 +12,7 @@ data class TopicValue (
     val serverTime: Instant = Instant.now()
     //val sourcePicoseconds: Int = 0,
     //val serverPicoseconds: Int = 0
-) {
+) : Serializable {
     // default constructor needed for json to object mapping
     fun hasValue() = value!=null
     fun hasNoValue() = value==null

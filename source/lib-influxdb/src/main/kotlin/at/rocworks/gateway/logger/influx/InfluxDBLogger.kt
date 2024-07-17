@@ -20,6 +20,8 @@ class InfluxDBLogger(config: JsonObject) : LoggerBase(config) {
     private val password = config.getString("Password", "")
     private val database = config.getString("Database", "test")
 
+    private var enabled = false
+
     private val session: InfluxDB = if (username == null || username == "")
         InfluxDBFactory.connect(url)
     else
@@ -30,6 +32,7 @@ class InfluxDBLogger(config: JsonObject) : LoggerBase(config) {
         try {
             val response: Pong = session.ping()
             if (!response.isGood) {
+                enabled = true
                 result.complete()
             } else {
                 session.setLogLevel(InfluxDB.LogLevel.NONE)
@@ -39,10 +42,12 @@ class InfluxDBLogger(config: JsonObject) : LoggerBase(config) {
                 options = options.bufferLimit(writeParameterBlockSize)
                 session.enableBatch(options)
                 logger.info("InfluxDB connected.")
+                enabled = true
                 result.complete()
             }
         } catch (e: Exception) {
             logger.severe("InfluxDB connect failed! [${e.message}]")
+            enabled = false
             result.fail(e)
         }
         return result.future()
@@ -51,8 +56,13 @@ class InfluxDBLogger(config: JsonObject) : LoggerBase(config) {
     override fun close(): Future<Unit> {
         val promise = Promise.promise<Unit>()
         session.close()
+        enabled = false
         promise.complete()
         return promise.future()
+    }
+
+    override fun isEnabled(): Boolean {
+        return enabled
     }
 
     private fun influxPointOf(dp: DataPoint): Point {

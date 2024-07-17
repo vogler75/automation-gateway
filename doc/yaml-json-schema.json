@@ -353,11 +353,21 @@
             "type": "object",
             "additionalProperties": false,
             "properties": {
+                "QueueType": {
+                    "type": "string",
+                    "default": "MEMORY",
+                    "enum": ["MEMORY", "DISK"]
+                },
                 "QueueSize": {
                     "type": "integer"
                 },
                 "BlockSize": {
                     "type": "integer"
+                },
+                "DiskPath": {
+                    "type": "string",
+                    "default": ".",
+                    "description": "Path for disk storage"
                 }
             },
             "required": [
@@ -400,16 +410,15 @@
             "properties": {
                 "Id": { "type": "string" },
                 "Enabled": { "type": "boolean" },
-                "Port": { "type": "integer", "description": "Default: 1883"},
-                "Host": { "type": "string" },
+                "Port": { "type": "integer", "default": 1883 },
+                "Host": { "type": "string", "deafult": "0.0.0.0" },
                 "MaxMessageSizeKb": { "type": "integer" },
                 "Username": { "type": "string" },
                 "Password": { "type": "string" },
                 "LogLevel": { "$ref": "#/definitions/LogLevel" },
-                "Websocket": { "type": "boolean" }
+                "Websocket": { "type": "boolean", "default": false }
             },
-            "required": [
-                "Port"
+            "required": [                
             ],
             "title": "Mqtt Server"
         },

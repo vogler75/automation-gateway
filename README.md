@@ -320,7 +320,7 @@ You have to build the program before with gradle. Then you can use the shell scr
 > C:\Workspace\automation-gateway\docker\examples\hazelcast> docker compose up -d  
 
 # Version History
-- [1.33 Removed Zenoh & DuckDB](#133-removed-zenoh--duckdb)
+- [1.33 Rework of Logging](#133-rework-of-logging)
 - [1.32 Zenoh Logger](#132-zenoh-logger)
 - [1.31 QuestDB Logger](#131-questdb-logger)
 - [1.30 OpenSearch Logger](#130-opensearch-logger)
@@ -358,7 +358,21 @@ You have to build the program before with gradle. Then you can use the shell scr
 - [1.6 Added GraphiQL (http://localhost:4000/graphiql/)](#16-added-graphiql-httplocalhost4000graphiql)
 - [1.5 OPC UA Schemas to GraphQL Schema Importer](#15-opc-ua-schemas-to-graphql-schema-importer)
 
-## 1.33 Removed Zenoh & DuckDB
+## 1.33 Rework of Logging
+
+Logging ensures now no data loss. If a connection is lost, values are temporarily stored in memory or on disk and written once the connection is restored. The default storage is memory. To specify the storage type, use the QueueType parameter in WriteParameters. If DISK is chosen, QueueSize sets the file size in bytes. If memory is used, QueueSize is the number of data points. This specifies the maximum space available for buffered data. The file will be pre-allocated to this size. Each tag value requires approximately 1400 bytes.
+
+```
+  QuestDB:
+    - Id: questdb1
+      Config: http::addr=linux0:9002;
+      Table: frankenstein
+      AutoFlush: false
+      WriteParameters:
+        QueueType: DISK
+        QueueSize: 1073741824 # Filesize in bytes (1GB)
+        DiskPath: /data/buffers # Storage location for disk files
+``` 
 
 We have removed Zenoh and DuckDB from the main branch for maintenance purposes.  
 

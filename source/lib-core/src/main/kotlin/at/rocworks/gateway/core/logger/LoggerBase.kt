@@ -36,6 +36,9 @@ abstract class LoggerBase(config: JsonObject) : Component(config) {
 
     private val defaultRetryWaitTime = 5000L
 
+    private val writeParameterQueueTypeDefault = "MEMORY"
+    private val writeParameterDiskPathDefault = "."
+
     private val writeParameterQueueSizeDefault = 10000
     private val writeParameterQueueSize : Int
 
@@ -54,10 +57,22 @@ abstract class LoggerBase(config: JsonObject) : Component(config) {
         val writeParameters = config.getJsonObject("WriteParameters")
         writeParameterQueueSize = writeParameters?.getInteger("QueueSize", writeParameterQueueSizeDefault) ?: writeParameterQueueSizeDefault
         writeParameterBlockSize = writeParameters?.getInteger("BlockSize", writeParameterBlockSizeDefault) ?: writeParameterBlockSizeDefault
-        logger.info("QueueSize [$writeParameterQueueSize] BlockSize [$writeParameterBlockSize]")
+        val writeParameterQueueType = writeParameters?.getString("QueueType", writeParameterQueueTypeDefault) ?: writeParameterQueueTypeDefault
+        val writeParameterDiskPath = writeParameters?.getString("DiskPath", writeParameterDiskPathDefault) ?: writeParameterDiskPathDefault
+        logger.info("QueueType [$writeParameterQueueTypeDefault] QueueSize [$writeParameterQueueSize] BlockSize [$writeParameterBlockSize]")
 
-        //writeQueue = LoggerQueueMemory(logger, writeParameterQueueSize, writeParameterBlockSize, writeQueuePollTimeout)
-        writeQueue = LoggerQueueDisk(id, logger, writeParameterQueueSize, writeParameterBlockSize, writeQueuePollTimeout)
+        when (writeParameterQueueType) {
+            "MEMORY" -> {
+                writeQueue = LoggerQueueMemory(logger, writeParameterQueueSize, writeParameterBlockSize, writeQueuePollTimeout)
+            }
+            "DISK" -> {
+                writeQueue = LoggerQueueDisk(id, logger, writeParameterQueueSize, writeParameterBlockSize, writeQueuePollTimeout, writeParameterDiskPath)
+            }
+            else -> {
+                writeQueue = LoggerQueueMemory(logger, writeParameterQueueSize, writeParameterBlockSize, writeQueuePollTimeout)
+                logger.severe("Unknown queue type [$writeParameterQueueType]! will use memory queue type!")
+            }
+        }
 
         topicsWithConfig = config
             .getJsonArray("Logging", JsonArray())
@@ -108,6 +123,8 @@ abstract class LoggerBase(config: JsonObject) : Component(config) {
         })
     }
 
+    abstract fun isEnabled(): Boolean
+
     @Volatile
     private var reconnectOngoing = false
     protected fun reconnect() {
@@ -128,7 +145,8 @@ abstract class LoggerBase(config: JsonObject) : Component(config) {
     private var periodicMetricCalculator: Long = 0
 
     private fun writerThread() = thread(start = true) {
-        logger.info("Writer thread with queue size [${writeQueue.getCapacity()}]")
+        while (!isEnabled()) Thread.sleep(1000)
+        logger.info("Writer thread started with queue size [${writeQueue.getCapacity()}]")
         writeValueStop.set(false)
         while (!writeValueStop.get()) {
             writeExecutor()

@@ -77,18 +77,31 @@ class Neo4jLogger(config: JsonObject) : LoggerBase(config) {
             RETURN ID(n)
             """.trimIndent()
 
-    init {
-    }
-
     override fun getAdditionalMetrics(): JsonObject {
         return JsonObject().put("Path Queue Size", writePathQueue.size)
     }
 
-    override fun start(startPromise: Promise<Void>) {
-        super.start(startPromise)
+    private fun createSchema() {
         val session = driver.session()
-        createIndexes(session)
 
+        // create indexes
+        session.run("""
+            CREATE INDEX IF NOT EXISTS
+            FOR (n:MqttNode)
+            ON (n.System, n.NodeId)
+            """.trimIndent())
+        session.run("""
+            CREATE INDEX IF NOT EXISTS
+            FOR (n:MqttValue)
+            ON (n.System, n.NodeId)
+            """.trimIndent())
+        session.run("""
+            CREATE INDEX IF NOT EXISTS
+            FOR (n:OpcUaNode)
+            ON (n.System, n.NodeId)
+            """.trimIndent())
+
+        // create schema
         val schemas = config.getJsonArray("Schemas", JsonArray()) ?: JsonArray()
         schemas.filterIsInstance<JsonObject>().map { systemConfig ->
             val system = systemConfig.getString("System")
@@ -125,24 +138,6 @@ class Neo4jLogger(config: JsonObject) : LoggerBase(config) {
             }
         }
         return promise.future()
-    }
-
-    private fun createIndexes(session: Session) {
-        session.run("""
-            CREATE INDEX IF NOT EXISTS
-            FOR (n:MqttNode)
-            ON (n.System, n.NodeId)
-            """.trimIndent())
-        session.run("""
-            CREATE INDEX IF NOT EXISTS
-            FOR (n:MqttValue)
-            ON (n.System, n.NodeId)
-            """.trimIndent())
-        session.run("""
-            CREATE INDEX IF NOT EXISTS
-            FOR (n:OpcUaNode)
-            ON (n.System, n.NodeId)
-            """.trimIndent())
     }
 
     private fun writeSchemaToDb(session: Session, system: String, schema: JsonArray) {
@@ -240,7 +235,8 @@ class Neo4jLogger(config: JsonObject) : LoggerBase(config) {
         logger.info("Open $username $password")
         val promise = Promise.promise<Unit>()
         try {
-            this.session = driver.session()
+            createSchema()
+            session = driver.session()
             thread(start = true, block = ::writeMqttNodesThread)
             promise.complete()
         } catch (e: Exception) {
@@ -252,10 +248,14 @@ class Neo4jLogger(config: JsonObject) : LoggerBase(config) {
     override fun close(): Future<Unit> {
         val promise = Promise.promise<Unit>()
         writePathStop.set(true)
-        driver.closeAsync().whenComplete { _, _ ->
-            promise.complete()
-        }
+        session?.close()
+        session = null
+        promise.complete()
         return promise.future()
+    }
+
+    override fun isEnabled(): Boolean {
+        return session != null
     }
 
     override fun writeExecutor() {

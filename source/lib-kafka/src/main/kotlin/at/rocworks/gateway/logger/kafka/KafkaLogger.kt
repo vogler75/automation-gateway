@@ -48,8 +48,13 @@ class KafkaLogger(config: JsonObject) : LoggerPublisher(config) {
     override fun close(): Future<Unit> {
         val promise = Promise.promise<Unit>()
         producer?.close()
+        producer = null
         promise.complete()
         return promise.future()
+    }
+
+    override fun isEnabled(): Boolean {
+        return producer != null
     }
 
     override fun publish(topic: Topic, payload: Buffer) {

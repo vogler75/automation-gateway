@@ -41,15 +41,16 @@ class QuestDBLogger(config: JsonObject) : LoggerBase(config) {
     override fun close(): Future<Unit> {
         val promise = Promise.promise<Unit>()
         sender?.close()
+        sender = null
         promise.complete()
         return promise.future()
     }
 
+    override fun isEnabled(): Boolean {
+        return sender != null
+    }
+
     override fun writeExecutor() {
-        if (sender==null) {
-            Thread.sleep(1000)
-        }
-        else
         try {
             val size = pollDatapointBlock { point ->
                 val address = point.topic.getBrowsePathOrNode().toString()

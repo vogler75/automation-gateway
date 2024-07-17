@@ -31,7 +31,7 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
             CONSTRAINT ${sqlTableName}_pk PRIMARY KEY (sys, nodeid, sourcetime)
         );
     """.trimIndent(),
-        "CREATE INDEX ${sqlTableName}_sourcetime_ix ON ${sqlTableName}(sourcetime);")
+        "CREATE INDEX IF NOT EXISTS ${sqlTableName}_sourcetime_ix ON ${sqlTableName}(sourcetime);")
 
     private val sqlCreateTableMySQL = listOf("""
         CREATE TABLE IF NOT EXISTS $sqlTableName
@@ -204,10 +204,20 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
 
     override fun close(): Future<Unit> {
         val promise = Promise.promise<Unit>()
-        readConnection?.let { if (!it.isClosed) it.close() }
-        writeConnection?.let { if (!it.isClosed) it.close() }
+        readConnection?.let {
+            if (!it.isClosed) it.close()
+            readConnection = null
+        }
+        writeConnection?.let {
+            if (!it.isClosed) it.close()
+            writeConnection = null
+        }
         promise.complete()
         return promise.future()
+    }
+
+    override fun isEnabled(): Boolean {
+        return writeConnection != null
     }
 
     override fun writeExecutor() {

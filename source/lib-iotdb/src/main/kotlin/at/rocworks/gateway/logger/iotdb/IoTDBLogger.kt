@@ -26,6 +26,8 @@ class IoTDBLogger(config: JsonObject) : LoggerBase(config) {
     private val writeSession = getSession()
     private val readSession = getSession()
 
+    private var enabled = false
+
     private fun getSession() = if (username == null || username == "")
             Session(host, port)
         else
@@ -36,10 +38,12 @@ class IoTDBLogger(config: JsonObject) : LoggerBase(config) {
         try {
             readSession.open()
             writeSession.open()
+            enabled = true
             logger.info("IoTDB connected.")
             promise.complete()
         } catch (e: Exception) {
             logger.severe("IoTDB connect failed! [${e.message}]")
+            enabled = false
             promise.fail(e)
         }
         return promise.future()
@@ -49,8 +53,13 @@ class IoTDBLogger(config: JsonObject) : LoggerBase(config) {
         val promise = Promise.promise<Unit>()
         readSession.close()
         writeSession.close()
+        enabled = false
         promise.complete()
         return promise.future()
+    }
+
+    override fun isEnabled(): Boolean {
+        return enabled
     }
 
     private fun nameToPath(path: String) =  path.replace(Regex("[/;:\\.\\-= ]"), "_")

@@ -29,7 +29,7 @@ class MqttLogger (config: JsonObject) : LoggerPublisher(config) {
     private val baseTopic: String = configMqtt.getString("Topic", "")
     private val maxMessageSizeKb = configMqtt.getInteger("MaxMessageSizeKb", 8) * 1024
 
-    private var isEnabled = false
+    private var enabled = false
 
     private val topicToTarget : Map<String, String> =
         topicsWithConfig
@@ -40,7 +40,7 @@ class MqttLogger (config: JsonObject) : LoggerPublisher(config) {
         val promise = Promise.promise<Unit>()
 
         if (client==null) {
-            isEnabled = true
+            enabled = true
             val options = MqttClientOptions()
             username?.let { options.username = it }
             password?.let { options.password = it }
@@ -52,7 +52,7 @@ class MqttLogger (config: JsonObject) : LoggerPublisher(config) {
             client = MqttClient.create(vertx, options)
             client!!.closeHandler {
                 logger.severe("Connection closed!")
-                if (isEnabled) reconnect()
+                if (enabled) reconnect()
             }
             client!!.exceptionHandler {
                 logger.severe(it.stackTraceToString())
@@ -73,12 +73,16 @@ class MqttLogger (config: JsonObject) : LoggerPublisher(config) {
 
     override fun close(): Future<Unit> {
         val promise = Promise.promise<Unit>()
-        isEnabled = false
+        enabled = false
         client!!.disconnect {
             promise.complete()
             logger.info("Mqtt client disconnect [${it.succeeded()}]")
         }
         return promise.future()
+    }
+
+    override fun isEnabled(): Boolean {
+        return enabled
     }
 
     private fun publish(topic: String, payload: Buffer) {

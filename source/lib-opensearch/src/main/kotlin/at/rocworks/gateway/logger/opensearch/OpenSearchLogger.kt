@@ -64,6 +64,8 @@ class OpenSearchLogger(config: JsonObject) : LoggerBase(config) {
     private val httpHost = HttpHost(host, port)
     private val credentialsProvider = BasicCredentialsProvider()
 
+    private var enabled = false
+
     //Initialize the client
     private val restClient = RestClient.builder(httpHost).setHttpClientConfigCallback { httpClientBuilder ->
         httpClientBuilder.setDefaultCredentialsProvider(
@@ -77,15 +79,16 @@ class OpenSearchLogger(config: JsonObject) : LoggerBase(config) {
     override fun open(): Future<Unit> {
         val result = Promise.promise<Unit>()
         try {
-            //Only for demo purposes. Don't specify your credentials in code.
             credentialsProvider.setCredentials(
                 AuthScope(httpHost),
                 UsernamePasswordCredentials(username, password)
             )
             logger.info("OpenSearch connected.")
+            enabled = true
             result.complete()
         } catch (e: Exception) {
             logger.severe("OpenSearch connect failed! [${e.message}]")
+            enabled = false
             e.printStackTrace()
             result.fail(e)
         }
@@ -94,8 +97,13 @@ class OpenSearchLogger(config: JsonObject) : LoggerBase(config) {
 
     override fun close(): Future<Unit> {
         val promise = Promise.promise<Unit>()
+        enabled = false
         promise.complete()
         return promise.future()
+    }
+
+    override fun isEnabled(): Boolean {
+        return enabled
     }
 
     override fun writeExecutor() {

@@ -8,23 +8,22 @@ import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.ReentrantLock
 import java.util.logging.Logger
-import kotlin.math.absoluteValue
-
 
 class LoggerQueueDisk(
     private val id: String,
     private val logger: Logger,
-    private val writeParameterQueueSize: Int,
-    private val writeParameterBlockSize: Int,
-    private val writeQueuePollTimeout: Long
+    private val queueSize: Int,
+    private val blockSize: Int,
+    private val pollTimeout: Long,
+    private val diskPath: String
 ) : ILoggerQueue {
     private var writeValueQueueFull = false
 
     private val outputBlock = arrayListOf<DataPoint>()
     private val semaphore = Semaphore(0) // Start with 0 permits (blocking initially)
 
-    private val fileSize = writeParameterQueueSize.toLong() // one datapoint is about 1408 bytes
-    private val fileName = "${id}.buf"
+    private val fileSize = queueSize.toLong() // one datapoint is about 1408 bytes
+    private val fileName = "$diskPath/${id}.buf"
     private val file: RandomAccessFile = RandomAccessFile(fileName, "rw")
     private val buffer: MappedByteBuffer
     private val lock = ReentrantLock()
@@ -34,7 +33,7 @@ class LoggerQueueDisk(
     private var readPosition = startPosition
 
     init {
-        if (file.length() != writeParameterQueueSize.toLong()) {
+        if (file.length() != queueSize.toLong()) {
             file.setLength(fileSize)
             buffer = file.getChannel().map(FileChannel.MapMode.READ_WRITE, 0, fileSize)
             writeReadPosition()
@@ -54,7 +53,7 @@ class LoggerQueueDisk(
         try {
             val dataBytes = serialize(dp)
             val dataSize = dataBytes.size + Int.SIZE_BYTES
-            logger.finest { "enqueue: ReadPos $readPosition WritePos $writePosition Data size: ${dataBytes.size} " }
+            logger.finest { "Enqueue: ReadPos $readPosition WritePos $writePosition Data size: ${dataBytes.size} " }
 
             if (writePosition + dataSize > file.length()) {
                 buffer.position(writePosition)
@@ -92,7 +91,7 @@ class LoggerQueueDisk(
             if (readPosition == writePosition) {
                 return null // Queue is empty
             }
-            logger.finest { "dequeue: ReadPos $readPosition WritePos $writePosition" }
+            logger.finest { "Dequeue: ReadPos $readPosition WritePos $writePosition" }
 
             buffer.position(readPosition)
             var dataSize = buffer.int
@@ -129,13 +128,13 @@ class LoggerQueueDisk(
     }
 
     override fun getCapacity(): Int {
-        return writeParameterQueueSize
+        return queueSize
     }
 
     override fun getSize(): Int {
         val size = writePosition - readPosition
         return if (size >= 0) size
-        else writeParameterQueueSize + size
+        else queueSize + size
     }
 
     override fun add(dp: DataPoint) {
@@ -161,7 +160,7 @@ class LoggerQueueDisk(
         } else {
             var point: DataPoint? = dequeue()
             if (point == null) {
-                if (semaphore.tryAcquire(writeQueuePollTimeout, TimeUnit.MILLISECONDS)) {
+                if (semaphore.tryAcquire(pollTimeout, TimeUnit.MILLISECONDS)) {
                     point = dequeue()
                 }
             }
@@ -170,7 +169,7 @@ class LoggerQueueDisk(
                     outputBlock.add(point)
                     handler(point)
                 }
-                point = if (outputBlock.size < writeParameterBlockSize) dequeue() else null
+                point = if (outputBlock.size < blockSize) dequeue() else null
             }
             return outputBlock.size
         }

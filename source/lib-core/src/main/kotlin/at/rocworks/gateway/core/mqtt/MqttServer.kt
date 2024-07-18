@@ -90,9 +90,4 @@ class MqttServer(config: JsonObject) : Component(config) {
     override fun getComponentConfig(): JsonObject {
         return this.config
     }
-
-    private fun createServer() {
-        // Start a verticle for every incoming connection
-
-    }
 }

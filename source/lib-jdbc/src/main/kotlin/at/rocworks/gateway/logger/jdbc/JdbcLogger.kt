@@ -6,6 +6,7 @@ import io.vertx.core.Promise
 import io.vertx.core.json.JsonObject
 import java.sql.*
 import java.time.OffsetDateTime
+import java.util.concurrent.Callable
 
 
 class JdbcLogger(config: JsonObject) : LoggerBase(config) {
@@ -181,7 +182,7 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
                         try {
                             statement.execute(sql)
                         } catch (e: Exception) {
-                            logger.warning("Create table exception [${e.message}]", )
+                            logger.warning("Create table exception [${e.message}]")
                         }
                         connection.commit()
                     }
@@ -191,7 +192,7 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
                 logger.info("Open connection done [${connection.metaData.databaseProductName}] [${connection.metaData.databaseProductVersion}]")
             }
         } catch (e: SQLException) {
-            e.printStackTrace()
+            logger.severe("SQL Exception: ${e.message}")
             promise.fail(e)
         }
         return promise.future()

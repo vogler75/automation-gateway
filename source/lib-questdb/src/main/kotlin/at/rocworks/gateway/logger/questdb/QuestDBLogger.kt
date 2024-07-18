@@ -23,11 +23,13 @@ class QuestDBLogger(config: JsonObject) : LoggerBase(config) {
     private val table = config.getString("Table", "gateway")
     private val autoFlush = config.getBoolean("AutoFlush", false)
 
+    @Volatile
     private var sender : Sender? = null
 
     override fun open(): Future<Unit> {
         val result = Promise.promise<Unit>()
         try {
+            logger.info("QuestDB connect to $url")
             sender = Sender.fromConfig(url)
             logger.info("QuestDB connected.")
             result.complete()

@@ -9,8 +9,6 @@ include('lib-core',
         'lib-jdbc',
         'lib-iotdb',
         'lib-neo4j',
-        'lib-duckdb',
-//        'lib-zenoh',
         'lib-opensearch',
         'lib-questdb')
 

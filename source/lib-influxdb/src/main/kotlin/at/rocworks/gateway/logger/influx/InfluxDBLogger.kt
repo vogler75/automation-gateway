@@ -12,6 +12,7 @@ import org.influxdb.BatchOptions
 import org.influxdb.InfluxDB
 import org.influxdb.InfluxDBFactory
 import org.influxdb.dto.*
+import java.util.concurrent.Callable
 
 
 class InfluxDBLogger(config: JsonObject) : LoggerBase(config) {
@@ -22,40 +23,47 @@ class InfluxDBLogger(config: JsonObject) : LoggerBase(config) {
 
     private var enabled = false
 
-    private val session: InfluxDB = if (username == null || username == "")
+    private var session: InfluxDB? = null
+
+    private fun connect() = if (username == null || username == "")
         InfluxDBFactory.connect(url)
     else
         InfluxDBFactory.connect(url, username, password)
 
     override fun open(): Future<Unit> {
         val result = Promise.promise<Unit>()
-        try {
-            val response: Pong = session.ping()
-            if (!response.isGood) {
-                enabled = true
-                result.complete()
-            } else {
-                session.setLogLevel(InfluxDB.LogLevel.NONE)
-                session.query(Query("CREATE DATABASE $database"))
-                session.setDatabase(database)
-                var options = BatchOptions.DEFAULTS
-                options = options.bufferLimit(writeParameterBlockSize)
-                session.enableBatch(options)
-                logger.info("InfluxDB connected.")
-                enabled = true
-                result.complete()
+        vertx.executeBlocking(Callable {
+            try {
+                connect().let {
+                    session = it
+                    val response: Pong = it.ping()
+                    if (!response.isGood) {
+                        enabled = true
+                        result.complete()
+                    } else {
+                        it.setLogLevel(InfluxDB.LogLevel.NONE)
+                        it.query(Query("CREATE DATABASE $database"))
+                        it.setDatabase(database)
+                        var options = BatchOptions.DEFAULTS
+                        options = options.bufferLimit(writeParameterBlockSize)
+                        it.enableBatch(options)
+                        logger.info("InfluxDB connected.")
+                        enabled = true
+                        result.complete()
+                    }
+                }
+            } catch (e: Exception) {
+                logger.severe("InfluxDB connect failed! [${e.message}]")
+                enabled = false
+                result.fail(e)
             }
-        } catch (e: Exception) {
-            logger.severe("InfluxDB connect failed! [${e.message}]")
-            enabled = false
-            result.fail(e)
-        }
+        })
         return result.future()
     }
 
     override fun close(): Future<Unit> {
         val promise = Promise.promise<Unit>()
-        session.close()
+        session?.close()
         enabled = false
         promise.complete()
         return promise.future()
@@ -91,7 +99,7 @@ class InfluxDBLogger(config: JsonObject) : LoggerBase(config) {
         }
         if (batch.points.size > 0) {
             try {
-                session.write(batch)
+                session?.write(batch)
                 commitDatapointBlock()
                 valueCounterOutput+=batch.points.size
             } catch (e: Exception) {
@@ -110,23 +118,25 @@ class InfluxDBLogger(config: JsonObject) : LoggerBase(config) {
         val fromTimeNano = fromTimeMS * 1_000_000
         val toTimeNano = toTimeMS * 1_000_000
         try {
-            val sql = """
+            val data = session?.let { s ->
+                val sql = """
                 SELECT time, servertime, value, text, status 
                 FROM "$system" 
                 WHERE "address" = '$nodeId' 
                 AND time >= $fromTimeNano AND time <= $toTimeNano 
                 """.trimIndent()
-            val data = session.query(Query(sql)).let { query ->
-                query.results.getOrNull(0)
-                    ?.series?.getOrNull(0)
-                    ?.values?.map {
-                        listOf(
-                            it.component1(),
-                            it.component2(),
-                            it.component3() ?: it.component4(),
-                            it.component5()
-                        )
-                    }
+                s.query(Query(sql)).let { query ->
+                    query.results.getOrNull(0)
+                        ?.series?.getOrNull(0)
+                        ?.values?.map {
+                            listOf(
+                                it.component1(),
+                                it.component2(),
+                                it.component3() ?: it.component4(),
+                                it.component5()
+                            )
+                        }
+                }
             }
             result(data != null, data)
         } catch (e: Exception) {

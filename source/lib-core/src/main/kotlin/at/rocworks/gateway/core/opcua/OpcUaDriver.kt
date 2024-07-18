@@ -96,13 +96,6 @@ class OpcUaDriver(config: JsonObject) : DriverBase(config) {
 
     private var pathNodeIdCache: LoadingCache<String, List<Pair<NodeId, String>>>
 
-    companion object {
-        init {
-            // Required for SecurityPolicy.Aes256_Sha256_RsaPss
-            Security.addProvider(BouncyCastleProvider())
-        }
-    }
-
     init {
         val securityPolicyName = config.getString("SecurityPolicy", null)
         val securityPolicyConf = config.getString("SecurityPolicyUri", null)

@@ -7,9 +7,11 @@ import io.vertx.config.ConfigRetrieverOptions
 import io.vertx.config.ConfigStoreOptions
 import io.vertx.core.Vertx
 import io.vertx.core.json.JsonObject
+import org.bouncycastle.jce.provider.BouncyCastleProvider
 import java.io.File
 import java.io.FileInputStream
 import java.io.InputStream
+import java.security.Security
 import java.util.logging.LogManager
 import java.util.logging.Logger
 
@@ -39,6 +41,9 @@ object Common {
                     vertx: Vertx,
                     factory: (Component.ComponentType, JsonObject) -> Component?) {
         try {
+            // Required for SecurityPolicy.Aes256_Sha256_RsaPss
+            Security.addProvider(BouncyCastleProvider())
+
             // Register Message Types
             vertx.eventBus().registerDefaultCodec(Topic::class.java, CodecTopic())
             vertx.eventBus().registerDefaultCodec(TopicValue::class.java,CodecTopicValue())

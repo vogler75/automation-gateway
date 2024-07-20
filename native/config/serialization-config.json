@@ -1,5 +1,14 @@
 {
   "types":[
+    {
+      "name":"java.util.HashMap"
+    },
+    {
+      "name":"org.apache.http.impl.auth.BasicScheme"
+    },
+    {
+      "name":"org.apache.http.impl.auth.RFC2617Scheme"
+    }
   ],
   "lambdaCapturingTypes":[
   ],

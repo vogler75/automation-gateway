@@ -1,0 +1,1 @@
+docker run -ti --rm -v $PWD/config.yaml:/app/config.yaml frankenstein

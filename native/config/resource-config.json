@@ -9,11 +9,21 @@
   }, {
     "pattern":"\\QMETA-INF/services/io.vertx.core.spi.VertxServiceProvider\\E"
   }, {
+    "pattern":"\\QMETA-INF/services/jakarta.json.spi.JsonProvider\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/java.sql.Driver\\E"
+  }, {
     "pattern":"\\Qkafka/kafka-version.properties\\E"
   }, {
     "pattern":"\\Qlogback.xml\\E"
   }, {
     "pattern":"\\Qlogging.properties\\E"
+  }, {
+    "pattern":"\\Qmozilla/public-suffix-list.txt\\E"
+  }, {
+    "pattern":"\\Qorg/apache/http/nio/client/version.properties\\E"
+  }, {
+    "pattern":"\\Qorg/opensearch/client/version.properties\\E"
   }, {
     "pattern":"\\Qorg/slf4j/impl/StaticLoggerBinder.class\\E"
   }, {
@@ -33,9 +43,9 @@
   }]},
   "bundles":[{
     "name":"com.sun.org.apache.xml.internal.serializer.XMLEntities",
-    "locales":[""]
+    "locales":["", "und"]
   }, {
     "name":"i18n.Parsing",
-    "locales":["", "und"]
+    "locales":["und"]
   }]
 }

@@ -125,6 +125,23 @@
   "queryAllDeclaredMethods":true
 },
 {
+  "name":"at.rocworks.gateway.core.data.Topic$SystemType",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"at.rocworks.gateway.core.data.Topic$TopicType",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"at.rocworks.gateway.logger.opensearch.OpenSearchLogger$IndexData",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"getBrowsePath","parameterTypes":[] }, {"name":"getServerTime","parameterTypes":[] }, {"name":"getSourceTime","parameterTypes":[] }, {"name":"getStatusCode","parameterTypes":[] }, {"name":"getSystemName","parameterTypes":[] }, {"name":"getSystemType","parameterTypes":[] }, {"name":"getTopicName","parameterTypes":[] }, {"name":"getTopicNode","parameterTypes":[] }, {"name":"getTopicPath","parameterTypes":[] }, {"name":"getTopicType","parameterTypes":[] }, {"name":"getValueAsNumber","parameterTypes":[] }, {"name":"getValueAsString","parameterTypes":[] }]
+},
+{
   "name":"com.digitalpetri.netty.fsm.ChannelFsmFactory$1",
   "methods":[{"name":"channelInactive","parameterTypes":["io.netty.channel.ChannelHandlerContext"] }, {"name":"exceptionCaught","parameterTypes":["io.netty.channel.ChannelHandlerContext","java.lang.Throwable"] }, {"name":"userEventTriggered","parameterTypes":["io.netty.channel.ChannelHandlerContext","java.lang.Object"] }]
 },
@@ -202,6 +219,10 @@
 },
 {
   "name":"com.sun.crypto.provider.PBES2Parameters$HmacSHA256AndAES_256",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"com.sun.crypto.provider.PBKDF2Core$HmacSHA256",
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
@@ -359,6 +380,9 @@
   "name":"io.netty.handler.codec.dns.DatagramDnsQueryEncoder"
 },
 {
+  "name":"io.netty.handler.codec.haproxy.HAProxyMessageDecoder"
+},
+{
   "name":"io.netty.handler.codec.http.HttpObjectDecoder",
   "queriedMethods":[{"name":"userEventTriggered","parameterTypes":["io.netty.channel.ChannelHandlerContext","java.lang.Object"] }]
 },
@@ -503,11 +527,11 @@
 },
 {
   "name":"io.vertx.mqtt.impl.MqttServerConnection$1",
-  "queriedMethods":[{"name":"userEventTriggered","parameterTypes":["io.netty.channel.ChannelHandlerContext","java.lang.Object"] }]
+  "methods":[{"name":"userEventTriggered","parameterTypes":["io.netty.channel.ChannelHandlerContext","java.lang.Object"] }]
 },
 {
   "name":"io.vertx.mqtt.impl.MqttServerImpl$1",
-  "queriedMethods":[{"name":"userEventTriggered","parameterTypes":["io.netty.channel.ChannelHandlerContext","java.lang.Object"] }]
+  "methods":[{"name":"userEventTriggered","parameterTypes":["io.netty.channel.ChannelHandlerContext","java.lang.Object"] }]
 },
 {
   "name":"java.io.FilePermission"
@@ -587,6 +611,10 @@
   "name":"java.lang.RuntimePermission"
 },
 {
+  "name":"java.lang.SecurityManager",
+  "methods":[{"name":"checkPermission","parameterTypes":["java.security.Permission"] }]
+},
+{
   "name":"java.lang.Short",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
@@ -600,6 +628,10 @@
 {
   "name":"java.lang.String",
   "fields":[{"name":"TYPE"}]
+},
+{
+  "name":"java.lang.System",
+  "methods":[{"name":"getSecurityManager","parameterTypes":[] }]
 },
 {
   "name":"java.lang.Thread",
@@ -731,6 +763,10 @@
   "methods":[{"name":"openServerSocketChannel","parameterTypes":["java.net.ProtocolFamily"] }, {"name":"openSocketChannel","parameterTypes":["java.net.ProtocolFamily"] }]
 },
 {
+  "name":"java.security.AccessController",
+  "methods":[{"name":"doPrivileged","parameterTypes":["java.security.PrivilegedExceptionAction"] }]
+},
+{
   "name":"java.security.AlgorithmParametersSpi"
 },
 {
@@ -770,6 +806,10 @@
   "name":"java.sql.Date"
 },
 {
+  "name":"java.sql.SQLException",
+  "fields":[{"name":"next"}]
+},
+{
   "name":"java.sql.Timestamp"
 },
 {
@@ -795,6 +835,10 @@
 {
   "name":"java.util.concurrent.atomic.AtomicBoolean",
   "fields":[{"name":"value"}]
+},
+{
+  "name":"java.util.concurrent.atomic.AtomicMarkableReference",
+  "fields":[{"name":"pair"}]
 },
 {
   "name":"java.util.concurrent.atomic.AtomicReference",
@@ -885,6 +929,24 @@
 {
   "name":"jdk.management.jfr.SettingDescriptorInfo",
   "queryAllPublicMethods":true
+},
+{
+  "name":"org.apache.commons.logging.LogFactory"
+},
+{
+  "name":"org.apache.commons.logging.impl.Jdk14Logger",
+  "methods":[{"name":"<init>","parameterTypes":["java.lang.String"] }, {"name":"setLogFactory","parameterTypes":["org.apache.commons.logging.LogFactory"] }]
+},
+{
+  "name":"org.apache.commons.logging.impl.Log4JLogger"
+},
+{
+  "name":"org.apache.commons.logging.impl.LogFactoryImpl",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"org.apache.commons.logging.impl.WeakHashtable",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
   "name":"org.apache.iotdb.service.rpc.thrift.IClientRPCService$Iface",
@@ -1495,6 +1557,17 @@
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
+  "name":"org.postgresql.Driver"
+},
+{
+  "name":"org.postgresql.core.QueryExecutorCloseAction",
+  "fields":[{"name":"pgStream"}]
+},
+{
+  "name":"org.postgresql.jdbc.PgStatement",
+  "fields":[{"name":"cancelTimerTask"}, {"name":"isClosed"}, {"name":"statementState"}]
+},
+{
   "name":"sun.management.ClassLoadingImpl",
   "queryAllPublicConstructors":true
 },
@@ -1597,6 +1670,14 @@
 },
 {
   "name":"sun.security.rsa.RSASignature$SHA256withRSA",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"sun.security.ssl.KeyManagerFactoryImpl$SunX509",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"sun.security.ssl.SSLContextImpl$DefaultSSLContext",
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {

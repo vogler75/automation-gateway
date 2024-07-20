@@ -14,6 +14,7 @@ import graphql.schema.idl.SchemaGenerator
 import graphql.schema.idl.SchemaParser
 import graphql.schema.idl.TypeRuntimeWiring
 import io.vertx.core.AbstractVerticle
+import io.vertx.core.Promise
 import io.vertx.core.http.HttpServerOptions
 import io.vertx.core.json.JsonObject
 import io.vertx.ext.web.Router
@@ -24,6 +25,7 @@ import io.vertx.ext.web.handler.graphql.GraphQLHandler
 import io.vertx.ext.web.handler.graphql.ws.GraphQLWSHandler
 import java.time.Instant
 import java.util.*
+import java.util.concurrent.Callable
 
 
 class ConfigServer(private val componentHandler: ComponentHandler, private val port: Int=9999): AbstractVerticle() {
@@ -35,30 +37,29 @@ class ConfigServer(private val componentHandler: ComponentHandler, private val p
         const val GQL_LINEBREAK = "  " // Markdown two spaces for a new line
     }
 
-    override fun start() {
-        try {
-            val (schema, wiring) = getSchema()
-            val typeRegistry = SchemaParser().parse(schema)
-            val graphQLSchema = SchemaGenerator().makeExecutableSchema(typeRegistry, wiring.build())
-            val graphQLBuilder = GraphQL.newGraphQL(graphQLSchema)
-            startGraphQLServer(graphQLBuilder.build())
-            vertx.setPeriodic(60000) {// every minute
-                // remove token after 30min of inactivity
-                val removeTokens = tokens.filter {
-                    it.value.plusSeconds(60*30) < Instant.now()
+    override fun start(startPromise: Promise<Void>) {
+        vertx.executeBlocking(Callable {
+            try {
+                val (schema, wiring) = getSchema()
+                val typeRegistry = SchemaParser().parse(schema)
+                val graphQLSchema = SchemaGenerator().makeExecutableSchema(typeRegistry, wiring.build())
+                val graphQLBuilder = GraphQL.newGraphQL(graphQLSchema)
+                startGraphQLServer(graphQLBuilder.build())
+                vertx.setPeriodic(60000) {// every minute
+                    // remove token after 30min of inactivity
+                    val removeTokens = tokens.filter {
+                        it.value.plusSeconds(60*30) < Instant.now()
+                    }
+                    removeTokens.forEach {
+                        logger.info("Remove access key ${it.key} [${it.value}].")
+                        tokens.remove(it.key)
+                    }
                 }
-                removeTokens.forEach {
-                    logger.info("Remove access key ${it.key} [${it.value}].")
-                    tokens.remove(it.key)
-                }
+                startPromise.complete()
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-
-    override fun stop() {
-        super.stop()
+        })
     }
 
     private fun startGraphQLServer(graphql: GraphQL) {

@@ -36,8 +36,7 @@ class ComponentHandler(
                 Component.ComponentType.KafkaLogger,
                 Component.ComponentType.MqttLogger,
                 Component.ComponentType.Neo4jLogger,
-                Component.ComponentType.OpenSearchLogger,
-                Component.ComponentType.QuestDBLogger -> Component.ComponentGroup.Logger
+                Component.ComponentType.OpenSearchLogger -> Component.ComponentGroup.Logger
                 Component.ComponentType.None -> Component.ComponentGroup.None
             }
     }

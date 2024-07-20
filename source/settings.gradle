@@ -9,8 +9,7 @@ include('lib-core',
         'lib-jdbc',
         'lib-iotdb',
         'lib-neo4j',
-        'lib-opensearch',
-        'lib-questdb')
+        'lib-opensearch',)
 
 dependencyResolutionManagement {
     repositories {

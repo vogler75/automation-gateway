@@ -28,8 +28,7 @@ abstract class Component(val config: JsonObject) : AbstractVerticle() {
         KafkaLogger,
         MqttLogger,
         Neo4jLogger,
-        OpenSearchLogger,
-        QuestDBLogger
+        OpenSearchLogger
     }
 
     fun getComponentType() : ComponentType = ComponentType.valueOf(this.javaClass.simpleName)

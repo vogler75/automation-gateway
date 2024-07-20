@@ -64,31 +64,28 @@ class OpenSearchLogger(config: JsonObject) : LoggerBase(config) {
     private val httpHost = HttpHost(host, port)
     private val credentialsProvider = BasicCredentialsProvider()
 
-    private var enabled = false
-
     //Initialize the client
-    private val restClient = RestClient.builder(httpHost).setHttpClientConfigCallback { httpClientBuilder ->
-        httpClientBuilder.setDefaultCredentialsProvider(
-            credentialsProvider
-        )
-    }.build()
-
-    private val transport: OpenSearchTransport = RestClientTransport(restClient, JacksonJsonpMapper())
-    private val client = OpenSearchClient(transport)
+    private var client : OpenSearchClient? = null
 
     override fun open(): Future<Unit> {
         val result = Promise.promise<Unit>()
         try {
+            val restClient = RestClient.builder(httpHost).setHttpClientConfigCallback { httpClientBuilder ->
+                httpClientBuilder.setDefaultCredentialsProvider(
+                    credentialsProvider
+                )
+            }.build()
+            val transport = RestClientTransport(restClient, JacksonJsonpMapper())
             credentialsProvider.setCredentials(
                 AuthScope(httpHost),
                 UsernamePasswordCredentials(username, password)
             )
+            client = OpenSearchClient(transport)
             logger.info("OpenSearch connected.")
-            enabled = true
             result.complete()
         } catch (e: Exception) {
             logger.severe("OpenSearch connect failed! [${e.message}]")
-            enabled = false
+            client = null
             e.printStackTrace()
             result.fail(e)
         }
@@ -97,13 +94,13 @@ class OpenSearchLogger(config: JsonObject) : LoggerBase(config) {
 
     override fun close(): Future<Unit> {
         val promise = Promise.promise<Unit>()
-        enabled = false
+        client = null
         promise.complete()
         return promise.future()
     }
 
     override fun isEnabled(): Boolean {
-        return enabled
+        return client != null
     }
 
     override fun writeExecutor() {
@@ -131,20 +128,23 @@ class OpenSearchLogger(config: JsonObject) : LoggerBase(config) {
         }
         if (bulkOperations.size > 0) {
             try {
-                val result = client.bulk(BulkRequest.Builder().operations(bulkOperations).build())
-                if (result.errors()) {
-                    logger.severe("Bulk had some errors")
-                    for (item in result.items()) {
-                        if (item.error() != null) {
-                            logger.severe(item.error()!!.reason())
+                client?.let { session ->
+                    val result = session.bulk(BulkRequest.Builder().operations(bulkOperations).build())
+                    if (result.errors()) {
+                        logger.severe("Bulk had some errors...")
+                        for (item in result.items()) {
+                            if (item.error() != null) {
+                                logger.fine(item.error()!!.reason())
+                            }
                         }
                     }
+                    commitDatapointBlock()
+                    valueCounterOutput += bulkOperations.size
                 }
-                commitDatapointBlock()
-                valueCounterOutput+=bulkOperations.size
             } catch (e: Exception) {
                 logger.severe("Error writing batch [${e.message}]")
             }
         }
+
     }
 }

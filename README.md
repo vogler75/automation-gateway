@@ -360,21 +360,20 @@ You have to build the program before with gradle. Then you can use the shell scr
 
 ## 1.33 Rework of Logging
 
-Logging ensures now no data loss. If a connection is lost, values are temporarily stored in memory or on disk and written once the connection is restored. The default storage is memory. To specify the storage type, use the QueueType parameter in WriteParameters. If DISK is chosen, QueueSize sets the file size in bytes. If memory is used, QueueSize is the number of data points. This specifies the maximum space available for buffered data. The file will be pre-allocated to this size. Each tag value requires approximately 1400 bytes.
+Logging ensures now no data loss. If a connection is lost, values are temporarily stored in memory or on disk and written once the connection is restored. The default storage is memory. To specify the storage type, use the QueueType parameter in WriteParameters. If DISK is chosen, QueueSize sets the file size in bytes. If memory is used, QueueSize is the number of data points. This specifies the maximum space available for buffered data. The file will be pre-allocated to this size. Currently, each tag value consumes around 1400 bytes due to Java Object serialization, but we must optimize this to decrease storage requirements.
 
 ```
-  QuestDB:
-    - Id: questdb1
-      Config: http::addr=linux0:9002;
-      Table: frankenstein
-      AutoFlush: false
+ Jdbc:
+    - Id: postgres      
+      Enabled: false
+      Url: jdbc:postgresql://linux0:5432/scada
       WriteParameters:
         QueueType: DISK
         QueueSize: 1073741824 # Filesize in bytes (1GB)
         DiskPath: /data/buffers # Storage location for disk files
 ``` 
 
-We have removed Zenoh and DuckDB from the main branch for maintenance purposes.  
+We have removed Zenoh and DuckDB from the main branch for maintenance purposes. We also removed native QuestDB support because the gateway cannot be compiled to native code using GraalVM with the QuestDB client.
 
 ## 1.32 Zenoh Logger
 

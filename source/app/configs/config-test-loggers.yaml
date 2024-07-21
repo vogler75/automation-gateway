@@ -1,0 +1,87 @@
+Servers:
+  Mqtt:
+    - Id: "mqtt"
+      Enabled: true
+
+Drivers:
+  OpcUa:
+    - Id: "demo1"
+      Enabled: true
+      LogLevel: INFO
+      EndpointUrl: "opc.tcp://localhost:62541/server"
+      UpdateEndpointUrl: true
+      SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#None
+      KeepAliveFailuresAllowed: 0
+      MonitoringParameters:
+        SamplingInterval: 10
+
+Loggers:
+  Mqtt:
+    - Id: mqtt1
+      Enabled: false
+      Host: linux0.rocworks.local
+      Format: Raw
+      Port: 1883
+      Logging:
+        #- Topic: opc/demo1/path/Objects/Dynamic/#
+        - Topic: opc/demo1/path/Objects/Dynamic/IncreasingInt16_000
+
+  Kafka:
+    - Id: kafka1
+      Enabled: false
+      Servers: linux0:9092
+      TopicName: frankenstein
+      Format: Raw
+      Logging:
+        #- Topic: opc/demo1/path/Objects/Dynamic/#
+        - Topic: opc/demo1/path/Objects/Dynamic/IncreasingInt16_000
+
+  InfluxDB:
+    - Id: influxdb1
+      Enabled: false
+      LogLevel: FINEST
+      Url: http://linux0:8086
+      Database: frankenstein
+      WriteParameters:
+        QueueSize: 1000000
+      Logging:
+        #- Topic: opc/demo1/path/Objects/Dynamic/#
+        - Topic: opc/demo1/path/Objects/Dynamic/IncreasingInt16_000
+
+  IoTDB:
+    - Id: iotdb1
+      Enabled: false
+      Host: linux0
+      Port: 6667
+      Database: root.frankenstein
+      Username: "root"
+      Password: "root"
+      WriteParameters:
+        QueueSize: 1000000
+      Logging:
+        #- Topic: opc/demo1/path/Objects/Dynamic/#
+        - Topic: opc/demo1/path/Objects/Dynamic/IncreasingInt16_000
+
+  Jdbc:
+    - Id: timescale1
+      Enabled: false
+      Url: jdbc:postgresql://linux0:5432/postgres
+      Username: system
+      Password: manager
+      WriteParameters:
+        QueueSize: 1000000
+      Logging:
+        #- Topic: opc/demo1/path/Objects/Dynamic/#
+        - Topic: opc/demo1/path/Objects/Dynamic/IncreasingInt16_000
+
+  OpenSearch:
+    - Id: opensearch1
+      Enabled: true
+      Host: linux0
+      Port: 9200
+      Index: frankenstein
+      WriteParameters:
+        QueueSize: 1000000
+      Logging:
+        #- Topic: opc/demo1/path/Objects/Dynamic/#
+        - Topic: opc/demo1/path/Objects/Dynamic/IncreasingInt16_000

@@ -110,9 +110,12 @@ class ConfigServer(private val componentHandler: ComponentHandler, private val p
     private fun createAccessToken(env: DataFetchingEnvironment): GqlResult {
         val username = env.getArgumentOrDefault("username", "")
         val password = env.getArgumentOrDefault("password", "")
+        if (username != "" && password != "") {
+            logger.warning("Username and password is not yet checked!")
+        }
+        // TODO: check username and password
         val token = UUID.randomUUID().toString()
         tokens[token] = Instant.now()
-        // TODO: check username and password
         return GqlResult(true, 0, token)
     }
 

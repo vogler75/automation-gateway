@@ -321,6 +321,7 @@ You have to build the program before with gradle. Then you can use the shell scr
 > C:\Workspace\automation-gateway\docker\examples\hazelcast> docker compose up -d  
 
 # Version History
+- [1.34 Added Config Upload Page](#134-added-config-upload-page)
 - [1.33 Rework of Logging](#133-rework-of-logging)
 - [1.32 Zenoh Logger](#132-zenoh-logger)
 - [1.31 QuestDB Logger](#131-questdb-logger)
@@ -358,6 +359,14 @@ You have to build the program before with gradle. Then you can use the shell scr
 - [1.7 DDS Driver (subscribe and publish)](#17-dds-driver-subscribe-and-publish)
 - [1.6 Added GraphiQL (http://localhost:4000/graphiql/)](#16-added-graphiql-httplocalhost4000graphiql)
 - [1.5 OPC UA Schemas to GraphQL Schema Importer](#15-opc-ua-schemas-to-graphql-schema-importer)
+
+## 1.34 Added Config Upload Page
+
+A simple web page has been added to facilitate the upload of a configuration file. This feature is particularly useful when the gateway is installed on an Edge Device, such as a SIMATIC HMI Comfort Panel. Additionally, an option is provided for the gateway to attempt to read the configuration file at regular intervals. Once the configuration file is uploaded, the gateway will read the file and initiate the startup process.
+
+Enable Upload Page: Set the environment variable GATEWAY_CONFIG_HTTP to enable the configuration file upload page. Example: GATEWAY_CONFIG_HTTP=8080 (You can specify any desired port number).
+
+Enable Periodic Configuration File Reading: Set the environment variable GATEWAY_CONFIG_RETRY to enable the periodic reading of the configuration file. Example: GATEWAY_CONFIG_RETRY=10 (The gateway will retry every 10 seconds to locate a configuration file). 
 
 ## 1.33 Rework of Logging
 

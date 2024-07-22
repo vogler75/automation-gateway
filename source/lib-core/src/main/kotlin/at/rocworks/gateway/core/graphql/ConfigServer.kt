@@ -67,7 +67,7 @@ class ConfigServer(private val componentHandler: ComponentHandler, private val p
         router.route().handler(BodyHandler.create())
 
         val pathWithCors = "/admin/api"
-        val pathWithoutCors = "/graphql" // needed for  access with tools like Altair-GraphQL-Client origin [electron://altair]
+        val pathWithoutCors = "/graphql" // needed for access with tools like Altair-GraphQL-Client origin [electron://altair]
 
         // CORS Handler
         router.route(pathWithCors).handler(CorsHandler.create().addOrigins(listOf("*")))

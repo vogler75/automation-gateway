@@ -1,0 +1,19 @@
+version: '2.4'
+services:
+  frankenstein:
+    environment:
+      GATEWAY_CONFIG: /cfg-data/config-simatic-panel.yaml
+      GATEWAY_CONFIG_RETRY: 5
+      GATEWAY_CONFIG_HTTP: 80
+    ports:
+      - '30000:80'
+      - '30001:1883'
+      - '30002:4000'
+    restart: unless-stopped
+    image: 'rocworks/automation-gateway:1.34'
+    hostname: frankenstein
+    volumes:
+      - './cfg-data/:/cfg-data/'
+      - './security/:/app/security/'
+      - './publish/:/publish/'
+    mem_limit: 512mb

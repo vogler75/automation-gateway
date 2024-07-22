@@ -1,0 +1,91 @@
+Drivers:
+  OpcUa:
+    - Id: "panel"
+      Enabled: true
+      LogLevel: INFO
+      EndpointUrl: "opc.tcp://172.17.1.1:4890"
+      UpdateEndpointUrl: true
+      SecurityPolicy: None
+      KeepAliveFailuresAllowed: 0
+      UsernameProvider:
+        Username: username1
+        Password: password1
+      AddressCache:
+        MaximumSize: 1000
+      SubscriptionSamplingInterval: 0.0
+  
+Servers: 
+  GraphQL:
+    - Id: graphql
+      Enabled: true
+      LogLevel: INFO
+      Port: 4000
+
+  Mqtt:
+    - Id: mqtt
+      Enabled: true
+      LogLevel: INFO
+      Port: 1883
+
+Loggers:
+  Mqtt:
+    - Id: mqtt1
+      Enabled: true
+      Host: 192.168.1.30
+      Format: Raw
+      Port: 1883
+      Logging:
+        - Topic: opc/panel/path/Objects/HmiRuntime/HMI_RT_2/Tags/#
+        - Topic: opc/panel/path/Objects/HmiRuntime/HMI_RT_2/Structure instances/#
+
+  Kafka:
+    - Id: kafka1
+      Enabled: false
+      Servers: 192.168.1.30:9092
+      TopicName: frankenstein
+      Format: Raw
+      Logging:
+        - Topic: opc/panel/path/Objects/HmiRuntime/HMI_RT_2/Tags/#
+        - Topic: opc/panel/path/Objects/HmiRuntime/HMI_RT_2/Structure instances/#
+
+  Jdbc:
+    - Id: timescale1
+      Enabled: false
+      Url: jdbc:postgresql://192.168.1.30:5432/postgres
+      Username: system
+      Password: manager
+      Logging:
+        - Topic: opc/panel/path/Objects/HmiRuntime/HMI_RT_2/Tags/#
+        - Topic: opc/panel/path/Objects/HmiRuntime/HMI_RT_2/Structure instances/#
+
+  InfluxDB:
+    - Id: influxdb1
+      Enabled: false
+      LogLevel: INFO
+      Url: http://192.168.1.30:8086
+      Database: frankenstein
+      Logging:
+        - Topic: opc/panel/path/Objects/HmiRuntime/HMI_RT_2/Tags/#
+        - Topic: opc/panel/path/Objects/HmiRuntime/HMI_RT_2/Structure instances/#
+
+  IoTDB:
+    - Id: iotdb1
+      Enabled: false
+      Host: 192.168.1.30
+      Port: 6667
+      Database: root.frankenstein
+      Username: "root"
+      Password: "root"
+      Logging:
+        - Topic: opc/panel/path/Objects/HmiRuntime/HMI_RT_2/Tags/#
+        - Topic: opc/panel/path/Objects/HmiRuntime/HMI_RT_2/Structure instances/#
+
+  OpenSearch:
+    - Id: opensearch1
+      Enabled: false
+      Host: 192.168.1.30
+      Port: 9200
+      Index: frankenstein
+      Logging:
+        - Topic: opc/panel/path/Objects/HmiRuntime/HMI_RT_2/Tags/#
+        - Topic: opc/panel/path/Objects/HmiRuntime/HMI_RT_2/Structure instances/#

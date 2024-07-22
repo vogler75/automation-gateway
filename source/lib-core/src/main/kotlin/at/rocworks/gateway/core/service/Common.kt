@@ -123,6 +123,19 @@ object Common {
         }
     }
 
+    fun ensureYamlExtension(configFileName: String): String {
+        // Regex to check if the file has an extension
+        val regex = Regex(".*\\.[a-zA-Z0-9]+$")
+
+        return if (regex.matches(configFileName)) {
+            // If the file has an extension, return it as is
+            configFileName
+        } else {
+            // If the file does not have an extension, add .yaml to it
+            "$configFileName.yaml"
+        }
+    }
+
     private fun createHttpServer(vertx: Vertx, port: Int) : HttpServer {
         val index = """
         <!DOCTYPE html>
@@ -134,7 +147,7 @@ object Common {
         <body>
             <h1>Upload Config File</h1>
             <form action="/upload" method="post" enctype="multipart/form-data">
-                <input type="file" name="file">
+                <input type="file" name="file" accept=".yaml">
                 <button type="submit">Upload</button>
             </form>
         </body>
@@ -170,7 +183,7 @@ object Common {
                 """.trimIndent())
             } else {
                 // Move the file to a new location
-                val targetPath = Paths.get("config", fileName)
+                val targetPath = Paths.get(ensureYamlExtension(configFileName))
                 Files.move(Paths.get(uploadedFileName), targetPath, StandardCopyOption.REPLACE_EXISTING)
                 ctx.response()
                     .putHeader("Content-Type", "text/html")

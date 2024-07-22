@@ -46,7 +46,6 @@ class GraphQLServer(config: JsonObject) : Component(config) {
 
     private val schemas: JsonObject = JsonObject()
     private val defaultFieldName: String = "DisplayName"
-    private val enableGraphiQL: Boolean = config.getBoolean("GraphiQL", false)
     private val writeSchemaFiles: Boolean = config.getBoolean("WriteSchemaToFile", false)
     private val timeFormatterISO = DateTimeFormatter.ISO_DATE_TIME
 
@@ -367,12 +366,6 @@ class GraphQLServer(config: JsonObject) : Component(config) {
         router.route().handler(BodyHandler.create())
         router.route("/graphql").handler(GraphQLWSHandler.create(graphql));
         router.route("/graphql").handler(GraphQLHandler.create(graphql))
-
-        if (enableGraphiQL) {
-            logger.info("Enable GraphiQL")
-            val options = GraphiQLHandlerOptions().setEnabled(true)
-            router.route("/graphiql/*").handler(GraphiQLHandler.create(options))
-        }
 
         val httpServerOptions = HttpServerOptions()
             .setWebSocketSubProtocols(listOf("graphql-transport-ws"))

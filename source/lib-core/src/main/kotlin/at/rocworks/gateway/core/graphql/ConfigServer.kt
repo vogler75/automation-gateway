@@ -177,7 +177,7 @@ class ConfigServer(private val componentHandler: ComponentHandler, private val p
     | $GQL_DESCRIPTION
     | A log message
     | $GQL_DESCRIPTION  
-    | type Message {
+    | type Create a simple html webpage with vertx and kotlin to show a table with 4 columns, the data comes from a function  {
     |   time: String
     |   level: String
     |   name: String

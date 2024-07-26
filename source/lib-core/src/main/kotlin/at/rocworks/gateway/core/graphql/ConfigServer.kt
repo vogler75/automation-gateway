@@ -177,7 +177,7 @@ class ConfigServer(private val componentHandler: ComponentHandler, private val p
     | $GQL_DESCRIPTION
     | A log message
     | $GQL_DESCRIPTION  
-    | type {
+    | type Message {
     |   time: String
     |   level: String
     |   name: String

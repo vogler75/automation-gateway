@@ -878,11 +878,11 @@ class OpcUaDriver(config: JsonObject) : DriverBase(config) {
             val nodeId = NodeId.parseOrNull(node)
             if (nodeId != null) {
                 val nodes = browseNode(nodeId)
-                logger.finest { "- Nodes: ${nodes.filterIsInstance<JsonObject>().joinToString { it.getString("BrowseName") }}" }
+                logger.finest { "Find $node | $item ($itemIdx) | $path >>> Nodes: ${nodes.filterIsInstance<JsonObject>().joinToString { it.getString("BrowseName") }}" }
                 val result = nodes
                     .filterIsInstance<JsonObject>()
                     .filter { item == "#" || item == "+" || item == it.getString("BrowseName", "") }
-                logger.finest { "- Found: ${result.joinToString { it.getString("BrowseName") }}" }
+                logger.finest {  "Find $node | $item ($itemIdx) | $path >>> Found: ${result.joinToString { it.getString("BrowseName") }}" }
                 val nextIdx = if (item != "#" && itemIdx + 1 < items.size) itemIdx + 1 else itemIdx
                 return result.sumOf {
                     val childNodeId = NodeId.parseOrNull(it.getString("NodeId"))

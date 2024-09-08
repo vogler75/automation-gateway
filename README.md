@@ -47,11 +47,25 @@ You can open the project in IntelliJ IDEA IDE and build it there or use grade to
 
 ```
 > cd source/app
-> gradlew build
+> ../gradlew build
 
 > export GATEWAY_CONFIG=config.yaml  # Set configuration file (default is config.yaml)
-> gradlew run
+> ../gradlew run
 ```
+
+You can run the application using Gradle, or alternatively, you can use the ZIP file located in the `build/distributions` directory (either `app.zip` or `app.tar`). Extract the ZIP file, and you'll find the executable file at `app/bin/app` (or `app.bat` on Windows), which you can use to run the gateway. 
+
+On Windows, you’ll need to modify the line that sets the CLASSPATH. Replace:
+```bash
+set CLASSPATH=...long list of libs...
+```
+with:
+```bash
+set CLASSPATH=%APP_HOME%\lib\*
+```
+
+This is because the full CLASSPATH, which includes all the libraries, is too long for Windows to handle. Otherwise, you'll encounter the error: "The input line is too long."
+
 You can also pass the configuration filename as an argument.
 
 App is with GraphQL, MQTT and the OPC UA connections.    

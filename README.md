@@ -5,6 +5,7 @@ Connect one or more OPC UA servers, PLC4X devices or MQTT brokers to the gateway
 Available logger sinks:  
 * TimescaleDB (JDBC)
 * InfluxDB
+* CrateDB
 * IoTDB
 * Neo4J
 * JDBC (PostgreSQL, MySQL, SQL Server)
@@ -335,6 +336,7 @@ You have to build the program before with gradle. Then you can use the shell scr
 > C:\Workspace\automation-gateway\docker\examples\hazelcast> docker compose up -d  
 
 # Version History
+- [1.35 ]
 - [1.34 Added Config Upload Page](#134-added-config-upload-page)
 - [1.33 Rework of Logging](#133-rework-of-logging)
 - [1.32 Zenoh Logger](#132-zenoh-logger)
@@ -373,6 +375,14 @@ You have to build the program before with gradle. Then you can use the shell scr
 - [1.7 DDS Driver (subscribe and publish)](#17-dds-driver-subscribe-and-publish)
 - [1.6 Added GraphiQL (http://localhost:4000/graphiql/)](#16-added-graphiql-httplocalhost4000graphiql)
 - [1.5 OPC UA Schemas to GraphQL Schema Importer](#15-opc-ua-schemas-to-graphql-schema-importer)
+
+## 1.35 Enhancements and Bug Fixes
+
+Removed GraphiQL due to deprecation in Vert.x.
+Added necessary files for building a SIEMENS Industrial Edge App.
+Introduced a web page for config file upload functionality.
+Fixed an issue in the MQTT Driver where reconnecting to the MQTT Broker caused incoming messages to be sent multiple times to the bus.
+  
 
 ## 1.34 Added Config Upload Page
 

@@ -4,7 +4,7 @@ import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import java.io.Serializable
 
-class BrowsePath (
+data class BrowsePath (
     private val items: List<String>
 ) : Serializable {
     constructor(browsePath: String) : this(Topic.splitTopic(browsePath))

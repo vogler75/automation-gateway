@@ -101,35 +101,36 @@ class MqttDriver(config: JsonObject) : DriverBase(config) {
         options.setSsl(ssl)
         options.setTrustAll(trustAll)
         options.setMaxMessageSize(maxMessageSizeKb)
-        options.reconnectInterval=reconnectInterval // ms
+        //options.reconnectInterval=reconnectInterval // ms
 
         client = MqttClient.create(vertx, options)
 
         client?.exceptionHandler { e: Throwable ->
             logger.warning("Exception: $e")
-        };
+        }
 
         client?.closeHandler {
-            logger.severe("Connection closed.")
-            connectMqttClient();
+            logger.severe("Connection closed!")
+            val promise = Promise.promise<Boolean>()
+            connectMqttClient(promise)
         }
 
         client?.publishHandler(::valueConsumer)
 
-        connectMqttClient()
-        promise.complete()
+        connectMqttClient(promise)
 
         return promise.future()
     }
 
-    private fun connectMqttClient() {
+    private fun connectMqttClient(promise: Promise<Boolean>) {
         client?.connect(port, host) {
-            logger.info("Mqtt client connect [${it.succeeded()}] [${it.cause()}]")
+            logger.info("Mqtt client connect [${it.succeeded()}] [${it.cause() ?: ""}]")
             if (it.succeeded()) {
+                promise.complete(true)
                 resubscribe()
             } else {
                 vertx.setTimer(reconnectInterval) {
-                    connectMqttClient();
+                    connectMqttClient(promise)
                 }
             }
         }
@@ -281,6 +282,7 @@ class MqttDriver(config: JsonObject) : DriverBase(config) {
 
     private fun valueConsumer(message: MqttPublishMessage) {
         try {
+            logger.finest { "Received message on topic ${message.topicName()}" }
             val receivedTopic = message.topicName()
             val receivedPayload = message.payload()
 
@@ -298,6 +300,7 @@ class MqttDriver(config: JsonObject) : DriverBase(config) {
             }
 
             receivedTopics[receivedTopic]?.forEach(::publish) ?: run {
+                logger.finest { "Received topic not found in subscribed topics: $receivedTopic" }
                 val topics = subscribedTopics.filter { compareTopic(receivedTopic, it.topicPath) }
                 receivedTopics[receivedTopic] = topics
                 topics.forEach(::publish)

@@ -84,7 +84,13 @@
                             "items": {
                                 "$ref": "#/definitions/InfluxDBLogger"
                             }
-                        },     
+                        },   
+                        "InfluxDB2": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/InfluxDB2Logger"
+                            }
+                        },
                         "IoTDB": {
                             "type": "array",
                             "items": {
@@ -216,13 +222,18 @@
                 "LogLevel": { "$ref": "#/definitions/LogLevel" },
                 "WriteParameters": { "$ref": "#/definitions/LoggerWriteParameters" },
                 "Logging": {  "$ref": "#/definitions/Logging" },   
-                "Url": { "type": "string","format": "uri" },
+                "Url": { "type": "string", "format": "uri" },
+                "Version": { "type": "integer", "default": 1 },
                 "Database": { "type": "string" },
                 "Username": { "type": "string" },
-                "Password": { "type": "string" }                            
+                "Password": { "type": "string" },
+                "Org": { "type": "string" },
+                "Bucket": { "type": "string" },
+                "Token": { "type": "string" },
+                "Measurement": { "type": "string" }                       
             },
-            "required": ["Id", "Url", "Database"]
-        },
+            "required": ["Id", "Url"]
+        },        
         "IoTDBLogger": {
             "type": "object",
             "additionalProperties": false,

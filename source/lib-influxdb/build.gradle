@@ -10,5 +10,6 @@ dependencies {
     implementation "io.vertx:vertx-config-yaml:$vertxVersion"
     implementation "io.vertx:vertx-service-discovery:$vertxVersion"
 
-    implementation 'org.influxdb:influxdb-java:2.21'
+    implementation "org.influxdb:influxdb-java:2.24"
+    implementation "com.influxdb:influxdb-client-java:6.6.0"
 }

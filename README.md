@@ -336,7 +336,8 @@ You have to build the program before with gradle. Then you can use the shell scr
 > C:\Workspace\automation-gateway\docker\examples\hazelcast> docker compose up -d  
 
 # Version History
-- [1.35 ]
+- [1.36 Support for InfluxDB V2](#136-support-for-influxdb-v2)
+- [1.35 Enhancements and Bug Fixes](#135-enhancements-and-bug-fixes)
 - [1.34 Added Config Upload Page](#134-added-config-upload-page)
 - [1.33 Rework of Logging](#133-rework-of-logging)
 - [1.32 Zenoh Logger](#132-zenoh-logger)
@@ -375,6 +376,29 @@ You have to build the program before with gradle. Then you can use the shell scr
 - [1.7 DDS Driver (subscribe and publish)](#17-dds-driver-subscribe-and-publish)
 - [1.6 Added GraphiQL (http://localhost:4000/graphiql/)](#16-added-graphiql-httplocalhost4000graphiql)
 - [1.5 OPC UA Schemas to GraphQL Schema Importer](#15-opc-ua-schemas-to-graphql-schema-importer)
+
+## 1.36 Support for InfluxDB V2
+
+Added support for InfluxDB V2 connection to be able to connect with Token, Org and Bucket. 
+```
+Loggers:
+  InfluxDB:
+    - Id: influxdb
+      Enabled: true
+      LogLevel: INFO
+      Version: 2
+      Url: "https://xxxxxxxxxx.aws.cloud2.influxdata.com"
+      Token: "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+      Org: rocworks
+      Bucket: scada
+      Measurement: opc  # Optionally, if not set the system name of the source topic will be used
+      WriteParameters:
+        QueueSize: 1000000
+      Logging:
+        - Topic: opc/scada/path/Objects/Mqtt/home/Original/Meter_Input/WattAct
+        - Topic: opc/scada/path/Objects/Mqtt/home/Original/Meter_Output/WattAct
+        - Topic: opc/scada/path/Objects/Mqtt/home/Original/PV/Calc/FlowWatt
+```
 
 ## 1.35 Enhancements and Bug Fixes
 

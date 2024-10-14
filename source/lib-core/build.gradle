@@ -18,7 +18,7 @@ dependencies {
     implementation "io.vertx:vertx-kafka-client:$vertxVersion"
 
     implementation "io.reactivex.rxjava2:rxjava:2.2.21"
-    implementation "org.eclipse.tahu:tahu-core:1.0.11"
+    implementation "org.eclipse.tahu:tahu-core:1.0.8" // Note: 1.0.10 leads to tons of log messages
 
     implementation 'org.slf4j:slf4j-api:1.7.32'
     implementation 'org.slf4j:slf4j-simple:1.7.32'

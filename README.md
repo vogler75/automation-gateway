@@ -10,6 +10,7 @@ Available logger sinks:
 * Neo4J
 * JDBC (PostgreSQL, MySQL, SQL Server)
 * OpenSearch (ElasticSearch)
+* Imply.io (Apache Druid)
 
 * Kafka
 * MQTT
@@ -87,7 +88,7 @@ yaml.schemas": {
 If you enable [GraphiQL](https://github.com/graphql/graphiql), a graphical ui to build and execute GraphQL queries, then you can access GraphiQL with  
 > http://localhost:4000/graphiql/ **! trailing slash is important !**
 
-```
+```yaml
 Servers:
   Mqtt:
     - Id: Mqtt
@@ -112,7 +113,7 @@ Servers:
 ## OPCUA Schema in GraphQL
 
 The GraphQL server can read the OPC UA object schema and convert it to a GraphQL schema. The starting NodeIds can be set to reduce the amount of browsed items. Browsing can take some while if the OPC UA server holds a huge structure of tags!
-```
+```yaml
 Servers:
   GraphQL:
     - Id: GraphQL
@@ -129,7 +130,7 @@ Servers:
             - ns=2;s=SimulationMass     # Node will be browsed and added to GraphQL schema          
 ```
 
-```
+```yaml
 Drivers:
   OpcUa
   - Id: "unified" 
@@ -213,7 +214,7 @@ Be careful when using wildcards when there are a lot of nodes, it can lead to a 
 Loggers for different type of sinks can be defined in the configuration file. All of them share a common configuration and can have additonal sink specific configuration. Sink specific configuration can be found in the example configuration files or in the version history.
 
 In the "Logging" section we can specify the Topics which should be logged to the sink. The Topics follow the same rule as MQTT Topics and will map to sources like OPC UA or PLC4X. See [Topic Mapping](#topic-mapping).
-```
+```yaml
 Loggers:
   InfluxDB:
     - Id: influx1
@@ -237,7 +238,7 @@ Value: {"Input v/s":20932,"Output v/s":20932}  # just an example
 
 ## OPCUA Driver
 See config directory for more example configurations.
-```
+```yaml
 Drivers:
   OpcUa:
   - Id: "unified"
@@ -263,9 +264,10 @@ Drivers:
 
 You the application app-plc4x to get values from various source supported by PLC4X. See config.yaml in each folder of the app. Because some PLC4X drivers/plc's do not support subscriptions we have added a simple polling options (currently only one polling time per connection). 
 
-```
-> cd app-plc4x
-cat config.yaml
+> cd app-plc4x  
+> cat config.yaml
+
+```yaml
 Drivers:
   Plc4x:
   - Id: "machine1"
@@ -278,9 +280,9 @@ Drivers:
     WriteTimeout: 100 # ms
     ReadTimeout: 100 # ms
     LogLevel: ALL
-
-> gradle run
 ```
+> gradle run
+
 
 Example GraphQL Query:
 ```
@@ -312,7 +314,7 @@ Example MQTT Topic:
 ## MQTT Driver
 
 MQTT Brokers can be connected with MQTT Driver. Withte the RAW Format the values are strings. JSON Format will be the Gateway's JSON format. If you add "CustomJson" to the config, then the JSON format can be customized. You can set JSON-Paths (without $.) to get the value out of a JSON. Currently only JSON objects are supported (not arrays).
-```
+```yaml
 Drivers:  
   Mqtt:
     - Id: "mqtt1"
@@ -336,6 +338,7 @@ You have to build the program before with gradle. Then you can use the shell scr
 > C:\Workspace\automation-gateway\docker\examples\hazelcast> docker compose up -d  
 
 # Version History
+- [1.37 Support for Imply.io](#137-support-for-implyio)
 - [1.36 Support for InfluxDB V2](#136-support-for-influxdb-v2)
 - [1.35 Enhancements and Bug Fixes](#135-enhancements-and-bug-fixes)
 - [1.34 Added Config Upload Page](#134-added-config-upload-page)
@@ -377,10 +380,40 @@ You have to build the program before with gradle. Then you can use the shell scr
 - [1.6 Added GraphiQL (http://localhost:4000/graphiql/)](#16-added-graphiql-httplocalhost4000graphiql)
 - [1.5 OPC UA Schemas to GraphQL Schema Importer](#15-opc-ua-schemas-to-graphql-schema-importer)
 
+## 1.37 Support for Imply.io 
+
+Support has been added for [Imply.io](https://docs.imply.io/polaris/api-stream/) to enable pushing event data via API directly into **Imply.io** (Apache Druid in the Cloud). This eliminates the need for a separate Apache Kafka instance for data ingestion. The automation-gateway will create the connection and the job for data ingestion directly in imply.io.
+
+To ensure successful integration, the API key used must have the following permissions:
+
++ ManageConnections: To create and edit connections.
++ ManageTables: To create and modify tables.
++ ManageIngestionJobs: To create ingestion jobs for connections.  
+
+
+### Example Configuration
+
+```yaml
+Imply:
+  - Id: Druid1
+    Enabled: true
+    LogLevel: INFO
+    Host: domain.region.aws.api.imply.io
+    ApiKey: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    ProjectId: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx               
+    ConnectionName: frankenstein_connection
+    TableName: frankenstein
+    Logging:
+      - Topic: opc/scada/path/Objects/Mqtt/home/Original/Meter_Output/WattAct
+      - Topic: opc/scada/path/Objects/Mqtt/home/Original/Meter_Input/WattAct
+      - Topic: opc/scada/path/Objects/Mqtt/home/Original/PV/Calc/#
+```
+
+
 ## 1.36 Support for InfluxDB V2
 
 Added support for InfluxDB V2 connection to be able to connect with Token, Org and Bucket. 
-```
+```yaml
 Loggers:
   InfluxDB:
     - Id: influxdb
@@ -420,7 +453,7 @@ Enable Periodic Configuration File Reading: Set the environment variable GATEWAY
 
 Logging ensures now no data loss. If a connection is lost, values are temporarily stored in memory or on disk and written once the connection is restored. The default storage is memory. To specify the storage type, use the QueueType parameter in WriteParameters. If DISK is chosen, QueueSize sets the file size in bytes. If memory is used, QueueSize is the number of data points. This specifies the maximum space available for buffered data. The file will be pre-allocated to this size. Currently, each tag value consumes around 1400 bytes due to Java Object serialization, but we must optimize this to decrease storage requirements.
 
-```
+```yaml
  Jdbc:
     - Id: postgres      
       Enabled: false
@@ -450,7 +483,7 @@ Also comment in the github maven repository for Zenoh in the settings.gradle fil
 Logger for QuestDB.
 
 You should create the logging table before you start the logger.
-```
+```sql
 CREATE TABLE gateway (
     time timestamp,
     system symbol,
@@ -464,7 +497,7 @@ ALTER TABLE gateway ALTER COLUMN address ADD INDEX;
 ```
 
 Example configuration:
-```
+```yaml
 Loggers:
   QuestDB:
     - Id: Qdb0
@@ -480,7 +513,7 @@ Loggers:
 Logger for OpenSearch / Elasticsearch. 
 
 You must create an index *template* \<index name\> with an index *pattern* "\<index name\>-*" with the following JSON index mapping:
-```
+```json
 {
   "properties": {
     "topicName": { "type": "text" },
@@ -500,7 +533,7 @@ You must create an index *template* \<index name\> with an index *pattern* "\<in
 ```
 
 Example configuration:
-```
+```yaml
 Loggers:
   OpenSearch:
     - Id: Search1
@@ -533,7 +566,7 @@ Nodes of type Variable will now be browsed. Before browsing stopped, when it rea
 With the "Target" option at the Logging Topics, a transformation of the input topic to the target topic can now be done.  With that a Unified Namespace (UNS) can be created at the target MQTT broker, with incomding non UNS topic names.  
 
 If a wildcard is used at the source topic, like opc/home1/path/Objects/Mqtt/home/Original/Gas/#, then the browsed/resolved names can be added to the end of the target topic. Just add a wildcard "#" also at the end of the target topic. If there is no wildcard at the target, then all the resolved topics of the source are all written to the same target topic.
-```
+```yaml
 Loggers:
   Mqtt:
     - Id: "mqtt1"
@@ -562,7 +595,7 @@ Loggers:
 ## 1.26 Reactivated Neo4j Logger  
 Added Neo4j as an option to log values from MQTT or OPC UA to the graph database. Additionally the OPC UA node structure can also be replicated to the graph database. This will be done only once at the startup of the Automation Gateway. For MQTT the node structure will be built during runtime, as new topics are coming in, the structure will be created.
 
-```
+```yaml
 Loggers:
   Neo4j:
     - Id: neo4j
@@ -581,11 +614,10 @@ Loggers:
         - Topic: mqtt/mqtt1/path/Original/#
         - Topic: opc/demo1/path/Objects/Variables/#
         - Topic: opc/demo2/path/Objects/Demo/SimulationMass/#
-
 ```
 ## 1.25 MQTT Driver Custom JSON Format
 With format JSON it is now possible to define the JSON-Path for the value and for the timestamp in milliseconds since epoch or ISO 8601. If CustomJson is not defined, then the JSON content is a defined JSON format of the Gateway. The format is used for reading and writing.  
-```
+```yaml
 Drivers:  
   Mqtt:
     - Id: "mqtt1"
@@ -597,7 +629,6 @@ Drivers:
           Value: "Value"
           TimestampMs: "TimeMS"    
           TimestampIso: "TimeISO"
-
 ```
 ## 1.24 Added OPC UA server
 The Gateway now also has an integrated OPC UA server. You can define what kind of data from MQTT brokers, other OPC UA servers and from PLC4X devices you want to have in the integraded OPC UA server. Data will be mapped to structured nodes in the OPC UA server. It is also possible to change the values in the OPC UA server and the changed values will be written back to the source (MQTT broker, other OPC UA server, PLC4X connected device).  
@@ -615,7 +646,7 @@ Note: In some GraphQL context the naming of the two protocols can be confusing. 
 To have a consistant layout of the config file, it was necessary to change the structure of it. Existing config files must be changed! Please use the Visual Studio Code YAML plugin to change your existing configs. See [Configuration](#configuration).
 
 Example of the new config file:
-```
+```yaml
 Servers:
   GraphQL:
     - Id: "GraphQL"        
@@ -663,7 +694,7 @@ Kafka and MQTT Logger can now publish SparkplugB message format.
 
 ## 1.21.1 Fixes and SparkplugB for MQTT Driver
 There is now a Format option for the MQTT driver. It can now read SparkplugB messages from topics. You can use now a logger to log values from a MQTT broker which are in SparkplugB message format. You can also write values from GraphQL or publish a value from the MQTT server to the MQTT driver. If the format of the MQTT driver is set to SparkplugB, it will publish a SparkplubB message.
-```
+```yaml
 Driver:
   Mqtt:
     - Id: "mqttclient1"
@@ -678,7 +709,7 @@ MQTT Publish Example:
 ## 1.21 IoTDB, MQTT SparkplugB Logger, YAML Schema, Native-Image
 * IoTDB is now again available as data logger.  
 * SparkplubB message format for MQTT logger.
-```
+```yaml
   Logger:
     - Id: mqtt1
       Type: Mqtt
@@ -704,16 +735,16 @@ yaml.schemas": {
 * Native image build was upgraded to GraalVM 17 and Java 17.
 * Native image works with Mqtt,Kafka,InfluxDB and IoTDB.
 * Logger configurations have now a separate object for the type specific configurations (but the old style yaml format is still supported). This was necessary for the YAML json schema. 
-```
+```yaml
 - Id: iotdb1
-      Type: IoTDB
-      Enabled: false
-      IoTDB: # same name as Type
-        Host: linux0.rocworks.local
-        Port: 6667
-        Database: root.gateway
-        Username: "root"
-        Password: "root" 
+    Type: IoTDB
+    Enabled: false
+    IoTDB: # same name as Type
+      Host: linux0.rocworks.local
+      Port: 6667
+      Database: root.gateway
+      Username: "root"
+      Password: "root" 
       LogLevel: INFO       
 
 ```
@@ -726,7 +757,7 @@ Neo4J is now in a separate branch and is removed from the main branch
 
 ## 1.20.2 Modifed JSON Format of Kafka Logger
 Added times in ms epoch and also added the value as double and as string. 
-```
+```json
 {
 	"nodeId": "ns=2;i=3",
 	"systemName": "scadaopcua",
@@ -748,7 +779,7 @@ It can be configured with a bunch of properties as described in the official [Ap
 Put the properites and values below "Configs" - see example below where the "batch.size" is set to 10000.  
 
 But be careful, you will not get an error message if you set an unknow property, so be sure to use right name of the property.
-```
+```yaml
 Database:
   Logger:
     - Id: kafka1
@@ -779,7 +810,7 @@ Fixed bug: Topic data class now contains two separate fields "path" and "node". 
 ## 1.19 Neo4j Logger  
 !! **NOT AVAILABLE ANYMORE** !!  Separate Branch !!  
 Added Neo4j as an option to log values from OPC UA to the graph database. Additionally the OPC UA node structure can also be replicated to the graph database. This will be done only once at the startup of the Automation Gateway.  
-```
+```yaml
 Database:
   Logger:
     - Id: neo4j
@@ -809,7 +840,7 @@ Database:
 Added the option to enable a Websocket listener for the MQTT server.
 The Websocket listener is listening on the endpoint "/mqtt".
 Example MQTT Client Url: "ws://your-host-or-ip/mqtt"
-```
+```yaml
 MqttServer:
   Listeners:
     - Id: Mqtt  # Tcp listener without authentication
@@ -826,7 +857,7 @@ MqttServer:
 !! **NOT AVAILABLE ANYMORE** !!  
 It is now possible to define Groovy functions to convert raw values to engineering values. Every incoming or outgoing value will be passed through the defined functions. The functions can currently only be defined at the connection level, so every value coming from this PLC connection goes through the conversion functions.  
 
-```
+```yaml
 Plc4x:
   Drivers:
     - Id: "niryo"
@@ -850,7 +881,7 @@ Plc4x:
 If you need different functions for different addresses then you have to implement a switch/case statement. The functions have two arguments: "address" and "value". 
 
 Here is an example where a value conversion is done only for some addresses:
-```
+```yaml
       Value:
         Reader: >
           def x = value as int;
@@ -871,7 +902,7 @@ Fixed issue when writing a value fails (stopped the writing thread).
 Fixed issue in unsubscribe with polling option (polling item was not removed).  
 Fixed issue when a client disconnects (unsubscribe with a list of topics failed).  
 Added new configuration settings for the driver: timeout in ms for write, read, polling.  
-```
+```yaml
 Plc4x:
   Drivers:
     - Id: "machine1"
@@ -936,7 +967,7 @@ Create a table with this structure. For PostgreSQL, MySQL and Microsoft SQL Serv
 ```
 
 Configuration of JDBC database logger:  
-```
+```yaml
 Database:
   Logger:
     - Id: postgres
@@ -955,7 +986,7 @@ Database:
 ```
 
 Because the SQL dialect can be slightly different with other databases, you can specify the insert and select SQL statement in the config file:
-```
+```yaml
 Database:
   Logger:
     - Id: other
@@ -978,7 +1009,7 @@ Database:
 ## 1.15 Nats Logger to write field values to a Nats server
 !! **NOT AVAILABLE ANYMORE** !!  
 Added a [Nats](https://nats.io) Logger to write field values to a Nats server. It is like a database logger, but it writes the values to a configurable Nats server. Any values which get into Frankenstein (OPC UA, PLC4X, DDS, MQTT) by a Driver can be logged to a Nats server. The values are stored in JSON format.
-```
+```yaml
 Database:
   Logger:
     - Id: nats1
@@ -1004,7 +1035,7 @@ Database:
 ## 1.13 MQTT Logger to write field values to a MQTT Broker
 Added a **MQTT Logger** to write field values to a MQTT Broker. It is like a database logger, but it writes the values to a configurable MQTT Broker. Any values which get into Frankenstein (OPC UA, PLC4X, DDS, MQTT) by a Driver can be logged to a MQTT Broker. The values are stored in JSON format.
 
-```
+```yaml
 Database:
   Logger:
     - Id: mqtt1
@@ -1028,7 +1059,7 @@ Added a inital version of a **MQTT Driver** to get values from a MQTT Broker int
 
 In this example we transform values of a MQTT Broker from this format: {"TimeMS":1620327963328,"Value":10.277357833719135} to our internal TopicValueOpc format by using a Groovy script and then log some topic values to an InfluxDB.
 
-```
+```yaml
 MqttClient:
   - Id: "mqtt1"
     Enabled: true
@@ -1067,7 +1098,7 @@ Database:
 
 ## 1.11 Apache Kafka Database Logger
 Added **Apache Kafka** as tag logger option, all incoming value changes of the configured topics will be published to an Apache Kafka Broker. How to can be found [here](https://www.rocworks.at/wordpress/?p=1076)
-```
+```yaml
 Database:
   Logger:
     - Id: kafka1
@@ -1115,7 +1146,7 @@ EMIT CHANGES;
 ## 1.10 Apache IoTDB Database Logger
 !! **NOT AVAILABLE ANYMORE** !!  Separate Branch !!  
 Added **Apache IoTDB** as tag logger option.
-```
+```yaml
 Database:
   Logger:
    - Id: iotdb1
@@ -1136,7 +1167,7 @@ Database:
 ## 1.9 Apache Ignite as Cluster option and Ignite as Memory-Store
 Added **Apache Ignite** as an option for clustering and also to use the Apache Ignite Distributed In Memory **Cache** for storing last and history values coming from OPC UA or other sources. With that enabled it is possible to do **SQL** queries on the process values. The cache node stores historical value changes for a defined timerange. So older values are purged on a regular basis (configurable in the configuration file). It is configurable which topics should be stored in the Apache Ignite Cache.
 
-```
+```yaml
 Cache:
   - Id: "global"
     Enabled: true
@@ -1195,7 +1226,7 @@ Example MQTT Topic:
 > dds/demo/path/shape/Square  
 
 Configuration
-```
+```yaml
 DDS:
   Domains:
     - Id: "demo"
@@ -1212,7 +1243,7 @@ DDS:
 
 ## 1.6 Added GraphiQL (http://localhost:4000/graphiql/)
 Added GraphiQL to the Gateway and optionally write the browsed schemas (OPC UA and generated GraphQL scheam) to files.
-```
+```yaml
 GraphQLServer:
   Listeners:
     - Port: 4000
@@ -1229,7 +1260,7 @@ OpcUaClient:
 
 ## 1.5 OPC UA Schemas to GraphQL Schema Importer
 Support multiple OPC UA schemas in GraphQL. Be sure that you have set `BrowseOnStartup: true` for the OPC UA servers which you want to embed in the GraphQL schema. Additionally it can be defined which OPC UA field should be taken as the GraphQL field name: it can be "BrowseName" or "DisplayName". But be careful, the DisplayName must not be unique below a node, so it can lead to an invalid schema. 
-```
+```yaml
 GraphQLServer:
   Listeners:
     - Port: 4000

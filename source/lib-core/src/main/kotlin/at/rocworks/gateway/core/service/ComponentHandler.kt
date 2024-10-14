@@ -1,12 +1,8 @@
 package at.rocworks.gateway.core.service
 
-import io.vertx.config.ConfigRetriever
-import io.vertx.config.ConfigRetrieverOptions
-import io.vertx.config.ConfigStoreOptions
 import io.vertx.core.Vertx
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
-import java.io.File
 import java.util.*
 import java.util.logging.Logger
 
@@ -36,7 +32,8 @@ class ComponentHandler(
                 Component.ComponentType.KafkaLogger,
                 Component.ComponentType.MqttLogger,
                 Component.ComponentType.Neo4jLogger,
-                Component.ComponentType.OpenSearchLogger -> Component.ComponentGroup.Logger
+                Component.ComponentType.OpenSearchLogger,
+                Component.ComponentType.ImplyLogger -> Component.ComponentGroup.Logger
                 Component.ComponentType.None -> Component.ComponentGroup.None
             }
     }
@@ -141,7 +138,7 @@ class ComponentHandler(
                 if (result.succeeded()) {
                     logger.info("Component ${component.getComponentName()} started successfully")
                 } else {
-                    logger.severe("Failed to stop component: " + result.cause())
+                    logger.severe("Failed to start component: " + result.cause())
                 }
             }
         }

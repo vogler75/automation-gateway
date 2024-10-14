@@ -1,6 +1,7 @@
 import at.rocworks.gateway.core.opcua.KeyStoreLoader
 import at.rocworks.gateway.core.service.Common
 import at.rocworks.gateway.core.service.Component
+import at.rocworks.gateway.logger.imply.ImplyLogger
 import at.rocworks.gateway.logger.influx.InfluxDBLogger
 import at.rocworks.gateway.logger.jdbc.JdbcLogger
 import at.rocworks.gateway.logger.kafka.KafkaLogger
@@ -19,8 +20,8 @@ object App {
     @JvmStatic
     fun main(args: Array<String>) {
         val options = VertxOptions()
-        options.setWarningExceptionTime(2)
-        options.setWarningExceptionTimeUnit(TimeUnit.SECONDS)
+        options.warningExceptionTime = 2
+        options.warningExceptionTimeUnit = TimeUnit.SECONDS
         val vertx = Vertx.vertx(options)
         val logger = Logger.getLogger(javaClass.simpleName)
 
@@ -32,6 +33,7 @@ object App {
                 Component.ComponentType.JdbcLogger       -> JdbcLogger(config)
                 Component.ComponentType.Neo4jLogger      -> Neo4jLogger(config)
                 Component.ComponentType.OpenSearchLogger -> OpenSearchLogger(config)
+                Component.ComponentType.ImplyLogger      -> ImplyLogger(config)
                 else -> {
                     logger.severe("Unknown component type [${type}]")
                     null

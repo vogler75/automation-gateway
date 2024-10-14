@@ -144,7 +144,7 @@ abstract class LoggerBase(config: JsonObject) : Component(config) {
 
     private var periodicMetricCalculator: Long = 0
 
-    private fun writerThread() = thread(start = true) {
+    protected open fun writerThread() = thread(start = true) {
         while (!isEnabled()) Thread.sleep(1000)
         logger.info("Writer thread started with queue size [${writeQueue.getCapacity()}]")
         writeValueStop.set(false)
@@ -202,7 +202,7 @@ abstract class LoggerBase(config: JsonObject) : Component(config) {
 
     abstract fun writeExecutor()
 
-    private val writeValueStop = AtomicBoolean(false)
+    protected val writeValueStop = AtomicBoolean(false)
     private var writeValueThread : Thread? = null
 
     private var valueCounterInput : Int = 0

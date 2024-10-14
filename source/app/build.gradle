@@ -6,8 +6,6 @@ dependencies {
     implementation project(':lib-core')
 
     implementation project(':lib-influxdb')
-    implementation project(':lib-jdbc')
-    implementation project(':lib-kafka')
     implementation project(':lib-iotdb')
     implementation project(':lib-neo4j')
     implementation project(':lib-opensearch')

@@ -126,6 +126,12 @@
                             "items": {
                                 "$ref": "#/definitions/QuestDBLogger"
                             }
+                        },
+                        "Imply": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/ImplyLogger"
+                            }
                         }                          
                     }
                 }
@@ -314,7 +320,25 @@
                 "AutoFlush": { "type": "boolean", "default": true}
             },
             "required": ["Id"]
-        },               
+        }, 
+        "ImplyLogger": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {  
+                "Id": { "type": "string" },
+                "Enabled": { "type": "boolean" },
+                "LogLevel": { "$ref": "#/definitions/LogLevel" },
+                "WriteParameters": { "$ref": "#/definitions/LoggerWriteParameters" },
+                "Logging": {  "$ref": "#/definitions/Logging" },   
+                "Host": { "type": "string", "default": "domain.region.provider.api.imply.io" },
+                "ApiKey": { "type": "string", "default": ""},
+                "ProjectId": { "type": "string", "default": ""},
+                "ConnectionName": { "type": "string", "default": "frankenstein"},
+                "TableName": { "type": "string", "default": "frankenstein"}
+
+            },
+            "required": ["Id", "Host", "ApiKey", "ProjectId"]
+        },            
         "KafkaPublisherConfigs": {
             "type": "object",
             "additionalProperties": true,

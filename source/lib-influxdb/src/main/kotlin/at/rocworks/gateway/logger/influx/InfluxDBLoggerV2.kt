@@ -104,8 +104,7 @@ class InfluxDBLoggerV2(config: JsonObject) : LoggerBase(config) {
                     valueCounterOutput+=batch.size
                 } catch (e: Exception) {
                     logger.severe("Error writing batch [${e.message}]")
-                    commitDatapointBlock()
-
+                    commitDatapointBlock() // TODO: check the exact error, it could be that only some points are not written, but it could also be that the whole batch is not written
                 }
             }
         }

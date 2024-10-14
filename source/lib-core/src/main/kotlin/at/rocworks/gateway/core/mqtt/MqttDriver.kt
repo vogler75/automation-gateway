@@ -111,8 +111,7 @@ class MqttDriver(config: JsonObject) : DriverBase(config) {
 
         client?.closeHandler {
             logger.severe("Connection closed!")
-            val promise = Promise.promise<Boolean>()
-            connectMqttClient(promise)
+            connectMqttClient(Promise.promise<Boolean>())
         }
 
         client?.publishHandler(::valueConsumer)

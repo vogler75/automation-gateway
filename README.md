@@ -5,6 +5,7 @@ Connect one or more OPC UA servers, PLC4X devices or MQTT brokers to the gateway
 Available logger sinks:  
 * TimescaleDB (JDBC)
 * InfluxDB
+* QuestDB
 * CrateDB
 * IoTDB
 * Neo4J
@@ -338,7 +339,7 @@ You have to build the program before with gradle. Then you can use the shell scr
 > C:\Workspace\automation-gateway\docker\examples\hazelcast> docker compose up -d  
 
 # Version History
-- [1.37 Support for Imply.io](#137-support-for-implyio)
+- [1.37 Support for Imply.io & reactivated QuestDB](#137-support-for-implyio--reactivated-questdb)
 - [1.36 Support for InfluxDB V2](#136-support-for-influxdb-v2)
 - [1.35 Enhancements and Bug Fixes](#135-enhancements-and-bug-fixes)
 - [1.34 Added Config Upload Page](#134-added-config-upload-page)
@@ -380,7 +381,7 @@ You have to build the program before with gradle. Then you can use the shell scr
 - [1.6 Added GraphiQL (http://localhost:4000/graphiql/)](#16-added-graphiql-httplocalhost4000graphiql)
 - [1.5 OPC UA Schemas to GraphQL Schema Importer](#15-opc-ua-schemas-to-graphql-schema-importer)
 
-## 1.37 Support for Imply.io 
+## 1.37 Support for Imply.io & reactivated QuestDB
 
 Support has been added for [Imply.io](https://docs.imply.io/polaris/api-stream/) to enable pushing event data via API directly into **Imply.io** (Apache Druid in the Cloud). This eliminates the need for a separate Apache Kafka instance for data ingestion. The automation-gateway will create the connection and the job for data ingestion directly in imply.io.
 
@@ -401,8 +402,8 @@ Imply:
     Host: domain.region.aws.api.imply.io
     ApiKey: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
     ProjectId: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx               
-    ConnectionName: frankenstein_connection
-    TableName: frankenstein
+    ConnectionName: gateway
+    TableName: gateway
     Logging:
       - Topic: opc/scada/path/Objects/Mqtt/home/Original/Meter_Output/WattAct
       - Topic: opc/scada/path/Objects/Mqtt/home/Original/Meter_Input/WattAct
@@ -464,7 +465,7 @@ Logging ensures now no data loss. If a connection is lost, values are temporaril
         DiskPath: /data/buffers # Storage location for disk files
 ``` 
 
-We have removed Zenoh and DuckDB from the main branch for maintenance purposes. We also removed native QuestDB support because the gateway cannot be compiled to native code using GraalVM with the QuestDB client.
+We have removed Zenoh and DuckDB from the main branch for maintenance purposes.
 
 ## 1.32 Zenoh Logger
 

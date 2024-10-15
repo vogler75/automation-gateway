@@ -23,6 +23,7 @@ abstract class Component(val config: JsonObject) : AbstractVerticle() {
         GraphQLServer, MqttServer, OpcUaServer,
         OpcUaDriver, MqttDriver, Plc4xDriver,
         InfluxDBLogger,
+        QuestDBLogger,
         IoTDBLogger,
         JdbcLogger,
         KafkaLogger,

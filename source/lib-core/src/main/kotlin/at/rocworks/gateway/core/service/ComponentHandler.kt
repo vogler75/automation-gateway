@@ -27,6 +27,7 @@ class ComponentHandler(
                 Component.ComponentType.MqttDriver,
                 Component.ComponentType.Plc4xDriver -> Component.ComponentGroup.Driver
                 Component.ComponentType.InfluxDBLogger,
+                Component.ComponentType.QuestDBLogger,
                 Component.ComponentType.IoTDBLogger,
                 Component.ComponentType.JdbcLogger,
                 Component.ComponentType.KafkaLogger,

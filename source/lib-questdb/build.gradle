@@ -1,0 +1,14 @@
+plugins {
+    id 'gateway.kotlin-library-conventions'
+}
+
+dependencies {
+    api project(':lib-core')
+
+    implementation "io.vertx:vertx-core:$vertxVersion"
+    implementation "io.vertx:vertx-lang-kotlin:$vertxVersion"
+    implementation "io.vertx:vertx-config-yaml:$vertxVersion"
+    implementation "io.vertx:vertx-service-discovery:$vertxVersion"
+
+    implementation 'org.questdb:questdb:8.1.2'
+}

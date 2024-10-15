@@ -319,7 +319,7 @@
                 "Table": { "type": "string", "default": "gateway"},
                 "AutoFlush": { "type": "boolean", "default": true}
             },
-            "required": ["Id"]
+            "required": ["Id", "Config"]
         }, 
         "ImplyLogger": {
             "type": "object",
@@ -333,8 +333,8 @@
                 "Host": { "type": "string", "default": "domain.region.provider.api.imply.io" },
                 "ApiKey": { "type": "string", "default": ""},
                 "ProjectId": { "type": "string", "default": ""},
-                "ConnectionName": { "type": "string", "default": "frankenstein"},
-                "TableName": { "type": "string", "default": "frankenstein"}
+                "ConnectionName": { "type": "string", "default": "gateway"},
+                "TableName": { "type": "string", "default": "gateway"}
 
             },
             "required": ["Id", "Host", "ApiKey", "ProjectId"]

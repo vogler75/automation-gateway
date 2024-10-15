@@ -6,6 +6,7 @@ dependencies {
     implementation project(':lib-core')
 
     implementation project(':lib-influxdb')
+    implementation project(':lib-questdb')
     implementation project(':lib-iotdb')
     implementation project(':lib-neo4j')
     implementation project(':lib-opensearch')
@@ -15,7 +16,7 @@ dependencies {
     implementation "io.vertx:vertx-config-yaml:$vertxVersion"
     implementation "io.vertx:vertx-service-discovery:$vertxVersion"
 
-    runtimeOnly group: 'org.postgresql', name: 'postgresql', version: '42.7.1'
+    runtimeOnly group: 'org.postgresql', name: 'postgresql', version: '42.7.4'
     runtimeOnly group: 'org.hsqldb', name: 'hsqldb', version: '2.7.2'
 
     //runtimeOnly group: 'mysql', name: 'mysql-connector-java', version: '8.0.28'

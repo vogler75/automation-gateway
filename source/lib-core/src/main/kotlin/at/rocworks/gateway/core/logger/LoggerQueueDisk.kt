@@ -154,6 +154,8 @@ class LoggerQueueDisk(
 
     override fun pollBlock(handler: (DataPoint) -> Unit): Int {
         if (outputBlock.isNotEmpty()) {
+            logger.warning("Repeat last data block in one second...")
+            Thread.sleep(1000)
             logger.warning("Repeat last data block.")
             outputBlock.forEach(handler)
             return outputBlock.size

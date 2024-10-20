@@ -65,7 +65,7 @@ class ImplyLogger(config: JsonObject) : LoggerBase(config) {
         return promise.future()
     }
 
-    fun createIngestionJob(): Future<Unit> {
+    private fun createIngestionJob(): Future<Unit> {
         val promise = Promise.promise<Unit>()
         val url = "https://$host/v1/projects/$projectId/jobs"
         val payload = JsonObject()
@@ -151,7 +151,7 @@ class ImplyLogger(config: JsonObject) : LoggerBase(config) {
         return true
     }
 
-    fun createRecord(dp: DataPoint): JsonObject {
+    private fun createRecord(dp: DataPoint): JsonObject {
         return JsonObject()
             .put("system", dp.topic.systemName)
             .put("address", dp.topic.getBrowsePathOrNode().toString())

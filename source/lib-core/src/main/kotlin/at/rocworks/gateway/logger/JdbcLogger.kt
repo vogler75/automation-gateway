@@ -231,12 +231,9 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
                     logger.severe("Error writing batch [${e.message}]")
                 }
             } else {
-                Thread.sleep(1000)
                 reconnect()
             }
-        } else {
-            Thread.sleep(1000)
-        }
+        } 
     }
 
     private fun writeBatch(batch: PreparedStatement) {

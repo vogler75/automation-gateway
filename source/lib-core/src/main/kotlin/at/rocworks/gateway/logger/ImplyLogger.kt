@@ -1,4 +1,4 @@
-package at.rocworks.gateway.logger.imply
+package at.rocworks.gateway.logger
 
 import at.rocworks.gateway.core.data.DataPoint
 import at.rocworks.gateway.core.logger.LoggerBase

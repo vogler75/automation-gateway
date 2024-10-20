@@ -1,4 +1,4 @@
-package at.rocworks.gateway.logger.jdbc
+package at.rocworks.gateway.logger
 
 import at.rocworks.gateway.core.logger.LoggerBase
 import io.vertx.core.Future
@@ -6,7 +6,6 @@ import io.vertx.core.Promise
 import io.vertx.core.json.JsonObject
 import java.sql.*
 import java.time.OffsetDateTime
-import java.util.concurrent.Callable
 
 
 class JdbcLogger(config: JsonObject) : LoggerBase(config) {

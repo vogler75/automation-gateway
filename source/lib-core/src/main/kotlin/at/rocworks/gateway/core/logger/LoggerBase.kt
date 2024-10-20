@@ -202,7 +202,7 @@ abstract class LoggerBase(config: JsonObject) : Component(config) {
 
     abstract fun writeExecutor()
 
-    protected val writeValueStop = AtomicBoolean(false)
+    private val writeValueStop = AtomicBoolean(false)
     private var writeValueThread : Thread? = null
 
     private var valueCounterInput : Int = 0

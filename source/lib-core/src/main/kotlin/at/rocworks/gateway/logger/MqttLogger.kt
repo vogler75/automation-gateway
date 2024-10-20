@@ -1,4 +1,4 @@
-package at.rocworks.gateway.core.mqtt
+package at.rocworks.gateway.logger
 
 import at.rocworks.gateway.core.data.Topic
 import at.rocworks.gateway.core.logger.LoggerPublisher

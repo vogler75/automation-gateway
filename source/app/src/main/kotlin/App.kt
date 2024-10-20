@@ -1,11 +1,11 @@
 import at.rocworks.gateway.core.opcua.KeyStoreLoader
 import at.rocworks.gateway.core.service.Common
 import at.rocworks.gateway.core.service.Component
-import at.rocworks.gateway.logger.imply.ImplyLogger
+import at.rocworks.gateway.logger.ImplyLogger
 import at.rocworks.gateway.logger.influx.InfluxDBLogger
 import at.rocworks.gateway.logger.questdb.QuestDBLogger
-import at.rocworks.gateway.logger.jdbc.JdbcLogger
-import at.rocworks.gateway.logger.kafka.KafkaLogger
+import at.rocworks.gateway.logger.JdbcLogger
+import at.rocworks.gateway.logger.KafkaLogger
 import at.rocworks.gateway.logger.iotdb.IoTDBLogger
 import at.rocworks.gateway.logger.neo4j.Neo4jLogger
 import at.rocworks.gateway.logger.opensearch.OpenSearchLogger

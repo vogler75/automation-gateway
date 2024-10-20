@@ -2,7 +2,7 @@ package at.rocworks.gateway.core.service
 
 import at.rocworks.gateway.core.graphql.GraphQLServer
 import at.rocworks.gateway.core.mqtt.MqttDriver
-import at.rocworks.gateway.core.mqtt.MqttLogger
+import at.rocworks.gateway.logger.MqttLogger
 import at.rocworks.gateway.core.mqtt.MqttServer
 import at.rocworks.gateway.core.opcua.OpcUaDriver
 import at.rocworks.gateway.core.opcua.OpcUaServer

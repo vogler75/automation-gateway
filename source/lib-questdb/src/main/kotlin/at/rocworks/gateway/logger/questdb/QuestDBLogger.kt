@@ -16,6 +16,8 @@ CREATE TABLE gateway (
     value double,
     text varchar
 ) TIMESTAMP(time) PARTITION BY DAY;
+
+ALTER TABLE gateway DEDUP ENABLE UPSERT KEYS(time, system, address)
 */
 
 class QuestDBLogger(config: JsonObject) : LoggerBase(config) {

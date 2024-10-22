@@ -1,9 +1,9 @@
-#FROM amazoncorretto:17-alpine
+FROM amazoncorretto:17-alpine
 # libstdc++ is needed by QuestDB
-#RUN apk add libstdc++ gcompat 
+RUN apk add libstdc++ gcompat 
 
 # Eclipse-Temurin  also has the listdc++ which is needed by QuestDB
-FROM eclipse-temurin:21 
+#FROM eclipse-temurin:21 
 
 ARG APP_NAME=app
 ADD app.tar /

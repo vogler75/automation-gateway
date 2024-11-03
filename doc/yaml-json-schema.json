@@ -85,12 +85,6 @@
                                 "$ref": "#/definitions/InfluxDBLogger"
                             }
                         },   
-                        "InfluxDB2": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/InfluxDB2Logger"
-                            }
-                        },
                         "IoTDB": {
                             "type": "array",
                             "items": {
@@ -229,7 +223,7 @@
                 "WriteParameters": { "$ref": "#/definitions/LoggerWriteParameters" },
                 "Logging": {  "$ref": "#/definitions/Logging" },   
                 "Url": { "type": "string", "format": "uri" },
-                "Version": { "type": "integer", "default": 1 },
+                "Version": { "type": "integer", "default": 1, "description": "1 for InfluxDB 1.x, 2 for InfluxDB 2.x or higher." },
                 "Database": { "type": "string" },
                 "Username": { "type": "string" },
                 "Password": { "type": "string" },

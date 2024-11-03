@@ -34,6 +34,7 @@ class ComponentHandler(
                 Component.ComponentType.MqttLogger,
                 Component.ComponentType.Neo4jLogger,
                 Component.ComponentType.OpenSearchLogger,
+                Component.ComponentType.SnowflakeLogger,
                 Component.ComponentType.ImplyLogger -> Component.ComponentGroup.Logger
                 Component.ComponentType.None -> Component.ComponentGroup.None
             }

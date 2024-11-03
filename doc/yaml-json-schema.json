@@ -126,7 +126,13 @@
                             "items": {
                                 "$ref": "#/definitions/ImplyLogger"
                             }
-                        }                          
+                        },
+                        "Snowflake": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/SnowflakeLogger"
+                            }
+                        }
                     }
                 }
             },
@@ -332,7 +338,26 @@
 
             },
             "required": ["Id", "Host", "ApiKey", "ProjectId"]
-        },            
+        },   
+        "SnowflakeLogger": {
+            "type": "object",
+            "properties": {
+                "Id": { "type": "string" },
+                "Enabled": { "type": "boolean", "default": true },
+                "LogLevel": { "$ref": "#/definitions/LogLevel" },
+                "PrivateKeyFile": { "type": "string", "default": "snowflake.p8" },
+                "Account": { "type": "string", "description": "xx00000" },
+                "Url": { "type": "string", "format": "uri", "description": "Example: https://xx00000.eu-central-1.snowflakecomputing.com:443" },
+                "User": { "type": "string" },
+                "Role": { "type": "string", "description": "Example: accountadmin" },
+                "Scheme": { "type": "string", "default": "https" },
+                "Port": { "type": "integer", "default": 443 },
+                "Database": { "type": "string", "default": "gateway" },
+                "Schema": { "type": "string", "default": "gateway" },
+                "Table": { "type": "string", "default": "gateway" }
+            },
+            "required": ["Id", "Enabled", "LogLevel", "PrivateKeyFile", "Account", "Url", "User", "Role", "Scheme", "Port", "Database", "Schema", "Table"]
+        },
         "KafkaPublisherConfigs": {
             "type": "object",
             "additionalProperties": true,

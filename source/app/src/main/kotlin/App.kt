@@ -9,6 +9,7 @@ import at.rocworks.gateway.logger.KafkaLogger
 import at.rocworks.gateway.logger.iotdb.IoTDBLogger
 import at.rocworks.gateway.logger.neo4j.Neo4jLogger
 import at.rocworks.gateway.logger.opensearch.OpenSearchLogger
+import at.rocworks.gateway.logger.snowflake.SnowflakeLogger
 
 import io.vertx.core.Vertx
 import io.vertx.core.VertxOptions
@@ -36,6 +37,7 @@ object App {
                 Component.ComponentType.Neo4jLogger      -> Neo4jLogger(config)
                 Component.ComponentType.OpenSearchLogger -> OpenSearchLogger(config)
                 Component.ComponentType.ImplyLogger      -> ImplyLogger(config)
+                Component.ComponentType.SnowflakeLogger  -> SnowflakeLogger(config)
                 else -> {
                     logger.severe("Unknown component type [${type}]")
                     null

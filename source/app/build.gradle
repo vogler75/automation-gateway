@@ -10,6 +10,7 @@ dependencies {
     implementation project(':lib-iotdb')
     implementation project(':lib-neo4j')
     implementation project(':lib-opensearch')
+    implementation project(':lib-snowflake')
 
     implementation "io.vertx:vertx-core:$vertxVersion"
     implementation "io.vertx:vertx-lang-kotlin:$vertxVersion"

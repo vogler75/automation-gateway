@@ -64,11 +64,11 @@ class SnowflakeLogger(config: JsonObject) : LoggerBase(config) {
             props.put("scheme", scheme)
             props.put("port", port.toString())
 
-            logger.info("Create a client...")
-            val client = SnowflakeStreamingIngestClientFactory.builder("client1").setProperties(props).build()
+            logger.info("Create client [$id]...")
+            val client = SnowflakeStreamingIngestClientFactory.builder(id).setProperties(props).build()
 
-            logger.info("Open a channel...")
-            val request = OpenChannelRequest.builder("channel1")
+            logger.info("Open channel [$id]...")
+            val request = OpenChannelRequest.builder(id)
                 .setDBName(database)
                 .setSchemaName(schema)
                 .setTableName(table)

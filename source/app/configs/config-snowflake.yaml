@@ -17,10 +17,10 @@ Loggers:
     - Id: "snowflake"
       Enabled: true
       LogLevel: INFO
-      PrivateKeyFile: "security/snowflake.p8"
-      Account: ig92018
-      Url: https://ig92018.eu-central-1.snowflakecomputing.com:443
-      User: vogler
+      PrivateKeyFile: "snowflake.p8"
+      Account: xx00000
+      Url: https://xx00000.eu-central-1.snowflakecomputing.com:443
+      User: xxxxx
       Role: accountadmin
       Scheme: https
       Port: 443

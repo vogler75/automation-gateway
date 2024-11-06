@@ -324,7 +324,7 @@ class Neo4jLogger(config: JsonObject) : LoggerBase(config) {
             val name = point.topic.getMetricName()
             mapOf("Name" to name,
                 "System" to point.topic.systemName,
-                "NodeId" to point.topic.topicNode,
+                "NodeId" to point.topic.getBrowsePathOrNode().toString(),
                 "Status" to point.value.statusAsString(),
                 "Value" to if (point.value.value is BufferImpl) point.value.valueAsString() else point.value.valueAsObject(),
                 "DataType" to point.value.dataTypeName(),

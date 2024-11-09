@@ -9,6 +9,7 @@ Before getting started, you need to have the following software installed on you
 
 - **Node.js** (version 16.0 or higher)
 - **npm** (Node package manager, comes with Node.js)
+- **Environment variable** of `GATEWAY_CONFIG_PORT=9999`
 
 You can verify the installation of Node.js and npm with the following commands:
 

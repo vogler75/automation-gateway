@@ -1,0 +1,775 @@
+{
+  "$schema": "http://json-schema.org/draft-06/schema#",
+  "$ref": "#/definitions/Frankenstein",
+  "definitions": {
+    "Frankenstein": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "Servers": {
+          "titel": "Servers",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "Mqtt": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/MqttServer"
+              }
+            },
+            "GraphQL": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/GraphQLServer"
+              }
+            },
+            "OpcUa": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/OpcUaServer"
+              }
+            }
+          }
+        },
+        "Drivers": {
+          "title": "Drivers",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "Mqtt": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/MqttClient"
+              }
+            },
+            "OpcUa": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/OpcUaClient"
+              }
+            },
+            "Plc4x": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Plc4xClient"
+              }
+            }
+          }
+        },
+        "Loggers": {
+          "title": "Loggers",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "Mqtt": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/MqttLogger"
+              }
+            },
+            "Kafka": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/KafkaLogger"
+              }
+            },
+            "Jdbc": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/JdbcLogger"
+              }
+            },
+            "InfluxDB": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/InfluxDBLogger"
+              }
+            },
+            "IoTDB": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/IoTDBLogger"
+              }
+            },
+            "Neo4j": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Neo4jLogger"
+              }
+            },
+            "DuckDB": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/DuckDBLogger"
+              }
+            },
+            "OpenSearch": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/OpenSearchLogger"
+              }
+            },
+            "Zenoh": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/ZenohLogger"
+              }
+            },
+            "QuestDB": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/QuestDBLogger"
+              }
+            },
+            "Imply": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/ImplyLogger"
+              }
+            }
+          }
+        }
+      },
+      "required": [],
+      "title": "Frankenstein"
+    },
+    "LogLevel": {
+      "type": "string",
+      "enum": [
+        "INFO",
+        "ALL",
+        "SEVERE",
+        "WARNING",
+        "CONFIG",
+        "FINE",
+        "FINER",
+        "FINEST",
+        "OFF"
+      ]
+    },
+    "MqttLogger": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "Id": { "type": "string" },
+        "Enabled": { "type": "boolean" },
+        "LogLevel": { "$ref": "#/definitions/LogLevel" },
+        "WriteParameters": { "$ref": "#/definitions/LoggerWriteParameters" },
+        "Logging": { "$ref": "#/definitions/Logging" },
+        "Host": { "type": "string", "default": "localhost" },
+        "Port": { "type": "integer", "default": 1883 },
+        "Ssl": { "type": "boolean", "default": false },
+        "TrustAll": { "type": "boolean" },
+        "Username": { "type": "string" },
+        "Password": { "type": "string" },
+        "ClientId": { "type": "string" },
+        "CleanSession": { "type": "boolean" },
+        "Qos": { "type": "integer" },
+        "Retained": { "type": "boolean" },
+        "Topic": { "type": "string" },
+        "Format": {
+          "type": "string",
+          "enum": ["Raw", "Json", "JsonSimple", "SparkplugB"]
+        },
+        "BulkMessages": { "type": "boolean" },
+        "MaxMessageSizeKb": { "type": "integer" }
+      },
+      "required": ["Id", "Host"]
+    },
+    "KafkaLogger": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "Id": { "type": "string" },
+        "Enabled": { "type": "boolean" },
+        "LogLevel": { "$ref": "#/definitions/LogLevel" },
+        "WriteParameters": { "$ref": "#/definitions/LoggerWriteParameters" },
+        "Logging": { "$ref": "#/definitions/Logging" },
+        "Servers": { "type": "string", "default": "localhost:9092" },
+        "TopicName": { "type": "string" },
+        "KeyName": { "type": "string" },
+        "Format": {
+          "type": "string",
+          "enum": ["Raw", "Json", "JsonSimple", "SparkplugB"]
+        },
+        "Configs": { "$ref": "#/definitions/KafkaPublisherConfigs" }
+      },
+      "required": ["Id", "Servers"]
+    },
+    "ZenohLogger": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "Id": { "type": "string" },
+        "Enabled": { "type": "boolean" },
+        "LogLevel": { "$ref": "#/definitions/LogLevel" },
+        "WriteParameters": { "$ref": "#/definitions/LoggerWriteParameters" },
+        "Logging": { "$ref": "#/definitions/Logging" },
+        "Format": {
+          "type": "string",
+          "enum": ["Raw", "Json", "JsonSimple", "SparkplugB"]
+        },
+        "Key": { "type": "string", "default": "gateway" }
+      },
+      "required": ["Id"]
+    },
+    "JdbcLogger": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "Id": { "type": "string" },
+        "Enabled": { "type": "boolean" },
+        "LogLevel": { "$ref": "#/definitions/LogLevel" },
+        "WriteParameters": { "$ref": "#/definitions/LoggerWriteParameters" },
+        "Logging": { "$ref": "#/definitions/Logging" },
+        "Url": {
+          "type": "string",
+          "default": "jdbc:postgresql://localhost:5432/gateway"
+        },
+        "Username": { "type": "string" },
+        "Password": { "type": "string" },
+        "SqlTableName": { "type": "string" },
+        "SqlInsertStatement": { "type": "string" },
+        "SqlQueryStatement": { "type": "string" }
+      },
+      "required": ["Id", "Url"]
+    },
+    "InfluxDBLogger": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "Id": { "type": "string" },
+        "Enabled": { "type": "boolean" },
+        "LogLevel": { "$ref": "#/definitions/LogLevel" },
+        "WriteParameters": { "$ref": "#/definitions/LoggerWriteParameters" },
+        "Logging": { "$ref": "#/definitions/Logging" },
+        "Url": { "type": "string", "format": "uri" },
+        "Version": { "type": "integer", "default": 1 },
+        "Database": { "type": "string" },
+        "Username": { "type": "string" },
+        "Password": { "type": "string" },
+        "Org": { "type": "string" },
+        "Bucket": { "type": "string" },
+        "Token": { "type": "string" },
+        "Measurement": { "type": "string" }
+      },
+      "required": ["Id", "Url"]
+    },
+    "IoTDBLogger": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "Id": { "type": "string" },
+        "Enabled": { "type": "boolean" },
+        "LogLevel": { "$ref": "#/definitions/LogLevel" },
+        "WriteParameters": { "$ref": "#/definitions/LoggerWriteParameters" },
+        "Logging": { "$ref": "#/definitions/Logging" },
+        "Host": { "type": "string", "default": "localhost" },
+        "Port": { "type": "integer", "default": 6667 },
+        "Username": { "type": "string", "default": "root" },
+        "Password": { "type": "string", "default": "root" },
+        "Database": { "type": "string", "default": "root.gateway" }
+      },
+      "required": ["Id", "Host", "Port", "Database"]
+    },
+    "Neo4jLogger": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "Id": { "type": "string" },
+        "Enabled": { "type": "boolean" },
+        "LogLevel": { "$ref": "#/definitions/LogLevel" },
+        "WriteParameters": { "$ref": "#/definitions/LoggerWriteParameters" },
+        "Logging": { "$ref": "#/definitions/Logging" },
+        "Url": { "type": "string", "default": "bolt://localhost:7687" },
+        "Username": { "type": "string" },
+        "Password": { "type": "string" },
+        "Schemas": {
+          "$ref": "#/definitions/Schemas"
+        }
+      },
+      "required": ["Id", "Url"]
+    },
+    "DuckDBLogger": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "Id": { "type": "string" },
+        "Enabled": { "type": "boolean" },
+        "LogLevel": { "$ref": "#/definitions/LogLevel" },
+        "WriteParameters": { "$ref": "#/definitions/LoggerWriteParameters" },
+        "Logging": { "$ref": "#/definitions/Logging" },
+        "Url": { "type": "string", "default": "jdbc:duckdb:" },
+        "SqlTableName": { "type": "string" }
+      },
+      "required": ["Id"]
+    },
+    "OpenSearchLogger": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "Id": { "type": "string" },
+        "Enabled": { "type": "boolean" },
+        "LogLevel": { "$ref": "#/definitions/LogLevel" },
+        "WriteParameters": { "$ref": "#/definitions/LoggerWriteParameters" },
+        "Logging": { "$ref": "#/definitions/Logging" },
+        "Host": { "type": "string", "default": "localhost" },
+        "Port": { "type": "integer", "default": 9200 },
+        "Username": { "type": "string", "default": "" },
+        "Password": { "type": "string", "default": "" },
+        "Index": { "type": "string", "default": "gateway" }
+      },
+      "required": ["Id", "Host", "Index"]
+    },
+    "QuestDBLogger": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "Id": { "type": "string" },
+        "Enabled": { "type": "boolean" },
+        "LogLevel": { "$ref": "#/definitions/LogLevel" },
+        "WriteParameters": { "$ref": "#/definitions/LoggerWriteParameters" },
+        "Logging": { "$ref": "#/definitions/Logging" },
+        "Config": { "type": "string", "default": "http::addr=localhost:9000;" },
+        "Table": { "type": "string", "default": "gateway" },
+        "AutoFlush": { "type": "boolean", "default": true }
+      },
+      "required": ["Id", "Config"]
+    },
+    "ImplyLogger": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "Id": { "type": "string" },
+        "Enabled": { "type": "boolean" },
+        "LogLevel": { "$ref": "#/definitions/LogLevel" },
+        "WriteParameters": { "$ref": "#/definitions/LoggerWriteParameters" },
+        "Logging": { "$ref": "#/definitions/Logging" },
+        "Host": {
+          "type": "string",
+          "default": "domain.region.provider.api.imply.io"
+        },
+        "ApiKey": { "type": "string", "default": "" },
+        "ProjectId": { "type": "string", "default": "" },
+        "ConnectionName": { "type": "string", "default": "gateway" },
+        "TableName": { "type": "string", "default": "gateway" }
+      },
+      "required": ["Id", "Host", "ApiKey", "ProjectId"]
+    },
+    "KafkaPublisherConfigs": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "batch.size": {
+          "type": "integer"
+        },
+        "enable.auto.commit": {
+          "type": "boolean"
+        },
+        "auto.commit.interval.ms": {
+          "type": "integer"
+        }
+      },
+      "required": [],
+      "title": "Configs"
+    },
+    "Logging": {
+      "type": "array",
+      "items": {
+        "anyOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "Topic": {
+                "type": "string"
+              },
+              "Target": {
+                "type": "string"
+              }
+            },
+            "required": ["Topic"],
+            "title": "Logging"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      }
+    },
+    "LoggerWriteParameters": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "QueueType": {
+          "type": "string",
+          "default": "MEMORY",
+          "enum": ["MEMORY", "DISK"]
+        },
+        "QueueSize": {
+          "type": "integer"
+        },
+        "BlockSize": {
+          "type": "integer"
+        },
+        "DiskPath": {
+          "type": "string",
+          "default": ".",
+          "description": "Path for disk storage"
+        }
+      },
+      "required": [],
+      "title": "LoggerWriteParameters"
+    },
+    "GraphQLServer": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "Id": { "type": "string" },
+        "Port": {
+          "description": "Default: 4000",
+          "type": "integer"
+        },
+        "Enabled": {
+          "type": "boolean"
+        },
+        "LogLevel": {
+          "$ref": "#/definitions/LogLevel"
+        },
+        "GraphiQL": {
+          "type": "boolean"
+        },
+        "WriteSchemaToFile": {
+          "type": "boolean"
+        },
+        "Schemas": {
+          "$ref": "#/definitions/Schemas"
+        }
+      },
+      "required": ["Port"],
+      "title": "GraphQL Server"
+    },
+    "MqttServer": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "Id": { "type": "string" },
+        "Enabled": { "type": "boolean" },
+        "Port": { "type": "integer", "default": 1883 },
+        "Host": { "type": "string", "deafult": "0.0.0.0" },
+        "MaxMessageSizeKb": { "type": "integer" },
+        "Username": { "type": "string" },
+        "Password": { "type": "string" },
+        "LogLevel": { "$ref": "#/definitions/LogLevel" },
+        "Websocket": { "type": "boolean", "default": false }
+      },
+      "required": [],
+      "title": "Mqtt Server"
+    },
+    "OpcUaServer": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "Id": { "type": "string" },
+        "Port": {
+          "description": "Default: 4840",
+          "type": "integer"
+        },
+        "Path": {
+          "description": "Default: server",
+          "type": "string"
+        },
+        "Enabled": {
+          "type": "boolean"
+        },
+        "LogLevel": { "$ref": "#/definitions/LogLevel" },
+        "BindAddresses": {
+          "description": "A list of bind hostnames or ip addresses.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "EndpointAddresses": {
+          "description": "A list of endpoint hostnames or ip addresses.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "Topics": {
+          "$ref": "#/definitions/OpcUaServerTopics"
+        }
+      }
+    },
+    "OpcUaServerTopics": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "Topic": {
+            "type": "string"
+          }
+        },
+        "required": ["Topic"],
+        "title": "Topic"
+      }
+    },
+    "MqttClient": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "Id": { "type": "string" },
+        "Enabled": { "type": "boolean" },
+        "LogLevel": { "$ref": "#/definitions/LogLevel" },
+        "Host": { "type": "string" },
+        "Port": { "type": "integer" },
+        "Username": { "type": "string" },
+        "Password": { "type": "string" },
+        "MaxMessageSizeKb": { "type": "integer" },
+        "Ssl": { "type": "boolean" },
+        "TrustAll": { "type": "boolean" },
+        "ClientId": { "type": "string" },
+        "CleanSession": { "type": "boolean" },
+        "Qos": { "type": "integer" },
+        "Retained": { "type": "boolean" },
+        "ReconnectInterval": {
+          "type": "integer",
+          "default": 5000,
+          "description": "Reconnect Interval (ms)"
+        },
+        "Format": { "type": "string", "enum": ["Raw", "Json", "SparkplugB"] },
+        "CustomJson": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "Value": {
+              "type": "string",
+              "description": "JSON-Path to value."
+            },
+            "TimestampMs": {
+              "type": "string",
+              "description": "JSON-Path to timestamp in ms since epoch."
+            },
+            "TimestampIso": {
+              "type": "string",
+              "description": "JSON-Path to timestamp in ISO 8601 format."
+            }
+          }
+        }
+      },
+      "required": ["Id", "Host", "Port"],
+      "title": "MqttClient"
+    },
+    "OpcUaClient": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "Id": {
+          "type": "string"
+        },
+        "Enabled": {
+          "type": "boolean"
+        },
+        "LogLevel": {
+          "$ref": "#/definitions/LogLevel"
+        },
+        "EndpointUrl": {
+          "type": "string"
+        },
+        "UpdateEndpointUrl": {
+          "type": "boolean"
+        },
+        "SecurityPolicy": {
+          "type": "string",
+          "enum": [
+            "None",
+            "Basic256Sha256",
+            "Basic256",
+            "Basic128Rsa15",
+            "Aes256_Sha256_RsaPss",
+            "Aes128_Sha256_RsaOaep"
+          ]
+        },
+        "SecurityPolicyUri": {
+          "type": "string",
+          "enum": [
+            "http://opcfoundation.org/UA/SecurityPolicy#None",
+            "http://opcfoundation.org/UA/SecurityPolicy#Basic256Sha256",
+            "http://opcfoundation.org/UA/SecurityPolicy#Basic256",
+            "http://opcfoundation.org/UA/SecurityPolicy#Basic128Rsa15",
+            "http://opcfoundation.org/UA/SecurityPolicy#Aes256_Sha256_RsaPss",
+            "http://opcfoundation.org/UA/SecurityPolicy#Aes128_Sha256_RsaOaep"
+          ]
+        },
+        "KeepAliveFailuresAllowed": {
+          "type": "integer"
+        },
+        "SubscriptionSamplingInterval": {
+          "type": "number"
+        },
+        "WriteSchemaToFile": {
+          "type": "boolean"
+        },
+        "UsernameProvider": {
+          "$ref": "#/definitions/OpcUaClientUsernameProvider"
+        },
+        "WriteParameters": {
+          "$ref": "#/definitions/OpcUaClientWriteParameters"
+        },
+        "MonitoringParameters": {
+          "$ref": "#/definitions/OpcUaClientMonitoringParameters"
+        },
+        "ConnectTimeout": {
+          "type": "integer"
+        },
+        "RequestTimeout": {
+          "type": "integer"
+        },
+        "AddressCache": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "MaximumSize": {
+              "type": "integer"
+            },
+            "ExpireAfterSeconds": {
+              "type": "integer"
+            }
+          }
+        }
+      },
+      "required": ["Id", "EndpointUrl"],
+      "title": "OpcUaClient"
+    },
+    "OpcUaClientMonitoringParameters": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "BufferSize": {
+          "type": "integer"
+        },
+        "SamplingInterval": {
+          "type": "number"
+        },
+        "DiscardOldest": {
+          "type": "boolean"
+        },
+        "DataChangeTrigger": {
+          "type": "string",
+          "enum": ["Status", "StatusValue", "StatusValueTimestamp"]
+        }
+      },
+      "required": [],
+      "title": "MonitoringParameters"
+    },
+    "OpcUaClientUsernameProvider": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "Username": {
+          "type": "string"
+        },
+        "Password": {
+          "type": "string"
+        }
+      },
+      "required": ["Password", "Username"],
+      "title": "UsernameProvider"
+    },
+    "OpcUaClientWriteParameters": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "QueueSize": {
+          "type": "integer"
+        },
+        "BlockSize": {
+          "type": "integer"
+        },
+        "WithTime": {
+          "type": "boolean"
+        }
+      },
+      "required": [],
+      "title": "WriteParameters"
+    },
+    "Plc4xClient": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "Id": {
+          "type": "string"
+        },
+        "Enabled": {
+          "type": "boolean"
+        },
+        "Url": {
+          "type": "string"
+        },
+        "Polling": {
+          "$ref": "#/definitions/Plc4xClientPolling"
+        },
+        "WriteTimeout": {
+          "type": "integer"
+        },
+        "ReadTimeout": {
+          "type": "integer"
+        },
+        "LogLevel": {
+          "type": "string"
+        },
+        "RetryWaitTime": {
+          "type": "integer",
+          "description": "Retry to connect after ms"
+        }
+      },
+      "required": ["Id", "Url"],
+      "title": "Plc4X"
+    },
+    "Plc4xClientPolling": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "Time": {
+          "description": "Polling time in ms",
+          "type": "integer"
+        },
+        "Timeout": {
+          "description": "Timeout time in ms",
+          "type": "integer"
+        },
+        "OldNew": {
+          "description": "Old/New comparision",
+          "type": "boolean"
+        }
+      },
+      "required": ["Time"],
+      "title": "Polling"
+    },
+    "Schemas": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "System": {
+            "type": "string"
+          },
+          "FieldName": {
+            "type": "string"
+          },
+          "RootNodes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": ["System"],
+        "title": "Schema"
+      }
+    }
+  }
+}

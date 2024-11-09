@@ -1,0 +1,56 @@
+.rows {
+  align-content: center;
+  align-items: center;
+  text-align: center;
+  height: auto;
+}
+
+.columns {
+  width: auto;
+}
+
+.spacer {
+  background-color: grey;
+  height: 2px;
+}
+
+.loginCols {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  padding-right: 0 !important;
+  padding-left: 0 !important;
+}
+
+.loginRows {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  padding-right: 0 !important;
+  padding-left: 0 !important;
+}
+
+.loginRows,
+.loginRows > .container,
+.loginRows > .container > .row {
+  padding-right: 0 !important;
+  padding-left: 0 !important;
+}
+
+.leftsidenav {
+  background-color: cadetblue !important;
+}
+
+.card-title {
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.last-message-container {
+  background-color: white;
+  border: 2px dashed #d9d9d9;
+  padding: 10px;
+  border-radius: 4px;
+}

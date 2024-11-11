@@ -26,7 +26,19 @@ build() {
   fi
 }
 
-ver=${2:-`cat version.txt`}
+# Get the current branch name
+branch=$(git rev-parse --abbrev-ref HEAD)
 
-build app . $ver
-build app plc4x $ver
+# Check if the branch is not "master"
+if [ "$branch" != "master" ]; then
+  branch_name="-$branch"
+else
+  branch_name=""
+fi
+
+ver=${2:-`cat version.txt`}$branch_name
+
+echo $ver
+
+#build app . $ver
+#build app plc4x $ver

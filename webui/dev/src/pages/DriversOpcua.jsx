@@ -3,8 +3,8 @@ import { usePageTitle } from "../utils/PageTitleContext";
 import {
   CloseOutlined,
   CheckOutlined,
-  DownOutlined,
   PlusOutlined,
+  MenuOutlined,
 } from "@ant-design/icons";
 import {
   Button,
@@ -18,12 +18,16 @@ import {
   Menu,
   message,
   Select,
+  Tooltip,
 } from "antd";
 import { useAuth } from "../utils/auth";
+import ShowMoreLogsPopup from "../components/ShowMoreLogsPopup";
 
 const { Option } = Select;
 
 const handleMenuClick = async (key, id, auth, fetchData) => {
+  const endpoint = localStorage.getItem("serverEndpoint") || "localhost";
+  const serverURL = `http://${endpoint}:9999`;
   let mutation = "";
 
   if (key === "enable") {
@@ -60,7 +64,7 @@ const handleMenuClick = async (key, id, auth, fetchData) => {
 
   if (mutation) {
     try {
-      const response = await fetch("http://localhost:9999/admin/api", {
+      const response = await fetch(`${serverURL}/admin/api`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -80,11 +84,9 @@ const handleMenuClick = async (key, id, auth, fetchData) => {
           `${key.charAt(0).toUpperCase() + key.slice(1)} operation successful!`
         );
 
-        // Fetch updated data after deletion
         setTimeout(async function () {
           fetchData();
         }, 250);
-        //await fetchData();
       }
     } catch (error) {
       console.error("Error sending mutation to API:", error);
@@ -94,6 +96,10 @@ const handleMenuClick = async (key, id, auth, fetchData) => {
 };
 
 export function DriversOpcua() {
+  const [isPopupVisible, setIsPopupVisible] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const endpoint = localStorage.getItem("serverEndpoint") || "localhost";
+  const serverURL = `http://${endpoint}:9999`;
   const [form] = Form.useForm();
   const { setTitle } = usePageTitle();
   const auth = useAuth();
@@ -118,7 +124,7 @@ export function DriversOpcua() {
     }`;
 
     try {
-      const response = await fetch("http://localhost:9999/admin/api", {
+      const response = await fetch(`${serverURL}/admin/api`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -144,12 +150,14 @@ export function DriversOpcua() {
 
   const handleToggleForm = () => {
     if (isFormVisible) {
-      form.resetFields(); // Reset form fields when hiding the form
+      form.resetFields();
     }
-    setIsFormVisible(!isFormVisible); // Toggle the form visibility
+    setIsFormVisible(!isFormVisible);
   };
 
   const handleSubmit = async (values) => {
+    const endpoint = localStorage.getItem("serverEndpoint") || "localhost";
+    const serverURL = `http://${endpoint}:9999`;
     console.log("Form values:", values);
 
     const dataObject = {
@@ -185,7 +193,7 @@ export function DriversOpcua() {
     `;
 
     try {
-      const response = await fetch("http://localhost:9999/admin/api", {
+      const response = await fetch(`${serverURL}/admin/api`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -215,12 +223,23 @@ export function DriversOpcua() {
     }
   };
 
+  const handleShowPopup = (item) => {
+    setSelectedItem(item);
+    setIsPopupVisible(true);
+  };
+
+  const handleClosePopup = () => {
+    setIsPopupVisible(false);
+    setSelectedItem(null);
+  };
+
   return (
     <>
       <p></p>
       <div style={{}}>
         <Button
           onClick={handleToggleForm}
+          className="custom-button"
           style={{
             width: "100%",
             display: "flex",
@@ -273,7 +292,7 @@ export function DriversOpcua() {
                           rules={[
                             { required: true, message: "Id is required" },
                           ]}
-                          labelCol={{ span: 8 }}
+                          labelCol={{ span: 6 }}
                           wrapperCol={{ span: 16 }}
                           labelAlign="left"
                         >
@@ -282,18 +301,20 @@ export function DriversOpcua() {
                         <Form.Item
                           label="Log Level:"
                           name={[field.name, "LogLevel"]}
-                          labelCol={{ span: 8 }}
+                          initialValue="INFO"
+                          labelCol={{ span: 6 }}
                           wrapperCol={{ span: 16 }}
-                          labelAlign="left"
                         >
-                          <Select
-                            placeholder="Select Log Level"
-                            defaultValue="INFO"
-                          >
+                          <Select placeholder="Select Log Level">
                             <Option value="INFO">INFO</Option>
+                            <Option value="ALL">ALL</Option>
+                            <Option value="SEVERE">SEVERE</Option>
                             <Option value="WARNING">WARNING</Option>
-                            <Option value="ERROR">ERROR</Option>
-                            <Option value="CRITICAL">CRITICAL</Option>
+                            <Option value="CONFIG">CONFIG</Option>
+                            <Option value="FINE">FINE</Option>
+                            <Option value="FINER">FINER</Option>
+                            <Option value="FINEST">FINEST</Option>
+                            <Option value="OFF">OFF</Option>
                           </Select>
                         </Form.Item>
                         <Form.Item
@@ -304,13 +325,8 @@ export function DriversOpcua() {
                               required: true,
                               message: "Please input a valid Endpoint URL!",
                             },
-                            {
-                              pattern:
-                                /^opc\.tcp:\/\/([a-zA-Z0-9.-]+):\d{1,5}$/,
-                              message: "Invalid Endpoint format.",
-                            },
                           ]}
-                          labelCol={{ span: 8 }}
+                          labelCol={{ span: 6 }}
                           wrapperCol={{ span: 16 }}
                           labelAlign="left"
                         >
@@ -319,7 +335,7 @@ export function DriversOpcua() {
                         <Form.Item
                           label="Subscription Sampling Interval:"
                           name={[field.name, "SubscriptionSamplingInterval"]}
-                          labelCol={{ span: 12 }}
+                          labelCol={{ span: 10 }}
                           wrapperCol={{ span: 12 }}
                           labelAlign="left"
                         >
@@ -330,7 +346,7 @@ export function DriversOpcua() {
                         <Form.Item
                           label="Enabled:"
                           name={[field.name, "Enabled"]}
-                          labelCol={{ span: 8 }}
+                          labelCol={{ span: 6 }}
                           wrapperCol={{ span: 16 }}
                           labelAlign="left"
                         >
@@ -342,7 +358,7 @@ export function DriversOpcua() {
                         <Form.Item
                           label="Update Endpoint Url:"
                           name={[field.name, "UpdateEndpointUrl"]}
-                          labelCol={{ span: 8 }}
+                          labelCol={{ span: 6 }}
                           wrapperCol={{ span: 16 }}
                           labelAlign="left"
                         >
@@ -354,7 +370,7 @@ export function DriversOpcua() {
                         <Form.Item
                           label="Security Policy Uri:"
                           name={[field.name, "SecurityPolicyUri"]}
-                          labelCol={{ span: 8 }}
+                          labelCol={{ span: 6 }}
                           wrapperCol={{ span: 16 }}
                           labelAlign="left"
                         >
@@ -388,7 +404,7 @@ export function DriversOpcua() {
                         <Form.Item
                           label="Keep Alive Failures Allowed:"
                           name={[field.name, "KeepAliveFailuresAllowed"]}
-                          labelCol={{ span: 12 }}
+                          labelCol={{ span: 10 }}
                           wrapperCol={{ span: 12 }}
                           labelAlign="left"
                         >
@@ -398,9 +414,18 @@ export function DriversOpcua() {
                     </Row>
                     <div style={{ textAlign: "center" }}>
                       <Button
-                        type="primary"
+                        type="submit"
+                        className="btn btn-success"
                         htmlType="submit"
-                        style={{ display: "block", margin: "0 auto" }}
+                        style={{
+                          margin: "0 auto",
+                          textAlign: "center",
+                          padding: "10px 20px",
+                          lineHeight: "normal",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
                       >
                         Add Configuration
                       </Button>
@@ -417,7 +442,17 @@ export function DriversOpcua() {
           apiData.map((item) => (
             <Col span={6} key={item.id}>
               <Card
-                title={<div className="card-title">{item.id}</div>}
+                title={
+                  item.id.length > 20 ? (
+                    <Tooltip title={item.id}>
+                      <div className="card-title">
+                        {item.id.substring(0, 20) + "..."}
+                      </div>
+                    </Tooltip>
+                  ) : (
+                    <div className="card-title">{item.id}</div>
+                  )
+                }
                 bordered={false}
                 extra={
                   <Dropdown
@@ -468,9 +503,10 @@ export function DriversOpcua() {
                         </Menu.Item>
                       </Menu>
                     }
+                    trigger={["click"]}
                   >
-                    <Button>
-                      Actions <DownOutlined />
+                    <Button className="btn-action-custom">
+                      <MenuOutlined />
                     </Button>
                   </Dropdown>
                 }
@@ -489,22 +525,14 @@ export function DriversOpcua() {
                 <p>
                   <strong>Log Level:</strong> {JSON.parse(item.config).LogLevel}
                 </p>
-                {item.messages && item.messages.length > 0 && (
-                  <div className="last-message-container">
-                    <p>
-                      <strong>Last Message:</strong>
-                    </p>
-                    <p>
-                      <strong>Time:</strong> {item.messages[0].time}
-                    </p>
-                    <p>
-                      <strong>Level:</strong> {item.messages[0].level}
-                    </p>
-                    <p>
-                      <strong>Message:</strong> {item.messages[0].message}
-                    </p>
-                  </div>
-                )}
+                <div style={{ display: "flex", justifyContent: "center" }}>
+                  <Button
+                    onClick={() => handleShowPopup(item)}
+                    className="custom-button"
+                  >
+                    Show Logs
+                  </Button>
+                </div>
               </Card>
             </Col>
           ))
@@ -512,6 +540,14 @@ export function DriversOpcua() {
           <></>
         )}
       </Row>
+      {isPopupVisible && selectedItem && (
+        <ShowMoreLogsPopup
+          visible={isPopupVisible}
+          onClose={handleClosePopup}
+          type={selectedItem.type}
+          id={selectedItem.id}
+        />
+      )}
     </>
   );
 }

@@ -3,10 +3,10 @@ import { usePageTitle } from "../utils/PageTitleContext";
 import {
   CloseOutlined,
   CheckOutlined,
-  DownOutlined,
   PlusOutlined,
   PlusCircleOutlined,
   MinusCircleOutlined,
+  MenuOutlined,
 } from "@ant-design/icons";
 import {
   Button,
@@ -20,12 +20,16 @@ import {
   Menu,
   message,
   Select,
+  Tooltip,
 } from "antd";
 import { useAuth } from "../utils/auth";
+import ShowMoreLogsPopup from "../components/ShowMoreLogsPopup";
 
 const { Option } = Select;
 
 const handleMenuClick = async (key, id, auth, fetchData) => {
+  const endpoint = localStorage.getItem("serverEndpoint") || "localhost";
+  const serverURL = `http://${endpoint}:9999`;
   let mutation = "";
 
   if (key === "enable") {
@@ -62,7 +66,7 @@ const handleMenuClick = async (key, id, auth, fetchData) => {
 
   if (mutation) {
     try {
-      const response = await fetch("http://localhost:9999/admin/api", {
+      const response = await fetch(`${serverURL}/admin/api`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -92,6 +96,10 @@ const handleMenuClick = async (key, id, auth, fetchData) => {
 };
 
 export function ServersOpcua() {
+  const [isPopupVisible, setIsPopupVisible] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const endpoint = localStorage.getItem("serverEndpoint") || "localhost";
+  const serverURL = `http://${endpoint}:9999`;
   const [form] = Form.useForm();
   const { setTitle } = usePageTitle();
   const auth = useAuth();
@@ -117,7 +125,7 @@ export function ServersOpcua() {
     }`;
 
     try {
-      const response = await fetch("http://localhost:9999/admin/api", {
+      const response = await fetch(`${serverURL}/admin/api`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -177,7 +185,7 @@ export function ServersOpcua() {
     `;
 
     try {
-      const response = await fetch("http://localhost:9999/admin/api", {
+      const response = await fetch(`${serverURL}/admin/api`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -201,12 +209,23 @@ export function ServersOpcua() {
     }
   };
 
+  const handleShowPopup = (item) => {
+    setSelectedItem(item);
+    setIsPopupVisible(true);
+  };
+
+  const handleClosePopup = () => {
+    setIsPopupVisible(false);
+    setSelectedItem(null);
+  };
+
   return (
     <>
       <p></p>
       <div>
         <Button
           onClick={handleToggleForm}
+          className="custom-button"
           style={{
             width: "100%",
             display: "flex",
@@ -244,7 +263,7 @@ export function ServersOpcua() {
                 label="Id:"
                 name="Id"
                 rules={[{ required: true, message: "Id is required" }]}
-                labelCol={{ span: 4 }}
+                labelCol={{ span: 6 }}
                 wrapperCol={{ span: 16 }}
               >
                 <Input placeholder="Component Name" />
@@ -258,7 +277,7 @@ export function ServersOpcua() {
                     message: "Please input a valid port number!",
                   },
                 ]}
-                labelCol={{ span: 4 }}
+                labelCol={{ span: 6 }}
                 wrapperCol={{ span: 16 }}
               >
                 <Input placeholder="4841" />
@@ -269,7 +288,7 @@ export function ServersOpcua() {
                 label="Enabled:"
                 name="Enabled"
                 valuePropName="checked"
-                labelCol={{ span: 4 }}
+                labelCol={{ span: 6 }}
                 wrapperCol={{ span: 16 }}
               >
                 <Switch
@@ -281,14 +300,19 @@ export function ServersOpcua() {
                 label="Log Level:"
                 name="LogLevel"
                 initialValue="INFO"
-                labelCol={{ span: 4 }}
+                labelCol={{ span: 6 }}
                 wrapperCol={{ span: 16 }}
               >
                 <Select placeholder="Select Log Level">
                   <Option value="INFO">INFO</Option>
+                  <Option value="ALL">ALL</Option>
+                  <Option value="SEVERE">SEVERE</Option>
                   <Option value="WARNING">WARNING</Option>
-                  <Option value="ERROR">ERROR</Option>
-                  <Option value="CRITICAL">CRITICAL</Option>
+                  <Option value="CONFIG">CONFIG</Option>
+                  <Option value="FINE">FINE</Option>
+                  <Option value="FINER">FINER</Option>
+                  <Option value="FINEST">FINEST</Option>
+                  <Option value="OFF">OFF</Option>
                 </Select>
               </Form.Item>
             </Col>
@@ -309,25 +333,21 @@ export function ServersOpcua() {
                         style={{
                           display: "flex",
                           alignItems: "center",
-                          marginLeft: "10px",
+                          marginLeft: "2px",
                         }}
+                        className="custom-button-hover"
                       >
                         <PlusCircleOutlined /> Add Topic
-                      </Button>
-                      <Button
-                        type="dashed"
-                        onClick={() => remove(fields.length - 1)}
-                        disabled={fields.length <= 1}
-                        style={{ display: "flex", alignItems: "center" }}
-                      >
-                        <MinusCircleOutlined /> Remove Topic
                       </Button>
                     </div>
                   </Col>
                 </Row>
                 {fields.map((field, index) => (
                   <Row gutter={16} key={field.key} style={{ marginBottom: 0 }}>
-                    <Col span={24}>
+                    <Col
+                      span={24}
+                      style={{ display: "flex", alignItems: "center" }}
+                    >
                       <Form.Item
                         {...field}
                         label={`Topic ${index + 1}:`}
@@ -336,21 +356,51 @@ export function ServersOpcua() {
                         rules={[
                           { required: true, message: "Topic is required" },
                         ]}
-                        style={{ marginBottom: 6 }}
+                        style={{ marginBottom: 6, flexGrow: 1 }}
                         labelCol={{ span: 2 }}
                         wrapperCol={{ span: 20 }}
                         labelAlign="left"
                       >
-                        <Input placeholder="Opc/OpcUaDriver/path/Objects/#/#/#" />
+                        <Input
+                          placeholder="Opc/OpcUaDriver/path/Objects/#/#/#"
+                          style={{ marginLeft: 16 }}
+                        />
                       </Form.Item>
+                      <Button
+                        type="dashed"
+                        onClick={() => remove(field.name)}
+                        disabled={fields.length <= 1}
+                        className="custom-button-hover"
+                        style={{
+                          marginLeft: "8px",
+                          display: "flex",
+                          alignItems: "center",
+                          marginBottom: 6,
+                        }}
+                      >
+                        <MinusCircleOutlined /> Remove
+                      </Button>
                     </Col>
                   </Row>
                 ))}
               </>
             )}
           </Form.List>
-          <Form.Item style={{ textAlign: "center" }}>
-            <Button type="primary" htmlType="submit" style={{ marginTop: 10 }}>
+          <Form.Item style={{ textAlign: "center", marginTop: 16 }}>
+            <Button
+              type="submit"
+              className="btn btn-success"
+              htmlType="submit"
+              style={{
+                margin: "0 auto",
+                textAlign: "center",
+                padding: "10px 20px",
+                lineHeight: "normal",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
               Add Configuration
             </Button>
           </Form.Item>
@@ -363,7 +413,17 @@ export function ServersOpcua() {
           apiData.map((item) => (
             <Col span={6} key={item.id}>
               <Card
-                title={<div className="card-title">{item.id}</div>}
+                title={
+                  item.id.length > 20 ? (
+                    <Tooltip title={item.id}>
+                      <div className="card-title">
+                        {item.id.substring(0, 20) + "..."}
+                      </div>
+                    </Tooltip>
+                  ) : (
+                    <div className="card-title">{item.id}</div>
+                  )
+                }
                 bordered={false}
                 extra={
                   <Dropdown
@@ -396,9 +456,10 @@ export function ServersOpcua() {
                         </Menu.Item>
                       </Menu>
                     }
+                    trigger={["click"]}
                   >
-                    <Button>
-                      Actions <DownOutlined />
+                    <Button className="btn-action-custom">
+                      <MenuOutlined />
                     </Button>
                   </Dropdown>
                 }
@@ -419,24 +480,14 @@ export function ServersOpcua() {
                 <p>
                   <strong>Format:</strong> {JSON.parse(item.config).Format}
                 </p>
-                {Array.isArray(item.messages) && item.messages.length > 0 ? (
-                  <div className="last-message-container">
-                    <p>
-                      <strong>Last Message:</strong>
-                    </p>
-                    <p>
-                      <strong>Time:</strong> {item.messages[0].time}
-                    </p>
-                    <p>
-                      <strong>Level:</strong> {item.messages[0].level}
-                    </p>
-                    <p>
-                      <strong>Message:</strong> {item.messages[0].message}
-                    </p>
-                  </div>
-                ) : (
-                  <p>No messages available.</p>
-                )}
+                <div style={{ display: "flex", justifyContent: "center" }}>
+                  <Button
+                    onClick={() => handleShowPopup(item)}
+                    className="custom-button"
+                  >
+                    Show Logs
+                  </Button>
+                </div>
               </Card>
             </Col>
           ))
@@ -444,6 +495,14 @@ export function ServersOpcua() {
           <></>
         )}
       </Row>
+      {isPopupVisible && selectedItem && (
+        <ShowMoreLogsPopup
+          visible={isPopupVisible}
+          onClose={handleClosePopup}
+          type={selectedItem.type}
+          id={selectedItem.id}
+        />
+      )}
     </>
   );
 }

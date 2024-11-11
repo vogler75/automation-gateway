@@ -20,7 +20,7 @@ export function Home() {
   }, []);
 
   const formattedDateTime = `${currentTime.toLocaleDateString()} ${currentTime.toLocaleTimeString()}`;
-  const [title, setTitle] = useState("Welcome!");
+  const [title, setTitle] = useState("Dashboard");
 
   return (
     <PageTitleContext.Provider value={{ title, setTitle }}>
@@ -51,6 +51,8 @@ export function Home() {
               textAlign: "center",
               paddingTop: "4px",
               paddingBottom: "4px",
+              fontSize: "22px",
+              fontWeight: "bold",
             }}
           >
             {title}

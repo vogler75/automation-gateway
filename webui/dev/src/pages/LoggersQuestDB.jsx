@@ -3,10 +3,10 @@ import { usePageTitle } from "../utils/PageTitleContext";
 import {
   CloseOutlined,
   CheckOutlined,
-  DownOutlined,
   PlusOutlined,
   PlusCircleOutlined,
   MinusCircleOutlined,
+  MenuOutlined,
 } from "@ant-design/icons";
 import {
   Button,
@@ -20,12 +20,15 @@ import {
   Menu,
   message,
   Select,
+  Tooltip,
 } from "antd";
 import { useAuth } from "../utils/auth";
 
 const { Option } = Select;
 
 const handleMenuClick = async (key, id, auth, fetchData) => {
+  const endpoint = localStorage.getItem("serverEndpoint") || "localhost";
+  const serverURL = `http://${endpoint}:9999`;
   let mutation = "";
 
   if (key === "enable") {
@@ -62,7 +65,7 @@ const handleMenuClick = async (key, id, auth, fetchData) => {
 
   if (mutation) {
     try {
-      const response = await fetch("http://localhost:9999/admin/api", {
+      const response = await fetch(`${serverURL}/admin/api`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -92,6 +95,8 @@ const handleMenuClick = async (key, id, auth, fetchData) => {
 };
 
 export function LoggersQuestDB() {
+  const endpoint = localStorage.getItem("serverEndpoint") || "localhost";
+  const serverURL = `http://${endpoint}:9999`;
   const [form] = Form.useForm();
   const { setTitle } = usePageTitle();
   const auth = useAuth();
@@ -118,7 +123,7 @@ export function LoggersQuestDB() {
     }`;
 
     try {
-      const response = await fetch("http://localhost:9999/admin/api", {
+      const response = await fetch(`${serverURL}/admin/api`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -150,6 +155,8 @@ export function LoggersQuestDB() {
   };
 
   const handleSubmit = async (values) => {
+    const endpoint = localStorage.getItem("serverEndpoint") || "localhost";
+    const serverURL = `http://${endpoint}:9999`;
     console.log("Form values:", values);
 
     const loggingTopics = (values.loggingTopics || []).map((t) => ({
@@ -185,7 +192,7 @@ export function LoggersQuestDB() {
   `;
 
     try {
-      const response = await fetch("http://localhost:9999/admin/api", {
+      const response = await fetch(`${serverURL}/admin/api`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -214,6 +221,7 @@ export function LoggersQuestDB() {
       <div>
         <Button
           onClick={handleToggleForm}
+          className="custom-button"
           style={{
             width: "100%",
             display: "flex",
@@ -468,12 +476,24 @@ export function LoggersQuestDB() {
               </>
             )}
           </Form.List>
-
           <Form.Item
             wrapperCol={{ span: 24 }}
             style={{ display: "flex", justifyContent: "center" }}
           >
-            <Button type="primary" htmlType="submit" style={{ marginTop: 10 }}>
+            <Button
+              type="submit"
+              className="btn btn-success"
+              htmlType="submit"
+              style={{
+                margin: "0 auto",
+                textAlign: "center",
+                padding: "10px 20px",
+                lineHeight: "normal",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
               Add Configuration
             </Button>
           </Form.Item>
@@ -486,7 +506,17 @@ export function LoggersQuestDB() {
           apiData.map((item) => (
             <Col span={6} key={item.id}>
               <Card
-                title={<div className="card-title">{item.id}</div>}
+                title={
+                  item.id.length > 20 ? (
+                    <Tooltip title={item.id}>
+                      <div className="card-title">
+                        {item.id.substring(0, 20) + "..."}
+                      </div>
+                    </Tooltip>
+                  ) : (
+                    <div className="card-title">{item.id}</div>
+                  )
+                }
                 bordered={false}
                 extra={
                   <Dropdown
@@ -519,9 +549,10 @@ export function LoggersQuestDB() {
                         </Menu.Item>
                       </Menu>
                     }
+                    trigger={["click"]}
                   >
-                    <Button>
-                      Actions <DownOutlined />
+                    <Button className="btn-action-custom">
+                      <MenuOutlined />
                     </Button>
                   </Dropdown>
                 }

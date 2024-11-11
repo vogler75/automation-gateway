@@ -3,8 +3,8 @@ import { usePageTitle } from "../utils/PageTitleContext";
 import {
   CloseOutlined,
   CheckOutlined,
-  DownOutlined,
   PlusOutlined,
+  MenuOutlined,
 } from "@ant-design/icons";
 import {
   Button,
@@ -18,12 +18,16 @@ import {
   Menu,
   message,
   Select,
+  Tooltip,
 } from "antd";
 import { useAuth } from "../utils/auth";
+import ShowMoreLogsPopup from "../components/ShowMoreLogsPopup";
 
 const { Option } = Select;
 
 const handleMenuClick = async (key, id, auth, fetchData) => {
+  const endpoint = localStorage.getItem("serverEndpoint") || "localhost";
+  const serverURL = `http://${endpoint}:9999`;
   let mutation = "";
 
   if (key === "enable") {
@@ -60,7 +64,7 @@ const handleMenuClick = async (key, id, auth, fetchData) => {
 
   if (mutation) {
     try {
-      const response = await fetch("http://localhost:9999/admin/api", {
+      const response = await fetch(`${serverURL}/admin/api`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -80,8 +84,7 @@ const handleMenuClick = async (key, id, auth, fetchData) => {
           `${key.charAt(0).toUpperCase() + key.slice(1)} operation successful!`
         );
 
-        // Directly fetch data without delay
-        await fetchData(); // Fetch data after mutation completes
+        await fetchData();
       }
     } catch (error) {
       console.error("Error sending mutation to API:", error);
@@ -91,6 +94,10 @@ const handleMenuClick = async (key, id, auth, fetchData) => {
 };
 
 export function DriversMqtt() {
+  const [isPopupVisible, setIsPopupVisible] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const endpoint = localStorage.getItem("serverEndpoint") || "localhost";
+  const serverURL = `http://${endpoint}:9999`;
   const [form] = Form.useForm();
   const { setTitle } = usePageTitle();
   const auth = useAuth();
@@ -115,7 +122,7 @@ export function DriversMqtt() {
     }`;
 
     try {
-      const response = await fetch("http://localhost:9999/admin/api", {
+      const response = await fetch(`${serverURL}/admin/api`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -147,6 +154,8 @@ export function DriversMqtt() {
   };
 
   const handleSubmit = async (values) => {
+    const endpoint = localStorage.getItem("serverEndpoint") || "localhost";
+    const serverURL = `http://${endpoint}:9999`;
     console.log("Form values:", values);
 
     const dataObject = {
@@ -174,7 +183,7 @@ export function DriversMqtt() {
     `;
 
     try {
-      const response = await fetch("http://localhost:9999/admin/api", {
+      const response = await fetch(`${serverURL}/admin/api`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -198,12 +207,23 @@ export function DriversMqtt() {
     }
   };
 
+  const handleShowPopup = (item) => {
+    setSelectedItem(item);
+    setIsPopupVisible(true);
+  };
+
+  const handleClosePopup = () => {
+    setIsPopupVisible(false);
+    setSelectedItem(null);
+  };
+
   return (
     <>
       <p></p>
       <div style={{}}>
         <Button
           onClick={handleToggleForm}
+          className="custom-button"
           style={{
             width: "100%",
             display: "flex",
@@ -232,12 +252,16 @@ export function DriversMqtt() {
           autoComplete="off"
           initialValues={{ items: [{}] }}
           onFinish={handleSubmit}
-          labelAlign="left" // Align all labels to the left
+          labelAlign="left"
         >
           <Form.List name="items">
             {(fields, { add, remove }) => (
               <div
-                style={{ display: "flex", flexDirection: "column", rowGap: 16 }}
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  rowGap: 16,
+                }}
               >
                 {fields.map((field) => (
                   <div
@@ -256,7 +280,7 @@ export function DriversMqtt() {
                           rules={[
                             { required: true, message: "Id is required" },
                           ]}
-                          labelCol={{ span: 8 }}
+                          labelCol={{ span: 6 }}
                           wrapperCol={{ span: 16 }}
                           labelAlign="left"
                         >
@@ -265,20 +289,23 @@ export function DriversMqtt() {
                         <Form.Item
                           label="Log Level:"
                           name={[field.name, "LogLevel"]}
-                          labelCol={{ span: 8 }}
+                          initialValue="INFO"
+                          labelCol={{ span: 6 }}
                           wrapperCol={{ span: 16 }}
-                          labelAlign="left"
                         >
-                          <Select
-                            placeholder="Select Log Level"
-                            defaultValue="INFO"
-                          >
+                          <Select placeholder="Select Log Level">
                             <Option value="INFO">INFO</Option>
+                            <Option value="ALL">ALL</Option>
+                            <Option value="SEVERE">SEVERE</Option>
                             <Option value="WARNING">WARNING</Option>
-                            <Option value="ERROR">ERROR</Option>
-                            <Option value="CRITICAL">CRITICAL</Option>
+                            <Option value="CONFIG">CONFIG</Option>
+                            <Option value="FINE">FINE</Option>
+                            <Option value="FINER">FINER</Option>
+                            <Option value="FINEST">FINEST</Option>
+                            <Option value="OFF">OFF</Option>
                           </Select>
                         </Form.Item>
+
                         <Form.Item
                           label="Host:"
                           name={[field.name, "Host"]}
@@ -288,7 +315,7 @@ export function DriversMqtt() {
                               message: "Please input a valid Host!",
                             },
                           ]}
-                          labelCol={{ span: 8 }}
+                          labelCol={{ span: 6 }}
                           wrapperCol={{ span: 16 }}
                           labelAlign="left"
                         >
@@ -299,7 +326,7 @@ export function DriversMqtt() {
                         <Form.Item
                           label="Enabled:"
                           name={[field.name, "Enabled"]}
-                          labelCol={{ span: 8 }}
+                          labelCol={{ span: 6 }}
                           wrapperCol={{ span: 16 }}
                           labelAlign="left"
                         >
@@ -311,7 +338,7 @@ export function DriversMqtt() {
                         <Form.Item
                           label="Format:"
                           name={[field.name, "Format"]}
-                          labelCol={{ span: 8 }}
+                          labelCol={{ span: 6 }}
                           wrapperCol={{ span: 16 }}
                           labelAlign="left"
                         >
@@ -320,9 +347,8 @@ export function DriversMqtt() {
                             defaultValue="Json"
                           >
                             <Option value="Json">Json</Option>
-                            <Option value="Xml" disabled>
-                              Xml
-                            </Option>
+                            <Option value="Raw">Raw</Option>
+                            <Option value="SparkplugB">SparkplugB</Option>
                           </Select>
                         </Form.Item>
                         <Form.Item
@@ -334,7 +360,7 @@ export function DriversMqtt() {
                               message: "Please input a valid port number!",
                             },
                           ]}
-                          labelCol={{ span: 8 }}
+                          labelCol={{ span: 6 }}
                           wrapperCol={{ span: 16 }}
                           labelAlign="left"
                         >
@@ -344,9 +370,18 @@ export function DriversMqtt() {
                     </Row>
                     <div style={{ textAlign: "center" }}>
                       <Button
-                        type="primary"
+                        type="submit"
+                        className="btn btn-success"
                         htmlType="submit"
-                        style={{ display: "block", margin: "0 auto" }}
+                        style={{
+                          margin: "0 auto",
+                          textAlign: "center",
+                          padding: "10px 20px",
+                          lineHeight: "normal",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
                       >
                         Add Configuration
                       </Button>
@@ -365,7 +400,17 @@ export function DriversMqtt() {
           apiData.map((item) => (
             <Col span={6} key={item.id}>
               <Card
-                title={<div className="card-title">{item.id}</div>}
+                title={
+                  item.id.length > 20 ? (
+                    <Tooltip title={item.id}>
+                      <div className="card-title">
+                        {item.id.substring(0, 20) + "..."}
+                      </div>
+                    </Tooltip>
+                  ) : (
+                    <div className="card-title">{item.id}</div>
+                  )
+                }
                 bordered={false}
                 extra={
                   <Dropdown
@@ -398,9 +443,10 @@ export function DriversMqtt() {
                         </Menu.Item>
                       </Menu>
                     }
+                    trigger={["click"]}
                   >
-                    <Button>
-                      Actions <DownOutlined />
+                    <Button className="btn-action-custom">
+                      <MenuOutlined />
                     </Button>
                   </Dropdown>
                 }
@@ -422,24 +468,14 @@ export function DriversMqtt() {
                 <p>
                   <strong>Format:</strong> {JSON.parse(item.config).Format}
                 </p>
-                {Array.isArray(item.messages) && item.messages.length > 0 ? (
-                  <div className="last-message-container">
-                    <p>
-                      <strong>Last Message:</strong>
-                    </p>
-                    <p>
-                      <strong>Time:</strong> {item.messages[0].time}
-                    </p>
-                    <p>
-                      <strong>Level:</strong> {item.messages[0].level}
-                    </p>
-                    <p>
-                      <strong>Message:</strong> {item.messages[0].message}
-                    </p>
-                  </div>
-                ) : (
-                  <p>No messages available.</p>
-                )}
+                <div style={{ display: "flex", justifyContent: "center" }}>
+                  <Button
+                    onClick={() => handleShowPopup(item)}
+                    className="custom-button"
+                  >
+                    Show Logs
+                  </Button>
+                </div>
               </Card>
             </Col>
           ))
@@ -447,6 +483,14 @@ export function DriversMqtt() {
           <></>
         )}
       </Row>
+      {isPopupVisible && selectedItem && (
+        <ShowMoreLogsPopup
+          visible={isPopupVisible}
+          onClose={handleClosePopup}
+          type={selectedItem.type}
+          id={selectedItem.id}
+        />
+      )}
     </>
   );
 }

@@ -1,10 +1,24 @@
 import React, { useEffect, useState } from "react";
 import { usePageTitle } from "../utils/PageTitleContext";
-import { CloseOutlined, CheckOutlined, DownOutlined } from "@ant-design/icons";
-import { Button, Card, Col, Row, Dropdown, Menu, message, Space } from "antd";
+import { FileSearchOutlined, MenuOutlined } from "@ant-design/icons";
+import {
+  Button,
+  Card,
+  Col,
+  Row,
+  Dropdown,
+  Menu,
+  message,
+  Space,
+  Tooltip,
+  ConfigProvider,
+} from "antd";
 import { useAuth } from "../utils/auth";
+import ShowMoreLogsPopup from "../components/ShowMoreLogsPopup";
 
 const handleMenuClick = async (key, id, type, auth, fetchData) => {
+  const endpoint = localStorage.getItem("serverEndpoint") || "localhost";
+  const serverURL = `http://${endpoint}:9999`;
   let mutation = "";
 
   if (key === "enable") {
@@ -41,7 +55,7 @@ const handleMenuClick = async (key, id, type, auth, fetchData) => {
 
   if (mutation) {
     try {
-      const response = await fetch("http://localhost:9999/admin/api", {
+      const response = await fetch(`${serverURL}/admin/api`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -67,6 +81,10 @@ const handleMenuClick = async (key, id, type, auth, fetchData) => {
 };
 
 export function Dashboard() {
+  const [isPopupVisible, setIsPopupVisible] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const endpoint = localStorage.getItem("serverEndpoint") || "localhost";
+  const serverURL = `http://${endpoint}:9999`;
   const { setTitle } = usePageTitle();
   const auth = useAuth();
   const [drivers, setDrivers] = useState([]);
@@ -89,7 +107,7 @@ export function Dashboard() {
     try {
       const fetchResponses = await Promise.all(
         queries.map((query) =>
-          fetch("http://localhost:9999/admin/api", {
+          fetch(`${serverURL}/admin/api`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -122,7 +140,17 @@ export function Dashboard() {
   const renderCard = (item, bgColor) => (
     <Col style={{ margin: "8px" }} key={item.id}>
       <Card
-        title={<div className="card-title">{item.id}</div>}
+        title={
+          item.id.length > 20 ? (
+            <Tooltip title={item.id}>
+              <div className="card-title">
+                {item.id.substring(0, 20) + "..."}
+              </div>
+            </Tooltip>
+          ) : (
+            <div className="card-title">{item.id}</div>
+          )
+        }
         bordered={false}
         extra={
           <Dropdown
@@ -173,9 +201,10 @@ export function Dashboard() {
                 </Menu.Item>
               </Menu>
             }
+            trigger={["click"]}
           >
-            <Button>
-              Actions <DownOutlined />
+            <Button className="btn-action-custom">
+              <MenuOutlined />
             </Button>
           </Dropdown>
         }
@@ -190,6 +219,38 @@ export function Dashboard() {
         <p>
           <strong>Log Level:</strong> {JSON.parse(item.config).LogLevel}
         </p>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            width: "10px",
+          }}
+        >
+          <Button
+            onClick={() => handleShowPopup(item)}
+            className="custom-button"
+            style={{
+              background: "transparent",
+              border: "none",
+              padding: 0,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              boxShadow: "none",
+              outline: "none",
+            }}
+          >
+            <FileSearchOutlined />
+          </Button>
+        </div>
+        {isPopupVisible && selectedItem && (
+          <ShowMoreLogsPopup
+            visible={isPopupVisible}
+            onClose={handleClosePopup}
+            type={selectedItem.type}
+            id={selectedItem.id}
+          />
+        )}
       </Card>
     </Col>
   );
@@ -213,6 +274,16 @@ export function Dashboard() {
     cursor: "pointer",
     color: "black",
     fontWeight: "normal",
+  };
+
+  const handleShowPopup = (item) => {
+    setSelectedItem(item);
+    setIsPopupVisible(true);
+  };
+
+  const handleClosePopup = () => {
+    setIsPopupVisible(false);
+    setSelectedItem(null);
   };
 
   return (

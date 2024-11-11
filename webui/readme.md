@@ -57,11 +57,16 @@ npm install express
 ```
 ### 4. Run the production server:
 ```js
-const express = require('express');
-const path = require('path');
+import express from 'express';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Get __dirname equivalent in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Serve static files from the 'dist' directory (or wherever the build output is)
 app.use(express.static(path.join(__dirname, 'dist')));
@@ -97,4 +102,15 @@ my-app/
 └── node_modules/
 ```
 
-# More details to come on explaining the available and unavailable features by the webui.
+# Changelog V0.0.2
+
+- Added entries to log level dropdown of components creation
+- Changed format of MQTT driver from XML to raw and added SparkPlugB
+- Harmonized distance on the creation form items of components
+- Harmonized colors for Frankenstein green instead of default Ant Design blue
+- Created settings component screen that can handle:
+  - Save configuration to config file (in progress)
+  - Create and delete temporary access token
+  - On-demand query/response area within the browser
+- Added 'Show Logs' button on cards to display history of last 50 messages, with refresh every 5 seconds
+- Changed click trigger event instead of hover on the action button

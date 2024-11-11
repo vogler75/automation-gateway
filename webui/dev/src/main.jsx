@@ -16,6 +16,7 @@ import { LoggersInfluxDB } from "./pages/LoggersInfluxDB.jsx";
 import { LoggersQuestDB } from "./pages/LoggersQuestDB.jsx";
 import { LoggersJDBC } from "./pages/LoggersJDBC.jsx";
 import { ServersOpcua } from "./pages/ServersOpcua.jsx";
+import { Settings } from "./pages/Settings.jsx";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
@@ -45,7 +46,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
             <Route path="35" element={<LoggersJDBC />} />
             <Route path="36" element={<LoggersQuestDB />} />
             <Route path="37" element={<div>Loggers Neo4J</div>} />
-            <Route path="4" element={<div>No settings yet :-)</div>} />
+            <Route path="4" element={<Settings />} />
             <Route path="5" element={<div>Logout</div>} />
           </Route>
         </Routes>

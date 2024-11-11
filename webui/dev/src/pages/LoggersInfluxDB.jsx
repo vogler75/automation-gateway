@@ -3,10 +3,10 @@ import { usePageTitle } from "../utils/PageTitleContext";
 import {
   CloseOutlined,
   CheckOutlined,
-  DownOutlined,
   PlusOutlined,
   PlusCircleOutlined,
   MinusCircleOutlined,
+  MenuOutlined,
 } from "@ant-design/icons";
 import {
   Button,
@@ -20,12 +20,16 @@ import {
   Menu,
   message,
   Select,
+  Tooltip,
 } from "antd";
 import { useAuth } from "../utils/auth";
+import ShowMoreLogsPopup from "../components/ShowMoreLogsPopup";
 
 const { Option } = Select;
 
 const handleMenuClick = async (key, id, auth, fetchData) => {
+  const endpoint = localStorage.getItem("serverEndpoint") || "localhost";
+  const serverURL = `http://${endpoint}:9999`;
   let mutation = "";
 
   if (key === "enable") {
@@ -62,7 +66,7 @@ const handleMenuClick = async (key, id, auth, fetchData) => {
 
   if (mutation) {
     try {
-      const response = await fetch("http://localhost:9999/admin/api", {
+      const response = await fetch(`${serverURL}/admin/api`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -92,6 +96,10 @@ const handleMenuClick = async (key, id, auth, fetchData) => {
 };
 
 export function LoggersInfluxDB() {
+  const [isPopupVisible, setIsPopupVisible] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const endpoint = localStorage.getItem("serverEndpoint") || "localhost";
+  const serverURL = `http://${endpoint}:9999`;
   const [form] = Form.useForm();
   const { setTitle } = usePageTitle();
   const auth = useAuth();
@@ -118,7 +126,7 @@ export function LoggersInfluxDB() {
     }`;
 
     try {
-      const response = await fetch("http://localhost:9999/admin/api", {
+      const response = await fetch(`${serverURL}/admin/api`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -150,6 +158,8 @@ export function LoggersInfluxDB() {
   };
 
   const handleSubmit = async (values) => {
+    const endpoint = localStorage.getItem("serverEndpoint") || "localhost";
+    const serverURL = `http://${endpoint}:9999`;
     console.log("Form values:", values);
 
     const loggingTopics = (values.loggingTopics || []).map((t) => ({
@@ -185,7 +195,7 @@ export function LoggersInfluxDB() {
   `;
 
     try {
-      const response = await fetch("http://localhost:9999/admin/api", {
+      const response = await fetch(`${serverURL}/admin/api`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -208,12 +218,23 @@ export function LoggersInfluxDB() {
     }
   };
 
+  const handleShowPopup = (item) => {
+    setSelectedItem(item);
+    setIsPopupVisible(true);
+  };
+
+  const handleClosePopup = () => {
+    setIsPopupVisible(false);
+    setSelectedItem(null);
+  };
+
   return (
     <>
       <p></p>
       <div>
         <Button
           onClick={handleToggleForm}
+          className="custom-button"
           style={{
             width: "100%",
             display: "flex",
@@ -330,7 +351,7 @@ export function LoggersInfluxDB() {
                 name="Version"
                 initialValue={1}
                 labelCol={{ span: 6 }}
-                wrapperCol={{ span: 18 }}
+                wrapperCol={{ span: 16 }}
               >
                 <Select>
                   <Option value={1}>1</Option>
@@ -429,26 +450,29 @@ export function LoggersInfluxDB() {
                     span={24}
                     style={{ display: "flex", alignItems: "center" }}
                   >
-                    <h4 style={{ margin: 0, marginRight: 16 }}>
-                      Logging Topics:
-                    </h4>
+                    <h4 style={{ margin: 0, marginRight: 16 }}>Topics:</h4>
                     <div style={{ display: "flex", gap: "8px" }}>
-                      <Button type="dashed" onClick={() => add()}>
-                        <PlusCircleOutlined /> Add Topic
-                      </Button>
                       <Button
                         type="dashed"
-                        onClick={() => remove(fields.length - 1)}
-                        disabled={fields.length <= 1}
+                        onClick={() => add()}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          marginLeft: "2px",
+                        }}
+                        className="custom-button-hover"
                       >
-                        <MinusCircleOutlined /> Remove Topic
+                        <PlusCircleOutlined /> Add Topic
                       </Button>
                     </div>
                   </Col>
                 </Row>
                 {fields.map((field, index) => (
                   <Row gutter={16} key={field.key} style={{ marginBottom: 0 }}>
-                    <Col span={24}>
+                    <Col
+                      span={24}
+                      style={{ display: "flex", alignItems: "center" }}
+                    >
                       <Form.Item
                         {...field}
                         label={`Topic ${index + 1}:`}
@@ -457,11 +481,29 @@ export function LoggersInfluxDB() {
                         rules={[
                           { required: true, message: "Topic is required" },
                         ]}
-                        labelCol={{ span: 3 }}
-                        wrapperCol={{ span: 18 }}
+                        labelCol={{ span: 2 }}
+                        wrapperCol={{ span: 20 }}
+                        style={{ marginBottom: 6, flexGrow: 1 }}
                       >
-                        <Input placeholder="Opc/OpcUaDriver/path/Objects/#/#/#" />
+                        <Input
+                          placeholder="Opc/OpcUaDriver/path/Objects/#/#/#"
+                          style={{ marginLeft: 16 }}
+                        />
                       </Form.Item>
+                      <Button
+                        type="dashed"
+                        onClick={() => remove(field.name)}
+                        disabled={fields.length <= 1}
+                        className="custom-button-hover"
+                        style={{
+                          marginLeft: "8px",
+                          display: "flex",
+                          alignItems: "center",
+                          marginBottom: 6,
+                        }}
+                      >
+                        <MinusCircleOutlined /> Remove
+                      </Button>
                     </Col>
                   </Row>
                 ))}
@@ -473,7 +515,20 @@ export function LoggersInfluxDB() {
             wrapperCol={{ span: 24 }}
             style={{ display: "flex", justifyContent: "center" }}
           >
-            <Button type="primary" htmlType="submit" style={{ marginTop: 10 }}>
+            <Button
+              type="submit"
+              className="btn btn-success"
+              htmlType="submit"
+              style={{
+                margin: "0 auto",
+                textAlign: "center",
+                padding: "10px 20px",
+                lineHeight: "normal",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
               Add Configuration
             </Button>
           </Form.Item>
@@ -486,7 +541,17 @@ export function LoggersInfluxDB() {
           apiData.map((item) => (
             <Col span={6} key={item.id}>
               <Card
-                title={<div className="card-title">{item.id}</div>}
+                title={
+                  item.id.length > 20 ? (
+                    <Tooltip title={item.id}>
+                      <div className="card-title">
+                        {item.id.substring(0, 20) + "..."}
+                      </div>
+                    </Tooltip>
+                  ) : (
+                    <div className="card-title">{item.id}</div>
+                  )
+                }
                 bordered={false}
                 extra={
                   <Dropdown
@@ -519,9 +584,10 @@ export function LoggersInfluxDB() {
                         </Menu.Item>
                       </Menu>
                     }
+                    trigger={["click"]}
                   >
-                    <Button>
-                      Actions <DownOutlined />
+                    <Button className="btn-action-custom">
+                      <MenuOutlined />
                     </Button>
                   </Dropdown>
                 }
@@ -542,24 +608,14 @@ export function LoggersInfluxDB() {
                 <p>
                   <strong>Log Level:</strong> {JSON.parse(item.config).LogLevel}
                 </p>
-                {Array.isArray(item.messages) && item.messages.length > 0 ? (
-                  <div className="last-message-container">
-                    <p>
-                      <strong>Last Message:</strong>
-                    </p>
-                    <p>
-                      <strong>Time:</strong> {item.messages[0].time}
-                    </p>
-                    <p>
-                      <strong>Level:</strong> {item.messages[0].level}
-                    </p>
-                    <p>
-                      <strong>Message:</strong> {item.messages[0].message}
-                    </p>
-                  </div>
-                ) : (
-                  <p>No messages available.</p>
-                )}
+                <div style={{ display: "flex", justifyContent: "center" }}>
+                  <Button
+                    onClick={() => handleShowPopup(item)}
+                    className="custom-button"
+                  >
+                    Show Logs
+                  </Button>
+                </div>
               </Card>
             </Col>
           ))
@@ -567,6 +623,14 @@ export function LoggersInfluxDB() {
           <></>
         )}
       </Row>
+      {isPopupVisible && selectedItem && (
+        <ShowMoreLogsPopup
+          visible={isPopupVisible}
+          onClose={handleClosePopup}
+          type={selectedItem.type}
+          id={selectedItem.id}
+        />
+      )}
     </>
   );
 }

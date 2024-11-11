@@ -39,6 +39,43 @@
   padding-left: 0 !important;
 }
 
+input.form-control:focus,
+input.form-control:hover {
+  border-color: #28a745 !important;
+  box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25) !important;
+}
+
+.ant-input:focus,
+.ant-input:hover,
+.ant-select-selector:focus,
+.ant-select-selector:hover,
+.ant-switch-checked {
+  border-color: #28a745 !important;
+  box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.25) !important;
+}
+
+.ant-switch:focus,
+.ant-switch:hover {
+  border-color: #28a745 !important;
+  box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.25) !important;
+}
+
+.ant-switch-checked {
+  background-color: #28a745 !important;
+  border-color: #28a745 !important;
+}
+
+.ant-select-focused .ant-select-selector,
+.ant-select-selector:focus,
+.ant-select-selector:hover {
+  border-color: #28a745 !important;
+  box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.25) !important;
+}
+
+.ant-select-item-option-selected {
+  background-color: rgba(40, 167, 69, 0.1) !important;
+}
+
 .leftsidenav {
   background-color: cadetblue !important;
 }
@@ -53,4 +90,89 @@
   border: 2px dashed #d9d9d9;
   padding: 10px;
   border-radius: 4px;
+}
+
+.custom-button {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 1px solid initial;
+  transition: border-color 0.3s ease;
+}
+
+.custom-button:hover {
+  border-color: #28a745 !important;
+  color: #28a745 !important;
+}
+
+.custom-button-hover:hover {
+  border-color: #28a745 !important;
+  color: #28a745 !important;
+}
+
+.green-border-on-hover-focus {
+  border-color: #ccc;
+  transition: border-color 0.3s ease;
+}
+
+.green-border-on-hover-focus:hover,
+.green-border-on-hover-focus:focus {
+  border-color: #28a745 !important;
+  outline: none;
+}
+
+.ant-dropdown-trigger:hover {
+  border: 0px solid #28a745 !important;
+  color: #727272 !important;
+}
+
+.btn-action-custom {
+  font-size: 20px !important;
+  line-height: 1;
+  margin: 0 !important;
+  padding: 6px !important;
+  display: flex;
+  justify-content: center;
+  background: none !important;
+  margin: 0 !important;
+  border: 0px !important;
+  box-shadow: none;
+  outline: none;
+}
+
+.card-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: calc(100% - 2px);
+}
+
+.url-text {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  word-break: break-all;
+}
+
+.ant-card-body {
+  padding: 16px;
+  overflow: hidden;
+  word-wrap: break-word;
+}
+
+.btn-action-custom {
+  margin-left: 8px;
+}
+
+.ant-tooltip-inner {
+  white-space: normal !important;
+  max-width: 300px;
+}
+
+.ant-table-thead > tr > th {
+  padding: 8px 12px;
+}
+
+.ant-modal-mask {
+  background-color: rgba(0, 0, 0, 0.1) !important;
 }

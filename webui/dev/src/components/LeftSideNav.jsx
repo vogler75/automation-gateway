@@ -8,12 +8,14 @@ import {
   ApiOutlined,
   ClusterOutlined,
   AppstoreOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined,
 } from "@ant-design/icons";
-import { Menu, message } from "antd";
+import { Button, Menu, message, ConfigProvider } from "antd";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../utils/auth";
-import { get } from "react-hook-form";
 
+// Function to get menu items
 function getItem(label, key, icon, children, disabled = false) {
   return {
     key,
@@ -29,7 +31,7 @@ const items = [
   getItem("Drivers", "1", <ApiOutlined />, [
     getItem("MQTT", "11"),
     getItem("OPC UA", "12"),
-    getItem("PLC4X", "13 ", null, null, true),
+    getItem("PLC4X", "13", null, null, true),
   ]),
   getItem("Servers", "2", <ClusterOutlined />, [
     getItem("MQTT", "21"),
@@ -61,21 +63,17 @@ const items = [
 ];
 
 export function LeftSideNav() {
+  const [collapsed, setCollapsed] = useState(false);
   const auth = useAuth();
   const navigate = useNavigate();
-  const [mode, setMode] = useState("inline");
-  const [theme, setTheme] = useState("light");
 
-  const changeMode = (value) => {
-    setMode(value ? "vertical" : "inline");
+  const toggleCollapsed = () => {
+    setCollapsed(!collapsed);
   };
 
-  const changeTheme = (value) => {
-    setTheme(value ? "dark" : "light");
-  };
-
-  // Function to handle logout mutation
   const logoutMutation = async () => {
+    const endpoint = localStorage.getItem("serverEndpoint") || "localhost";
+    const serverURL = `http://${endpoint}:9999`;
     const mutation = `mutation {
       deleteAccessToken(token: "${auth.token.replace(/["']/g, "")}") {
         ok
@@ -84,10 +82,8 @@ export function LeftSideNav() {
       }
     }`;
 
-    console.log("Logout mutation query:", mutation); // Log the mutation query
-
     try {
-      const response = await fetch("http://localhost:9999/admin/api", {
+      const response = await fetch(`${serverURL}/admin/api`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -96,14 +92,13 @@ export function LeftSideNav() {
       });
 
       const data = await response.json();
-      console.log("Logout mutation response:", data); // Log the response from the API
 
       if (data.errors) {
         message.error(data.errors[0].message);
       } else {
         message.success("Logout successful!");
-        auth.logout(); // Call the logout function from useAuth
-        navigate("/"); // Redirect after successful logout
+        auth.logout();
+        navigate("/");
       }
     } catch (error) {
       console.error("Error sending logout mutation:", error);
@@ -111,9 +106,10 @@ export function LeftSideNav() {
     }
   };
 
+  // Handle menu click events
   const handleMenuClick = ({ key }) => {
     if (key === "5") {
-      logoutMutation(); // Call the logout function when Logout is clicked
+      logoutMutation();
     } else if (key === "link") {
       // Do nothing
     } else if (key === "0") {
@@ -124,21 +120,39 @@ export function LeftSideNav() {
   };
 
   return (
-    <>
-      <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
+    <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
+      {/* <Button
+        type="submit"
+        onClick={toggleCollapsed}
+        style={{ marginBottom: 16 }}
+      >
+        {collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+      </Button> */}
+      <ConfigProvider
+        theme={{
+          components: {
+            Menu: {
+              itemHoverBg: "#b7f7ca",
+              itemSelectedColor: "#0fab3e",
+              itemSelectedBg: "#d9ffe4",
+            },
+          },
+        }}
+      >
         <Menu
           onClick={handleMenuClick}
           style={{
             width: 180,
             height: "100vh",
           }}
-          defaultSelectedKeys={[]}
+          defaultSelectedKeys={["0"]}
           defaultOpenKeys={[]}
-          mode={mode}
-          theme={theme}
+          mode="inline"
+          theme="light"
+          inlineCollapsed={collapsed}
           items={items}
         />
-      </div>
-    </>
+      </ConfigProvider>
+    </div>
   );
 }

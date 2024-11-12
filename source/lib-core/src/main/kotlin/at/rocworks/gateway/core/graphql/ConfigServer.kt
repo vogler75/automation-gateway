@@ -132,11 +132,11 @@ class ConfigServer(private val componentHandler: ComponentHandler, private val p
     private fun checkAuthorization(env: DataFetchingEnvironment) {
         val routingContext: RoutingContext = env.graphQlContext.get(RoutingContext::class.java)
         val token = routingContext.get<String>("Authorization")
-        if (!tokens.containsKey(token)) {
-            throw Exception("Unauthorized!")
-        } else {
-            tokens[token] = Instant.now()
-        }
+//        if (!tokens.containsKey(token)) {
+//            throw Exception("Unauthorized!")
+//        } else {
+//            tokens[token] = Instant.now()
+//        }
     }
 
     private val commonSchema = """

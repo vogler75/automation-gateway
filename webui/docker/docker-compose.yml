@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  ag-web:
+    build: .
+    ports:
+      - "3000:3000"  # Map host port 3000 to container port 3000
+    environment:
+      - PORT=3000      # Set environment variable for port
+    restart: always
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

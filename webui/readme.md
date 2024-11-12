@@ -1,7 +1,8 @@
+
 # WebUI for Automation Gateway
 
 ## Description
-This is a beta1 release for tests and reviews.
+This is a beta (V0.0.2) release for tests and reviews.
 
 ## Prerequisites
 
@@ -101,6 +102,38 @@ my-app/
 ├── package.json
 └── node_modules/
 ```
+## To get started in docker:
+### Prerequisites
+Before getting started, you need to have the following software installed on your machine:
+- **docker** 
+- **docker-compose**
+### 1. Clone the repository:
+```bash
+git clone https://github.com/your-username/your-repository.git
+```
+### 2. Navigate to the project folder:
+```bash
+cd <your-repository>/automation-gateway/webui/docker
+```
+>In this directory, you can edit the docker-compose.yml file before building it, to change the docker application name and the port used to run the express.js server.
+### 3. Build and run the docker container with docker-compose:
+```bash
+docker-compose up --build -d
+```
+### 4. Access the WebUI at:
+```
+http://localhost:PORT/
+```
+>There are some commands that might help you with docker (if you're new):
+```bash
+# Show all running container
+docker ps -a 
+# Start/Stop a specific container
+docker start <container id>
+docker stop <container id>
+# Remove a specific container (must be stopped)
+docker rm <conatiner id>
+```
 
 # Changelog V0.0.2
 
@@ -114,3 +147,4 @@ my-app/
   - On-demand query/response area within the browser
 - Added 'Show Logs' button on cards to display history of last 50 messages, with refresh every 5 seconds
 - Changed click trigger event instead of hover on the action button
+- Added a /docker directory that contain a way to deploy as a container

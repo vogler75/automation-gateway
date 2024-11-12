@@ -133,10 +133,11 @@ class ComponentHandler(
 
     fun deployComponent(type: Component.ComponentType, id: String) {
         var record = components["$type/$id"]
-        if (record != null && record.component != null) {
+        if (record?.component != null) {
             val component = record.component!!
             vertx.deployVerticle(component) { result ->
                 if (result.succeeded()) {
+                    record.config.put("Enabled", true)
                     logger.info("Component ${component.getComponentName()} started successfully")
                 } else {
                     logger.severe("Failed to start component: " + result.cause())
@@ -147,9 +148,10 @@ class ComponentHandler(
 
     fun undeployComponent(type: Component.ComponentType, id: String) {
         val record = components["$type/$id"]
-        if (record != null && record.component != null) {
+        if (record?.component != null) {
             vertx.undeploy(record.component!!.deploymentID()) { result ->
                 if (result.succeeded()) {
+                    record.config.put("Enabled", false)
                     logger.info("Component stopped successfully")
                 } else {
                     logger.severe("Failed to stop component: " + result.cause())

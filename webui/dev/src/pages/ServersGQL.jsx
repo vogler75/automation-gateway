@@ -27,7 +27,7 @@ const { Option } = Select;
 
 const handleMenuClick = async (key, id, auth, fetchData) => {
   const endpoint = localStorage.getItem("serverEndpoint") || "localhost";
-  const serverURL = `http://${endpoint}:9999`;
+  const serverURL = `http://${endpoint}`;
   let mutation = "";
 
   if (key === "enable") {
@@ -106,7 +106,7 @@ export function ServersGQL() {
 
   const fetchData = async () => {
     const endpoint = localStorage.getItem("serverEndpoint") || "localhost";
-    const serverURL = `http://${endpoint}:9999`;
+    const serverURL = `http://${endpoint}`;
     const query = `{
       getComponents(group: Server, type: GraphQLServer) {
         id
@@ -156,7 +156,7 @@ export function ServersGQL() {
 
   const handleSubmit = async (values) => {
     const endpoint = localStorage.getItem("serverEndpoint") || "localhost";
-    const serverURL = `http://${endpoint}:9999`;
+    const serverURL = `http://${endpoint}`;
     console.log("Form values:", values);
 
     const dataObject = {

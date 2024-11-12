@@ -1,8 +1,9 @@
 
+
 # WebUI for Automation Gateway
 
 ## Description
-This is a beta (V0.0.2) release for tests and reviews.
+This is a beta (V0.0.3) release for tests and reviews.
 
 ## Prerequisites
 
@@ -11,6 +12,9 @@ Before getting started, you need to have the following software installed on you
 - **Node.js** (version 16.0 or higher)
 - **npm** (Node package manager, comes with Node.js)
 - **Environment variable** of `GATEWAY_CONFIG_PORT=9999`
+	>This is required for the admin API (GraphQL) to be activated.
+- **Environment variable** of `GATEWAY_CONFIG=config.json`
+	>This is required for the "Save configuration to file" function in the settings. By using this variable with your gateway, it will look for a config.json instead of config.yaml when you run the application, so you need to create the config.json file before doing 'gradle run'.
 
 You can verify the installation of Node.js and npm with the following commands:
 
@@ -134,8 +138,14 @@ docker stop <container id>
 # Remove a specific container (must be stopped)
 docker rm <conatiner id>
 ```
+# Changelogs 
+### Changelog V0.0.3
+- Save configuration to config file works
+	- (see requirements)
+- Changed login screen to include "PORT" in the endpoint target field.
+	- IP:PORT has to be provided
 
-# Changelog V0.0.2
+### Changelog V0.0.2
 
 - Added entries to log level dropdown of components creation
 - Changed format of MQTT driver from XML to raw and added SparkPlugB

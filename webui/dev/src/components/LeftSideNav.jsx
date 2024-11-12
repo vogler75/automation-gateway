@@ -73,7 +73,7 @@ export function LeftSideNav() {
 
   const logoutMutation = async () => {
     const endpoint = localStorage.getItem("serverEndpoint") || "localhost";
-    const serverURL = `http://${endpoint}:9999`;
+    const serverURL = `http://${endpoint}`;
     const mutation = `mutation {
       deleteAccessToken(token: "${auth.token.replace(/["']/g, "")}") {
         ok

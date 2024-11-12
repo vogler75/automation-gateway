@@ -13,7 +13,7 @@ const ShowMoreLogsPopup = ({ visible, onClose, type, id }) => {
     message: null,
   });
   const endpoint = localStorage.getItem("serverEndpoint") || "localhost";
-  const serverURL = `http://${endpoint}:9999`;
+  const serverURL = `http://${endpoint}`;
 
   const fetchLogs = async () => {
     const query = `{

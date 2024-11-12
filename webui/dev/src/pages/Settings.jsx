@@ -10,7 +10,7 @@ import { useAuth } from "../utils/auth";
 
 export function Settings() {
   const endpoint = localStorage.getItem("serverEndpoint") || "localhost";
-  const serverURL = `http://${endpoint}:9999`;
+  const serverURL = `http://${endpoint}`;
   const { setTitle } = usePageTitle();
   const auth = useAuth();
   const [tokens, setTokens] = useState([]);

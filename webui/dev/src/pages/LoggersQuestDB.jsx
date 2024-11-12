@@ -28,7 +28,7 @@ const { Option } = Select;
 
 const handleMenuClick = async (key, id, auth, fetchData) => {
   const endpoint = localStorage.getItem("serverEndpoint") || "localhost";
-  const serverURL = `http://${endpoint}:9999`;
+  const serverURL = `http://${endpoint}`;
   let mutation = "";
 
   if (key === "enable") {
@@ -96,7 +96,7 @@ const handleMenuClick = async (key, id, auth, fetchData) => {
 
 export function LoggersQuestDB() {
   const endpoint = localStorage.getItem("serverEndpoint") || "localhost";
-  const serverURL = `http://${endpoint}:9999`;
+  const serverURL = `http://${endpoint}`;
   const [form] = Form.useForm();
   const { setTitle } = usePageTitle();
   const auth = useAuth();
@@ -156,7 +156,7 @@ export function LoggersQuestDB() {
 
   const handleSubmit = async (values) => {
     const endpoint = localStorage.getItem("serverEndpoint") || "localhost";
-    const serverURL = `http://${endpoint}:9999`;
+    const serverURL = `http://${endpoint}`;
     console.log("Form values:", values);
 
     const loggingTopics = (values.loggingTopics || []).map((t) => ({

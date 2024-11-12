@@ -1,6 +1,6 @@
 export async function getToken() {
   const endpoint = localStorage.getItem("serverEndpoint") || "localhost";
-  const serverURL = `http://${endpoint}:9999`;
+  const serverURL = `http://${endpoint}`;
   // Default options are marked with *
   const query = `mutation {
         createAccessToken(username: "string", password: "string") {

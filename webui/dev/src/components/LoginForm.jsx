@@ -15,7 +15,7 @@ export function LoginForm() {
   const [endpoint, setEndpoint] = useState("");
 
   useEffect(() => {
-    const savedEndpoint = localStorage.getItem("serverEndpoint") || "localhost";
+    const savedEndpoint = localStorage.getItem("serverEndpoint");
     setEndpoint(savedEndpoint);
   }, []);
 
@@ -25,7 +25,7 @@ export function LoginForm() {
     localStorage.setItem("serverEndpoint", endpointValue);
   };
 
-  const serverURL = `http://${endpoint}:9999`;
+  const serverURL = `http://${endpoint}`;
 
   useEffect(() => {}, [serverURL]);
 
@@ -75,7 +75,7 @@ export function LoginForm() {
           <input
             type="text"
             className="form-control"
-            placeholder="Server IP or endpoint (e.g., localhost or 192.168.1.1)"
+            placeholder="Ip:Port of the gateway"
             value={endpoint}
             onChange={handleEndpointChange}
           />

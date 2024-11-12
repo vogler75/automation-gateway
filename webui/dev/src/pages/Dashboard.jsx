@@ -18,7 +18,7 @@ import ShowMoreLogsPopup from "../components/ShowMoreLogsPopup";
 
 const handleMenuClick = async (key, id, type, auth, fetchData) => {
   const endpoint = localStorage.getItem("serverEndpoint") || "localhost";
-  const serverURL = `http://${endpoint}:9999`;
+  const serverURL = `http://${endpoint}`;
   let mutation = "";
 
   if (key === "enable") {
@@ -84,7 +84,7 @@ export function Dashboard() {
   const [isPopupVisible, setIsPopupVisible] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const endpoint = localStorage.getItem("serverEndpoint") || "localhost";
-  const serverURL = `http://${endpoint}:9999`;
+  const serverURL = `http://${endpoint}`;
   const { setTitle } = usePageTitle();
   const auth = useAuth();
   const [drivers, setDrivers] = useState([]);

@@ -1,0 +1,30 @@
+Drivers:
+  Mqtt:
+    - Id: "home"
+      Enabled: true
+      LogLevel: INFO
+      Host: 192.168.1.4
+      Port: 1883
+      ClientId: frankenstein-driver
+      Format: Json
+      CustomJson:
+        Value: "Value"
+        TimestampMs: "TimeMS"
+        TimestampIso: "TimeISO"
+
+Loggers:
+  Jdbc:
+    - Id: risingwave
+      Enabled: true
+      Url: jdbc:postgresql://nuc1:4566/dev
+      Username: root
+      Password: ""
+      SqlTableName: "frankenstein"
+      SqlCreateTable: true
+      SqlCreateStatements:
+        - "CREATE TABLE IF NOT EXISTS frankenstein (sys VARCHAR, nodeid VARCHAR, address VARCHAR, sourcetime TIMESTAMPTZ, servertime TIMESTAMPTZ, numericvalue NUMERIC, stringvalue VARCHAR, status VARCHAR, PRIMARY KEY (sys, nodeid, sourcetime))"
+      SqlInsertStatement: "INSERT INTO frankenstein (sys, nodeid, address, sourcetime, servertime, numericvalue, stringvalue, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+      Logging:
+        - Topic: mqtt/home/path/Original/#
+
+

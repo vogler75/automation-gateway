@@ -3,6 +3,7 @@ package at.rocworks.gateway.logger
 import at.rocworks.gateway.core.logger.LoggerBase
 import io.vertx.core.Future
 import io.vertx.core.Promise
+import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import java.sql.*
 import java.time.OffsetDateTime
@@ -14,6 +15,8 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
     private val password = config.getString("Password", "")
 
     private val sqlTableName = config.getString("SqlTableName", "frankenstein")
+    private val sqlCreateTable = config.getBoolean("SqlCreateTable", true)
+    private val sqlCreateStatements = config.getJsonArray("SqlCreateStatements", JsonArray()).map { it.toString() }
 
     // --------------------------------------------------------------------------------------------------------------
 
@@ -155,13 +158,15 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
                 this.readConnection = getConnection()
 
                 // Insert SQL
-                sqlInsertStatement = when (connection.metaData.databaseProductName) {
-                    "MySQL" -> sqlInsertStatementMySQL
-                    "Crate" -> sqlInsertStatementCrate
-                    "PostgreSQL" -> sqlInsertStatementPostgreSQL
-                    "Microsoft SQL Server" -> sqlInsertStatementMsSQL
-                    "HSQL Database Engine" -> sqlInsertStatementHSQL
-                    else -> sqlInsertStatement
+                if (sqlInsertStatement == "") {
+                    sqlInsertStatement = when (connection.metaData.databaseProductName) {
+                        "MySQL" -> sqlInsertStatementMySQL
+                        "Crate" -> sqlInsertStatementCrate
+                        "PostgreSQL" -> sqlInsertStatementPostgreSQL
+                        "Microsoft SQL Server" -> sqlInsertStatementMsSQL
+                        "HSQL Database Engine" -> sqlInsertStatementHSQL
+                        else -> sqlInsertStatement
+                    }
                 }
 
                 if (sqlInsertStatement == "") {
@@ -169,21 +174,34 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
                 }
 
                 // Create Table
-                when (connection.metaData.databaseProductName) {
-                    "MySQL" -> sqlCreateTableMySQL
-                    "Crate" -> sqlCreateTableCrate
-                    "PostgreSQL" -> sqlCreateTablePostgreSQL
-                    "Microsoft SQL Server" -> sqlCreateTableMsSQL
-                    "HSQL Database Engine" -> sqlCreateTableHSQL
-                    else -> listOf<String>()
-                }.forEach { sql ->
-                    connection.createStatement().use { statement ->
-                        try {
-                            statement.execute(sql)
-                        } catch (e: Exception) {
-                            logger.warning("Create table exception [${e.message}]")
+                if (sqlCreateTable) {
+                    if (sqlCreateStatements.isNotEmpty()) {
+                        sqlCreateStatements.forEach { sql ->
+                            connection.createStatement().use { statement ->
+                                try {
+                                    statement.execute(sql)
+                                } catch (e: Exception) {
+                                    logger.warning("Create table exception [${e.message}]")
+                                }
+                                connection.commit()
+                            }
                         }
-                        connection.commit()
+                    } else when (connection.metaData.databaseProductName) {
+                        "MySQL" -> sqlCreateTableMySQL
+                        "Crate" -> sqlCreateTableCrate
+                        "PostgreSQL" -> sqlCreateTablePostgreSQL
+                        "Microsoft SQL Server" -> sqlCreateTableMsSQL
+                        "HSQL Database Engine" -> sqlCreateTableHSQL
+                        else -> listOf<String>()
+                    }.forEach { sql ->
+                        connection.createStatement().use { statement ->
+                            try {
+                                statement.execute(sql)
+                            } catch (e: Exception) {
+                                logger.warning("Create table exception [${e.message}]")
+                            }
+                            connection.commit()
+                        }
                     }
                 }
 

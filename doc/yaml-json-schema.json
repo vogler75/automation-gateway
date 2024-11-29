@@ -208,8 +208,15 @@
                 "Username": { "type": "string" },
                 "Password": { "type": "string" },
                 "SqlTableName": { "type": "string"},
+                "SqlCreateTable": { "type": "boolean", "default": true },
                 "SqlInsertStatement": { "type": "string"},
-                "SqlQueryStatement": { "type": "string"}                        
+                "SqlQueryStatement": { "type": "string"},
+                "SqlCreateStatements": { 
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                } 
             },
             "required": ["Id", "Url"]
         },

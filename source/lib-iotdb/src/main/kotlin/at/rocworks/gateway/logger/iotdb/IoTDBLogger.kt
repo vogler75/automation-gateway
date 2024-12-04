@@ -8,7 +8,7 @@ import io.vertx.core.Promise
 import io.vertx.core.buffer.impl.BufferImpl
 import io.vertx.core.json.JsonObject
 import org.apache.iotdb.session.Session
-import org.apache.iotdb.tsfile.file.metadata.enums.TSDataType
+import org.apache.tsfile.enums.TSDataType
 import java.sql.SQLException
 import java.time.Instant
 import java.util.*

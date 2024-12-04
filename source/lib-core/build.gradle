@@ -3,10 +3,10 @@ plugins {
 }
 
 dependencies {
-    implementation 'org.eclipse.milo:sdk-client:0.6.14'
-    implementation 'org.eclipse.milo:sdk-server:0.6.14'
-    implementation 'org.eclipse.milo:dictionary-manager:0.6.14'
-    implementation 'org.eclipse.milo:dictionary-reader:0.6.14'
+    implementation 'org.eclipse.milo:sdk-client:0.6.15'
+    implementation 'org.eclipse.milo:sdk-server:0.6.15'
+    implementation 'org.eclipse.milo:dictionary-manager:0.6.15'
+    implementation 'org.eclipse.milo:dictionary-reader:0.6.15'
 
     implementation "io.vertx:vertx-core:$vertxVersion"
     implementation "io.vertx:vertx-lang-kotlin:$vertxVersion"
@@ -18,8 +18,9 @@ dependencies {
     implementation "io.vertx:vertx-kafka-client:$vertxVersion"
 
     implementation "io.reactivex.rxjava2:rxjava:2.2.21"
-    implementation "org.eclipse.tahu:tahu-core:1.0.8" // Note: 1.0.10 leads to tons of log messages
 
-    implementation 'org.slf4j:slf4j-api:1.7.32'
-    implementation 'org.slf4j:slf4j-simple:1.7.32'
+    implementation "org.eclipse.tahu:tahu-core:1.0.12"
+
+    implementation 'org.slf4j:slf4j-api:2.0.12'
+    implementation 'org.slf4j:slf4j-simple:2.0.13'
 }

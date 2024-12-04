@@ -19,8 +19,10 @@ dependencies {
     runtimeOnly group: 'org.hsqldb', name: 'hsqldb', version: '2.7.4'
     runtimeOnly group: 'org.postgresql', name: 'postgresql', version: '42.7.4'
     runtimeOnly group: 'io.crate', name: 'crate-jdbc', version: '2.7.0'
-    runtimeOnly group: 'com.mysql', name: 'mysql-connector-j', version: '9.1.0'
     runtimeOnly group: 'com.microsoft.sqlserver', name: 'mssql-jdbc', version: '12.8.1.jre11'
+    runtimeOnly group: 'mysql', name: 'mysql-connector-java', version: '8.0.33'
+    //runtimeOnly group: 'com.mysql', name: 'mysql-connector-j', version: '9.1.0' // by adding this we are getting an error: ClassNotFoundException: com.google.protobuf.GeneratedMessageV3$ExtendableMessageOrBuilder
+
 }
 
 application {

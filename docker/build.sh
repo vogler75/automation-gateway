@@ -40,5 +40,5 @@ ver=${2:-`cat version.txt`}$branch_name
 
 echo $ver
 
-#build app . $ver
-#build app plc4x $ver
+build app . $ver
+build app plc4x $ver

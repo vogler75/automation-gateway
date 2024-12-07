@@ -80,6 +80,8 @@ data class Topic (
         TopicType.Unknown -> BrowsePath(emptyList())
     }
 
+    fun getNodeOrBrowsePath() = topicNode.ifEmpty { browsePath.toString() }
+
     fun encodeToJson() = encodeToJson(this)
 
     companion object {

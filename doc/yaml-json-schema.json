@@ -207,6 +207,7 @@
                 "Url": { "type": "string", "default": "jdbc:postgresql://localhost:5432/gateway" },
                 "Username": { "type": "string" },
                 "Password": { "type": "string" },
+                "SqlDbType": { "type": "string", "enum": ["QuestDB", "RisingWave"]},
                 "SqlTableName": { "type": "string"},
                 "SqlCreateTable": { "type": "boolean", "default": true },
                 "SqlInsertStatement": { "type": "string"},

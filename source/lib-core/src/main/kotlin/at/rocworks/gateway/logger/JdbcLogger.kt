@@ -14,6 +14,7 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
     private val username = config.getString("Username", "")
     private val password = config.getString("Password", "")
 
+    private val sqlDbType = config.getString("SqlDbType", "")
     private val sqlTableName = config.getString("SqlTableName", "frankenstein")
     private val sqlCreateTable = config.getBoolean("SqlCreateTable", true)
     private val sqlCreateStatements = config.getJsonArray("SqlCreateStatements", JsonArray()).map { it.toString() }
@@ -93,9 +94,38 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
             servertime timestamp with time zone NOT NULL,
             numericvalue numeric,
             stringvalue longvarchar,
-            status varchar(30) ,
+            status varchar(30),
             CONSTRAINT ${sqlTableName}_pk PRIMARY KEY (sys, nodeid, sourcetime)
         );
+    """.trimIndent())
+
+    private val sqlCreateTableQuestDB = listOf("""
+        CREATE TABLE IF NOT EXISTS $sqlTableName (
+            sys symbol,
+            nodeid symbol,
+            address symbol,            
+            sourcetime timestamp,
+            servertime timestamp,
+            numericvalue double,
+            stringvalue varchar,
+            status varchar
+        ) TIMESTAMP (sourcetime) PARTITION BY MONTH
+    """.trimIndent(),
+        "ALTER TABLE $sqlTableName DEDUP ENABLE UPSERT KEYS (sourcetime, sys, nodeid)"
+    )
+
+    private val sqlCreateTableRisingWave = listOf("""
+        CREATE TABLE IF NOT EXISTS $sqlTableName (
+            sys VARCHAR,
+            nodeid VARCHAR,
+            address VARCHAR, 
+            sourcetime TIMESTAMPTZ, 
+            servertime TIMESTAMPTZ,
+            numericvalue NUMERIC, 
+            stringvalue VARCHAR, 
+            status VARCHAR, 
+            PRIMARY KEY (sys, nodeid, sourcetime)
+         )
     """.trimIndent())
 
     // --------------------------------------------------------------------------------------------------------------
@@ -109,7 +139,7 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
         """.trimIndent()
 
     private val sqlInsertStatementMySQL = """
-        INSERT IGNORE INTO $sqlTableName (sys, address, nodeid, sourcetime, servertime, numericvalue, stringvalue, status)
+        INSERT IGNORE INTO $sqlTableName (sys, nodeid, address, sourcetime, servertime, numericvalue, stringvalue, status)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)        
         """.trimIndent()
 
@@ -129,12 +159,22 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)        
         """.trimIndent()
 
+    private val sqlInsertStatementQuestDB = """
+        INSERT INTO $sqlTableName (sys, nodeid, address, sourcetime, servertime, numericvalue, stringvalue, status)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)        
+    """.trimIndent()
+
+    private val sqlInsertStatementRisingWave = """
+        INSERT INTO $sqlTableName (sys, nodeid, address, sourcetime, servertime, numericvalue, stringvalue, status) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    """.trimIndent()
+
     // --------------------------------------------------------------------------------------------------------------
 
     private val sqlQueryStatement = config.getString("SqlQueryStatement", """
         SELECT sourcetime, servertime, numericvalue, stringvalue, status
          FROM $sqlTableName 
-         WHERE sys = ? AND nodeid = ? AND sourcetime >= ? AND sourcetime <= ? 
+         WHERE sys = ? AND address = ? AND sourcetime >= ? AND sourcetime <= ? 
         """.trimIndent())
 
     // --------------------------------------------------------------------------------------------------------------
@@ -148,7 +188,7 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
         try {
             logger.info("Open connection...")
             getConnection().let { connection ->
-                logger.info("Database product name [${connection.metaData.databaseProductName}]")
+                logger.info("Database product name [${connection.metaData.databaseProductName}] [${connection.metaData.databaseProductVersion}] DbType [$sqlDbType]")
                 connection.autoCommit = false
 
                 // Set write connection
@@ -162,7 +202,11 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
                     sqlInsertStatement = when (connection.metaData.databaseProductName) {
                         "MySQL" -> sqlInsertStatementMySQL
                         "Crate" -> sqlInsertStatementCrate
-                        "PostgreSQL" -> sqlInsertStatementPostgreSQL
+                        "PostgreSQL" -> when (sqlDbType) {
+                            "QuestDB" -> sqlInsertStatementQuestDB
+                            "RisingWave" -> sqlInsertStatementRisingWave
+                            else -> sqlInsertStatementPostgreSQL
+                        }
                         "Microsoft SQL Server" -> sqlInsertStatementMsSQL
                         "HSQL Database Engine" -> sqlInsertStatementHSQL
                         else -> sqlInsertStatement
@@ -189,7 +233,11 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
                     } else when (connection.metaData.databaseProductName) {
                         "MySQL" -> sqlCreateTableMySQL
                         "Crate" -> sqlCreateTableCrate
-                        "PostgreSQL" -> sqlCreateTablePostgreSQL
+                        "PostgreSQL" -> when (sqlDbType) {
+                            "QuestDB" -> sqlCreateTableQuestDB
+                            "RisingWave" -> sqlCreateTableRisingWave
+                            else -> sqlCreateTablePostgreSQL
+                        }
                         "Microsoft SQL Server" -> sqlCreateTableMsSQL
                         "HSQL Database Engine" -> sqlCreateTableHSQL
                         else -> listOf<String>()
@@ -257,7 +305,7 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
     private fun writeBatch(batch: PreparedStatement) {
         val size = pollDatapointBlock {
             batch.setString(1, it.topic.systemName)
-            batch.setString(2, it.topic.topicNode)
+            batch.setString(2, it.topic.getNodeOrBrowsePath())
             batch.setString(3, it.topic.getBrowsePathOrNode().toString())
             batch.setTimestamp(4, Timestamp.from(it.value.sourceTime()))
             batch.setTimestamp(5, Timestamp.from(it.value.serverTime()))

@@ -3,13 +3,17 @@
 Connect one or more OPC UA servers, PLC4X devices or MQTT brokers to the gateway and access the data with a GraphQL, a MQTT, or an OPC UA client. The Gateway additionally offers functionality to log value changes from OPC UA, MQTT and PLC4X in a range of databases and platforms, including QuestDB, InfluxDB, Kafka, among others. Tested with up to 250000 value changes per second on comodity hardware.  
 
 Available logger sinks:  
-* TimescaleDB (JDBC)
+* JDBC
+  * PostgreSQL & TimescaleDB
+  * QuestDB (PostgreSQL Driver, set SqlDbType to QuestDB)
+  * RisingWave (PostgreSQL Driver, set SqlDbType to RisingWave)
+  * CrateDB 
+  * MySQL
+  * SQLServer
+  * HSQL
 * InfluxDB
-* QuestDB
-* CrateDB
 * IoTDB
 * Neo4J
-* JDBC (PostgreSQL, MySQL, SQL Server)
 * OpenSearch (ElasticSearch)
 * Imply.io (Apache Druid)
 

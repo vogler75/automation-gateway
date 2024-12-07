@@ -3,7 +3,6 @@ import at.rocworks.gateway.core.service.Common
 import at.rocworks.gateway.core.service.Component
 import at.rocworks.gateway.logger.ImplyLogger
 import at.rocworks.gateway.logger.influx.InfluxDBLogger
-import at.rocworks.gateway.logger.questdb.QuestDBLogger
 import at.rocworks.gateway.logger.JdbcLogger
 import at.rocworks.gateway.logger.KafkaLogger
 import at.rocworks.gateway.logger.iotdb.IoTDBLogger
@@ -29,7 +28,6 @@ object App {
         fun factory(type: Component.ComponentType, config: JsonObject): Component? {
             return Component.defaultFactory(type, config) ?: when (type) {
                 Component.ComponentType.InfluxDBLogger   -> InfluxDBLogger.create(config)
-                Component.ComponentType.QuestDBLogger    -> QuestDBLogger(config)
                 Component.ComponentType.IoTDBLogger      -> IoTDBLogger(config)
                 Component.ComponentType.KafkaLogger      -> KafkaLogger(config)
                 Component.ComponentType.JdbcLogger       -> JdbcLogger(config)

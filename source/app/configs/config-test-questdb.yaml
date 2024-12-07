@@ -27,19 +27,19 @@ Drivers:
       SecurityPolicy: None
 
 Loggers:
-  QuestDB:
-    - Id: Qdb0
+  Jdbc:
+    - Id: "questdb1"
       Enabled: true
-      Config: http::addr=nuc1.rocworks.local:9001;
-      Table: home1
+      Url: jdbc:postgresql://scada:8812/qdb
+      Username: admin
+      Password: quest
+      SqlDbType: QuestDB
+      SqlTableName: gateway
+      WriteParameters:
+        QueueSize: 1000000
       Logging:
         - Topic: mqtt/home/path/Original/#
 
-    - Id: Qdb1
-      Enabled: true
-      Config: http::addr=nuc1.rocworks.local:9001;
-      Table: demo1
-      Logging:
         - Topic: opc/demo1/path/Objects/Demo/SimulationMass/SimulationMass_Boolean/#
         - Topic: opc/demo1/path/Objects/Demo/SimulationMass/SimulationMass_Byte/#
         - Topic: opc/demo1/path/Objects/Demo/SimulationMass/SimulationMass_Double/#
@@ -62,11 +62,6 @@ Loggers:
         - Topic: opc/demo1/path/Objects/Demo/SimulationMass/SimulationMass_NodeId/#
         - Topic: opc/demo1/path/Objects/Demo/SimulationMass/SimulationMass_XmlElement/#
 
-    - Id: Qdb2
-      Enabled: true
-      Config: http::addr=nuc1.rocworks.local:9001;
-      Table: demo2
-      Logging:
         - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Boolean/#
         - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Byte/#
         - Topic: opc/demo2/path/Objects/Demo/SimulationMass/SimulationMass_Double/#

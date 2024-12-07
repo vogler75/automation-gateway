@@ -5,8 +5,8 @@ Connect one or more OPC UA servers, PLC4X devices or MQTT brokers to the gateway
 Available logger sinks:  
 * JDBC
   * PostgreSQL & TimescaleDB
-  * QuestDB (PostgreSQL Driver, set SqlDbType to QuestDB)
-  * RisingWave (PostgreSQL Driver, set SqlDbType to RisingWave)
+  * QuestDB (PostgreSQL Driver, set SqlDbType to QuestDB, jdbc:postgresql://hostname:8812/qdb)
+  * RisingWave (PostgreSQL Driver, set SqlDbType to RisingWave, jdbc:postgresql://hostname:4566/dev)
   * CrateDB 
   * MySQL
   * SQLServer

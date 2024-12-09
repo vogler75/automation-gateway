@@ -124,7 +124,7 @@ class JdbcLogger(config: JsonObject) : LoggerBase(config) {
             numericvalue NUMERIC, 
             stringvalue VARCHAR, 
             status VARCHAR, 
-            PRIMARY KEY (sys, nodeid, sourcetime)
+            PRIMARY KEY (sys, nodeid, sourcetime)         
          )
     """.trimIndent())
 

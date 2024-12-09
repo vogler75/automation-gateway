@@ -48,6 +48,7 @@ class MqttLogger (config: JsonObject) : LoggerPublisher(config) {
             options.setCleanSession(cleanSession)
             options.setSsl(ssl)
             options.setTrustAll(trustAll)
+            options.hostnameVerificationAlgorithm = "HTTPS"
             options.setMaxMessageSize(maxMessageSizeKb)
             client = MqttClient.create(vertx, options)
             client!!.closeHandler {

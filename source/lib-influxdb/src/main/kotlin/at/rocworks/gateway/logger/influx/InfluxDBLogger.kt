@@ -6,7 +6,7 @@ import io.vertx.core.json.JsonObject
 class InfluxDBLogger {
     companion object {
         fun create(config: JsonObject): LoggerBase {
-            val version = config.getInteger("Version")
+            val version = config.getInteger("Version", 1)
             return when (version) {
                 1 -> InfluxDBLoggerV1(config)
                 2 -> InfluxDBLoggerV2(config)

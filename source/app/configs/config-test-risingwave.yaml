@@ -1,25 +1,19 @@
 Drivers:
-  Mqtt:
-    - Id: "home"
+  OpcUa:
+    - Id: "home1"
       Enabled: true
       LogLevel: INFO
-      Host: 192.168.1.4
-      Port: 1883
-      ClientId: frankenstein-driver
-      Format: Json
-      CustomJson:
-        Value: "Value"
-        TimestampMs: "TimeMS"
-        TimestampIso: "TimeISO"
+      EndpointUrl: "opc.tcp://scada:4841/server"
+      UpdateEndpointUrl: true
+      SecurityPolicyUri: http://opcfoundation.org/UA/SecurityPolicy#None
 
 Loggers:
-  Jdbc:
-    - Id: risingwave
+  Jdbc:   
+    - Id: risingwave1
       Enabled: true
-      Url: jdbc:postgresql://nuc1:4566/dev
+      Url: jdbc:postgresql://linux0:4566/dev
+      SqlDbType: RisingWave
       Username: root
       Password: ""
       Logging:
-        - Topic: mqtt/home/path/Original/#
-
-
+        - Topic: opc/home1/path/ns=2;s=85\/Mqtt\/home/#

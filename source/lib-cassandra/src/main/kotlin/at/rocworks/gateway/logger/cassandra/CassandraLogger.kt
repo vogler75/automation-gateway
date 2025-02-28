@@ -13,16 +13,7 @@ import com.datastax.oss.driver.api.core.cql.PreparedStatement
 import java.net.InetSocketAddress
 
 /*
-  CREATE TABLE IF NOT EXISTS frankenstein (
-    sys TEXT,
-    nodeid TEXT,
-    address TEXT,
-    sourcetime TIMESTAMP,
-    servertime TIMESTAMP,
-    numericvalue DECIMAL,
-    stringvalue TEXT,
-    status TEXT,
-    PRIMARY KEY ((sys, nodeid), sourcetime)
+  CREATE KEYSPACE scada WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 2};
 );
  */
 
@@ -51,7 +42,7 @@ class CassandraLogger(config: JsonObject) : LoggerBase(config) {
             val session = builder.build()
 
             val createTableQuery = """
-            CREATE TABLE IF NOT EXISTS frankenstein (
+            CREATE TABLE IF NOT EXISTS $table (
                 sys TEXT,
                 nodeid TEXT,
                 address TEXT,
@@ -60,7 +51,7 @@ class CassandraLogger(config: JsonObject) : LoggerBase(config) {
                 numericvalue DECIMAL,
                 stringvalue TEXT,
                 status TEXT,
-                PRIMARY KEY ((sys, nodeid), sourcetime)
+                PRIMARY KEY ((sys, address), sourcetime)
             );
             """.trimIndent()
 
@@ -112,13 +103,14 @@ class CassandraLogger(config: JsonObject) : LoggerBase(config) {
             val batchBuilder = BatchStatement.builder(BatchType.UNLOGGED)
 
             val size = pollDatapointBlock { it ->
+                val bigDecimal = it.value.valueAsDouble()?.let { if (it.isNaN()) null else it.toBigDecimal() }
                 val boundStatement = preparedStatement.bind(
                     it.topic.systemName,
                     it.topic.getNodeOrBrowsePath(),
                     it.topic.getBrowsePathOrNode().toString(),
                     it.value.sourceTime,
                     it.value.serverTime,
-                    it.value.valueAsDouble()?.toBigDecimal(),
+                    bigDecimal,
                     it.value.valueAsString(),
                     it.value.statusCode
                 )

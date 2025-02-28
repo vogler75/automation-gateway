@@ -7,7 +7,8 @@ include('lib-core',
         'lib-influxdb',
         'lib-iotdb',
         'lib-neo4j',
-        'lib-opensearch')
+        'lib-opensearch',
+        'lib-cassandra')
 
 dependencyResolutionManagement {
     repositories {

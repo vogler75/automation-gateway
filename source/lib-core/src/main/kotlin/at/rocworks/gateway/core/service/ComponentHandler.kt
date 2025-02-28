@@ -34,7 +34,8 @@ class ComponentHandler(
                 Component.ComponentType.MqttLogger,
                 Component.ComponentType.Neo4jLogger,
                 Component.ComponentType.OpenSearchLogger,
-                Component.ComponentType.ImplyLogger -> Component.ComponentGroup.Logger
+                Component.ComponentType.ImplyLogger,
+                Component.ComponentType.CassandraLogger -> Component.ComponentGroup.Logger
                 Component.ComponentType.None -> Component.ComponentGroup.None
             }
     }

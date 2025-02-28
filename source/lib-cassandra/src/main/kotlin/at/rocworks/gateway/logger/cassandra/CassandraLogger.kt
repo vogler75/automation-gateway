@@ -48,7 +48,26 @@ class CassandraLogger(config: JsonObject) : LoggerBase(config) {
                 .withLocalDatacenter(datacenter)
             if (username.isNotEmpty() && password.isNotEmpty())
                 builder.withAuthCredentials(username, password)
-            session = builder.build()
+            val session = builder.build()
+
+            val createTableQuery = """
+            CREATE TABLE IF NOT EXISTS frankenstein (
+                sys TEXT,
+                nodeid TEXT,
+                address TEXT,
+                sourcetime TIMESTAMP,
+                servertime TIMESTAMP,
+                numericvalue DECIMAL,
+                stringvalue TEXT,
+                status TEXT,
+                PRIMARY KEY ((sys, nodeid), sourcetime)
+            );
+            """.trimIndent()
+
+            session.execute(createTableQuery)
+
+            this.session = session
+
             logger.info("Cassandra built.")
             result.complete()
         } catch (e: Exception) {

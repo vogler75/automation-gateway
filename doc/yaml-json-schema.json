@@ -120,7 +120,13 @@
                             "items": {
                                 "$ref": "#/definitions/ImplyLogger"
                             }
-                        }                          
+                        },
+                        "Cassandra": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/CassandraLogger"
+                            }
+                        }
                     }
                 }
             },
@@ -319,7 +325,26 @@
 
             },
             "required": ["Id", "Host", "ApiKey", "ProjectId"]
-        },            
+        },     
+        "CassandraLogger": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {  
+                "Id": { "type": "string" },
+                "Enabled": { "type": "boolean" },
+                "LogLevel": { "$ref": "#/definitions/LogLevel" },
+                "WriteParameters": { "$ref": "#/definitions/LoggerWriteParameters" },
+                "Logging": {  "$ref": "#/definitions/Logging" },   
+                "Host": { "type": "string", "default": "localhost" },
+                "Port": { "type": "integer", "default": 9042 },
+                "Datacenter": { "type": "string", "default": "gateway" },
+                "KeyspaceName": { "type": "string", "default": "gateway" },
+                "TableName": { "type": "string", "default": "gateway" },
+                "Username": { "type": "string", "default": "" },
+                "Password": { "type": "string", "default": "" }
+            },
+            "required": ["Id", "Host", "KeyspaceName", "TableName"]
+        },
         "KafkaPublisherConfigs": {
             "type": "object",
             "additionalProperties": true,

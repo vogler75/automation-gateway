@@ -343,6 +343,7 @@ You have to build the program before with gradle. Then you can use the shell scr
 > C:\Workspace\automation-gateway\docker\examples\hazelcast> docker compose up -d  
 
 # Version History
+- [1.38 Added Cassandra as database for logging](#138-added-cassandra-as-database-for-logging)
 - [1.37 Support for Imply.io & reactivated QuestDB](#137-support-for-implyio--reactivated-questdb)
 - [1.36 Support for InfluxDB V2](#136-support-for-influxdb-v2)
 - [1.35 Enhancements and Bug Fixes](#135-enhancements-and-bug-fixes)
@@ -384,6 +385,25 @@ You have to build the program before with gradle. Then you can use the shell scr
 - [1.7 DDS Driver (subscribe and publish)](#17-dds-driver-subscribe-and-publish)
 - [1.6 Added GraphiQL (http://localhost:4000/graphiql/)](#16-added-graphiql-httplocalhost4000graphiql)
 - [1.5 OPC UA Schemas to GraphQL Schema Importer](#15-opc-ua-schemas-to-graphql-schema-importer)
+
+## 1.38 Added Cassandra as database for logging
+
+Cassandra is now supported as a logging backend. Apache Cassandra is a highly scalable, distributed NoSQL database designed for handling large amounts of data across many servers with no single point of failure. By integrating Cassandra as a logger sink, the gateway can efficiently store time-series and event data with high availability and horizontal scalability. This is especially useful for industrial and IoT scenarios where reliability and performance are critical for logging large volumes of data.
+
+```yaml
+Loggers:
+  Cassandra:
+    - Id: "cassandra1"
+      Enabled: true
+      LogLevel: INFO
+      Datacenter: gateway
+      KeyspaceName: gateway
+      TableName: gateway
+      Host: localhost
+      Port: 9042
+      Logging:
+        - Topic: mqtt/home/path/Original/#
+```
 
 ## 1.37 Support for Imply.io & reactivated QuestDB
 

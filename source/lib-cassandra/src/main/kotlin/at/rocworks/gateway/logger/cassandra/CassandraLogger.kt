@@ -21,9 +21,9 @@ class CassandraLogger(config: JsonObject) : LoggerBase(config) {
 
     private val host = config.getString("Host", "localhost")
     private val port = config.getInteger("Port", 9042)
-    private val datacenter = config.getString("Datacenter", "datacenter1")
+    private val datacenter = config.getString("Datacenter", "gateway")
     private val keyspace = config.getString("Keyspace", "gateway")
-    private val table = config.getString("Table", "frankenstein")
+    private val table = config.getString("Table", "gateway")
     private val username = config.getString("Username", "")
     private val password = config.getString("Password", "")
 

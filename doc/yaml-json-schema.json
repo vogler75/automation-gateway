@@ -337,7 +337,7 @@
                 "Logging": {  "$ref": "#/definitions/Logging" },   
                 "Host": { "type": "string", "default": "localhost" },
                 "Port": { "type": "integer", "default": 9042 },
-                "Datacenter": { "type": "string", "default": "gateway" },
+                "Datacenter": { "type": "string", "default": "datacenter1" },
                 "KeyspaceName": { "type": "string", "default": "gateway" },
                 "TableName": { "type": "string", "default": "gateway" },
                 "Username": { "type": "string", "default": "" },

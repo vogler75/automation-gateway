@@ -1,5 +1,8 @@
 package at.rocworks.gateway.core.graphql
 
+import at.rocworks.gateway.core.auth.AuthController
+import at.rocworks.gateway.core.auth.AuthService
+import at.rocworks.gateway.core.auth.JWTAuthHandler
 import at.rocworks.gateway.core.data.*
 import at.rocworks.gateway.core.service.Common
 import at.rocworks.gateway.core.service.Component
@@ -364,7 +367,46 @@ class GraphQLServer(config: JsonObject) : Component(config) {
     private fun startGraphQLServer(graphql: GraphQL) {
         val router = Router.router(vertx)
         router.route().handler(BodyHandler.create())
-        router.route("/graphql").handler(GraphQLWSHandler.create(graphql));
+
+        // Initialize authentication
+        val authEnabled = config.getBoolean("AuthEnabled", true)
+        val jwtSecret = System.getenv("JWT_SECRET")
+            ?: config.getString("JWTSecret")
+            ?: "CHANGE_THIS_SECRET_IN_PRODUCTION_${UUID.randomUUID()}"
+
+        if (jwtSecret.startsWith("CHANGE_THIS_SECRET")) {
+            logger.warning("Using auto-generated JWT secret - configure JWT_SECRET env var for production!")
+        }
+
+        val authService = AuthService(vertx, jwtSecret)
+        val authController = AuthController(vertx, authService)
+
+        // Mount authentication routes
+        authController.mount(router)
+
+        // Health check endpoints (unauthenticated)
+        router.get("/healthz").handler { ctx ->
+            ctx.response()
+                .putHeader("Content-Type", "application/json")
+                .end("""{"status":"UP","timestamp":"${Instant.now()}"}""")
+        }
+
+        router.get("/ready").handler { ctx ->
+            ctx.response()
+                .putHeader("Content-Type", "application/json")
+                .end("""{"status":"READY","timestamp":"${Instant.now()}"}""")
+        }
+
+        // GraphQL endpoints with authentication
+        if (authEnabled) {
+            val authHandler = JWTAuthHandler(authService)
+            router.route("/graphql").handler(authHandler)
+            logger.info("GraphQL authentication enabled")
+        } else {
+            logger.warning("GraphQL authentication DISABLED - use only for development/testing!")
+        }
+
+        router.route("/graphql").handler(GraphQLWSHandler.create(graphql))
         router.route("/graphql").handler(GraphQLHandler.create(graphql))
 
         val httpServerOptions = HttpServerOptions()
@@ -372,6 +414,8 @@ class GraphQLServer(config: JsonObject) : Component(config) {
         val httpServer = vertx.createHttpServer(httpServerOptions)
         val httpPort = config.getInteger("Port", 4000)
         httpServer.requestHandler(router).listen(httpPort)
+
+        logger.info("GraphQL server started on port $httpPort (auth: $authEnabled)")
     }
 
     private fun getServerInfo(): DataFetcher<CompletableFuture<Map<String, Any?>>> {

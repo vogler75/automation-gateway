@@ -73,31 +73,19 @@ class AuthService(
      * Returns a JWT token on success.
      */
     fun authenticate(username: String, password: String): Future<AuthToken> {
-        val promise = Promise.promise<AuthToken>()
+        return vertx.executeBlocking(java.util.concurrent.Callable {
+            val user = users[username]
+                ?: throw AuthenticationException("Invalid credentials")
 
-        vertx.executeBlocking<AuthToken> { blocking ->
-            try {
-                val user = users[username]
-                    ?: throw AuthenticationException("Invalid credentials")
-
-                if (!BCrypt.checkpw(password, user.passwordHash)) {
-                    logger.warning("Failed login attempt for user: $username")
-                    throw AuthenticationException("Invalid credentials")
-                }
-
-                val token = generateToken(user)
-                logger.info("Successful authentication for user: $username")
-                blocking.complete(token)
-
-            } catch (e: AuthenticationException) {
-                blocking.fail(e)
-            } catch (e: Exception) {
-                logger.severe("Authentication error: ${e.message}")
-                blocking.fail(AuthenticationException("Authentication failed", e))
+            if (!BCrypt.checkpw(password, user.passwordHash)) {
+                logger.warning("Failed login attempt for user: $username")
+                throw AuthenticationException("Invalid credentials")
             }
-        }.onComplete(promise)
 
-        return promise.future()
+            val token = generateToken(user)
+            logger.info("Successful authentication for user: $username")
+            token
+        })
     }
 
     /**
@@ -128,25 +116,18 @@ class AuthService(
      * Validate JWT token and extract claims.
      */
     fun validateToken(token: String): Future<Claims> {
-        val promise = Promise.promise<Claims>()
-
-        vertx.executeBlocking<Claims> { blocking ->
+        return vertx.executeBlocking(java.util.concurrent.Callable {
             try {
-                val claims = Jwts.parser()
+                Jwts.parser()
                     .verifyWith(signingKey)
                     .build()
                     .parseSignedClaims(token)
                     .payload
-
-                blocking.complete(claims)
-
             } catch (e: Exception) {
                 logger.warning("Token validation failed: ${e.message}")
-                blocking.fail(AuthenticationException("Invalid or expired token", e))
+                throw AuthenticationException("Invalid or expired token", e)
             }
-        }.onComplete(promise)
-
-        return promise.future()
+        })
     }
 
     /**
@@ -170,49 +151,35 @@ class AuthService(
      * In production, this would integrate with external identity provider.
      */
     fun addUser(username: String, password: String, roles: Set<String>, email: String? = null): Future<User> {
-        val promise = Promise.promise<User>()
-
-        vertx.executeBlocking<User> { blocking ->
-            try {
-                if (users.containsKey(username)) {
-                    throw AuthenticationException("User already exists")
-                }
-
-                val user = User(
-                    username = username,
-                    passwordHash = BCrypt.hashpw(password, BCrypt.gensalt()),
-                    roles = roles,
-                    email = email
-                )
-
-                users[username] = user
-                logger.info("Created user: $username with roles: $roles")
-                blocking.complete(user)
-
-            } catch (e: Exception) {
-                logger.severe("Failed to create user: ${e.message}")
-                blocking.fail(e)
+        return vertx.executeBlocking(java.util.concurrent.Callable {
+            if (users.containsKey(username)) {
+                throw AuthenticationException("User already exists")
             }
-        }.onComplete(promise)
 
-        return promise.future()
+            val user = User(
+                username = username,
+                passwordHash = BCrypt.hashpw(password, BCrypt.gensalt()),
+                roles = roles,
+                email = email
+            )
+
+            users[username] = user
+            logger.info("Created user: $username with roles: $roles")
+            user
+        })
     }
 
     /**
      * Remove a user from the system (admin only).
      */
     fun removeUser(username: String): Future<Boolean> {
-        val promise = Promise.promise<Boolean>()
-
-        vertx.<Boolean>executeBlocking { blocking ->
+        return vertx.executeBlocking(java.util.concurrent.Callable {
             val removed = users.remove(username) != null
             if (removed) {
                 logger.info("Removed user: $username")
             }
-            blocking.complete(removed)
-        }.onComplete(promise)
-
-        return promise.future()
+            removed
+        })
     }
 
     /**
@@ -230,38 +197,28 @@ class AuthService(
      * }
      */
     fun loadUsersFromConfig(config: JsonObject): Future<Int> {
-        val promise = Promise.promise<Int>()
+        return vertx.executeBlocking(java.util.concurrent.Callable {
+            val usersArray = config.getJsonArray("users") ?: JsonArray()
+            var count = 0
 
-        vertx.<Int>executeBlocking { blocking ->
-            try {
-                val usersArray = config.getJsonArray("users") ?: JsonArray()
-                var count = 0
+            for (i in 0 until usersArray.size()) {
+                val userJson = usersArray.getJsonObject(i)
+                val username = userJson.getString("username")
+                val passwordHash = userJson.getString("password")
+                val rolesArray = userJson.getJsonArray("roles")
+                val roles = (0 until rolesArray.size())
+                    .map { rolesArray.getString(it) }
+                    .toSet()
+                val email = userJson.getString("email")
 
-                for (i in 0 until usersArray.size()) {
-                    val userJson = usersArray.getJsonObject(i)
-                    val username = userJson.getString("username")
-                    val passwordHash = userJson.getString("password")
-                    val rolesArray = userJson.getJsonArray("roles")
-                    val roles = (0 until rolesArray.size())
-                        .map { rolesArray.getString(it) }
-                        .toSet()
-                    val email = userJson.getString("email")
-
-                    val user = User(username, passwordHash, roles, email)
-                    users[username] = user
-                    count++
-                }
-
-                logger.info("Loaded $count users from configuration")
-                blocking.complete(count)
-
-            } catch (e: Exception) {
-                logger.severe("Failed to load users from config: ${e.message}")
-                blocking.fail(e)
+                val user = User(username, passwordHash, roles, email)
+                users[username] = user
+                count++
             }
-        }.onComplete(promise)
 
-        return promise.future()
+            logger.info("Loaded $count users from configuration")
+            count
+        })
     }
 }
 

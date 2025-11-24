@@ -16,11 +16,11 @@ dependencies {
     implementation "io.vertx:vertx-config-yaml:$vertxVersion"
     implementation "io.vertx:vertx-service-discovery:$vertxVersion"
 
-    runtimeOnly group: 'org.hsqldb', name: 'hsqldb', version: '2.7.4'
-    runtimeOnly group: 'org.postgresql', name: 'postgresql', version: '42.7.4'
-    runtimeOnly group: 'io.crate', name: 'crate-jdbc', version: '2.7.0'
-    runtimeOnly group: 'com.microsoft.sqlserver', name: 'mssql-jdbc', version: '12.8.1.jre11'
-    runtimeOnly group: 'mysql', name: 'mysql-connector-java', version: '8.0.33'
+    runtimeOnly 'org.hsqldb:hsqldb:2.7.4'
+    runtimeOnly 'org.postgresql:postgresql:42.7.4'
+    runtimeOnly 'io.crate:crate-jdbc:2.7.0'
+    runtimeOnly 'com.microsoft.sqlserver:mssql-jdbc:12.8.1.jre11'
+    runtimeOnly 'mysql:mysql-connector-java:8.0.33'
     //runtimeOnly group: 'com.mysql', name: 'mysql-connector-j', version: '9.1.0' // by adding this we are getting an error: ClassNotFoundException: com.google.protobuf.GeneratedMessageV3$ExtendableMessageOrBuilder
 
 }

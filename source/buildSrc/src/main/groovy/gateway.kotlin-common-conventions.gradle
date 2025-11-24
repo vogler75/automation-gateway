@@ -7,6 +7,10 @@ plugins {
     id 'org.jetbrains.kotlin.jvm'
 }
 
+kotlin {
+    jvmToolchain(23)
+}
+
 dependencies {
     constraints {
         // Define dependency versions as constraints

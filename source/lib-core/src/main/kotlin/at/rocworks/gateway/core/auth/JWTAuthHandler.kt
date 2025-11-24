@@ -31,6 +31,33 @@ class JWTAuthHandler(
         const val USER_CONTEXT_KEY = "user_context"
         private const val AUTHORIZATION_HEADER = "Authorization"
         private const val BEARER_PREFIX = "Bearer "
+
+        /**
+         * Extract user context from routing context.
+         * Should be called from GraphQL resolvers after authentication.
+         */
+        fun getUserContext(context: RoutingContext): UserContext? {
+            return context.get(USER_CONTEXT_KEY)
+        }
+
+        fun requireUserContext(context: RoutingContext): UserContext {
+            return getUserContext(context)
+                ?: throw AuthenticationException("User context not found - authentication required")
+        }
+
+        fun requireRole(context: RoutingContext, role: String) {
+            val userContext = requireUserContext(context)
+            if (!userContext.hasRole(role)) {
+                throw AuthorizationException("Insufficient permissions - role '$role' required")
+            }
+        }
+
+        fun requireAnyRole(context: RoutingContext, vararg roles: String) {
+            val userContext = requireUserContext(context)
+            if (!userContext.hasAnyRole(*roles)) {
+                throw AuthorizationException("Insufficient permissions - one of roles ${roles.joinToString()} required")
+            }
+        }
     }
 
     override fun handle(context: RoutingContext) {
@@ -80,35 +107,6 @@ class JWTAuthHandler(
             .setStatusCode(401)
             .putHeader("Content-Type", "application/json")
             .end("""{"error": "Unauthorized", "message": "$message"}""")
-    }
-
-    /**
-     * Extract user context from routing context.
-     * Should be called from GraphQL resolvers after authentication.
-     */
-    companion object {
-        fun getUserContext(context: RoutingContext): UserContext? {
-            return context.get(USER_CONTEXT_KEY)
-        }
-
-        fun requireUserContext(context: RoutingContext): UserContext {
-            return getUserContext(context)
-                ?: throw AuthenticationException("User context not found - authentication required")
-        }
-
-        fun requireRole(context: RoutingContext, role: String) {
-            val userContext = requireUserContext(context)
-            if (!userContext.hasRole(role)) {
-                throw AuthorizationException("Insufficient permissions - role '$role' required")
-            }
-        }
-
-        fun requireAnyRole(context: RoutingContext, vararg roles: String) {
-            val userContext = requireUserContext(context)
-            if (!userContext.hasAnyRole(*roles)) {
-                throw AuthorizationException("Insufficient permissions - one of roles ${roles.joinToString()} required")
-            }
-        }
     }
 }
 

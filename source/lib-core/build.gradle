@@ -16,8 +16,16 @@ dependencies {
     implementation "io.vertx:vertx-web-client:$vertxVersion"
     implementation "io.vertx:vertx-web-graphql:$vertxVersion"
     implementation "io.vertx:vertx-kafka-client:$vertxVersion"
+    implementation "io.vertx:vertx-auth-jwt:$vertxVersion"
+    implementation "io.vertx:vertx-web:$vertxVersion"
 
     implementation "io.reactivex.rxjava2:rxjava:2.2.21"
+
+    // JWT and security dependencies
+    implementation 'io.jsonwebtoken:jjwt-api:0.12.5'
+    implementation 'io.jsonwebtoken:jjwt-impl:0.12.5'
+    implementation 'io.jsonwebtoken:jjwt-jackson:0.12.5'
+    implementation 'org.mindrot:jbcrypt:0.4'
 
     implementation "org.eclipse.tahu:tahu-core:1.0.12"
 

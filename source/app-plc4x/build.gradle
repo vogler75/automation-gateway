@@ -16,10 +16,10 @@ dependencies {
     implementation "io.vertx:vertx-config-yaml:$vertxVersion"
     implementation "io.vertx:vertx-service-discovery:$vertxVersion"
 
-    implementation 'org.apache.plc4x:plc4j-api:0.9.0'
-    runtimeOnly 'org.apache.plc4x:plc4j-driver-s7:0.9.0'
-    runtimeOnly 'org.apache.plc4x:plc4j-driver-modbus:0.9.0'
-    runtimeOnly 'org.apache.plc4x:plc4j-driver-simulated:0.9.0'
+    implementation 'org.apache.plc4x:plc4j-api:0.13.1'
+    runtimeOnly 'org.apache.plc4x:plc4j-driver-s7:0.13.1'
+    runtimeOnly 'org.apache.plc4x:plc4j-driver-modbus:0.13.1'
+    runtimeOnly 'org.apache.plc4x:plc4j-driver-simulated:0.13.1'
 
     runtimeOnly 'org.postgresql:postgresql:42.2.27'
 }

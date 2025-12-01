@@ -23,7 +23,7 @@ Drivers:
   Plc4x:
     - Id: "demo"
       Enabled: true
-      Url: "modbus://localhost:502"
+      Url: "modbus-tcp://localhost:502"
       Polling:
         Time: 100
         OldNew: true

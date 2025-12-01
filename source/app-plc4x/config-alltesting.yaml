@@ -57,7 +57,7 @@ Drivers:
       LogLevel: INFO
       Polling:
         Time: 500
-      Url: "modbus://localhost:502"
+      Url: "modbus-tcp://localhost:502"
 
 Loggers:
   Mqtt:

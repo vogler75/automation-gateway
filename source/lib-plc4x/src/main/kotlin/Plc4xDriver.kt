@@ -12,7 +12,7 @@ import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 
 import org.apache.plc4x.java.api.PlcConnection
-import org.apache.plc4x.java.PlcDriverManager
+import org.apache.plc4x.java.api.PlcDriverManager
 import org.apache.plc4x.java.api.messages.*
 import org.apache.plc4x.java.api.value.PlcValue
 import java.util.concurrent.TimeUnit
@@ -62,7 +62,7 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
             val localRequestId = ++pollingRequestId
             val builder: PlcReadRequest.Builder = plc!!.readRequestBuilder()
             pollingTopics.forEach {
-                builder.addItem(it.key.topicName, it.key.topicNode)
+                builder.addTagAddress(it.key.topicName, it.key.topicNode)
             }
             logger.finest { "Poll request [${localRequestId}] for [${pollingTopics.size}] items..." }
             try {
@@ -116,12 +116,12 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
     }
 
     private fun connectPlc4xDriver() {
-        plc = PlcDriverManager().getConnection(url)
+        plc = PlcDriverManager.getDefault().getConnectionManager().getConnection(url)
         plc?.let {
             it.connect()
-            val info = (if (it.metadata?.canRead() == true) "Read " else " ") +
-                    (if (it.metadata?.canWrite() == true) "Write " else " ") +
-                    if (it.metadata?.canSubscribe() == true) "Subscribe " else " "
+            val info = (if (it.metadata?.isReadSupported == true) "Read " else " ") +
+                    (if (it.metadata?.isWriteSupported == true) "Write " else " ") +
+                    if (it.metadata?.isSubscribeSupported == true) "Subscribe " else " "
             logger.info("This connection supports: $info")
         }
     }
@@ -169,7 +169,7 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
         logger.fine {"Subscribe topic [${topics.size}]" }
         val ret = Promise.promise<Boolean>()
         when {
-            plc?.metadata?.canSubscribe() == false -> {
+            plc?.metadata?.isSubscribeSupported == false -> {
                 topics.forEach { topic ->
                     if (!pollingTopics.containsKey(topic)) {
                         pollingTopics[topic] = null
@@ -182,19 +182,21 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
             else -> {
                 val builder: PlcSubscriptionRequest.Builder = plc!!.subscriptionRequestBuilder()
                 topics.forEach {
-                    builder.addEventField("value", it.topicNode)
+                    builder.addChangeOfStateTagAddress(it.topicName, it.topicNode)
                 }
                 val request = builder.build()
 
                 request.execute().whenComplete { subscribeResponse, throwable ->
                     if (subscribeResponse != null) {
                         topics.forEach { topic ->
-                            val handle = subscribeResponse.getSubscriptionHandle("value")
+                            val handle = subscribeResponse.getSubscriptionHandle(topic.topicName)
                             registry.addMonitoredItem(Plc4xMonitoredItem(handle), topic)
-                            handle.register {
-                                valueConsumer(topic, it.asPlcValue)
+                            handle.register { event ->
+                                val value = event.getPlcValue(topic.topicName)
+                                valueConsumer(topic, value)
                             }
                         }
+                        ret.complete(true)
                     } else {
                         logger.severe("An error occurred at plc subscription request: ${throwable.message}")
                         ret.complete(false)
@@ -303,7 +305,7 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
     override fun readHandler(message: Message<JsonObject>) {
         val node = message.body().getValue("NodeId")
         when {
-            plc?.metadata?.canRead() == false -> {
+            plc?.metadata?.isReadSupported == false -> {
                 message.reply(JsonObject().put("Ok", false).put("Error", "Read not supported!"))
             }
             node != null && node is String -> {
@@ -312,7 +314,7 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
                         message.reply(JsonObject().put("Ok", false).put("Result", "Not connected!"))
                     } else {
                         val builder: PlcReadRequest.Builder = plc!!.readRequestBuilder()
-                        builder.addItem("value", node)
+                        builder.addTagAddress("value", node)
                         val request = builder.build()
                         val response = request.execute()
                         response.orTimeout(readTimeout, TimeUnit.MILLISECONDS)
@@ -350,7 +352,7 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
     override fun writeHandler(message: Message<JsonObject>) {
         val node = message.body().getValue("NodeId")
         when {
-            plc?.metadata?.canWrite() == false -> {
+            plc?.metadata?.isWriteSupported == false -> {
                 message.reply(JsonObject().put("Ok", false).put("Error", "Write not supported!"))
             }
             node != null && node is String -> {
@@ -379,7 +381,7 @@ class Plc4xDriver(config: JsonObject): DriverBase(config) {
                 promise.complete(false)
             } else {
                 val builder: PlcWriteRequest.Builder = plc!!.writeRequestBuilder()
-                builder.addItem("value", node, value)
+                builder.addTagAddress("value", node, value)
                 val request = builder.build()
                 val response = request.execute()
                 response.orTimeout(writeTimeout, TimeUnit.MILLISECONDS)
